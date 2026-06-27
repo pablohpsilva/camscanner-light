@@ -338,25 +338,33 @@ carries no GPS/device EXIF.
 
 ## Acceptance criteria (each closed only by a passing test)
 
-- [ ] Accept persists the capture: a JPEG is written under
+- [x] Accept persists the capture: a JPEG is written under
   `documents/<id>/page_1.jpg` and a `Document`+`Page` row is created — *unit:
   repository round-trip · BDD: capture→Accept→document appears*
-- [ ] The stored image path is **relative** and resolves under a changed app-dir
+  *(observed green: unit "All tests passed!" + BDD on Android emulator-5554 + iOS simulator, gate 2026-06-27)*
+- [x] The stored image path is **relative** and resolves under a changed app-dir
   base — *unit: relative-path resolution*
+  *(observed green: unit "All tests passed!", gate 2026-06-27)*
 - [ ] Saved JPEG has identifying EXIF stripped with **Orientation preserved** and
   image data unchanged — *unit: JpegExifScrubber · REAL_DEVICE: no GPS/Make/Model
   on device*
-- [ ] The Documents home reads storage and lists saved documents (name + date),
+  *(unit: JpegExifScrubber observed green in gate 2026-06-27; REAL_DEVICE lane not run — default gate only; re-run with REAL_DEVICE=1 to close)*
+- [x] The Documents home reads storage and lists saved documents (name + date),
   replacing the empty state — *widget: DocumentsListView · BDD*
-- [ ] Save failure surfaces an error and keeps the user on review with the
+  *(observed green: widget + BDD on Android emulator + iOS simulator, gate 2026-06-27)*
+- [x] Save failure surfaces an error and keeps the user on review with the
   capture intact (no crash) — *unit: SaveController failure · widget: Accept
   failure SnackBar*
-- [ ] Double-tap on Accept saves once; disposing mid-save does not notify — *unit:
+  *(observed green: unit + widget "All tests passed!", gate 2026-06-27)*
+- [x] Double-tap on Accept saves once; disposing mid-save does not notify — *unit:
   SaveController guard + dispose-safety*
-- [ ] A failed file write leaves **no** `Document`/`Page` row (transactional save,
+  *(observed green: unit "All tests passed!", gate 2026-06-27)*
+- [x] A failed file write leaves **no** `Document`/`Page` row (transactional save,
   no orphan) — *unit: crash-safety rollback*
+  *(observed green: unit "All tests passed!", gate 2026-06-27)*
 - [ ] Saved scan renders **upright** on a real device (Orientation honored, or
   bake fallback applied) — *REAL_DEVICE: on-device orientation check*
+  *(REAL_DEVICE lane only — not run in default gate; re-run with REAL_DEVICE=1 to close)*
 
 ---
 

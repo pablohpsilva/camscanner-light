@@ -57,7 +57,9 @@ assert_coverage_floor() {
   ( cd "$ROOT/apps/mobile" && flutter test --coverage >"$log" 2>&1 ); local rc=$?
   if [ "$rc" -ne 0 ]; then fail "coverage: flutter test --coverage exit $rc (see $log)"; return 1; fi
   if [ ! -s "$lcov" ]; then fail "coverage: lcov.info missing/empty [silence=fail]"; return 1; fi
-  local pct; pct="$(awk -F: '/^LF:/{f+=$2} /^LH:/{h+=$2} END{if(f>0) printf "%.1f", 100*h/f; else print "0"}' "$lcov")"
+  # Exclude generated files (*.g.dart — Drift, json_serializable, build_runner
+  # codegen) from coverage: they are machine-written and not a quality signal.
+  local pct; pct="$(awk -F: '/^SF:/{skip=($2 ~ /\.g\.dart$/)} /^LF:/{if(!skip) f+=$2} /^LH:/{if(!skip) h+=$2} END{if(f>0) printf "%.1f", 100*h/f; else print "0"}' "$lcov")"
   if awk "BEGIN{exit !($pct >= $floor)}"; then
     pass "coverage: ${pct}% line coverage ≥ floor ${floor}%"; return 0
   fi
