@@ -39,6 +39,14 @@ the rules below. This protocol is part of the Definition of Done.
   FAIL by construction, so rule 2 cannot be forgotten.
 - **The progression gate is the script's exit code.** A step is "done" only when
   `scripts/verify/<step>.sh` exits 0, **observed**, not narrated.
+- **On-device UI is verified programmatically, not by screenshot.** Any step that
+  adds/changes UI ships an `apps/mobile/integration_test/<step>_*.dart` test that
+  pumps the **real app on each device** and asserts the rendered widget tree; the
+  verify script runs it via `verify_integration_android` /
+  `verify_integration_ios` (in `lib.sh`), which gate on "All tests passed!".
+  Screenshots are **corroborating only**. Each new UI test must be
+  **mutation-checked** once (inject a guaranteed-false assertion → confirm the
+  gate FAILS, then revert) so the test is provably non-vacuous.
 - **Independent adversarial verifier.** After the implementer and the task
   reviewer, a **separate** subagent runs `scripts/verify/<step>.sh` from a clean
   state, tries to **disprove** "done," and reports PASS/FAIL per criterion with
@@ -85,12 +93,8 @@ tool's stdout, where the tool is flaky:
 2. **Back-to-back device runs** can still degrade the emulator (port/DDS
    exhaustion). Give a cooldown between full script runs; the per-platform
    signals above tolerate a single degraded run, but a fresh device is best.
-3. **Screenshots are not programmatically validated.** The gate captures a
-   screenshot for human inspection but does not assert its *contents*, so a
-   splash and the real UI are equally invisible to the gate logic. The Android
-   capture now waits for painted frames (`dumpsys gfxinfo … Total frames
-   rendered ≥ 5`) instead of a fixed sleep, so the evidence is trustworthy — but
-   the **proper fix is an on-device integration test** (`integration_test`) that
-   pumps the real app and asserts the rendered widgets. Add that as the harness
-   matures; until then the in-process widget tests are the authoritative UI proof
-   and the screenshots are corroborating evidence.
+3. **Programmatic on-device UI validation — RESOLVED.** Feature steps now ship an
+   `integration_test` that asserts the rendered widget tree on each device (see
+   "On-device UI" above); the screenshot is corroborating only. (`gfxinfo "Total
+   frames rendered"` does not track Flutter/Impeller, so it must not be used as a
+   render signal — it was removed.)

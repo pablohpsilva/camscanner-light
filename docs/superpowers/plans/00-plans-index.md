@@ -23,6 +23,12 @@ a clean state and agree before the step is marked done. The final task of every
 plan is "author `scripts/verify/<step>.sh` and pass it under the independent
 verifier."
 
+Any step that adds/changes UI also ships an
+`apps/mobile/integration_test/<step>_*.dart` test asserting the rendered widget
+tree on each device (run via `verify_integration_{android,ios}`) — the
+**authoritative on-device UI check**, mutation-verified once; screenshots are
+corroborating only.
+
 ## Plan files (ordered)
 
 Status: ✅ written & ready · ⏳ pending (written when its predecessor passes the gate)

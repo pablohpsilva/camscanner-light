@@ -27,13 +27,15 @@ assert_cmd "a1 widget tests pass" "All tests passed!" \
 assert_cmd "analyze clean" "Successfully ran target analyze" \
   pnpm nx run mobile:analyze --skip-nx-cache
 
-# ---- Device criteria: launch via `nx run mobile:run` on each platform ----
+# ---- Device criteria: programmatic on-device UI verification (integration test) ----
+# Authoritative: runs the REAL app on each device and asserts the Documents home
+# widget tree (a wrong/blank/splash UI fails). Supersedes screenshot evidence.
 if [ "${VERIFY_SKIP_DEVICE:-0}" = "1" ]; then
   fail "DEVICE CHECKS SKIPPED (VERIFY_SKIP_DEVICE=1) — not a pass; run without the flag to gate"
   verify_summary
 fi
 
-verify_android_run
-verify_ios_run
+verify_integration_android a1_home_screen_test.dart
+verify_integration_ios a1_home_screen_test.dart
 
 verify_summary

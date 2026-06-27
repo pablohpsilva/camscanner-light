@@ -163,3 +163,67 @@ verify_ios_run() {
   fi
   _kill_run "$pid"
 }
+
+# ---- On-device integration tests: the AUTHORITATIVE programmatic UI check ----
+# `flutter test integration_test/...` builds, installs and launches the REAL app
+# on the device, then asserts the rendered widget tree — a wrong/blank/splash UI
+# FAILS. It runs to completion (not resident), so "All tests passed!" is a clean
+# pass/fail signal (no DDS/launchctl gymnastics). This supersedes the screenshot
+# as UI evidence for feature steps.
+
+_ensure_android() {
+  local dev; dev="$("$ADB" devices | awk '/emulator-.*device$/{print $1; exit}')"
+  if [ -z "$dev" ]; then
+    flutter emulators --launch Medium_Phone_API_35 >/dev/null 2>&1
+    "$ADB" wait-for-device
+    local b=0; until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 3; b=$((b+3)); [ "$b" -gt 180 ] && break; done
+    dev="$("$ADB" devices | awk '/emulator-.*device$/{print $1; exit}')"
+  fi
+  printf '%s' "$dev"
+}
+
+_ensure_ios() {
+  local udid; udid="$(xcrun simctl list devices booted | grep -oE '[0-9A-Fa-f-]{36}' | head -1)"
+  if [ -z "$udid" ]; then
+    udid="$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-Fa-f-]{36}')"
+    [ -n "$udid" ] && { xcrun simctl boot "$udid" 2>/dev/null; open -a Simulator; }
+    local b=0; while [ -n "$udid" ] && ! xcrun simctl list devices | grep "$udid" | grep -q Booted; do sleep 2; b=$((b+2)); [ "$b" -gt 120 ] && break; done
+  fi
+  printf '%s' "$udid"
+}
+
+# verify_integration <label> <device-id> <test-file-under-integration_test/>
+verify_integration() {
+  local label="$1" dev="$2" tf="$3"
+  local log="$EVIDENCE_DIR/integration-$label.log"
+  local attempt=0
+  while [ "$attempt" -lt 2 ]; do
+    attempt=$((attempt + 1))
+    ( cd "$ROOT/apps/mobile" && flutter test "integration_test/$tf" -d "$dev" >"$log" 2>&1 )
+    if grep -qF "All tests passed!" "$log"; then
+      pass "$label: on-device integration test asserts UI ($tf)"
+      return 0
+    fi
+    # Retry ONCE on transient infra (the test never loaded/ran) — but NEVER on a
+    # real assertion failure. A failed assertion prints "[E]"; infra errors don't.
+    if [ "$attempt" -lt 2 ] \
+      && grep -qE "Failed to start Dart Development Service|device offline|Failed to load|Lost connection to device|Gradle task .* failed" "$log" \
+      && ! grep -qF "[E]" "$log"; then
+      sleep 10; continue
+    fi
+    break
+  done
+  fail "$label: on-device integration test FAILED ($tf) [silence=fail] (see $log)"
+}
+
+verify_integration_android() {
+  local tf="$1" dev; dev="$(_ensure_android)"
+  [ -z "$dev" ] && { fail "android: no emulator for integration test"; return 1; }
+  verify_integration android "$dev" "$tf"
+}
+
+verify_integration_ios() {
+  local tf="$1" udid; udid="$(_ensure_ios)"
+  [ -z "$udid" ] && { fail "ios: no simulator for integration test"; return 1; }
+  verify_integration ios "$udid" "$tf"
+}
