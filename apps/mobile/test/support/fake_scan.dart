@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
+import 'package:mobile/features/scan/scan_dependencies.dart';
 
 /// In-memory fake of [CameraPermissionService] — returns a fixed status.
 class FakeCameraPermissionService implements CameraPermissionService {
@@ -47,3 +48,35 @@ class FakeCameraPreviewController implements CameraPreviewController {
     disposed = true;
   }
 }
+
+/// Returns [ScanDependencies] wired with a [FakeCameraPermissionService] that
+/// reports [CameraPermissionStatus.granted] and an always-available
+/// [FakeCameraPreviewController].
+ScanDependencies grantedScanDependencies() => ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: FakeCameraPreviewController.new,
+    );
+
+/// Returns [ScanDependencies] wired with a [FakeCameraPermissionService] that
+/// reports [CameraPermissionStatus.denied] (or [CameraPermissionStatus.permanentlyDenied]
+/// when [permanently] is `true`).
+ScanDependencies deniedScanDependencies({bool permanently = false}) =>
+    ScanDependencies(
+      createPermissionService: () => FakeCameraPermissionService(
+        permanently
+            ? CameraPermissionStatus.permanentlyDenied
+            : CameraPermissionStatus.denied,
+      ),
+      createPreviewController: FakeCameraPreviewController.new,
+    );
+
+/// Returns [ScanDependencies] wired with a [FakeCameraPermissionService] that
+/// reports [CameraPermissionStatus.granted] and a [FakeCameraPreviewController]
+/// that throws [CameraUnavailableException] on [initialize].
+ScanDependencies unavailableScanDependencies() => ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: () =>
+          FakeCameraPreviewController(unavailable: true),
+    );
