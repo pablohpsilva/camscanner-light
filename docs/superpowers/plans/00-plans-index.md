@@ -14,6 +14,15 @@ Definition of Done in `../specs/00-overview-roadmap.md`).
 A step's plan file is **written only after** its predecessor passes the gate — we
 plan and build progressively, not speculatively.
 
+**Verification harness (binding) — see `../VERIFICATION.md`.** Every step ships
+`scripts/verify/<step>.sh` (built on `scripts/verify/lib.sh`) that encodes its
+acceptance criteria as asserts — exact command + success marker, exit-code check,
+caches disabled, negative controls, **silence = FAIL**. The gate is that script
+exiting 0, and an **independent adversarial verifier subagent** must run it from
+a clean state and agree before the step is marked done. The final task of every
+plan is "author `scripts/verify/<step>.sh` and pass it under the independent
+verifier."
+
 ## Plan files (ordered)
 
 Status: ✅ written & ready · ⏳ pending (written when its predecessor passes the gate)
