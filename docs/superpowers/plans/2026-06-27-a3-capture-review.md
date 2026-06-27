@@ -457,33 +457,32 @@ A stateless screen that shows the captured file and two actions. It owns **no** 
 
 `apps/mobile/test/features/scan/capture_review_screen_test.dart`:
 ```dart
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
-import '../../support/fake_scan.dart';
-
 void main() {
-  testWidgets('shows the captured image and Retake/Accept; callbacks fire',
+  // IMPORTANT — use a NON-LOADABLE path on purpose. Routing a REAL file through
+  // Image.file in a host widget test leaves a pending dart:io isolate-port read
+  // that never resolves under flutter_test's fake-async, hanging the test (and
+  // even a bare pump() does not save it — verified empirically). A bad path
+  // errors fast (no pending I/O), so the test runs instantly. This asserts the
+  // review screen's STRUCTURE + button wiring; real image rendering is verified
+  // on-device by the A3 BDD integration test (where real async loads the file).
+  testWidgets('shows the image area and Retake/Accept; callbacks fire',
       (tester) async {
-    final dir = await Directory.systemTemp.createTemp('review_test');
-    final file = File('${dir.path}/page.jpg');
-    await file.writeAsBytes(kFakeJpegBytes);
-
     var retook = false;
     var accepted = false;
 
     await tester.pumpWidget(MaterialApp(
       home: CaptureReviewScreen(
-        image: CapturedImage(file.path),
+        image: const CapturedImage('/nonexistent/capture.jpg'),
         onRetake: () => retook = true,
         onAccept: () => accepted = true,
       ),
     ));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.widgetWithText(AppBar, 'Review'), findsOneWidget);
     expect(find.byKey(const Key('review-image')), findsOneWidget);
@@ -598,14 +597,43 @@ Add the shutter to the preview view and wire the capture→review→nav flow wit
 **Files:**
 - Modify: `apps/mobile/lib/features/scan/widgets/camera_preview_view.dart`
 - Modify: `apps/mobile/lib/features/scan/camera_screen.dart`
+- Modify: `apps/mobile/test/support/fake_scan.dart` (add an opt-in `captureReturnPath` so review-rendering host tests avoid the real-file `Image.file` hang)
 - Modify: `apps/mobile/test/features/scan/camera_screen_test.dart` (the granted test now provides a shutter; no assertion change required, but verify it still passes)
 - Test: `apps/mobile/test/features/scan/camera_screen_capture_test.dart`
+
+> **Critical test-harness note (learned during execution):** routing a REAL, loadable file through `Image.file` in a HOST widget test hangs the test — a pending `dart:io` isolate-port read never resolves under flutter_test's fake-async (even a bare `pump()` does not save it). Any host test that renders `CaptureReviewScreen` must therefore feed it a **non-loadable path**. The fake's default `capture()` still writes a real JPEG (Task 1's unit test + on-device rendering need it); host tests opt into a bad path via `captureReturnPath`. On-device (BDD) is unaffected — real async loads the file there.
 
 **Interfaces:**
 - Consumes: `ScanController.capture()`/`capturing` (Task 2), `CaptureReviewScreen` (Task 3), existing `CameraPreviewView`.
 - Produces: `CameraPreviewView({required controller, required VoidCallback onShutter, bool capturing})`; keys `scan-shutter`, `scan-shutter-busy`.
 
-- [ ] **Step 1: Write the failing widget tests**
+- [ ] **Step 1: Amend the fake with an opt-in `captureReturnPath`**
+
+In `apps/mobile/test/support/fake_scan.dart`, change `FakeCameraPreviewController` so a test can make `capture()` return a chosen path **without writing a file** — used by the review-rendering host tests to feed a non-loadable path (see the Critical note above). Update the constructor and `capture()`:
+```dart
+  final bool unavailable;
+  final String? captureReturnPath;
+  bool disposed = false;
+
+  FakeCameraPreviewController({this.unavailable = false, this.captureReturnPath});
+```
+```dart
+  @override
+  Future<CapturedImage> capture() async {
+    captureCalled = true;
+    final err = captureError;
+    if (err != null) throw err;
+    final override = captureReturnPath;
+    if (override != null) return CapturedImage(override); // no file written
+    final dir = await Directory.systemTemp.createTemp('fake_capture');
+    final file = File('${dir.path}/page.jpg');
+    await file.writeAsBytes(kFakeJpegBytes);
+    return CapturedImage(file.path);
+  }
+```
+Leave `captureCalled` / `captureError` as-is. The default path (no `captureReturnPath`) still writes a real JPEG — Task 1's `captured_image_test` depends on that, so do not remove it.
+
+- [ ] **Step 2: Write the failing widget tests**
 
 `apps/mobile/test/features/scan/camera_screen_capture_test.dart`:
 ```dart
@@ -616,6 +644,17 @@ import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 
 import '../../support/fake_scan.dart';
+
+// Review-rendering tests feed a NON-LOADABLE capture path: a real file routed
+// through Image.file hangs a host widget test (pending dart:io isolate-port read
+// under fake-async). A bad path errors fast, so pumpAndSettle works. Real
+// rendering is covered on-device by the A3 BDD test.
+ScanDependencies _grantedReview() => ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: () => FakeCameraPreviewController(
+          captureReturnPath: '/nonexistent/capture.jpg'),
+    );
 
 ScanDependencies _grantedWithCaptureError() => ScanDependencies(
       createPermissionService: () =>
@@ -635,7 +674,7 @@ void main() {
 
   testWidgets('tapping the shutter opens the review screen', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: CameraScreen(dependencies: grantedScanDependencies())),
+      MaterialApp(home: CameraScreen(dependencies: _grantedReview())),
     );
     await tester.pumpAndSettle();
 
@@ -649,7 +688,7 @@ void main() {
 
   testWidgets('Retake returns to the live preview', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: CameraScreen(dependencies: grantedScanDependencies())),
+      MaterialApp(home: CameraScreen(dependencies: _grantedReview())),
     );
     await tester.pumpAndSettle();
 
@@ -680,12 +719,12 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [ ] **Step 3: Run to verify it fails**
 
 Run: `cd apps/mobile && flutter test test/features/scan/camera_screen_capture_test.dart`
 Expected: FAIL — `CameraPreviewView` has no `onShutter`/`capturing`; no `scan-shutter` key.
 
-- [ ] **Step 3: Add the shutter to `CameraPreviewView`**
+- [ ] **Step 4: Add the shutter to `CameraPreviewView`**
 
 Replace the contents of `apps/mobile/lib/features/scan/widgets/camera_preview_view.dart`:
 ```dart
@@ -741,7 +780,7 @@ class CameraPreviewView extends StatelessWidget {
 ```
 **Do not remove the `heroTag: 'scan-shutter'`.** The Documents-home Scan button is also a `FloatingActionButton` (default hero tag); during the Home→Camera route transition both FABs are mounted at once, and two FABs sharing the default tag throw "multiple heroes share the same tag". The explicit tag keeps them distinct.
 
-- [ ] **Step 4: Wire capture→review→nav in `CameraScreen`**
+- [ ] **Step 5: Wire capture→review→nav in `CameraScreen`**
 
 In `apps/mobile/lib/features/scan/camera_screen.dart`, add the import:
 ```dart
@@ -783,16 +822,17 @@ Add this method to `_CameraScreenState` (after `dispose()`). **Capture `navigato
 ```
 Update the class doc comment line 10–11 ("Capture (shutter) arrives in A3.") to: `/// Capture (shutter) → review screen lives here (A3).`
 
-- [ ] **Step 5: Run the capture tests + the existing scan widget tests**
+- [ ] **Step 6: Run the capture tests + the existing scan widget tests**
 
 Run: `cd apps/mobile && flutter test test/features/scan/camera_screen_capture_test.dart test/features/scan/camera_screen_test.dart`
 Expected: PASS (both files). If the existing `camera_screen_test.dart` granted test fails to compile because `CameraPreviewView` now requires `onShutter`, that view is only constructed inside `CameraScreen` (not directly by that test), so no change is needed — confirm it passes.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add apps/mobile/lib/features/scan/widgets/camera_preview_view.dart \
         apps/mobile/lib/features/scan/camera_screen.dart \
+        apps/mobile/test/support/fake_scan.dart \
         apps/mobile/test/features/scan/camera_screen_capture_test.dart
 git commit -m "feat(a3): shutter button + capture→review navigation with failure SnackBar"
 ```
