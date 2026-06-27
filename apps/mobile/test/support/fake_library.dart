@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_repository.dart';
+import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 /// In-memory fake repository for host tests. Optionally throws, or blocks on a
@@ -39,3 +40,7 @@ class FakeDocumentRepository implements DocumentRepository {
   Future<List<Document>> listDocuments() async =>
       List<Document>.unmodifiable(documents);
 }
+
+/// LibraryDependencies whose factory returns the given fake repository.
+LibraryDependencies fakeLibraryDependencies(FakeDocumentRepository repo) =>
+    LibraryDependencies(createRepository: () async => repo);
