@@ -8,6 +8,7 @@ import 'package:mobile/features/scan/camera_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
+import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
 
 /// Preview whose [capture] blocks on [gate] so a test can observe the transient
@@ -54,7 +55,12 @@ void main() {
           FakeCameraPermissionService(CameraPermissionStatus.granted),
       createPreviewController: () => gated,
     );
-    await tester.pumpWidget(MaterialApp(home: CameraScreen(dependencies: deps)));
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: deps,
+        repository: FakeDocumentRepository(),
+      ),
+    ));
     await tester.pumpAndSettle();
 
     // Tap the shutter; capture() now blocks on the gate, so capturing == true.
@@ -74,7 +80,10 @@ void main() {
 
   testWidgets('ready state shows the shutter', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: CameraScreen(dependencies: grantedScanDependencies())),
+      MaterialApp(home: CameraScreen(
+        dependencies: grantedScanDependencies(),
+        repository: FakeDocumentRepository(),
+      )),
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('scan-shutter')), findsOneWidget);
@@ -82,7 +91,10 @@ void main() {
 
   testWidgets('tapping the shutter opens the review screen', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: CameraScreen(dependencies: _grantedReview())),
+      MaterialApp(home: CameraScreen(
+        dependencies: _grantedReview(),
+        repository: FakeDocumentRepository(),
+      )),
     );
     await tester.pumpAndSettle();
 
@@ -96,7 +108,10 @@ void main() {
 
   testWidgets('Retake returns to the live preview', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: CameraScreen(dependencies: _grantedReview())),
+      MaterialApp(home: CameraScreen(
+        dependencies: _grantedReview(),
+        repository: FakeDocumentRepository(),
+      )),
     );
     await tester.pumpAndSettle();
 
@@ -112,7 +127,10 @@ void main() {
   testWidgets('capture failure shows a SnackBar and stays on preview',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: CameraScreen(dependencies: _grantedWithCaptureError())),
+      MaterialApp(home: CameraScreen(
+        dependencies: _grantedWithCaptureError(),
+        repository: FakeDocumentRepository(),
+      )),
     );
     await tester.pumpAndSettle();
 
@@ -123,5 +141,41 @@ void main() {
     expect(find.text('Could not capture photo. Try again.'), findsOneWidget);
     expect(find.byKey(const Key('review-image')), findsNothing);
     expect(find.byKey(const Key('scan-shutter')), findsOneWidget);
+  });
+
+  testWidgets('Accept save failure shows a SnackBar and stays on review',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: _grantedReview(),
+        repository: FakeDocumentRepository(throwOnCreate: true),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pump(); // start save
+    await tester.pump(const Duration(milliseconds: 50)); // let it fail
+    expect(find.text("Couldn't save document. Try again."), findsOneWidget);
+    expect(find.byKey(const Key('review-accept')), findsOneWidget,
+        reason: 'still on the review screen');
+  });
+
+  testWidgets('Accept save success returns to the Documents home',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: _grantedReview(),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('review-accept')), findsNothing,
+        reason: 'left the review screen after a successful save');
   });
 }

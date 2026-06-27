@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
 
+import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
 
 void main() {
@@ -9,7 +10,10 @@ void main() {
 
   testWidgets('granted → shows the live preview', (tester) async {
     await tester.pumpWidget(
-      host(CameraScreen(dependencies: grantedScanDependencies())),
+      host(CameraScreen(
+        dependencies: grantedScanDependencies(),
+        repository: FakeDocumentRepository(),
+      )),
     );
     await tester.pumpAndSettle();
 
@@ -20,7 +24,10 @@ void main() {
 
   testWidgets('denied → rationale + Open Settings; tap delegates', (tester) async {
     final deps = deniedScanDependencies();
-    await tester.pumpWidget(host(CameraScreen(dependencies: deps)));
+    await tester.pumpWidget(host(CameraScreen(
+      dependencies: deps,
+      repository: FakeDocumentRepository(),
+    )));
     await tester.pumpAndSettle();
 
     expect(find.text('Camera access is needed to scan documents'),
@@ -35,7 +42,10 @@ void main() {
 
   testWidgets('granted but no camera → unavailable message', (tester) async {
     await tester.pumpWidget(
-      host(CameraScreen(dependencies: unavailableScanDependencies())),
+      host(CameraScreen(
+        dependencies: unavailableScanDependencies(),
+        repository: FakeDocumentRepository(),
+      )),
     );
     await tester.pumpAndSettle();
 

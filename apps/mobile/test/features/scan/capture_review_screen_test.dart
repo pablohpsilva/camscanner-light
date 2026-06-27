@@ -35,4 +35,19 @@ void main() {
     expect(retook, isTrue);
     expect(accepted, isTrue);
   });
+
+  testWidgets('saving disables buttons and shows the spinner', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: CaptureReviewScreen(
+        image: const CapturedImage('/nonexistent/x.jpg'),
+        onRetake: () {},
+        onAccept: () {},
+        saving: true,
+      ),
+    ));
+    expect(find.byKey(const Key('review-saving')), findsOneWidget);
+    final accept = tester.widget<FilledButton>(
+        find.byKey(const Key('review-accept')));
+    expect(accept.onPressed, isNull);
+  });
 }

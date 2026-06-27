@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../library/document_repository.dart';
+import '../library/save_controller.dart';
 import 'capture_review_screen.dart';
+import 'captured_image.dart';
 import 'scan_controller.dart';
 import 'scan_dependencies.dart';
 import 'scan_view_state.dart';
@@ -9,11 +12,16 @@ import 'widgets/camera_unavailable_view.dart';
 import 'widgets/permission_denied_view.dart';
 
 /// The Scan screen: requests camera permission and shows the live preview, or
-/// a graceful fallback. Capture (shutter) → review screen lives here (A3).
+/// a graceful fallback. Capture (shutter) → review screen lives here (A3/B1).
 class CameraScreen extends StatefulWidget {
   final ScanDependencies dependencies;
+  final DocumentRepository repository;
 
-  const CameraScreen({super.key, this.dependencies = const ScanDependencies()});
+  const CameraScreen({
+    super.key,
+    this.dependencies = const ScanDependencies(),
+    required this.repository,
+  });
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -21,6 +29,7 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   late final ScanController _controller;
+  late final SaveController _saveController;
 
   @override
   void initState() {
@@ -30,11 +39,13 @@ class _CameraScreenState extends State<CameraScreen> {
       preview: widget.dependencies.createPreviewController(),
     );
     _controller.start();
+    _saveController = SaveController(repository: widget.repository);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _saveController.dispose();
     super.dispose();
   }
 
@@ -51,13 +62,31 @@ class _CameraScreenState extends State<CameraScreen> {
     }
     await navigator.push(
       MaterialPageRoute<void>(
-        builder: (_) => CaptureReviewScreen(
-          image: image,
-          onRetake: navigator.pop,
-          onAccept: () => navigator.popUntil((route) => route.isFirst),
+        builder: (_) => ListenableBuilder(
+          listenable: _saveController,
+          builder: (context, _) => CaptureReviewScreen(
+            image: image,
+            saving: _saveController.saving,
+            onRetake: navigator.pop,
+            onAccept: () => _onAccept(image),
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _onAccept(CapturedImage image) async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final doc = await _saveController.save(image);
+    if (!mounted) return;
+    if (doc == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Couldn't save document. Try again.")),
+      );
+      return;
+    }
+    navigator.popUntil((route) => route.isFirst);
   }
 
   @override
