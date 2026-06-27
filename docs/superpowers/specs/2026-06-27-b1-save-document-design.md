@@ -207,15 +207,31 @@ scan data intact).
   unchanged" must compare the **raw scan-segment bytes**. Neither may go through
   `package:image` decode, which would auto-orient and mislead.
 
-Remaining plan items (now low risk):
-- The scrubber's emitted Exif APP1 must be **valid TIFF** (a malformed block is
-  silently ignored → still sideways); the unit test reads the output back with the
-  `exif` package to prove Orientation parses as written, and the BDD/REAL_DEVICE
-  lane re-confirms upright render end-to-end.
+**Full-scrubber validation (same spike, deeper pass) — PASSED.** The complete
+strip-and-re-emit prototype (drop all APP1, then re-emit a minimal hand-built Exif
+APP1 carrying only Orientation) was run on the **real capture** and a synthetic
+probe, and the output rendered via **`Image.file`** (the actual review-screen
+widget, not `Image.asset`) on the SM-A166B:
+- Real capture EXIF went **58 tags → 1** (only Orientation; Make/Model/Software/
+  DateTime/GPS gone); the **main scan data is byte-identical** (lossless) and the
+  output decodes valid (720×1280 upright).
+- The synthetic scrubber output rendered **BLUE-TL via `Image.file`** — proving
+  the **hand-built minimal Exif emitter produces a valid tag that Flutter honors**
+  (the residual risk), and that `Image.file` honors orientation (not just
+  `Image.asset`).
+- The real scrubbed photo rendered **portrait/pillarboxed (upright)** via
+  `Image.file`.
+
+So the keep-Orientation lossless scrubber is validated end-to-end on real
+hardware, not just in principle.
+
+Remaining plan items (low risk, now mostly mechanical):
+- Port the prototype's byte-level strip + minimal-Exif emitter into
+  `JpegExifScrubber` with the unit tests below.
 - **Contingency** (only if a future Flutter/engine regression drops EXIF
-  honoring): switch `JpegExifScrubber` to bake-orientation-then-strip (decode →
-  apply orientation → re-encode q95). Contained single-class change behind the
-  `ImageMetadataScrubber` interface — no caller changes.
+  honoring): switch to bake-orientation-then-strip (decode → apply orientation →
+  re-encode q95). Contained single-class change behind the `ImageMetadataScrubber`
+  interface — no caller changes.
 
 ## Error handling
 
@@ -239,7 +255,10 @@ Remaining plan items (now low risk):
   - `JpegExifScrubber`: feed a real JPEG carrying GPS + Make + Model +
     Orientation=6 → asserts GPS/Make/Model are gone, **Orientation == 6**
     survives, and the SOF/SOS/entropy bytes are byte-identical to the source
-    (lossless). Non-JPEG input → `MetadataScrubException`.
+    (lossless). Non-JPEG input → `MetadataScrubException`. **Lossless comparison
+    must walk JPEG segments (honor lengths) to find the MAIN-image SOS** — the
+    source Exif APP1 can embed a thumbnail JPEG whose own `FFDA` will fool a naive
+    `FFDA` byte-scan into a false "differs" (this bit the spike's first comparator).
   - `SaveController`: success (idle→saving→idle, returns Document), failure
     (→error, capture retained), double-tap guard, dispose-safety.
   - Deterministic name/date via the injected clock.
