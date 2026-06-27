@@ -84,6 +84,27 @@ tool's stdout, where the tool is flaky:
 - Each check keeps a **negative control** (force-stop / terminate before launch)
   and writes a **fresh per-run log**, so a positive signal proves *this* run.
 
+## BDD scenario authoring standard (from A2 Task 4)
+
+BDD scenarios are authored as `.feature` files (Gherkin syntax) under
+`apps/mobile/integration_test/` and generated into on-device integration tests
+by `bdd_widget_test` + `build_runner` (version 2.1.4+).
+
+- **Mode: on-device integration tests.** `bdd_widget_test` detects that a
+  `.feature` file lives inside `integration_test/` AND that `integration_test`
+  is a dev dependency, and automatically emits
+  `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` plus the
+  `integration_test` import in the generated `*_test.dart`.
+- **Step definitions** live in `test/step/` (shared across widget and
+  integration tests via `stepFolderName: step` in `apps/mobile/build.yaml`).
+- **Generated files are committed** to the repository (idempotent; regenerate
+  with `cd apps/mobile && dart run build_runner build --delete-conflicting-outputs`).
+  The gate does NOT run `build_runner` — it runs the committed generated tests
+  directly via `verify_integration_android`/`verify_integration_ios`.
+- **From A3 onwards**, every new BDD scenario is authored as a `.feature` file
+  first; the generated `*_test.dart` is committed alongside. Hand-written
+  integration tests are used only for non-BDD cases (e.g. real-plugin paths).
+
 ## Known limitations / future hardening
 
 1. **Patch checks should exercise the code path, not just grep for a string.**

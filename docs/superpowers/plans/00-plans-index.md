@@ -29,6 +29,13 @@ tree on each device (run via `verify_integration_{android,ios}`) — the
 **authoritative on-device UI check**, mutation-verified once; screenshots are
 corroborating only.
 
+**BDD-from-.feature standard (from A3 onwards):** BDD scenarios are authored
+as `.feature` files (Gherkin) under `apps/mobile/integration_test/` and
+generated into on-device integration tests via `bdd_widget_test` + `build_runner`.
+Step definitions live in `apps/mobile/test/step/` (shared, reusable).
+Generated `*_test.dart` files are committed (idempotent). The A2 scenarios are
+the reference example (`a2_scan_permission.feature` → `a2_scan_permission_test.dart`).
+
 ## Plan files (ordered)
 
 Status: ✅ written & ready · ⏳ pending (written when its predecessor passes the gate)

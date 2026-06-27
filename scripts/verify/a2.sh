@@ -48,12 +48,16 @@ if [ "${VERIFY_SKIP_DEVICE:-0}" = "1" ]; then
   verify_summary
 fi
 
-verify_integration_android a2_camera_denied_test.dart
-verify_integration_android a2_camera_ready_test.dart
+# BDD-generated integration tests (from integration_test/a2_scan_permission.feature
+# via bdd_widget_test + build_runner).  The .feature file is the authored BDD
+# source; a2_scan_permission_test.dart is committed (generated files are
+# idempotent — no build_runner step needed in the gate; regenerate with
+# `cd apps/mobile && dart run build_runner build --delete-conflicting-outputs`).
+# The generated test covers the three scenarios that were previously expressed
+# as hand-written a2_camera_{denied,ready,unavailable}_test.dart files (removed
+# for DRY; a2_camera_real_android_test.dart is kept — it exercises the real plugin).
+verify_integration_android a2_scan_permission_test.dart
 verify_integration_android_real a2_camera_real_android_test.dart
-verify_integration_android a2_camera_unavailable_test.dart
-verify_integration_ios a2_camera_denied_test.dart
-verify_integration_ios a2_camera_ready_test.dart
-verify_integration_ios a2_camera_unavailable_test.dart
+verify_integration_ios a2_scan_permission_test.dart
 
 verify_summary
