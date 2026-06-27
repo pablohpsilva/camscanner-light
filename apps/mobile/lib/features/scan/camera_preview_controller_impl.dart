@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/widgets.dart';
 
 import 'camera_preview_controller.dart';
+import 'captured_image.dart';
 
 /// Production [CameraPreviewController] backed by the `camera` plugin.
 class PluginCameraPreviewController implements CameraPreviewController {
@@ -41,6 +42,20 @@ class PluginCameraPreviewController implements CameraPreviewController {
       throw StateError('buildPreview() called before initialize() succeeded');
     }
     return CameraPreview(controller);
+  }
+
+  @override
+  Future<CapturedImage> capture() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      throw const CameraUnavailableException('capture() before initialize()');
+    }
+    try {
+      final file = await controller.takePicture();
+      return CapturedImage(file.path);
+    } on CameraException catch (e) {
+      throw CameraUnavailableException(e.description ?? e.code);
+    }
   }
 
   @override

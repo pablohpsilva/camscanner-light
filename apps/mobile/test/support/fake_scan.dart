@@ -1,7 +1,20 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
+import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
+
+/// A minimal valid 1×1 JPEG (SOI … EOI). The fake writes this so the review
+/// screen renders a real, decodable image in tests without camera hardware.
+final Uint8List kFakeJpegBytes = base64Decode(
+  '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRof'
+  'Hh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAAB'
+  'AAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AfwD/2Q==',
+);
 
 /// In-memory fake of [CameraPermissionService] — returns a fixed status.
 class FakeCameraPermissionService implements CameraPermissionService {
@@ -25,6 +38,8 @@ class FakeCameraPermissionService implements CameraPermissionService {
 class FakeCameraPreviewController implements CameraPreviewController {
   final bool unavailable;
   bool disposed = false;
+  bool captureCalled = false;
+  CameraUnavailableException? captureError;
 
   FakeCameraPreviewController({this.unavailable = false});
 
@@ -42,6 +57,17 @@ class FakeCameraPreviewController implements CameraPreviewController {
           child: Text('FAKE PREVIEW', key: Key('fake-preview')),
         ),
       );
+
+  @override
+  Future<CapturedImage> capture() async {
+    captureCalled = true;
+    final err = captureError;
+    if (err != null) throw err;
+    final dir = await Directory.systemTemp.createTemp('fake_capture');
+    final file = File('${dir.path}/page.jpg');
+    await file.writeAsBytes(kFakeJpegBytes);
+    return CapturedImage(file.path);
+  }
 
   @override
   Future<void> dispose() async {

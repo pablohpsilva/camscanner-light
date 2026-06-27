@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'captured_image.dart';
+
 /// Thrown when the device has no usable camera, or it fails to initialize.
 class CameraUnavailableException implements Exception {
   final String message;
@@ -19,6 +21,10 @@ abstract interface class CameraPreviewController {
 
   /// Builds the live preview widget. Only valid after [initialize] succeeds.
   Widget buildPreview();
+
+  /// Captures a still image to a temporary file. Only valid after [initialize]
+  /// succeeds. Throws [CameraUnavailableException] if capture fails.
+  Future<CapturedImage> capture();
 
   /// Releases the camera.
   Future<void> dispose();

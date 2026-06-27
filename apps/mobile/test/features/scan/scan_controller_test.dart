@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
+import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/scan_controller.dart';
 import 'package:mobile/features/scan/scan_view_state.dart';
 
@@ -24,6 +25,10 @@ class _GatedPreviewController implements CameraPreviewController {
 
   @override
   Widget buildPreview() => const SizedBox.shrink();
+
+  @override
+  Future<CapturedImage> capture() async =>
+      throw const CameraUnavailableException('gated: capture not used');
 
   @override
   Future<void> dispose() async {
