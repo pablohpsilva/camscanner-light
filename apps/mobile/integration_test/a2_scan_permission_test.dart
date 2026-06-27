@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import '../test/step/the_app_is_launched_with_camera_permission_denied.dart';
-import '../test/step/i_tap_the_scan_button.dart';
-import '../test/step/i_see_text.dart';
-import '../test/step/the_app_is_launched_with_camera_permission_granted.dart';
-import '../test/step/i_see_the_camera_preview.dart';
-import '../test/step/the_app_is_launched_with_no_camera_available.dart';
+import './../test/step/the_app_is_launched_with_camera_permission_denied.dart';
+import './../test/step/i_tap_the_scan_button.dart';
+import './../test/step/i_see_text.dart';
+import './../test/step/the_app_is_launched_with_camera_permission_granted.dart';
+import './../test/step/i_see_the_camera_preview.dart';
+import './../test/step/the_app_is_launched_with_no_camera_available.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
