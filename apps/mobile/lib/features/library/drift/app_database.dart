@@ -1,0 +1,45 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+
+part 'app_database.g.dart';
+
+/// One scanned document's metadata. Image bytes live on disk (see Pages); this
+/// table holds only metadata. `createdAt`/`modifiedAt` are stored UTC.
+class Documents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get modifiedAt => dateTime()();
+}
+
+/// One page of a document. B1 creates exactly one page (position 1). The image
+/// path is RELATIVE to the app documents dir (resolved at read time) — never
+/// absolute (iOS container GUID changes on reinstall/update).
+class Pages extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get documentId =>
+      integer().references(Documents, #id, onDelete: KeyAction.cascade)();
+  IntColumn get position => integer()();
+  TextColumn get relativeImagePath => text()();
+}
+
+@DriftDatabase(tables: [Documents, Pages])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase(super.e);
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        // Future columns (folderId/tags in D; corners/mode/enhancement in
+        // E/F/G) bump schemaVersion and add steps here.
+      );
+}
+
+/// Production opener — lazily opens the SQLite file in a background isolate.
+LazyDatabase openAppDatabase(File file) =>
+    LazyDatabase(() async => NativeDatabase.createInBackground(file));

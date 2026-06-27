@@ -6,6 +6,9 @@ targets:
       - lib/**
       - $package$
     builders:
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true
       bdd_widget_test|featureBuilder:
         options:
           # Share one step folder between widget tests and integration tests.
