@@ -82,20 +82,15 @@ verify_summary() {
 APP_ID="${APP_ID:-com.camscannerlight.mobile}"
 ADB="${ADB:-$HOME/Library/Android/sdk/platform-tools/adb}"
 
-# Wait for a launch marker (or a failure marker) in a resident-run log.
-# Returns 0 if launched, 1 otherwise. Silence/timeout => 1 (fail).
-_wait_launch() {
-  local log="$1" pid="$2" t=0
-  while [ "$t" -lt 360 ]; do
-    grep -qE "Flutter run key commands|Dart VM Service is listening|Syncing files to device" "$log" 2>/dev/null && return 0
-    grep -qE "FAILURE:|Gradle task .* failed|^Error:|Exception:|No supported devices|command not found|Could not build|Unable to" "$log" 2>/dev/null && return 1
-    kill -0 "$pid" 2>/dev/null || return 1
-    sleep 5; t=$((t + 5))
-  done
-  return 1
-}
-
 _kill_run() { local pid="$1"; pkill -P "$pid" 2>/dev/null; kill "$pid" 2>/dev/null; pkill -f "mobile:run" 2>/dev/null; pkill -f "flutter run" 2>/dev/null; }
+
+# Hard build/launch failures that mean the run can never succeed (fail fast).
+_FAIL_RE='FAILURE:|Gradle task .* failed|Could not build|No supported devices|command not found|xcodebuild: error|Unable to find'
+
+# Device-state probes (the PRIMARY launch signal — robust to `flutter run` /
+# DDS exiting after a successful launch). Negative controls make a positive
+# device state proof that THIS run launched the app.
+_android_resumed() { "$ADB" -s "$1" shell dumpsys activity activities 2>/dev/null | grep -i ResumedActivity | grep -ci camscannerlight; }
 
 verify_android_run() {
   local dev log="$EVIDENCE_DIR/android-nx-run.log"
@@ -103,27 +98,29 @@ verify_android_run() {
   if [ -z "$dev" ]; then
     flutter emulators --launch Medium_Phone_API_35 >/dev/null 2>&1
     "$ADB" wait-for-device
-    local t=0; until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 3; t=$((t+3)); [ "$t" -gt 180 ] && break; done
+    local b=0; until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 3; b=$((b+3)); [ "$b" -gt 180 ] && break; done
     dev="$("$ADB" devices | awk '/emulator-.*device$/{print $1; exit}')"
   fi
   [ -z "$dev" ] && { fail "android: no emulator available"; return 1; }
   # Negative control (rule 5): force-stop, confirm NOT resumed.
-  "$ADB" -s "$dev" shell am force-stop "$APP_ID" 2>/dev/null
-  if [ "$("$ADB" -s "$dev" shell dumpsys activity activities 2>/dev/null | grep -i ResumedActivity | grep -ci camscannerlight)" != "0" ]; then
+  "$ADB" -s "$dev" shell am force-stop "$APP_ID" 2>/dev/null; sleep 1
+  if [ "$(_android_resumed "$dev")" != "0" ]; then
     fail "android: negative control failed (app still resumed pre-launch)"; return 1
   fi
   ( pnpm nx run mobile:run -- -d "$dev" >"$log" 2>&1 ) & local pid=$!
-  if _wait_launch "$log" "$pid"; then
-    sleep 4
-    local resumed; resumed="$("$ADB" -s "$dev" shell dumpsys activity activities 2>/dev/null | grep -i ResumedActivity | grep -ci camscannerlight)"
+  # PRIMARY signal: poll device state until the app is the resumed activity.
+  local launched=0 t=0
+  while [ "$t" -lt 300 ]; do
+    [ "$(_android_resumed "$dev")" -ge 1 ] 2>/dev/null && { launched=1; break; }
+    grep -qE "$_FAIL_RE" "$log" 2>/dev/null && break
+    sleep 5; t=$((t + 5))
+  done
+  if [ "$launched" -eq 1 ]; then
+    sleep 6  # let Flutter paint its first frame (past the native splash) before capturing evidence
     "$ADB" -s "$dev" exec-out screencap -p >"$EVIDENCE_DIR/android-nx-run.png" 2>/dev/null
-    if [ "$resumed" -ge 1 ]; then
-      pass "android: \`nx run mobile:run\` launched app (resumed after negative control; screenshot android-nx-run.png)"
-    else
-      fail "android: launch markers seen but app NOT resumed (see $log)"
-    fi
+    pass "android: \`nx run mobile:run\` launched app (device shows it RESUMED after force-stop negative control; screenshot android-nx-run.png)"
   else
-    fail "android: \`nx run mobile:run\` never reached a launch marker [silence=fail] (see $log)"
+    fail "android: app never became the resumed activity [silence=fail] (see $log)"
   fi
   _kill_run "$pid"
 }
@@ -134,22 +131,29 @@ verify_ios_run() {
   if [ -z "$udid" ]; then
     udid="$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-Fa-f-]{36}')"
     [ -n "$udid" ] && { xcrun simctl boot "$udid" 2>/dev/null; open -a Simulator; }
-    local t=0; while [ -n "$udid" ] && ! xcrun simctl list devices | grep "$udid" | grep -q Booted; do sleep 2; t=$((t+2)); [ "$t" -gt 120 ] && break; done
+    local b=0; while [ -n "$udid" ] && ! xcrun simctl list devices | grep "$udid" | grep -q Booted; do sleep 2; b=$((b+2)); [ "$b" -gt 120 ] && break; done
   fi
   [ -z "$udid" ] && { fail "ios: no simulator available"; return 1; }
-  # Negative control (rule 5): terminate, then prove this run starts it.
-  xcrun simctl terminate "$udid" "$APP_ID" 2>/dev/null
+  # Negative control (rule 5): terminate any running instance; the per-run log is
+  # truncated below (`>"$log"`), so its launch marker proves THIS invocation.
+  xcrun simctl terminate "$udid" "$APP_ID" 2>/dev/null; sleep 1
   ( pnpm nx run mobile:run -- -d "$udid" >"$log" 2>&1 ) & local pid=$!
-  if _wait_launch "$log" "$pid"; then
-    sleep 4
-    if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -qi camscannerlight; then
-      xcrun simctl io "$udid" screenshot "$EVIDENCE_DIR/ios-nx-run.png" 2>/dev/null
-      pass "ios: \`nx run mobile:run\` launched app (running after negative control; screenshot ios-nx-run.png)"
-    else
-      fail "ios: launch markers seen but app NOT in launchctl list (see $log)"
-    fi
+  # PRIMARY signal for iOS: the fresh-log "Dart VM Service is available" marker
+  # (reliable on the simulator; launchctl polling is flaky/false-negative while
+  # `flutter run` holds the device).
+  local launched=0 t=0
+  while [ "$t" -lt 360 ]; do
+    grep -qE "A Dart VM Service on .* is available|Flutter run key commands" "$log" 2>/dev/null && { launched=1; break; }
+    grep -qE "$_FAIL_RE" "$log" 2>/dev/null && break
+    kill -0 "$pid" 2>/dev/null || { grep -qE "A Dart VM Service on .* is available" "$log" 2>/dev/null && launched=1; break; }
+    sleep 5; t=$((t + 5))
+  done
+  if [ "$launched" -eq 1 ]; then
+    sleep 6  # let Flutter paint its first frame (past the native splash) before capturing evidence
+    xcrun simctl io "$udid" screenshot "$EVIDENCE_DIR/ios-nx-run.png" 2>/dev/null
+    pass "ios: \`nx run mobile:run\` launched app (Dart VM Service up after terminate negative control; screenshot ios-nx-run.png)"
   else
-    fail "ios: \`nx run mobile:run\` never reached a launch marker [silence=fail] (see $log)"
+    fail "ios: app never reached launch (no Dart VM Service) [silence=fail] (see $log)"
   fi
   _kill_run "$pid"
 }

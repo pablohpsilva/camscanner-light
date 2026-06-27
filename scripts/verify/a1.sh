@@ -14,6 +14,7 @@ echo "== A1 verification =="
 # ---- Tool preconditions (rule 4) ----
 require_tool flutter
 require_tool pnpm
+require_tool git
 require_tool xcrun
 if [ -x "$ADB" ]; then pass "tool present: adb"; else fail "required tool MISSING: adb ($ADB)"; fi
 

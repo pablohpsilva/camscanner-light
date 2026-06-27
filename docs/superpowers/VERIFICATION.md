@@ -57,14 +57,31 @@ For each acceptance criterion, add one assert that:
 If a criterion genuinely cannot be machine-checked, that is itself a finding —
 make the script print it as a FAIL with the reason, never a silent skip.
 
-## Known limitations / future hardening
+## Device-launch signals (learned the hard way)
 
-Surfaced by the independent verifier (neither caused a false pass; defense-in-depth):
+The device checks went through several false-fails before settling on a
+per-platform **reliable** signal. Use device-side state, not the `flutter run`
+tool's stdout, where the tool is flaky:
+
+- **Android — poll device state** (`dumpsys activity … ResumedActivity`). The
+  `flutter run` stdout is unreliable: DDS (Dart Debug Service) connection errors
+  make the tool exit non-zero *after* the app has actually launched. The app
+  being the resumed activity (after a force-stop negative control) is the truth.
+- **iOS — poll the fresh-per-run log marker** "A Dart VM Service … is available".
+  On the simulator the tool reliably reaches this; the `launchctl list` probe is
+  the flaky part (false-negative while `flutter run` holds the device).
+- **Screenshots:** wait ~6s after the launch signal before capturing, so the
+  shot shows the rendered UI, not the native splash. A splash screenshot is
+  misleading evidence even when the gate is correctly green.
+- Each check keeps a **negative control** (force-stop / terminate before launch)
+  and writes a **fresh per-run log**, so a positive signal proves *this* run.
+
+## Known limitations / future hardening
 
 1. **Patch checks should exercise the code path, not just grep for a string.**
    `step-0.sh` greps for the shim text as a proxy; a partially-applied patch could
    pass the grep. Mitigated today by the runtime `nx show project` assert. Prefer
    a check that runs the patched path.
-2. **Process/running checks should match the exact identifier, not a substring.**
-   The iOS check greps `launchctl list` for `camscannerlight`; match the full
-   bundle id `com.camscannerlight.mobile` to avoid a theoretical false positive.
+2. **Back-to-back device runs** can still degrade the emulator (port/DDS
+   exhaustion). Give a cooldown between full script runs; the per-platform
+   signals above tolerate a single degraded run, but a fresh device is best.
