@@ -67,15 +67,21 @@ grayscale → blur → Canny edge detection → contour finding → select the l
   - *Given auto-capture is on and a steady, confidently-detected document, then a
     capture fires automatically; given low confidence, then it does not.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. Detection returns corners + confidence, or "none," for a still image.
-2. High-confidence detection pre-fills the crop corners; low/none defaults to the
-   full image with no error.
-3. Auto-capture fires only above the confidence + stability threshold.
-4. Detection runs off the UI thread; UI stays responsive.
-5. Engine is accessed via the `EdgeDetector` interface (swappable).
-6. All logic test-first; BDD scenarios pass.
+**Auto corner detection** that pre-fills the crop screen for a captured document
+(outline turns green when confident), and falls back to the full image when none
+is found. **You can test it by** capturing a document on a contrasting background
+(corners pre-filled near the edges) and capturing a blank/cluttered image (crop
+opens on the full image with no error).
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Detection returns corners + confidence, or "none," for a still image — *unit: fixture images*
+- [ ] High-confidence pre-fills crop corners; low/none defaults to full image, no error — *BDD: both paths*
+- [ ] Auto-capture fires only above the confidence + stability threshold — *unit/BDD*
+- [ ] Detection runs off the UI thread; UI stays responsive — *unit/perf*
+- [ ] Engine accessed via the `EdgeDetector` interface (swappable) — *unit: interface / DI*
 
 ---
 

@@ -45,14 +45,20 @@ on-device privacy posture.
     printer.*
   - *Given any shared file, then it carries no personal metadata.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. User can share a PDF/JPG via the system share sheet (email/social/messaging).
-2. User can wirelessly print a PDF.
-3. Shared/printed files are metadata-scrubbed.
-4. Link-share and fax sit behind a `ShareChannel`/`FaxProvider` interface for
-   later, without disturbing on-device channels.
-5. All logic test-first; BDD scenarios pass.
+**Share and Print actions**: share a PDF/JPG via the system share sheet, and
+print via AirPrint / the Android print framework. **You can test it by** tapping
+Share (the system share sheet opens with the file) and Print (the OS print dialog
+opens for a wireless printer), and confirming the shared file carries no personal
+metadata.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Share a PDF/JPG via the system share sheet (email/social/messaging) — *widget/BDD: share sheet opens with the file*
+- [ ] Wirelessly print a PDF — *widget/BDD: print dialog opens*
+- [ ] Shared/printed files are metadata-scrubbed — *unit*
+- [ ] Link-share and fax sit behind a `ShareChannel`/`FaxProvider` interface, on-device channels undisturbed — *unit: interface*
 
 ---
 

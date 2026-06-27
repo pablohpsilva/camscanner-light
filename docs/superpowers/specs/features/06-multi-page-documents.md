@@ -59,14 +59,20 @@ capture, crop, and enhancement compose into a real multi-page document.
   - *Given a 1-page document, when I delete that page and confirm, then the whole
     document is removed.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. A document holds an ordered list of pages with metadata.
-2. User can add (at creation and later), reorder, delete, retake, and insert
-   pages.
-3. Deleting the final page deletes the document after confirmation.
-4. Page operations preserve order and integrity.
-5. All logic test-first; BDD scenarios pass.
+A **multi-page document** with a thumbnail grid to add, reorder, delete, retake,
+and insert pages. **You can test it by** building a 3-page document,
+drag-reordering pages (order persists), returning later to append more via Batch,
+retaking a page in place, and deleting the final page (the document is removed
+after confirm).
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] A document holds an ordered list of pages with metadata — *unit*
+- [ ] Add (at creation and later), reorder, delete, retake, and insert pages — *unit: ops · widget: drag-reorder*
+- [ ] Deleting the final page deletes the document after confirmation — *unit + BDD*
+- [ ] Page operations preserve order and integrity — *unit*
 
 ---
 

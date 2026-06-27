@@ -94,14 +94,19 @@ camscanner-light/            ← Nx workspace root
 - Navigation, camera, document model, library, PDF — all begin at step A1.
 - Web/desktop platforms, backend, shared libs.
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. `nx run mobile:run` launches the app on an iOS simulator **and** an Android
-   emulator without crashing.
-2. The launched app shows a blank/placeholder screen.
-3. `nx run mobile:analyze` passes with no errors.
-4. The repository is a git repo with an appropriate `.gitignore` and the
-   generated workspace committed.
+A runnable Nx monorepo with a Flutter app at `apps/mobile` that launches a blank
+screen on iOS and Android. **You can test it by** running `nx run mobile:run` on
+an iOS simulator and an Android emulator and watching the app open without
+crashing, then running `nx run mobile:analyze` and seeing no errors.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *manual run on both targets, output shown*
+- [ ] The launched app shows a blank/placeholder screen — *manual observation / screenshot*
+- [ ] `nx run mobile:analyze` passes with no errors — *command output*
+- [ ] Repo is a git repo with a proper `.gitignore` and the workspace committed — *`git status` / `git log`*
 
 ## Risks / notes
 

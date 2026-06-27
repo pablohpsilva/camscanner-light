@@ -60,16 +60,22 @@ watermark, password-protect, and annotate.
   - *Given a PDF, when I rotate a page and re-export, then that page's orientation
     is changed.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. User can merge, split, delete, reorder, and rotate pages of in-app PDFs.
-2. User can compress and password-protect existing PDFs.
-3. User can add signature, highlight, freehand, text note, and text watermark;
-   annotations persist and re-edit.
-4. All outputs are metadata-scrubbed; password reuses Feature 07's pipeline.
-5. External-PDF import (Phase 2) sits behind a `PdfEditor` interface without
-   disturbing Phase 1.
-6. All logic test-first; BDD scenarios pass.
+**PDF editing** on in-app PDFs across three groups — organize
+(merge/split/delete/reorder/rotate), protect (password/compress), and markup
+(signature/highlight/freehand/note/watermark). **You can test it by** merging two
+PDFs (one combined PDF, pages in order), adding a signature (placed correctly,
+file scrubbed), password-protecting one (prompts on open), and rotating a page
+(orientation changes after re-export).
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Merge, split, delete, reorder, and rotate pages of in-app PDFs — *unit: page counts/order · BDD: merge*
+- [ ] Compress and password-protect existing PDFs — *unit: size bound · BDD: open requires password*
+- [ ] Add signature, highlight, freehand, note, watermark; annotations persist & re-edit — *unit/widget · BDD: signature*
+- [ ] All outputs metadata-scrubbed; password reuses Feature 07's pipeline — *unit*
+- [ ] External-PDF import (Phase 2) behind a `PdfEditor` interface, Phase 1 undisturbed — *unit: interface*
 
 ---
 

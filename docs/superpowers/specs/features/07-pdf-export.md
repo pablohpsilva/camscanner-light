@@ -71,16 +71,20 @@ single-page document produces a one-page PDF, not an image).
   - *Given OCR is available (stubbed), when I export, then the PDF text is
     selectable.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. Export a single- or multi-page document to a PDF saved in the library, pages
-   in order, Original aspect.
-2. Every generated PDF is metadata-scrubbed (no personal metadata).
-3. Optional password encrypts the PDF and is required to open it.
-4. A pluggable text-layer interface exists so OCR (Feature 08) injects a
-   searchable layer with no rework.
-5. Generation runs off the UI thread.
-6. All logic test-first; BDD scenarios pass.
+An **"Export to PDF"** action on a document: tap Export → a PDF is saved to the
+library. **You can test it by** exporting a 3-page document and confirming the
+opened PDF has 3 pages in order; inspecting the file's metadata to confirm none
+is personal; and, if a password was set, confirming it prompts on open.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Single/multi-page document exports to a PDF in the library, pages in order, Original aspect — *BDD: 3-page export · unit: page count/order*
+- [ ] Every generated PDF is metadata-scrubbed — *unit: assert no EXIF/author/producer*
+- [ ] Optional password encrypts and is required to open — *BDD + unit: open requires password*
+- [ ] Pluggable text-layer interface lets OCR inject a searchable layer with no rework — *unit: stub OCR → text selectable*
+- [ ] Generation runs off the UI thread — *unit/perf check*
 
 ---
 

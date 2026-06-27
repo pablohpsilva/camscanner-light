@@ -80,16 +80,22 @@ Target: 41+ languages including CJK.
   - *Given a recognized page, when I tap copy/export text, then I get the
     extracted text.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. OCR runs automatically on-device in the background after scanning.
-2. Auto-detection handles single- and multi-language pages, loading packs on
-   demand; user can override languages.
-3. Code/symbol content is preserved (layout + symbols, no autocorrection).
-4. OCR produces a searchable PDF layer, exportable text, and a content-search
-   index.
-5. No document data ever leaves the device.
-6. All logic test-first; BDD scenarios pass.
+**Automatic on-device OCR** after scanning that makes a page's PDF text
+selectable and findable by content search, with copy/export of the recognized
+text. **You can test it by** scanning an English page (text selectable in the
+PDF and found by search), a Japanese page (auto-detected), a mixed EN+JP page
+(both recognized), and a page of source code (symbols and indentation preserved,
+not autocorrected).
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] OCR runs automatically on-device in the background after scanning — *unit: pipeline · BDD*
+- [ ] Auto-detection handles single- and multi-language pages, packs on demand; user override — *unit: Latin/CJK/mixed fixtures · BDD: EN+JP*
+- [ ] Code/symbol content preserved (layout + symbols, no autocorrection) — *unit: code fixture*
+- [ ] Produces a searchable PDF layer, exportable text, and a content-search index — *unit + BDD*
+- [ ] No document data ever leaves the device — *unit/integration: no network calls*
 
 ---
 

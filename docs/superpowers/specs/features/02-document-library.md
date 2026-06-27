@@ -60,15 +60,20 @@ caches are stored).
     library and storage.*
   - *Given I type in search, then only documents whose name matches are shown.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. Library lists saved documents with thumbnail, name, date, page count.
-2. User can open, rename, delete (confirm), and sort by date/name.
-3. Name search filters the list.
-4. Data persists across restarts via the repository.
-5. Model/repository are structured to accept folders & tags later without
-   breaking existing code.
-6. All logic test-first; BDD scenarios pass.
+A **document library home screen** listing saved documents that you can open,
+rename, delete, sort, and search by name. **You can test it by** creating a few
+documents, renaming one and restarting the app (the name persists), deleting one
+(with confirm), sorting by date/name, and typing in search to filter the list.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Library lists documents with thumbnail, name, date, page count — *widget · BDD: list shows saved docs*
+- [ ] Open, rename, delete (confirm), and sort by date/name — *unit: repository CRUD & sort · widget*
+- [ ] Name search filters the list — *unit: search filter · BDD*
+- [ ] Data persists across restarts via the repository — *unit: persistence round-trip*
+- [ ] Model/repository accept folders & tags later without breaking existing code — *unit: model carries optional folderId/tags*
 
 ---
 

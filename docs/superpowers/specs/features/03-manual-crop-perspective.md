@@ -81,15 +81,21 @@ Implement #1 first; advance to #2/#3 as quality requires.
   - *Given I drag a corner past another to cross the quad, then the adjustment is
     prevented/clamped to a valid shape.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. User can adjust 4 corners with a magnifier and confirm to produce a flattened,
-   head-on document image (sizing method #1).
-2. "Use full image" bypasses warping.
-3. Invalid (non-convex) quads are prevented.
-4. Re-editing a page reloads original + saved corners with no cumulative loss.
-5. Warp runs off the UI thread; UI stays responsive.
-6. All logic test-first; BDD scenarios pass.
+A **crop/adjust screen**: drag the 4 corners (with a magnifier) and confirm to
+get a flattened, head-on page. **You can test it by** capturing an angled
+document, adjusting the corners and confirming a flat result; re-opening crop and
+re-adjusting with no quality loss; and using "use full image" on a frame-filling
+photo.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Adjust 4 corners (magnifier) and confirm → flattened head-on page (sizing #1) — *BDD: drag+confirm · unit: homography + edge-length sizing*
+- [ ] "Use full image" bypasses warping — *BDD*
+- [ ] Invalid (non-convex) quads are prevented — *unit: convex validation · widget*
+- [ ] Re-edit reloads original + saved corners with no cumulative loss — *unit: re-derivation is identical*
+- [ ] Warp runs off the UI thread; UI stays responsive — *unit/perf*
 
 ---
 

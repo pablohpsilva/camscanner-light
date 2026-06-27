@@ -104,15 +104,21 @@ depends on sharpness** (see cross-cutting OCR requirement in
   - *Given auto-capture is enabled and the document is framed and steady, when it
     passes the stability check, then a capture fires automatically.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. User can open the Scan screen and capture an image in **Single** mode
-   (manual shutter), producing an OCR-quality JPEG handed to the next step.
-2. Mode selector exposes Single, Batch, ID card, Whiteboard, Receipt.
-3. ID card mode combines front + back onto one page.
-4. Torch, grid, tap-to-focus, and exposure lock work.
-5. Permission-denied / no-camera states are handled gracefully.
-6. All logic covered by tests written test-first; BDD scenarios pass.
+A working **Scan screen**: open it, pick a mode, and capture an image that
+proceeds to the next (crop) step. **You can test it by** opening Scan, capturing
+in **Single** mode and confirming a sharp image proceeds; switching modes;
+capturing front+back in **ID card** and confirming one combined page; and denying
+camera permission to confirm a graceful rationale screen (no crash).
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Open Scan and capture in **Single** (manual shutter) → OCR-quality JPEG handed to the next step — *BDD: capture-in-Single · unit: capture output*
+- [ ] Mode selector exposes Single, Batch, ID card, Whiteboard, Receipt — *widget test*
+- [ ] ID card combines front + back onto one page — *BDD: front+back · unit: grouping*
+- [ ] Torch, grid, tap-to-focus, and exposure lock work — *widget tests*
+- [ ] Permission-denied / no-camera handled gracefully (no crash) — *BDD: permission denied*
 
 ---
 

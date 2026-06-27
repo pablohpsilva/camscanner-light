@@ -48,6 +48,14 @@ If any of 1–6 is unmet, the work is **not done**. Each feature's "Acceptance
 criteria" section is the checklist; each item is closed only by a passing,
 double-checked test. This gate is referenced by every feature spec.
 
+**Required spec format (every design doc):** each spec MUST contain a
+**`Deliverable (user-testable)`** section — a concrete artifact the user can
+exercise plus *how* to test it by hand — and an **`Acceptance criteria`** section
+written as a **checkbox checklist**, where each item is phrased to be verifiable
+and tagged with the test(s) that close it (e.g. *unit*, *widget*, *BDD*). A
+checkbox is ticked only when its named test passes and the result is
+double-checked. Step 0 and all 12 feature specs follow this format.
+
 ## Cross-cutting requirements
 
 - **Searchable PDFs whenever possible:** every capture mode should ultimately

@@ -36,11 +36,18 @@ does not disturb the local-only storage model.
 
 - Authentication, backend, multi-device sync, cloud storage.
 
-## Acceptance criteria (near-term)
+## Deliverable (user-testable)
 
-1. The app clearly indicates sync/accounts is an upcoming feature.
-2. Users understand data is stored only on their device.
-3. No backend or account dependency is introduced.
+An in-app indication that **sync/accounts is upcoming**, plus clear messaging
+that data is **device-local**. **You can test it by** viewing the
+upcoming-feature notice, confirming the device-local messaging is shown, and
+verifying the build introduces no backend/account dependency.
+
+## Acceptance criteria (near-term — each closed only by a passing test)
+
+- [ ] The app clearly indicates sync/accounts is an upcoming feature — *widget test*
+- [ ] Users are told data is stored only on their device — *widget test*
+- [ ] No backend or account dependency is introduced — *unit/build: no network/account deps*
 
 ---
 

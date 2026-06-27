@@ -50,13 +50,19 @@ privacy guarantee that documents never leave the phone.
     page.*
   - *Given any conversion, then no data leaves the device.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. User can convert an image to a PDF on-device.
-2. User can convert a PDF to per-page JPGs on-device.
-3. All converted files are metadata-scrubbed; nothing leaves the device.
-4. Conversions sit behind a `Converter` interface for future extension.
-5. All logic test-first; BDD scenarios pass.
+**On-device conversion** between image and PDF: `image → PDF` and `PDF → JPG`.
+**You can test it by** converting an image to a one-page PDF (and confirming it's
+metadata-scrubbed), converting a multi-page PDF to one JPG per page, and
+confirming no network activity during conversion.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Convert an image to a PDF on-device — *unit + BDD*
+- [ ] Convert a PDF to per-page JPGs on-device — *unit + BDD*
+- [ ] All converted files metadata-scrubbed; nothing leaves the device — *unit: scrub + no network*
+- [ ] Conversions sit behind a `Converter` interface for future extension — *unit: interface*
 
 ---
 

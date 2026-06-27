@@ -71,14 +71,21 @@ sliders.
     re-derives from the flattened cache with no cumulative loss.*
   - *Given a newly flattened page, then Auto/Magic is applied by default.*
 
-## Acceptance criteria
+## Deliverable (user-testable)
 
-1. User can apply Original, Auto/Magic, Color, Grayscale, and B&W to a page.
-2. Auto/Magic is applied by default to a newly flattened page.
-3. Filter choice is stored and re-derives non-destructively.
-4. Picker shows live previews; enhancement runs off the UI thread.
-5. New filters can be added without modifying existing filter code.
-6. All logic test-first; BDD scenarios pass.
+A **filter picker** with live previews to apply Original / Auto-Magic / Color /
+Grayscale / B&W to a page (Auto/Magic by default), stored non-destructively.
+**You can test it by** applying Black & White and confirming a crisp saved
+result; switching filters and confirming no quality loss; and confirming a newly
+flattened page defaults to Auto/Magic.
+
+## Acceptance criteria (each closed only by a passing test)
+
+- [ ] Apply Original, Auto/Magic, Color, Grayscale, and B&W to a page — *unit: each filter on a fixture · widget*
+- [ ] Auto/Magic applied by default to a newly flattened page — *unit/BDD*
+- [ ] Filter choice stored and re-derives non-destructively — *unit: re-derivation is identical*
+- [ ] Picker shows live previews; enhancement runs off the UI thread — *widget · perf*
+- [ ] New filters add without modifying existing filter code — *unit: strategy / OCP*
 
 ---
 
