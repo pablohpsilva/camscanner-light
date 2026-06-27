@@ -57,6 +57,7 @@
 
 **Files:**
 - Modify: `apps/mobile/pubspec.yaml`
+- Create: `apps/mobile/build.yaml` (Drift codegen option — store DateTime as UTC text)
 - Create: `apps/mobile/lib/features/library/drift/app_database.dart`
 - Generated: `apps/mobile/lib/features/library/drift/app_database.g.dart` (commit it)
 - Test: `apps/mobile/test/features/library/app_database_test.dart`
@@ -83,6 +84,19 @@ Under `dev_dependencies:` (after `build_runner: ^2.15.0`) add:
 
 Run: `cd apps/mobile && flutter pub get`
 Expected: `Got dependencies!` (exit 0).
+
+- [ ] **Step 1b: Configure Drift to store DateTime as UTC text.** Create `apps/mobile/build.yaml`. **Why (binding):** Drift's *default* stores `DateTime` as unix seconds and reads it back as a **local-flagged** `DateTime`, so `DateTime.utc(...) == readback` is **false** (the `isUtc` flags differ) and the model's "UTC" claim is untrue. Storing as ISO-8601 text preserves UTC on round-trip.
+
+```yaml
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true
+```
+
+(This only configures the `drift_dev` builder; `bdd_widget_test` codegen is unaffected.)
 
 - [ ] **Step 2: Write the Drift database.** Create `apps/mobile/lib/features/library/drift/app_database.dart`:
 
@@ -167,7 +181,10 @@ void main() {
     final pages = await db.select(db.pages).get();
     expect(docs, hasLength(1));
     expect(docs.single.name, 'Scan 2026-06-27 20.26.42');
-    expect(docs.single.createdAt, now);
+    // Compare the instant (storage-mode agnostic). With store_date_time_values_
+    // as_text the readback is also UTC, so this is exact.
+    expect(docs.single.createdAt.toUtc(), now);
+    expect(docs.single.createdAt.isAtSameMomentAs(now), isTrue);
     expect(pages.single.documentId, docId);
     expect(pages.single.relativeImagePath, 'documents/$docId/page_1.jpg');
   });
@@ -183,8 +200,8 @@ Expected: `No issues found!` (the generated `.g.dart` is analyze-clean).
 - [ ] **Step 7: Commit** (include the generated file).
 
 ```bash
-git add apps/mobile/pubspec.yaml apps/mobile/pubspec.lock apps/mobile/lib/features/library/drift/ apps/mobile/test/features/library/app_database_test.dart
-git commit -m "feat(b1): Drift AppDatabase scaffold (Documents/Pages) + codegen + round-trip test"
+git add apps/mobile/pubspec.yaml apps/mobile/pubspec.lock apps/mobile/build.yaml apps/mobile/lib/features/library/drift/ apps/mobile/test/features/library/app_database_test.dart
+git commit -m "feat(b1): Drift AppDatabase scaffold (Documents/Pages) + UTC-text codegen + round-trip test"
 ```
 
 ---
@@ -667,6 +684,11 @@ void main() {
   });
 
   test('listDocuments returns newest first', () async {
+    // The repository deletes the temp SOURCE after a successful save (it lives
+    // under systemTemp, as the test base does), so reseed it before each call.
+    final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+    void seedSource() => File(capture.path).writeAsBytesSync(fixture);
+
     var t = DateTime.utc(2026, 6, 27, 10);
     final r = DriftDocumentRepository(
       db: db,
@@ -674,8 +696,10 @@ void main() {
       fileStore: DocumentFileStore(base),
       clock: () => t,
     );
+    seedSource();
     await r.createFromCapture(capture);
     t = DateTime.utc(2026, 6, 27, 12);
+    seedSource();
     await r.createFromCapture(capture);
 
     final docs = await r.listDocuments();
@@ -1370,6 +1394,7 @@ git commit -m "feat(b1): LibraryDependencies + DocumentsListView + stateful Home
 - Modify: `apps/mobile/lib/features/scan/capture_review_screen.dart`
 - Test: `apps/mobile/test/features/scan/capture_review_screen_test.dart` (extend)
 - Modify test: `apps/mobile/test/features/scan/camera_screen_capture_test.dart`
+- Modify test: `apps/mobile/test/features/scan/camera_screen_test.dart` (3 `CameraScreen(...)` constructions need `repository:`)
 
 **Interfaces:**
 - Consumes: `SaveController`, `DocumentRepository`, `CapturedImage`.
@@ -1528,8 +1553,9 @@ Add the field to the constructor:
   });
 ```
 
-- [ ] **Step 3: Update the A3 camera capture tests to provide a repository.** Edit `apps/mobile/test/features/scan/camera_screen_capture_test.dart`:
-  - Add `import '../../support/fake_library.dart';`.
+- [ ] **Step 3: Update the A3 camera tests to provide a repository.** `CameraScreen` now requires `repository:`, so **both** A3 test files that construct it must be updated (grep first: `grep -rln "CameraScreen(" apps/mobile/test` → `camera_screen_test.dart` and `camera_screen_capture_test.dart`).
+  - In **`camera_screen_test.dart`**: add `import '../../support/fake_library.dart';` and add `repository: FakeDocumentRepository()` to all three `CameraScreen(dependencies: ...)` constructions (lines ~12, ~23, ~38).
+  - In **`camera_screen_capture_test.dart`**: add `import '../../support/fake_library.dart';`.
   - Every `CameraScreen(dependencies: ...)` construction gets `repository: FakeDocumentRepository()` added.
   - Add a new test for the save-failure path:
 
@@ -1602,7 +1628,7 @@ Expected: `All tests passed!` and `No issues found!`.
 - [ ] **Step 7: Commit.**
 
 ```bash
-git add apps/mobile/lib/features/scan/camera_screen.dart apps/mobile/lib/features/scan/capture_review_screen.dart apps/mobile/test/features/scan/camera_screen_capture_test.dart apps/mobile/test/features/scan/capture_review_screen_test.dart
+git add apps/mobile/lib/features/scan/camera_screen.dart apps/mobile/lib/features/scan/capture_review_screen.dart apps/mobile/test/features/scan/camera_screen_capture_test.dart apps/mobile/test/features/scan/camera_screen_test.dart apps/mobile/test/features/scan/capture_review_screen_test.dart
 git commit -m "feat(b1): wire Accept -> SaveController (save, then home; failure stays on review)"
 ```
 
@@ -1928,6 +1954,10 @@ chmod +x scripts/verify/b1.sh && bash scripts/verify/b1.sh
 ```
 Expected: ends with `VERIFY SUMMARY: N passed, 0 failed` and `GATE: PASS` (exit 0). If a device check fails for infra reasons, fix per `docs/superpowers/VERIFICATION.md` and re-run — do not hand-wave.
 
+Notes:
+- **REAL_DEVICE Accept tap (`~75% x, ~92% y`) is approximate** — confirm/adjust it on the actual device the way A3 measured its FAB/shutter taps (the review screen's Accept is the right-hand `FilledButton` in the bottom bar). The lane's pass signal is the saved JPEG + `EXIF_CLEAN`, not the tap.
+- **iOS:** if `verify_integration_ios` fails at pod install for `sqlite3_flutter_libs`, bump the Runner's iOS deployment target (`apps/mobile/ios/Podfile` `platform :ios, '13.0'` and the Runner target) and re-run. `path_provider`/`sqlite3_flutter_libs` need iOS 12+.
+
 - [ ] **Step 5: Tick acceptance criteria.** In `docs/superpowers/specs/2026-06-27-b1-save-document-design.md`, change each `- [ ]` in the **Acceptance criteria** section to `- [x]` ONLY where the named passing test/lane was observed green in Step 4 (and the REAL_DEVICE items only if that lane was run). Leave any unrun item unticked with a one-line note.
 
 - [ ] **Step 6: Commit.**
@@ -1959,3 +1989,9 @@ git commit -m "test(b1): verify gate (unit/widget/BDD/coverage) + REAL_DEVICE EX
 **3. Type consistency:** `DocumentRepository.createFromCapture/listDocuments`, `Document{id,name,createdAt,modifiedAt}`, `Page{id,documentId,position,relativeImagePath}`, `SaveStatus{idle,saving,error}`, `SaveController.save`, `CameraScreen({required repository})`, `CaptureReviewScreen({saving})`, `DocumentsListView(documents:)`, `LibraryDependencies.createRepository` are used identically across tasks. The Drift generated row type is also named `Document`/`Page` — the domain models live in `library/document.dart` and the repository maps between them; tests referencing the domain `Document` import that file (not the Drift one). ✓
 
 **Note on Task 6↔7 coupling:** flagged inline — dispatch 6 then 7 and gate them together (or merge), because Home references `CameraScreen(repository:)` which Task 7 introduces.
+
+**4. Adversarial re-verification (post-write) — fixes folded in:**
+- **Drift DateTime lost UTC on round-trip** (default stores unix seconds, reads back local → `DateTime.utc(...) ==` fails). Fixed: `build.yaml` `store_date_time_values_as_text: true` (Task 1 Step 1b) + instant-comparison assertions.
+- **`_deleteTempSource` deleted the shared temp source** under `systemTemp`, breaking the second save in the newest-first test. Fixed: reseed the source before each `createFromCapture` (Task 4).
+- **`camera_screen_test.dart` (3 `CameraScreen` constructions) was unhandled** — making `repository` required would break it. Fixed: Task 7 Step 3 now updates both A3 test files (grep-verified there are exactly two).
+- **Hand-rolled Orientation parser validated** — the production `_readOrientation`/`_orientationFromTiff` (new code; the spike read orientation via the `exif` package) was run against the fixture, the real capture, and the synthetic probe → all return `6`. No fix needed; risk retired.
