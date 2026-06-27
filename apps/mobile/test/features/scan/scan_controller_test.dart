@@ -55,7 +55,7 @@ void main() {
       var notifications = 0;
       c.addListener(() => notifications++);
       await c.start();
-      expect(notifications, greaterThan(0));
+      expect(notifications, 2);
     });
 
     test('openSettings() delegates to the permission service', () async {

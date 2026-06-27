@@ -1,4 +1,3 @@
-// ignore_for_file: prefer_initializing_formals
 import 'package:flutter/foundation.dart';
 
 import 'camera_permission_service.dart';
@@ -17,8 +16,8 @@ class ScanController extends ChangeNotifier {
   ScanController({
     required CameraPermissionService permission,
     required CameraPreviewController preview,
-  })  : _permission = permission,
-        _preview = preview;
+  })  : _permission = permission, // ignore: prefer_initializing_formals
+        _preview = preview; // ignore: prefer_initializing_formals
 
   ScanStatus _status = ScanStatus.checking;
   ScanStatus get status => _status;
