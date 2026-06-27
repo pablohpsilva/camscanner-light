@@ -65,8 +65,8 @@ Each sub-project / feature gets its own design doc, then plan, then build.
 | 07 | PDF export | `features/07-pdf-export.md` | Approved |
 | 08 | OCR / text extraction | `features/08-ocr-text-extraction.md` | Approved |
 | 09 | PDF editing | `features/09-pdf-editing.md` | Approved |
-| 10 | PDF conversion | `features/10-pdf-conversion.md` | Next |
-| 11 | Accounts & cloud sync | `features/11-accounts-cloud-sync.md` | Pending |
+| 10 | PDF conversion | `features/10-pdf-conversion.md` | Approved |
+| 11 | Accounts & cloud sync | `features/11-accounts-cloud-sync.md` | Next |
 | 12 | Sharing, printing & fax | `features/12-sharing-printing-fax.md` | Pending |
 
 ## Atomic build roadmap (Sub-project 1)
