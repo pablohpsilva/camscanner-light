@@ -1,7 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:mobile/features/library/document.dart';
+import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
+import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
+import 'package:mobile/features/library/drift/drift_document_repository.dart';
+import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
@@ -44,3 +50,20 @@ class FakeDocumentRepository implements DocumentRepository {
 /// LibraryDependencies whose factory returns the given fake repository.
 LibraryDependencies fakeLibraryDependencies(FakeDocumentRepository repo) =>
     LibraryDependencies(createRepository: () async => repo);
+
+/// Real DriftDocumentRepository on an in-memory DB + temp file store. Exercises
+/// the real save/scrub/list code paths deterministically with no persistent
+/// side effects — used by the BDD success scenario on-device.
+LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
+      createRepository: () async => DriftDocumentRepository(
+        db: AppDatabase(NativeDatabase.memory()),
+        scrubber: const JpegExifScrubber(),
+        fileStore:
+            DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
+        clock: DateTime.now,
+      ),
+    );
+
+/// Library deps whose repository always fails — for the save-failure scenario.
+LibraryDependencies failingLibraryDependencies() =>
+    fakeLibraryDependencies(FakeDocumentRepository(throwOnCreate: true));
