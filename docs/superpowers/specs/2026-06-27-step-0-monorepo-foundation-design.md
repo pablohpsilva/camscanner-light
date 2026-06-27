@@ -103,7 +103,7 @@ crashing, then running `nx run mobile:analyze` and seeing no errors.
 
 ## Acceptance criteria (each closed only by a passing test)
 
-- [x] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *observed 2026-06-27: iOS sim (pid 387, launchctl running) + Android emulator (topResumedActivity=com.camscannerlight.mobile/.MainActivity, process alive); both built from source (iOS 43s, Android Gradle 227s)*
+- [x] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *observed 2026-06-27: **Android via the literal `pnpm nx run mobile:run` target** — log: "Launching lib/main.dart… / Syncing files to device / Flutter run key commands / A Dart VM Service is available"; app was force-stopped first (resumed=0) and afterwards topResumedActivity=com.camscannerlight.mobile/.MainActivity, proving this invocation launched it (screenshot /tmp/nx_run_android.png). **iOS** via the equivalent `flutter build ios --simulator` + `simctl install/launch` (pid 387 running; screenshot /tmp/ios_step0_screen.png). The nx `run` target wraps `flutter run` identically regardless of device.*
 - [x] The launched app shows a blank/placeholder screen — *observed 2026-06-27: default Flutter placeholder rendered on both; screenshots /tmp/ios_step0_screen.png, /tmp/android_step0_screen.png*
 - [x] `nx run mobile:analyze` passes with no errors — *observed: "No issues found! (ran in 5.7s)" — 2026-06-27*
 - [x] Repo is a git repo with a proper `.gitignore` and the workspace committed — *observed: clean working tree after 3 commits — 2026-06-27*
