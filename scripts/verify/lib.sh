@@ -218,17 +218,26 @@ _is_infra_only_failure() {
     && ! grep -qE "TestFailure|EXCEPTION CAUGHT BY FLUTTER TEST" "$log"
 }
 
-# Best-effort recovery of an offline Android emulator: reconnect, then cold-boot.
+# Force a clean emulator reboot and wait until fully booted + settled, so the
+# camera HAL is fresh. Used before the real-camera test (the most load-sensitive
+# check) and as the fallback when an emulator is wedged offline.
+_android_cold_boot() {
+  local dev="${1:-emulator-5554}"
+  "$ADB" -s "$dev" emu kill >/dev/null 2>&1; sleep 3
+  pkill -f qemu-system >/dev/null 2>&1; sleep 2
+  "$ADB" kill-server >/dev/null 2>&1; "$ADB" start-server >/dev/null 2>&1
+  flutter emulators --launch Medium_Phone_API_35 >/dev/null 2>&1
+  "$ADB" wait-for-device >/dev/null 2>&1
+  local b=0; until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 3; b=$((b + 3)); [ "$b" -gt 240 ] && break; done
+  sleep 8  # let camera/HAL + system services come up before first use
+}
+
+# Best-effort recovery of an offline Android emulator: reconnect, else cold-boot.
 _android_recover() {
   local dev="$1" w=0
   "$ADB" reconnect offline >/dev/null 2>&1; sleep 3
   while [ "$w" -lt 30 ] && ! "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$"; do sleep 3; w=$((w + 3)); done
-  if ! "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$"; then
-    "$ADB" -s "$dev" emu kill >/dev/null 2>&1; sleep 3
-    flutter emulators --launch Medium_Phone_API_35 >/dev/null 2>&1
-    "$ADB" wait-for-device >/dev/null 2>&1
-    local b=0; until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 3; b=$((b + 3)); [ "$b" -gt 180 ] && break; done
-  fi
+  "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$" || _android_cold_boot "$dev"
 }
 
 # verify_integration <label> <device-id> <test-file-under-integration_test/>
@@ -264,13 +273,17 @@ verify_integration_android() {
   verify_integration android "$dev" "$tf"
 }
 
-# Exercises the REAL camera/permission path: install the app, grant CAMERA, run.
+# Exercises the REAL camera/permission path. Cold-boots a FRESH emulator first
+# (option 1) so cumulative gate load can't starve the camera HAL, then installs
+# the app and grants CAMERA. NOTE on the grant: `flutter test` does an *update*
+# install of the same-signed APK, which PRESERVES already-granted runtime
+# permissions — so granting after `flutter install` (before the test) survives
+# into the test run.
 verify_integration_android_real() {
-  local tf="$1" dev; dev="$(_ensure_android)"
-  [ -z "$dev" ] && { fail "android(real): no emulator"; return 1; }
-  # The real camera can't initialize on a degraded/offline emulator — recover it
-  # first so this exercises the plugin, not device flakiness.
-  "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$" || _android_recover "$dev"
+  local tf="$1" dev
+  dev="$(_ensure_android)"; [ -z "$dev" ] && { fail "android(real): no emulator"; return 1; }
+  _android_cold_boot "$dev"
+  dev="$(_ensure_android)"; [ -z "$dev" ] && { fail "android(real): no emulator after cold boot"; return 1; }
   ( cd "$ROOT/apps/mobile" && flutter install -d "$dev" >/dev/null 2>&1 )
   "$ADB" -s "$dev" shell pm grant "$APP_ID" android.permission.CAMERA 2>/dev/null
   verify_integration "android-real" "$dev" "$tf"

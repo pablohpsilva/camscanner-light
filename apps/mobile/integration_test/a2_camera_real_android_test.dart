@@ -17,8 +17,9 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FloatingActionButton, 'Scan'));
-    // Real camera init can take a moment; pump until the preview appears.
-    for (var i = 0; i < 50 && find.byType(CameraPreview).evaluate().isEmpty; i++) {
+    // Real camera init can take a while on a freshly-booted emulator; pump up to
+    // ~25s until the live preview appears.
+    for (var i = 0; i < 125 && find.byType(CameraPreview).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 200));
     }
 
