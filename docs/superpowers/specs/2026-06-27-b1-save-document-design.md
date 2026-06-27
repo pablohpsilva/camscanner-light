@@ -176,22 +176,31 @@ This is pure Dart (no runtime dependency), deterministic, and host-testable.
 **Correctness guarantee & its dependency.** Because the scan data is byte-identical
 and Orientation is preserved, the scrubbed file renders *exactly* like the
 original capture — no rotation regression is introduced **by the scrubber**.
-However, "keep Orientation" only displays upright if **every consumer honors the
-EXIF Orientation tag** (Flutter `Image.file` for the review/B3 viewer; later OCR
-and PDF export). Flutter's image pipeline has historically been inconsistent
-about applying EXIF orientation, so this is a **risk, not a given**.
-Mitigation, in the plan:
-- An **early on-device orientation check**: capture on a real Android device
-  whose camera writes orientation as EXIF (not baked pixels), save, and confirm
-  the review/list render upright.
+"Keep Orientation" only displays upright if **every consumer honors the EXIF
+Orientation tag** (Flutter `Image.file` for the review/B3 viewer; later OCR and
+PDF export). Flutter has historically been inconsistent here, so this was
+de-risked **before** committing the approach:
+
+**On-device spike (2026-06-27) — PASSED.** On the project's physical Samsung
+SM-A166B with **Flutter 3.44.4 (stable)**, a probe JPEG carrying orientation in
+the **EXIF tag only** (Orientation=6, pixels not baked) rendered
+**pixel-identically** to a reference image baked into the upright layout — both
+`TL=BLUE TR=RED BL=YELLOW BR=GREEN`; the "ignored" layout did not occur.
+Conclusion: **Flutter honors EXIF Orientation** via the engine codec, which
+`Image.asset` and `Image.file` share — so kept-Orientation scans render upright
+on the review/B3 screens. (Same spike also confirmed this device's camera writes
+`Orientation = Rotated 90 CW` and leaks Make/Model/Software/DateTime — the strip
+is warranted.)
+
+Remaining plan items (now low risk):
 - The scrubber's emitted Exif APP1 must be **valid TIFF** (a malformed block is
-  silently ignored by decoders → still sideways); the unit test reads the output
-  back with the `exif` package to prove Orientation parses as written.
-- **Fallback if Flutter ignores the tag:** switch `JpegExifScrubber` to
-  bake-orientation-then-strip (decode → apply orientation → re-encode q95, all
-  EXIF dropped). This is a contained, single-class change behind the
-  `ImageMetadataScrubber` interface — no caller changes — accepting one lossy
-  re-encode for guaranteed-upright display.
+  silently ignored → still sideways); the unit test reads the output back with the
+  `exif` package to prove Orientation parses as written, and the BDD/REAL_DEVICE
+  lane re-confirms upright render end-to-end.
+- **Contingency** (only if a future Flutter/engine regression drops EXIF
+  honoring): switch `JpegExifScrubber` to bake-orientation-then-strip (decode →
+  apply orientation → re-encode q95). Contained single-class change behind the
+  `ImageMetadataScrubber` interface — no caller changes.
 
 ## Error handling
 
@@ -276,8 +285,9 @@ spine — documents never leave the device — holds.
   a host unit test (resolve under a changed base) and exercise the save path on
   the iOS simulator, but do not run a real-iPhone reinstall. Deferred, consistent
   with A3's real-iOS deferral.
-- **EXIF Orientation honoring depends on Flutter** (see scrubbing §). Verified
-  on-device in B1; documented bake-on-save fallback if it fails.
+- **EXIF Orientation honoring depends on Flutter** (see scrubbing §) — **verified
+  PASS** on-device (SM-A166B, Flutter 3.44.4) before committing the approach;
+  bake-on-save kept as a documented contingency only.
 - **No background GC of unreferenced image files** from a crash-mid-save. Rare,
   harmless (no row references them); a sweep can be added with B2's storage read
   if it ever matters.
