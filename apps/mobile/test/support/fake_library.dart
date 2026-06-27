@@ -15,12 +15,14 @@ import 'package:mobile/features/scan/captured_image.dart';
 /// [gate] so a test can observe the transient `saving` state.
 class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnCreate;
+  final bool throwOnList;
   final Completer<void>? gate;
   final List<Document> documents;
   int createCalls = 0;
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
+    this.throwOnList = false,
     this.gate,
     List<Document>? documents,
   }) : documents = documents ?? <Document>[];
@@ -43,8 +45,12 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<Document>> listDocuments() async =>
-      List<Document>.unmodifiable(documents);
+  Future<List<Document>> listDocuments() async {
+    if (throwOnList) {
+      throw StateError('fake: list failed');
+    }
+    return List<Document>.unmodifiable(documents);
+  }
 }
 
 /// LibraryDependencies whose factory returns the given fake repository.

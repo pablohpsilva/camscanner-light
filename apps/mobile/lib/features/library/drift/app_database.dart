@@ -35,6 +35,11 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
+        // SQLite ignores FK actions (Pages.documentId onDelete cascade) unless
+        // foreign_keys is enabled per connection.
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
         // Future columns (folderId/tags in D; corners/mode/enhancement in
         // E/F/G) bump schemaVersion and add steps here.
       );

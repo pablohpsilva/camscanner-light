@@ -58,4 +58,12 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Scan'), findsOneWidget);
     expect(find.byKey(const Key('scan-preview')), findsOneWidget);
   });
+
+  testWidgets('shows an error view (not an infinite spinner) when load fails',
+      (tester) async {
+    await pumpHome(tester, FakeDocumentRepository(throwOnList: true));
+    expect(find.byKey(const Key('documents-loading')), findsNothing);
+    expect(find.byKey(const Key('documents-error')), findsOneWidget);
+    expect(find.byKey(const Key('documents-retry')), findsOneWidget);
+  });
 }

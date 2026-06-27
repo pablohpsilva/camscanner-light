@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentRepository? _repository;
   List<Document> _documents = const [];
   bool _loading = true;
+  bool _error = false;
 
   @override
   void initState() {
@@ -37,21 +38,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _init() async {
-    final repo = await widget.libraryDependencies.createRepository();
-    if (!mounted) return;
-    _repository = repo;
-    await _load();
+    try {
+      final repo = await widget.libraryDependencies.createRepository();
+      if (!mounted) return;
+      _repository = repo;
+      await _load();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = true;
+        });
+      }
+    }
   }
 
   Future<void> _load() async {
     final repo = _repository;
     if (repo == null) return;
-    final docs = await repo.listDocuments();
-    if (!mounted) return;
+    try {
+      final docs = await repo.listDocuments();
+      if (!mounted) return;
+      setState(() {
+        _documents = docs;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = true;
+        });
+      }
+    }
+  }
+
+  void _retry() {
     setState(() {
-      _documents = docs;
-      _loading = false;
+      _error = false;
+      _loading = true;
     });
+    _init();
   }
 
   Future<void> _openScan() async {
@@ -74,13 +101,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(
               key: Key('documents-loading'),
               child: CircularProgressIndicator())
-          : _documents.isEmpty
-              ? const EmptyDocumentsView()
-              : DocumentsListView(documents: _documents),
+          : _error
+              ? _buildError()
+              : _documents.isEmpty
+                  ? const EmptyDocumentsView()
+                  : DocumentsListView(documents: _documents),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _repository == null ? null : _openScan,
         icon: const Icon(Icons.document_scanner_outlined),
         label: const Text('Scan'),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      key: const Key('documents-error'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("Couldn't load documents."),
+          const SizedBox(height: 8),
+          FilledButton(
+            key: const Key('documents-retry'),
+            onPressed: _retry,
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
