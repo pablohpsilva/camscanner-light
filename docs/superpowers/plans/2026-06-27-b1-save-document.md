@@ -1991,7 +1991,7 @@ git commit -m "test(b1): verify gate (unit/widget/BDD/coverage) + REAL_DEVICE EX
 **Note on Task 6↔7 coupling:** flagged inline — dispatch 6 then 7 and gate them together (or merge), because Home references `CameraScreen(repository:)` which Task 7 introduces.
 
 **4. Adversarial re-verification (post-write) — fixes folded in:**
-- **Drift DateTime lost UTC on round-trip** (default stores unix seconds, reads back local → `DateTime.utc(...) ==` fails). Fixed: `build.yaml` `store_date_time_values_as_text: true` (Task 1 Step 1b) + instant-comparison assertions.
+- **Drift DateTime lost UTC on round-trip** — **confirmed empirically** in a throwaway Drift project: default → `isUtc=false`, `got == DateTime.utc(...)` is **false**; with `store_date_time_values_as_text: true` → `isUtc=true`, `==` is **true** (the option name is valid — build_runner accepted it). Fixed: `build.yaml` (Task 1 Step 1b) + instant-comparison assertions. (Same check confirmed `NativeDatabase.memory()` loads on the macOS host, so `flutter test` round-trips work here.)
 - **`_deleteTempSource` deleted the shared temp source** under `systemTemp`, breaking the second save in the newest-first test. Fixed: reseed the source before each `createFromCapture` (Task 4).
 - **`camera_screen_test.dart` (3 `CameraScreen` constructions) was unhandled** — making `repository` required would break it. Fixed: Task 7 Step 3 now updates both A3 test files (grep-verified there are exactly two).
 - **Hand-rolled Orientation parser validated** — the production `_readOrientation`/`_orientationFromTiff` (new code; the spike read orientation via the `exif` package) was run against the fixture, the real capture, and the synthetic probe → all return `6`. No fix needed; risk retired.
