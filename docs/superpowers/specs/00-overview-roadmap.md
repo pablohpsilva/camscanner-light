@@ -63,8 +63,8 @@ Each sub-project / feature gets its own design doc, then plan, then build.
 | 05 | Scan enhancement (filters) | `features/05-scan-enhancement.md` | Approved |
 | 06 | Multi-page documents | `features/06-multi-page-documents.md` | Approved |
 | 07 | PDF export | `features/07-pdf-export.md` | Approved |
-| 08 | OCR / text extraction | `features/08-ocr-text-extraction.md` | Pending |
-| 09 | PDF editing | `features/09-pdf-editing.md` | Pending |
+| 08 | OCR / text extraction | `features/08-ocr-text-extraction.md` | Approved |
+| 09 | PDF editing | `features/09-pdf-editing.md` | Next |
 | 10 | PDF conversion | `features/10-pdf-conversion.md` | Pending |
 | 11 | Accounts & cloud sync | `features/11-accounts-cloud-sync.md` | Pending |
 | 12 | Sharing, printing & fax | `features/12-sharing-printing-fax.md` | Pending |
