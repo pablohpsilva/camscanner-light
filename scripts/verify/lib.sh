@@ -205,26 +205,53 @@ _ensure_ios() {
   printf '%s' "$udid"
 }
 
+# A failure is "infra-only" (the test never actually ran its assertions) when the
+# log shows a build/load/connection problem but NO real test-assertion failure.
+# Real assertion failures throw a `TestFailure` / framework exception; infra
+# failures do not — so this is the reliable discriminator, NOT the `[E]` marker
+# (transient infra errors like "device offline" ALSO print `[E]`; see
+# VERIFICATION.md known-limitation 4). We retry infra-only failures, never real
+# assertion failures.
+_is_infra_only_failure() {
+  local log="$1"
+  grep -qE "Failed to start Dart Development Service|device offline|Lost connection to device|Failed to load|Gradle task .* failed|registerService: Service connection disposed|Connection refused" "$log" \
+    && ! grep -qE "TestFailure|EXCEPTION CAUGHT BY FLUTTER TEST" "$log"
+}
+
+# Best-effort recovery of an offline Android emulator: reconnect, then cold-boot.
+_android_recover() {
+  local dev="$1" w=0
+  "$ADB" reconnect offline >/dev/null 2>&1; sleep 3
+  while [ "$w" -lt 30 ] && ! "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$"; do sleep 3; w=$((w + 3)); done
+  if ! "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$"; then
+    "$ADB" -s "$dev" emu kill >/dev/null 2>&1; sleep 3
+    flutter emulators --launch Medium_Phone_API_35 >/dev/null 2>&1
+    "$ADB" wait-for-device >/dev/null 2>&1
+    local b=0; until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 3; b=$((b + 3)); [ "$b" -gt 180 ] && break; done
+  fi
+}
+
 # verify_integration <label> <device-id> <test-file-under-integration_test/>
 verify_integration() {
   local label="$1" dev="$2" tf="$3"
   # Per-(platform,test) log so multiple integration tests on the same platform
   # don't overwrite each other's evidence (rule 8: store evidence).
   local log="$EVIDENCE_DIR/integration-$label-$(_slug "$tf").log"
-  local attempt=0
-  while [ "$attempt" -lt 2 ]; do
+  local attempt=0 max=3
+  while [ "$attempt" -lt "$max" ]; do
     attempt=$((attempt + 1))
     ( cd "$ROOT/apps/mobile" && flutter test "integration_test/$tf" -d "$dev" >"$log" 2>&1 )
     if grep -qF "All tests passed!" "$log"; then
       pass "$label: on-device integration test asserts UI ($tf)"
       return 0
     fi
-    # Retry ONCE on transient infra (the test never loaded/ran) — but NEVER on a
-    # real assertion failure. A failed assertion prints "[E]"; infra errors don't.
-    if [ "$attempt" -lt 2 ] \
-      && grep -qE "Failed to start Dart Development Service|device offline|Failed to load|Lost connection to device|Gradle task .* failed" "$log" \
-      && ! grep -qF "[E]" "$log"; then
-      sleep 10; continue
+    # Retry transient infra failures (test never ran) — recovering an offline
+    # Android emulator first. NEVER retry a real assertion failure.
+    if [ "$attempt" -lt "$max" ] && _is_infra_only_failure "$log"; then
+      case "$label" in
+        android*) grep -q "device offline" "$log" && _android_recover "$dev" ;;
+      esac
+      sleep 8; continue
     fi
     break
   done
@@ -241,6 +268,9 @@ verify_integration_android() {
 verify_integration_android_real() {
   local tf="$1" dev; dev="$(_ensure_android)"
   [ -z "$dev" ] && { fail "android(real): no emulator"; return 1; }
+  # The real camera can't initialize on a degraded/offline emulator — recover it
+  # first so this exercises the plugin, not device flakiness.
+  "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$" || _android_recover "$dev"
   ( cd "$ROOT/apps/mobile" && flutter install -d "$dev" >/dev/null 2>&1 )
   "$ADB" -s "$dev" shell pm grant "$APP_ID" android.permission.CAMERA 2>/dev/null
   verify_integration "android-real" "$dev" "$tf"
