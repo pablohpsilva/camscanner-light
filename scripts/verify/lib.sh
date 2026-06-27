@@ -195,7 +195,9 @@ _ensure_ios() {
 # verify_integration <label> <device-id> <test-file-under-integration_test/>
 verify_integration() {
   local label="$1" dev="$2" tf="$3"
-  local log="$EVIDENCE_DIR/integration-$label.log"
+  # Per-(platform,test) log so multiple integration tests on the same platform
+  # don't overwrite each other's evidence (rule 8: store evidence).
+  local log="$EVIDENCE_DIR/integration-$label-$(_slug "$tf").log"
   local attempt=0
   while [ "$attempt" -lt 2 ]; do
     attempt=$((attempt + 1))

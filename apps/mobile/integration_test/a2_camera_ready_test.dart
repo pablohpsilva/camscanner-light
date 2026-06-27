@@ -23,6 +23,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Scan'), findsOneWidget);
     expect(find.byKey(const Key('scan-preview')), findsOneWidget);
     expect(find.byKey(const Key('fake-preview')), findsOneWidget);
+    expect(find.text('FAKE PREVIEW'), findsOneWidget);
 
     // Sanity: we navigated away from the Documents home.
     expect(find.text('No documents yet'), findsNothing);
