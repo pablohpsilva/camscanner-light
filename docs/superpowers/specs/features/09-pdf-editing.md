@@ -70,3 +70,7 @@ watermark, password-protect, and annotate.
 5. External-PDF import (Phase 2) sits behind a `PdfEditor` interface without
    disturbing Phase 1.
 6. All logic test-first; BDD scenarios pass.
+
+---
+
+> **Definition of Done gate:** Per the Definition of Done in `00-overview-roadmap.md`, this feature is **not done** until every acceptance criterion above is mapped to a passing TDD test and (for user-facing behavior) a BDD scenario, the full suite is run and observed green, quality gates pass, and the work is reviewed and double-checked. "Looks right" / "should pass" is not done.

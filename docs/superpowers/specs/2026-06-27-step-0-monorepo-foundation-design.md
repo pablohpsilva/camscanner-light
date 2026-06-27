@@ -109,3 +109,7 @@ camscanner-light/            ← Nx workspace root
   (Flutter, Xcode, Android SDK) is a prerequisite, not part of this step's code.
 - If the plugin's generated targets diverge from current Nx conventions, prefer
   the plugin's documented target names over hand-editing `project.json`.
+
+---
+
+> **Definition of Done gate:** Per the Definition of Done in `00-overview-roadmap.md`, this step is **not done** until every acceptance criterion above is satisfied and verified by observed evidence (commands run, output shown), quality gates pass, and the result is reviewed and double-checked. "Looks right" / "should pass" is not done.

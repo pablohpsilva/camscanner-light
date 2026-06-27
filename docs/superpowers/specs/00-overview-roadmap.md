@@ -23,6 +23,31 @@ Android, and Web** (mobile-first; Web later).
 - **SOLID, KISS, DRY** for every feature, class, component, and function.
 - Small, single-purpose, well-bounded units with clear interfaces.
 
+## Definition of Done (binding)
+
+This is the contract for every feature, build step, class, component, and
+function. **Nothing is "done", merged, or called complete until ALL of the
+following hold and have been verified — not assumed:**
+
+1. **Acceptance criteria ↔ tests (traceability):** every acceptance criterion in
+   the feature's spec maps to at least one automated test (TDD: unit/widget) and,
+   where it describes user-facing behavior, a **BDD scenario** (Given/When/Then).
+   No criterion is verified by inspection alone — each must have a test that
+   proves it.
+2. **Tests written first:** tests and BDD scenarios are authored **before**
+   implementation; red → green → refactor.
+3. **All tests pass — observed:** the full relevant suite (unit, widget, BDD) is
+   run and seen green. "Should pass" / "looks right" is **not** done.
+4. **Every acceptance criterion checked off** against its passing test(s).
+5. **Reviewed and double-checked:** code review **plus** an independent
+   verification pass — commands run, output shown, nothing regressed. Evidence
+   before any "done" claim.
+6. **Quality gates clean:** `analyze`/lint pass; SOLID/KISS/DRY upheld.
+
+If any of 1–6 is unmet, the work is **not done**. Each feature's "Acceptance
+criteria" section is the checklist; each item is closed only by a passing,
+double-checked test. This gate is referenced by every feature spec.
+
 ## Cross-cutting requirements
 
 - **Searchable PDFs whenever possible:** every capture mode should ultimately

@@ -41,3 +41,7 @@ does not disturb the local-only storage model.
 1. The app clearly indicates sync/accounts is an upcoming feature.
 2. Users understand data is stored only on their device.
 3. No backend or account dependency is introduced.
+
+---
+
+> **Definition of Done gate:** Per the Definition of Done in `00-overview-roadmap.md`, this feature is **not done** until every acceptance criterion above is mapped to a passing TDD test and (for user-facing behavior) a BDD scenario, the full suite is run and observed green, quality gates pass, and the work is reviewed and double-checked. "Looks right" / "should pass" is not done.
