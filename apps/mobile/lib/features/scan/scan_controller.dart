@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'camera_permission_service.dart';
 import 'camera_preview_controller.dart';
+import 'captured_image.dart';
 import 'scan_view_state.dart';
 
 /// Orchestrates the Scan screen's state machine:
@@ -24,6 +25,9 @@ class ScanController extends ChangeNotifier {
 
   bool _permanentlyDenied = false;
   bool get permanentlyDenied => _permanentlyDenied;
+
+  bool _capturing = false;
+  bool get capturing => _capturing;
 
   bool _disposed = false;
 
@@ -56,6 +60,27 @@ class ScanController extends ChangeNotifier {
 
   /// Opens the OS settings page (for the denied state).
   Future<bool> openSettings() => _permission.openSettings();
+
+  /// Captures a still image in the ready state. Returns null if not ready,
+  /// already capturing, disposed, or capture failed (the screen surfaces
+  /// failure). Sets [capturing] true→false around the in-flight capture.
+  Future<CapturedImage?> capture() async {
+    if (_disposed || _status != ScanStatus.ready || _capturing) return null;
+    _capturing = true;
+    notifyListeners();
+    try {
+      final image = await _preview.capture();
+      if (_disposed) return null;
+      return image;
+    } on CameraUnavailableException {
+      return null;
+    } finally {
+      if (!_disposed) {
+        _capturing = false;
+        notifyListeners();
+      }
+    }
+  }
 
   void _set(ScanStatus status) {
     if (_disposed) return;
