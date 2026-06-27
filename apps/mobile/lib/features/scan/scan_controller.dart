@@ -73,6 +73,13 @@ class ScanController extends ChangeNotifier {
       if (_disposed) return null;
       return image;
     } on CameraUnavailableException {
+      return null; // expected failure mode
+    } catch (_) {
+      // Defensive: ANY unexpected error stays graceful (binding "no crash").
+      // The only production preview impl maps camera errors to
+      // CameraUnavailableException above; this guards future impls / platform
+      // quirks so a stray throw can never become an unhandled async error in
+      // the shutter handler.
       return null;
     } finally {
       if (!_disposed) {

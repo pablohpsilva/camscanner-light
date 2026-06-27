@@ -1,11 +1,31 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
+import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 import '../../support/fake_scan.dart';
+
+/// Preview whose [capture] blocks on [gate] so a test can observe the transient
+/// `capturing` UI (busy indicator + disabled shutter) before capture completes.
+class _GatedPreview implements CameraPreviewController {
+  final Completer<void> gate = Completer<void>();
+  @override
+  Future<void> initialize() async {}
+  @override
+  Widget buildPreview() => const SizedBox.shrink();
+  @override
+  Future<CapturedImage> capture() async {
+    await gate.future;
+    return const CapturedImage('/nonexistent/capture.jpg');
+  }
+  @override
+  Future<void> dispose() async {}
+}
 
 // Review-rendering tests feed a NON-LOADABLE capture path: a real file routed
 // through Image.file hangs a host widget test (pending dart:io isolate-port read
@@ -26,6 +46,32 @@ ScanDependencies _grantedWithCaptureError() => ScanDependencies(
     );
 
 void main() {
+  testWidgets('shutter shows the busy indicator and is disabled while capturing',
+      (tester) async {
+    final gated = _GatedPreview();
+    final deps = ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: () => gated,
+    );
+    await tester.pumpWidget(MaterialApp(home: CameraScreen(dependencies: deps)));
+    await tester.pumpAndSettle();
+
+    // Tap the shutter; capture() now blocks on the gate, so capturing == true.
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('scan-shutter-busy')), findsOneWidget,
+        reason: 'busy indicator shows while capturing');
+    final fab = tester
+        .widget<FloatingActionButton>(find.byKey(const Key('scan-shutter')));
+    expect(fab.onPressed, isNull, reason: 'shutter is disabled while capturing');
+
+    // Release capture so teardown is clean (non-loadable path → review no hang).
+    gated.gate.complete();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('ready state shows the shutter', (tester) async {
     await tester.pumpWidget(
       MaterialApp(home: CameraScreen(dependencies: grantedScanDependencies())),

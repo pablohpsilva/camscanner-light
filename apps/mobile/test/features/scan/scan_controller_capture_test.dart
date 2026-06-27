@@ -36,6 +36,23 @@ class _GatedCapture implements CameraPreviewController {
   }
 }
 
+/// Preview controller whose [capture] throws a NON-[CameraUnavailableException]
+/// (a generic error), to prove capture() degrades gracefully for ANY error type
+/// (the binding "no crash" constraint), not just the mapped camera exception.
+class _ThrowingCapture implements CameraPreviewController {
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Widget buildPreview() => const SizedBox.shrink();
+
+  @override
+  Future<CapturedImage> capture() async => throw StateError('unexpected boom');
+
+  @override
+  Future<void> dispose() async {}
+}
+
 Future<ScanController> _ready(CameraPreviewController preview) async {
   final c = ScanController(
     permission: FakeCameraPermissionService(CameraPermissionStatus.granted),
@@ -47,6 +64,14 @@ Future<ScanController> _ready(CameraPreviewController preview) async {
 }
 
 void main() {
+  test('capture() returns null and stays graceful on an UNEXPECTED error',
+      () async {
+    final c = await _ready(_ThrowingCapture());
+    final image = await c.capture(); // _ThrowingCapture throws a StateError
+    expect(image, isNull, reason: 'any error type must degrade to null, no crash');
+    expect(c.capturing, isFalse, reason: 'capturing must reset after a throw');
+  });
+
   test('capture() returns the image and toggles capturing on then off',
       () async {
     final fake = FakeCameraPreviewController();

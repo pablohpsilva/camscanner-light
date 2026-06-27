@@ -11,6 +11,10 @@ void main() {
     final image = await fake.capture();
 
     final file = File(image.path);
+    // Clean up the temp dir the fake created (no orphaned files across runs).
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
     expect(file.existsSync(), isTrue, reason: 'capture must produce a real file');
     final bytes = await file.readAsBytes();
     expect(bytes.length, greaterThan(2));
