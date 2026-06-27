@@ -25,6 +25,8 @@ class ScanController extends ChangeNotifier {
   bool _permanentlyDenied = false;
   bool get permanentlyDenied => _permanentlyDenied;
 
+  bool _disposed = false;
+
   /// The preview controller, valid for [ScanStatus.ready].
   CameraPreviewController get preview => _preview;
 
@@ -32,11 +34,17 @@ class ScanController extends ChangeNotifier {
   Future<void> start() async {
     _set(ScanStatus.checking);
     final permission = await _permission.request();
+    if (_disposed) return;
     if (permission == CameraPermissionStatus.granted) {
       try {
         await _preview.initialize();
+        if (_disposed) {
+          await _preview.dispose(); // release the camera initialized after disposal
+          return;
+        }
         _set(ScanStatus.ready);
       } on CameraUnavailableException {
+        if (_disposed) return;
         _set(ScanStatus.unavailable);
       }
     } else {
@@ -50,12 +58,14 @@ class ScanController extends ChangeNotifier {
   Future<bool> openSettings() => _permission.openSettings();
 
   void _set(ScanStatus status) {
+    if (_disposed) return;
     _status = status;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _preview.dispose();
     super.dispose();
   }
