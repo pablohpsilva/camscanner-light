@@ -37,6 +37,8 @@ assert_cmd "a2 unit + widget tests pass" "All tests passed!" \
 assert_cmd "analyze clean" "Successfully ran target analyze" \
   pnpm nx run mobile:analyze --skip-nx-cache
 
+assert_coverage_floor 70
+
 # ---- Device criteria: programmatic on-device UI (integration tests) ----
 # Authoritative: pump the REAL app on each device and assert the camera screen's
 # widget tree for the denied and granted/preview states. The real camera +

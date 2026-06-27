@@ -51,6 +51,19 @@ assert_cmd() {
   return 1
 }
 
+# assert_coverage_floor <min_percent> : flutter test --coverage, gate on line %.
+assert_coverage_floor() {
+  local floor="$1" log="$EVIDENCE_DIR/coverage.log" lcov="$ROOT/apps/mobile/coverage/lcov.info"
+  ( cd "$ROOT/apps/mobile" && flutter test --coverage >"$log" 2>&1 ); local rc=$?
+  if [ "$rc" -ne 0 ]; then fail "coverage: flutter test --coverage exit $rc (see $log)"; return 1; fi
+  if [ ! -s "$lcov" ]; then fail "coverage: lcov.info missing/empty [silence=fail]"; return 1; fi
+  local pct; pct="$(awk -F: '/^LF:/{f+=$2} /^LH:/{h+=$2} END{if(f>0) printf "%.1f", 100*h/f; else print "0"}' "$lcov")"
+  if awk "BEGIN{exit !($pct >= $floor)}"; then
+    pass "coverage: ${pct}% line coverage ≥ floor ${floor}%"; return 0
+  fi
+  fail "coverage: ${pct}% line coverage BELOW floor ${floor}% (see $log)"; return 1
+}
+
 # assert_true "<desc>" <command...> : passes iff command exits 0
 assert_true() {
   local desc="$1"; shift
