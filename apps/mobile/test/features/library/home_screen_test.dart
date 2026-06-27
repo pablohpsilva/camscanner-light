@@ -22,10 +22,11 @@ void main() {
 
   testWidgets('shows a tappable Scan button', (tester) async {
     await pumpHome(tester);
-    final scan = find.widgetWithText(FloatingActionButton, 'Scan');
-    expect(scan, findsOneWidget);
-    await tester.tap(scan); // no-op for now, must not throw
-    await tester.pump();
+
+    final fab = tester.widget<FloatingActionButton>(
+      find.widgetWithText(FloatingActionButton, 'Scan'),
+    );
+    expect(fab.onPressed, isNotNull); // tappable: has a handler
   });
 
   testWidgets('tapping Scan opens the camera screen', (tester) async {
