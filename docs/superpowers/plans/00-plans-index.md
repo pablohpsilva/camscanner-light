@@ -37,7 +37,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 |------|------|------|-----------|--------|
 | 0 | Monorepo foundation | `step-0` design | `2026-06-27-step-0-monorepo-foundation.md` | ✅ **built & gated** |
 | A1 | App shell: home (empty Documents list) + Scan button | 02, 01 | `2026-06-27-a1-app-shell.md` | ✅ **built & gated** |
-| A2 | Camera preview + permission | 01 | `2026-06-27-a2-camera-preview.md` | ✅ **written & ready** |
+| A2 | Camera preview + permission | 01 | `2026-06-27-a2-camera-preview.md` | ✅ **built & gated** |
 | A3 | Capture photo → review screen | 01 | `…-a3-capture-review.md` | ⏳ |
 | B1 | Save photo + document record (storage) | 02, 06 | `…-b1-persist-page.md` | ⏳ |
 | B2 | Documents list reads storage | 02 | `…-b2-list-from-storage.md` | ⏳ |

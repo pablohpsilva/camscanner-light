@@ -98,3 +98,13 @@ tool's stdout, where the tool is flaky:
    "On-device UI" above); the screenshot is corroborating only. (`gfxinfo "Total
    frames rendered"` does not track Flutter/Impeller, so it must not be used as a
    render signal — it was removed.)
+4. **`verify_integration` retry can false-FAIL on a transient `[E]` infra error.**
+   The retry guard only retries when the log does NOT contain `[E]`, to avoid ever
+   retrying a real assertion failure. But some transient infra errors (e.g. `adb:
+   device offline`, `registerService: Service connection disposed`) can also emit
+   `[E]`, so they are NOT retried and surface as a gate FAIL. This is **fail-safe**
+   — it can only cause a false FAIL (re-run resolves it), never a false PASS — so
+   the conservative guard is kept intentionally. Multi-test-per-platform evidence
+   logs are now written per `(platform, test-file)` so runs no longer overwrite
+   each other (rule 8). Future hardening: distinguish infra `[E]` lines (match the
+   specific infra strings) from test `[E]` lines before deciding to retry.
