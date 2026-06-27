@@ -237,6 +237,15 @@ verify_integration_android() {
   verify_integration android "$dev" "$tf"
 }
 
+# Exercises the REAL camera/permission path: install the app, grant CAMERA, run.
+verify_integration_android_real() {
+  local tf="$1" dev; dev="$(_ensure_android)"
+  [ -z "$dev" ] && { fail "android(real): no emulator"; return 1; }
+  ( cd "$ROOT/apps/mobile" && flutter install -d "$dev" >/dev/null 2>&1 )
+  "$ADB" -s "$dev" shell pm grant "$APP_ID" android.permission.CAMERA 2>/dev/null
+  verify_integration "android-real" "$dev" "$tf"
+}
+
 verify_integration_ios() {
   local tf="$1" udid; udid="$(_ensure_ios)"
   [ -z "$udid" ] && { fail "ios: no simulator for integration test"; return 1; }

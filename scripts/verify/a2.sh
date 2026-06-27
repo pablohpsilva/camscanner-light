@@ -50,6 +50,7 @@ fi
 
 verify_integration_android a2_camera_denied_test.dart
 verify_integration_android a2_camera_ready_test.dart
+verify_integration_android_real a2_camera_real_android_test.dart
 verify_integration_android a2_camera_unavailable_test.dart
 verify_integration_ios a2_camera_denied_test.dart
 verify_integration_ios a2_camera_ready_test.dart
