@@ -37,11 +37,12 @@ class FakeCameraPermissionService implements CameraPermissionService {
 /// instead of real camera frames, so on-device tests need no hardware.
 class FakeCameraPreviewController implements CameraPreviewController {
   final bool unavailable;
+  final String? captureReturnPath;
   bool disposed = false;
   bool captureCalled = false;
   CameraUnavailableException? captureError;
 
-  FakeCameraPreviewController({this.unavailable = false});
+  FakeCameraPreviewController({this.unavailable = false, this.captureReturnPath});
 
   @override
   Future<void> initialize() async {
@@ -63,6 +64,8 @@ class FakeCameraPreviewController implements CameraPreviewController {
     captureCalled = true;
     final err = captureError;
     if (err != null) throw err;
+    final override = captureReturnPath;
+    if (override != null) return CapturedImage(override); // no file written
     final dir = await Directory.systemTemp.createTemp('fake_capture');
     final file = File('${dir.path}/page.jpg');
     await file.writeAsBytes(kFakeJpegBytes);

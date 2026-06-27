@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'capture_review_screen.dart';
 import 'scan_controller.dart';
 import 'scan_dependencies.dart';
 import 'scan_view_state.dart';
@@ -8,7 +9,7 @@ import 'widgets/camera_unavailable_view.dart';
 import 'widgets/permission_denied_view.dart';
 
 /// The Scan screen: requests camera permission and shows the live preview, or
-/// a graceful fallback. Capture (shutter) arrives in A3.
+/// a graceful fallback. Capture (shutter) → review screen lives here (A3).
 class CameraScreen extends StatefulWidget {
   final ScanDependencies dependencies;
 
@@ -37,6 +38,28 @@ class _CameraScreenState extends State<CameraScreen> {
     super.dispose();
   }
 
+  Future<void> _onShutter() async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final image = await _controller.capture();
+    if (!mounted) return;
+    if (image == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not capture photo. Try again.')),
+      );
+      return;
+    }
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => CaptureReviewScreen(
+          image: image,
+          onRetake: navigator.pop,
+          onAccept: () => navigator.popUntil((route) => route.isFirst),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,6 +77,8 @@ class _CameraScreenState extends State<CameraScreen> {
               return CameraPreviewView(
                 key: const Key('scan-preview'),
                 controller: _controller.preview,
+                capturing: _controller.capturing,
+                onShutter: _onShutter,
               );
             case ScanStatus.permissionDenied:
               return PermissionDeniedView(
