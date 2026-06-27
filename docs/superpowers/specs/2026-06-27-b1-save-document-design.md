@@ -66,16 +66,26 @@ first step where a capture survives leaving the review screen.
   reference and defeat persistence. (This is the single most important
   correctness decision in B1.)
 
-### Save sequence (atomic-ish, capture never lost)
+### Save sequence (transactional, capture never lost)
+Run the whole write inside a **single Drift `transaction()`** so the database can
+never hold a partial record:
 1. Insert `Document` row → obtain `docId`.
-2. Create `documents/<docId>/`.
-3. Read the temp capture bytes → **scrub** → write
+2. Create `documents/<docId>/`, read the temp capture bytes → **scrub** → write
    `documents/<docId>/page_1.jpg`.
-4. Insert `Page` row with the relative path.
-5. Delete the temp source file (best-effort; only if under the temp dir).
-6. On any failure in 2–4: roll back (delete the `Page`/`Document` rows + the
-   `documents/<docId>/` dir), leave the temp capture intact, and surface an
-   error — the user stays on the review screen and can retry. No partial record.
+3. Insert `Page` row with the relative path.
+4. If step 2 (file IO / scrub) throws, the transaction **rolls back the
+   `Document` row automatically** (Drift rolls back when the closure throws); the
+   `catch` then deletes the partially-written `documents/<docId>/` dir, leaves the
+   temp capture intact, and surfaces a save error — the user stays on the review
+   screen and can retry. No orphan row, no partial record.
+5. After the transaction commits, delete the temp source file (best-effort; only
+   if under the temp dir).
+
+**Crash safety:** because rows are committed atomically *after* the file is
+written, a process kill mid-save leaves **at most an unreferenced image file**
+(no row points at it — harmless, GC-able later), never an orphan `Document`
+without its `Page`. B2's "list reads storage" therefore never sees a broken
+zero-page document.
 
 ### Naming
 - Default name `Scan <YYYY-MM-DD HH.MM.SS>` from an **injectable clock**
@@ -112,8 +122,11 @@ CameraScreen ── Accept ──> SaveController ──> DriftDocumentRepositor
 - **`ImageMetadataScrubber`** (interface) + **`JpegExifScrubber`** (impl) — see
   below. Feature 07 swaps the impl for the shared scrubber.
 - **`DocumentFileStore`** — resolves relative ↔ absolute paths against the app
-  documents dir; creates/deletes per-document dirs; writes bytes. Keeps
-  `path_provider` and `dart:io` out of the repository's logic for testability.
+  documents dir; creates/deletes per-document dirs; writes bytes. Its **base dir
+  is injected** (the composition root calls `path_provider` *once* and passes the
+  dir in) — `path_provider` returns nothing under host unit tests, so the store
+  must never call it internally. Keeps `path_provider` and `dart:io` out of the
+  repository's logic for testability.
 - **`SaveController`** (`ChangeNotifier`, mirrors `ScanController`): states
   `idle → saving → error`, a double-tap guard, and dispose-safety. Wraps
   `repository.createFromCapture` and exposes `save(CapturedImage)`.
@@ -160,6 +173,26 @@ CameraScreen ── Accept ──> SaveController ──> DriftDocumentRepositor
 
 This is pure Dart (no runtime dependency), deterministic, and host-testable.
 
+**Correctness guarantee & its dependency.** Because the scan data is byte-identical
+and Orientation is preserved, the scrubbed file renders *exactly* like the
+original capture — no rotation regression is introduced **by the scrubber**.
+However, "keep Orientation" only displays upright if **every consumer honors the
+EXIF Orientation tag** (Flutter `Image.file` for the review/B3 viewer; later OCR
+and PDF export). Flutter's image pipeline has historically been inconsistent
+about applying EXIF orientation, so this is a **risk, not a given**.
+Mitigation, in the plan:
+- An **early on-device orientation check**: capture on a real Android device
+  whose camera writes orientation as EXIF (not baked pixels), save, and confirm
+  the review/list render upright.
+- The scrubber's emitted Exif APP1 must be **valid TIFF** (a malformed block is
+  silently ignored by decoders → still sideways); the unit test reads the output
+  back with the `exif` package to prove Orientation parses as written.
+- **Fallback if Flutter ignores the tag:** switch `JpegExifScrubber` to
+  bake-orientation-then-strip (decode → apply orientation → re-encode q95, all
+  EXIF dropped). This is a contained, single-class change behind the
+  `ImageMetadataScrubber` interface — no caller changes — accepting one lossy
+  re-encode for guaranteed-upright display.
+
 ## Error handling
 
 - Save failure / low storage → rollback (§ save sequence step 6), `error` state,
@@ -169,10 +202,13 @@ This is pure Dart (no runtime dependency), deterministic, and host-testable.
 
 ## Testing strategy (TDD/BDD first)
 
-- **Unit:**
+- **Unit** (host SQLite required — see Dependencies; tests open
+  `NativeDatabase.memory()`):
   - `DriftDocumentRepository.createFromCapture` + `listDocuments` round-trip
-    against a temp dir + in-memory/temp Drift DB: a row is created, the file
+    against a temp dir + in-memory Drift DB: a row is created, the file
     exists at the resolved relative path, `listDocuments` returns it newest-first.
+  - Crash safety: a `createFromCapture` whose file write throws leaves **no**
+    `Document` row (transaction rollback) and no orphan dir.
   - Relative-path resolution: a record created under one app-dir resolves under a
     *different* app-dir base (simulates the iOS container-GUID change) — proves
     we did not persist an absolute path.
@@ -198,14 +234,31 @@ This is pure Dart (no runtime dependency), deterministic, and host-testable.
 - **Verify gate** `scripts/verify/b1.sh` (sources `scripts/verify/lib.sh`):
   analyze + unit/widget + BDD on emulator and iOS simulator, with a coverage
   floor; asserts success markers (silence = FAIL). Opt-in `REAL_DEVICE=1` lane:
-  capture + Accept on a physical Android device, then assert via `run-as` that a
-  real, **non-empty** JPEG exists under `documents/<id>/` and that it carries
-  **no GPS/Make/Model EXIF** (privacy proof on real hardware).
+  capture + Accept on a physical Android device, then pull the saved file
+  (`adb exec-out run-as <appId> cat files/.../documents/<id>/page_1.jpg >
+  $EVIDENCE_DIR/saved.jpg`) and assert with a **concrete EXIF tool** (host
+  `exiftool` if present, else a Python `exifread`/`Pillow` snippet — the harness
+  `require_tool`s it so a missing tool is a FAIL, never a silent pass): file is
+  **non-empty**, contains **no GPS / Make / Model / Software / DateTime** tags,
+  and **Orientation matches** the captured value. Also confirm the review/list
+  render **upright** (the on-device orientation check above).
 
 ## Dependencies added
 
-- Runtime: `drift`, `sqlite3_flutter_libs`, `path_provider`, `path`.
-- Dev: `drift_dev`, `build_runner`, `exif` (test-only, to assert scrubber output).
+- Runtime: `drift`, `sqlite3_flutter_libs` (bundles SQLite on **device**),
+  `path_provider`, `path`.
+- Dev: `drift_dev`, `build_runner`, `exif` (test-only, to assert scrubber output),
+  and a **host SQLite for `flutter test`** — `sqlite3_flutter_libs` is
+  device-only, so host unit tests need `sqlite3` available (the `sqlite3` Dart
+  package's bundled lib, or a verified system `libsqlite3`). The plan pins this so
+  round-trip tests actually load.
+- **Codegen:** Drift generates `app_database.g.dart` via `build_runner`, running
+  alongside the existing `bdd_widget_test` codegen. The plan runs
+  `dart run build_runner build --delete-conflicting-outputs`, **commits** the
+  generated files (same policy as the committed BDD `_test.dart`), and the gate
+  asserts they are current (regenerate + `git diff --exit-code`).
+- **Drift `schemaVersion = 1`** with a `MigrationStrategy` stub, so future columns
+  (folderId/tags in D, corners/mode/enhancement in E/F/G) migrate cleanly.
 - Platform: ensure the iOS min deployment target and Android settings required by
   `sqlite3_flutter_libs` are set in the plan so the build doesn't surprise us.
 
@@ -214,6 +267,20 @@ This is pure Dart (no runtime dependency), deterministic, and host-testable.
 All storage is local (app documents dir + local SQLite). **No network calls, no
 cloud.** Identifying EXIF is stripped on the first permanent write. The privacy
 spine — documents never leave the device — holds.
+
+## Known gaps (named, carried with rationale — not silent)
+
+- **iOS relative-path reinstall-survival is verified on the simulator, not a
+  physical iPhone.** The relative-path decision specifically protects against the
+  iOS container-GUID change on reinstall/update; we prove the resolution logic in
+  a host unit test (resolve under a changed base) and exercise the save path on
+  the iOS simulator, but do not run a real-iPhone reinstall. Deferred, consistent
+  with A3's real-iOS deferral.
+- **EXIF Orientation honoring depends on Flutter** (see scrubbing §). Verified
+  on-device in B1; documented bake-on-save fallback if it fails.
+- **No background GC of unreferenced image files** from a crash-mid-save. Rare,
+  harmless (no row references them); a sweep can be added with B2's storage read
+  if it ever matters.
 
 ## Deliverable (user-testable)
 
@@ -242,6 +309,10 @@ carries no GPS/device EXIF.
   failure SnackBar*
 - [ ] Double-tap on Accept saves once; disposing mid-save does not notify — *unit:
   SaveController guard + dispose-safety*
+- [ ] A failed file write leaves **no** `Document`/`Page` row (transactional save,
+  no orphan) — *unit: crash-safety rollback*
+- [ ] Saved scan renders **upright** on a real device (Orientation honored, or
+  bake fallback applied) — *REAL_DEVICE: on-device orientation check*
 
 ---
 
