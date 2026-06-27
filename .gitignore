@@ -8,8 +8,6 @@ apps/mobile/build/
 apps/mobile/ios/Pods/
 apps/mobile/.flutter-plugins
 apps/mobile/.flutter-plugins-dependencies
-.flutter-plugins
-.flutter-plugins-dependencies
 
 # Nx
 .nx/cache
