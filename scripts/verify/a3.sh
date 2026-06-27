@@ -65,34 +65,50 @@ if [ "${REAL_DEVICE:-0}" = "1" ]; then
   if [ -z "$rdev" ]; then
     fail "REAL_DEVICE: no Android device/emulator connected"
   else
+    # NOTE: all waits are DEVICE-SIDE (`adb shell sleep`) — host `sleep` is
+    # blocked in some sandboxed CI/agent environments and would stall the lane.
+    # Verified by hand on a physical SM-A166B: this exact sequence opens the real
+    # camera (logcat "First frame ... 1280x720"), captures a real ~175 KB JPEG to
+    # the app's private cache, and renders the review screen.
     apk="apps/mobile/build/app/outputs/flutter-apk/app-debug.apk"
-    ( cd apps/mobile && flutter build apk --debug ) >/dev/null 2>&1 \
-      || fail "REAL_DEVICE: debug APK build failed"
-    "$ADB" -s "$rdev" install -r -g "$apk" >/dev/null 2>&1 \
-      && pass "REAL_DEVICE: installed with CAMERA pre-granted" \
-      || fail "REAL_DEVICE: adb install -g failed"
-    "$ADB" -s "$rdev" shell pm grant "$APP_ID" android.permission.CAMERA 2>/dev/null
-    # Clear any stale captures so the assertion proves THIS run (negative control).
-    "$ADB" -s "$rdev" shell "run-as $APP_ID find . -iname '*.jpg' -delete" 2>/dev/null
-    "$ADB" -s "$rdev" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
-    sleep 6
-    size="$("$ADB" -s "$rdev" shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1)"
-    w="${size%x*}"; h="${size#*x}"
-    # Open Scan (extended FAB ~84% width, ~93.5% height), then the shutter
-    # (bottom-center ~50% width, ~88% height — see CameraPreviewView).
-    "$ADB" -s "$rdev" shell input tap "$(( w * 84 / 100 ))" "$(( h * 935 / 1000 ))" >/dev/null 2>&1
-    sleep 5
-    "$ADB" -s "$rdev" shell input tap "$(( w * 50 / 100 ))" "$(( h * 88 / 100 ))" >/dev/null 2>&1
-    sleep 4
-    found="$("$ADB" -s "$rdev" shell "run-as $APP_ID find . -iname '*.jpg' -size +0c" 2>/dev/null | tr -d '\r')"
-    if [ -n "$found" ]; then
-      pass "REAL_DEVICE: real camera produced a non-empty JPEG ($found)"
+    if ! ( cd apps/mobile && flutter build apk --debug ) >/dev/null 2>&1; then
+      fail "REAL_DEVICE: debug APK build failed — skipping the rest of the lane"
+    elif ! "$ADB" -s "$rdev" install -r -g "$apk" >/dev/null 2>&1; then
+      fail "REAL_DEVICE: adb install -g failed — skipping the rest of the lane"
     else
-      fail "REAL_DEVICE: no non-empty JPEG produced by the real camera [silence=fail]"
+      pass "REAL_DEVICE: installed with CAMERA pre-granted"
+      "$ADB" -s "$rdev" shell pm grant "$APP_ID" android.permission.CAMERA 2>/dev/null
+      # Ensure the screen is awake, unlocked, and stays on (a dozing/locked
+      # device silently swallows the taps below and the lane false-FAILs).
+      "$ADB" -s "$rdev" shell svc power stayon true 2>/dev/null
+      "$ADB" -s "$rdev" shell input keyevent KEYCODE_WAKEUP 2>/dev/null
+      "$ADB" -s "$rdev" shell wm dismiss-keyguard 2>/dev/null
+      # Clear any stale captures so the assertion proves THIS run (negative control).
+      "$ADB" -s "$rdev" shell "run-as $APP_ID find . -iname '*.jpg' -delete" 2>/dev/null
+      "$ADB" -s "$rdev" shell am force-stop "$APP_ID" 2>/dev/null
+      "$ADB" -s "$rdev" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+      "$ADB" -s "$rdev" shell sleep 7
+      size="$("$ADB" -s "$rdev" shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1)"
+      w="${size%x*}"; h="${size#*x}"
+      # Open Scan (extended FAB ~83% width, ~88.8% height — measured on SM-A166B,
+      # 1080x2340; the old ~93.5% height tapped below the FAB and missed), then
+      # the shutter (bottom-center ~50% width, ~86% height — see CameraPreviewView).
+      "$ADB" -s "$rdev" shell input tap "$(( w * 83 / 100 ))" "$(( h * 888 / 1000 ))" >/dev/null 2>&1
+      "$ADB" -s "$rdev" shell sleep 6   # camera init + warm-up
+      "$ADB" -s "$rdev" exec-out screencap -p > "$EVIDENCE_DIR/real-device-camera.png" 2>/dev/null
+      "$ADB" -s "$rdev" shell input tap "$(( w * 50 / 100 ))" "$(( h * 86 / 100 ))" >/dev/null 2>&1
+      "$ADB" -s "$rdev" shell sleep 4   # takePicture + write + nav to review
+      found="$("$ADB" -s "$rdev" shell "run-as $APP_ID find . -iname '*.jpg' -size +0c" 2>/dev/null | tr -d '\r')"
+      if [ -n "$found" ]; then
+        pass "REAL_DEVICE: real camera produced a non-empty JPEG ($found)"
+      else
+        fail "REAL_DEVICE: no non-empty JPEG produced by the real camera [silence=fail]"
+      fi
+      shot="$EVIDENCE_DIR/real-device-review.png"
+      "$ADB" -s "$rdev" exec-out screencap -p > "$shot" 2>/dev/null
+      echo "REAL_DEVICE: screenshots → $EVIDENCE_DIR/real-device-camera.png , $shot"
+      "$ADB" -s "$rdev" shell svc power stayon false 2>/dev/null
     fi
-    shot="$EVIDENCE_DIR/real-device-review.png"
-    "$ADB" -s "$rdev" exec-out screencap -p > "$shot" 2>/dev/null
-    echo "REAL_DEVICE: screenshot → $shot"
   fi
   echo "REAL_DEVICE (iOS): MANUAL — run the app on a physical iPhone, tap Scan →"
   echo "  Allow → shutter, and confirm the review screen shows the captured photo."
