@@ -58,4 +58,9 @@ void main() {
     expect(() => scrubber.scrub(Uint8List.fromList([0, 1, 2, 3])),
         throwsA(isA<MetadataScrubException>()));
   });
+
+  test('throws MetadataScrubException on a truncated JPEG (dangling 0xFF)', () {
+    expect(() => scrubber.scrub(Uint8List.fromList([0xFF, 0xD8, 0xFF])),
+        throwsA(isA<MetadataScrubException>()));
+  });
 }

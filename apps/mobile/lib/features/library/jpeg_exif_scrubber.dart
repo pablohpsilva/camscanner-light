@@ -26,6 +26,9 @@ class JpegExifScrubber implements ImageMetadataScrubber {
       if (bytes[i] != 0xFF) {
         throw const MetadataScrubException('corrupt JPEG (expected marker)');
       }
+      if (i + 1 >= bytes.length) {
+        throw const MetadataScrubException('truncated JPEG (dangling 0xFF)');
+      }
       final marker = bytes[i + 1];
       if (marker == 0xDA) {
         out.add(bytes.sublist(i)); // SOS + entropy data + EOI verbatim
