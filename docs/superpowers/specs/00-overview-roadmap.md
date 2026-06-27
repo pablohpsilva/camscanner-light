@@ -57,7 +57,7 @@ Each sub-project / feature gets its own design doc, then plan, then build.
 | # | Feature | Doc | Status |
 |---|---------|-----|--------|
 | 01 | Document scanning (capture) | `features/01-document-scanning.md` | Approved |
-| 02 | Document library & management | `features/02-document-library.md` | Next |
+| 02 | Document library & management | `features/02-document-library.md` | Approved |
 | 03 | Manual crop & perspective (corners + flatten) | `features/03-manual-crop-perspective.md` | Approved |
 | 04 | Auto edge detection | `features/04-auto-edge-detection.md` | Approved |
 | 05 | Scan enhancement (filters) | `features/05-scan-enhancement.md` | Approved |
