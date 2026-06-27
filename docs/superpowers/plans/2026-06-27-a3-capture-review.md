@@ -1101,15 +1101,15 @@ git commit -m "test(a3): BDD capture→review scenarios + a3 verify gate + real-
 
 Each is closed only by a passing test named beside it; the gate (`scripts/verify/a3.sh` → `GATE: PASS`, exit 0) is the binding check, reproduced by an independent verifier.
 
-- [ ] Tapping the shutter in the ready state captures one JPEG to a temp file — *unit: `scan_controller_capture_test`, `captured_image_test`*
-- [ ] The captured image is shown on a review screen with Retake and Accept — *widget: `capture_review_screen_test`, `camera_screen_capture_test`; BDD: shutter→review*
-- [ ] Retake returns to the live preview — *widget + BDD: Retake*
-- [ ] Accept returns to the Documents home (no save in A3) — *BDD: Accept*
-- [ ] A second shutter tap during capture is ignored (no double capture) — *unit: double-tap guard*
-- [ ] Capture failure is graceful (SnackBar, no crash, stays on preview) — *widget: failure SnackBar*
-- [ ] Disposing mid-capture never notifies after dispose — *unit: dispose-safe*
-- [ ] On-device widget tree asserted on Android + iOS — *BDD integration on both, mutation-checked*
-- [ ] (Opt-in) Real camera produces a real non-empty JPEG on Android hardware — *`REAL_DEVICE=1` lane*
+- [x] Tapping the shutter in the ready state captures one JPEG to a temp file — *unit: `scan_controller_capture_test`, `captured_image_test`* — verified (gate 15/15 + real hardware JPEG 187KB)
+- [x] The captured image is shown on a review screen with Retake and Accept — *widget: `capture_review_screen_test`, `camera_screen_capture_test`; BDD: shutter→review* — verified (BDD Android+iOS + hardware screenshot)
+- [x] Retake returns to the live preview — *widget + BDD: Retake* — verified (BDD Android+iOS)
+- [x] Accept returns to the Documents home (no save in A3) — *BDD: Accept* — verified (BDD Android+iOS + hardware: returned to "No documents yet")
+- [x] A second shutter tap during capture is ignored (no double capture) — *unit: double-tap guard* — verified
+- [x] Capture failure is graceful (SnackBar, no crash, stays on preview) — *widget: failure SnackBar* — verified
+- [x] Disposing mid-capture never notifies after dispose — *unit: dispose-safe* — verified
+- [x] On-device widget tree asserted on Android + iOS — *BDD integration on both, mutation-checked* — verified (15/15, mutation-checked non-vacuous)
+- [x] (Opt-in) Real camera produces a real non-empty JPEG on Android hardware — *`REAL_DEVICE=1` lane* — verified (REAL_DEVICE 17/17, `cache/CAP*.jpg` 187,655 bytes on physical SM-A166B)
 
 ## Known deferred gaps (surfaced, not hidden — per the "no done with open gaps" rule)
 
