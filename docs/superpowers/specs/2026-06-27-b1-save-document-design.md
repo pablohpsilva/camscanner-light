@@ -181,16 +181,31 @@ Orientation tag** (Flutter `Image.file` for the review/B3 viewer; later OCR and
 PDF export). Flutter has historically been inconsistent here, so this was
 de-risked **before** committing the approach:
 
-**On-device spike (2026-06-27) — PASSED.** On the project's physical Samsung
-SM-A166B with **Flutter 3.44.4 (stable)**, a probe JPEG carrying orientation in
-the **EXIF tag only** (Orientation=6, pixels not baked) rendered
-**pixel-identically** to a reference image baked into the upright layout — both
-`TL=BLUE TR=RED BL=YELLOW BR=GREEN`; the "ignored" layout did not occur.
-Conclusion: **Flutter honors EXIF Orientation** via the engine codec, which
-`Image.asset` and `Image.file` share — so kept-Orientation scans render upright
-on the review/B3 screens. (Same spike also confirmed this device's camera writes
-`Orientation = Rotated 90 CW` and leaks Make/Model/Software/DateTime — the strip
-is warranted.)
+**On-device spike (2026-06-27) — PASSED, with a decisive control.** On the
+project's physical Samsung SM-A166B with **Flutter 3.44.4 (stable)**, two JPEGs
+with **byte-identical scan data** differing **only** by the EXIF Orientation
+segment were rendered: the tagged one (Orientation=6) displayed the rotated
+layout (`TL=BLUE`), the tag-stripped one displayed the raw layout (`TL=RED`).
+Because the only difference is the tag, this isolates it as the cause:
+**Flutter honors EXIF Orientation** via the engine codec, which `Image.asset` and
+`Image.file` share — so kept-Orientation scans render upright on the review/B3
+screens. (An earlier probe-vs-baked-reference comparison was *insufficient* — it
+couldn't rule out the pixels being pre-rotated; the tag-only control resolves it.)
+The spike also confirmed this device's camera writes `Orientation = Rotated 90 CW`
+and leaks Make/Model/Software/DateTime, and **independently validated the
+byte-level lossless APP1 strip** (the stripped file rendered as clean raw pixels —
+scan data intact).
+
+**Implementation constraint discovered (binding for the plan).** `package:image`'s
+`decodeJpg` **auto-orients and discards the Orientation tag** on decode. Therefore:
+- `JpegExifScrubber` MUST operate at the **JPEG byte/segment level** (drop/rebuild
+  APPn segments on the raw bytes, as the validated prototype does). It must **not**
+  decode→re-encode via `package:image` — that silently becomes the *bake* path and
+  drops the tag.
+- Tests asserting "Orientation preserved" must read EXIF with the **`exif`**
+  package (which parses tags without auto-orienting); tests asserting "image data
+  unchanged" must compare the **raw scan-segment bytes**. Neither may go through
+  `package:image` decode, which would auto-orient and mislead.
 
 Remaining plan items (now low risk):
 - The scrubber's emitted Exif APP1 must be **valid TIFF** (a malformed block is
