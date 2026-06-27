@@ -56,3 +56,15 @@ For each acceptance criterion, add one assert that:
 
 If a criterion genuinely cannot be machine-checked, that is itself a finding —
 make the script print it as a FAIL with the reason, never a silent skip.
+
+## Known limitations / future hardening
+
+Surfaced by the independent verifier (neither caused a false pass; defense-in-depth):
+
+1. **Patch checks should exercise the code path, not just grep for a string.**
+   `step-0.sh` greps for the shim text as a proxy; a partially-applied patch could
+   pass the grep. Mitigated today by the runtime `nx show project` assert. Prefer
+   a check that runs the patched path.
+2. **Process/running checks should match the exact identifier, not a substring.**
+   The iOS check greps `launchctl list` for `camscannerlight`; match the full
+   bundle id `com.camscannerlight.mobile` to avoid a theoretical false positive.
