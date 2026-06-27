@@ -119,13 +119,39 @@ by `bdd_widget_test` + `build_runner` (version 2.1.4+).
    "On-device UI" above); the screenshot is corroborating only. (`gfxinfo "Total
    frames rendered"` does not track Flutter/Impeller, so it must not be used as a
    render signal — it was removed.)
-4. **`verify_integration` retry can false-FAIL on a transient `[E]` infra error.**
-   The retry guard only retries when the log does NOT contain `[E]`, to avoid ever
-   retrying a real assertion failure. But some transient infra errors (e.g. `adb:
-   device offline`, `registerService: Service connection disposed`) can also emit
-   `[E]`, so they are NOT retried and surface as a gate FAIL. This is **fail-safe**
-   — it can only cause a false FAIL (re-run resolves it), never a false PASS — so
-   the conservative guard is kept intentionally. Multi-test-per-platform evidence
-   logs are now written per `(platform, test-file)` so runs no longer overwrite
-   each other (rule 8). Future hardening: distinguish infra `[E]` lines (match the
-   specific infra strings) from test `[E]` lines before deciding to retry.
+4. **`verify_integration` infra-vs-real retry — RESOLVED.** Retry is now decided
+   by `_is_infra_only_failure`: a failure is retried only when the log shows a
+   build/load/connection problem AND contains **no** `TestFailure` /
+   `EXCEPTION CAUGHT BY FLUTTER TEST` (the reliable marker of a real assertion
+   failure) — NOT by the `[E]` marker, which transient infra errors also print.
+   On a `device offline` infra failure the helper first runs `_android_recover`
+   (reconnect, else cold-boot) before retrying (up to 3 attempts). This still
+   never retries a real assertion failure. Multi-test-per-platform evidence logs
+   are written per `(platform, test-file)` so runs no longer overwrite each other
+   (rule 8).
+5. **Real-plugin RUNTIME tests cannot be gated via `flutter test`.** A test that
+   drives the REAL `permission_handler` / `camera` plugins at runtime cannot pass
+   under `flutter test`: the real permission request raises the OS permission
+   dialog (Android `GrantPermissionsActivity`; iOS the system alert), which the
+   `integration_test` driver cannot tap, and `flutter test`'s install→run→
+   **uninstall** lifecycle leaves no window to pre-grant (a pre-grant is wiped by
+   the next run's fresh install). On Android the camera2 API additionally requires
+   the OS runtime CAMERA grant, so a real preview can never render there. The gate
+   therefore exercises the real plugins only by **compiling + linking** them into
+   every on-device build (the BDD device builds), and asserts behavior via the
+   `ScanDependencies` fake-injection seam (deterministic, dialog-free). The real
+   *runtime* camera/preview is verified **manually** via
+   `apps/mobile/tool/manual_real_camera_check.sh`, which installs the APK with
+   `adb install -g` (grants CAMERA at install, bypassing the dialog) and launches
+   the app for visual inspection. A fully-automated real-plugin gate would require
+   native UIAutomator/Espresso instrumentation (outside Flutter's
+   `integration_test`) — deferred as future hardening.
+
+   **Planned (A3+): opt-in real-device smoke lane.** When physical devices are
+   connected, an opt-in lane (`REAL_DEVICE=1`) will run the real-plugin paths on
+   hardware — Android pre-granted via `adb pm grant` for a real-camera gate; iOS
+   real camera as a manual "Allow once" observed check (no simulator camera
+   exists). It stays SEPARATE from the always-on fast gate (unit + widget +
+   BDD-with-fakes) and runs pre-release / on demand, not per-commit. Its payoff
+   begins at **A3 (capture → image)** where real image bytes, file I/O, and
+   rendering matter — so it is wired in then, not at A2 (preview-only).

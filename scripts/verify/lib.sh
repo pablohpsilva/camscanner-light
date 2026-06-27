@@ -240,6 +240,17 @@ _android_recover() {
   "$ADB" devices | grep -qE "^${dev}[[:space:]]+device$" || _android_cold_boot "$dev"
 }
 
+# Kill orphaned Dart Development Service / frontend_server daemons left behind by
+# previous (especially killed) `flutter test` runs. These accumulate and block
+# new DDS from starting ("Failed to start Dart Development Service" / device goes
+# offline) — the real cause of this environment's "emulator instability". Safe in
+# the sequential gate: no other flutter session is active between runs.
+_kill_stale_dds() {
+  pkill -9 -f "dart development-service" >/dev/null 2>&1
+  pkill -9 -f "flutter_tools.snapshot.*frontend_server" >/dev/null 2>&1
+  return 0
+}
+
 # verify_integration <label> <device-id> <test-file-under-integration_test/>
 verify_integration() {
   local label="$1" dev="$2" tf="$3"
@@ -249,6 +260,7 @@ verify_integration() {
   local attempt=0 max=3
   while [ "$attempt" -lt "$max" ]; do
     attempt=$((attempt + 1))
+    _kill_stale_dds  # clean DDS slate so this run can start its own service
     ( cd "$ROOT/apps/mobile" && flutter test "integration_test/$tf" -d "$dev" >"$log" 2>&1 )
     if grep -qF "All tests passed!" "$log"; then
       pass "$label: on-device integration test asserts UI ($tf)"
@@ -271,22 +283,6 @@ verify_integration_android() {
   local tf="$1" dev; dev="$(_ensure_android)"
   [ -z "$dev" ] && { fail "android: no emulator for integration test"; return 1; }
   verify_integration android "$dev" "$tf"
-}
-
-# Exercises the REAL camera/permission path. Cold-boots a FRESH emulator first
-# (option 1) so cumulative gate load can't starve the camera HAL, then installs
-# the app and grants CAMERA. NOTE on the grant: `flutter test` does an *update*
-# install of the same-signed APK, which PRESERVES already-granted runtime
-# permissions — so granting after `flutter install` (before the test) survives
-# into the test run.
-verify_integration_android_real() {
-  local tf="$1" dev
-  dev="$(_ensure_android)"; [ -z "$dev" ] && { fail "android(real): no emulator"; return 1; }
-  _android_cold_boot "$dev"
-  dev="$(_ensure_android)"; [ -z "$dev" ] && { fail "android(real): no emulator after cold boot"; return 1; }
-  ( cd "$ROOT/apps/mobile" && flutter install -d "$dev" >/dev/null 2>&1 )
-  "$ADB" -s "$dev" shell pm grant "$APP_ID" android.permission.CAMERA 2>/dev/null
-  verify_integration "android-real" "$dev" "$tf"
 }
 
 verify_integration_ios() {
