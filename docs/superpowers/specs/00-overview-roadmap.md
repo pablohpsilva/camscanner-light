@@ -48,6 +48,13 @@ If any of 1–6 is unmet, the work is **not done**. Each feature's "Acceptance
 criteria" section is the checklist; each item is closed only by a passing,
 double-checked test. This gate is referenced by every feature spec.
 
+**Progression gate (binding):** work proceeds **one step at a time**. We do
+**not** start the next step until the current step's acceptance criteria are all
+developed, tested, fulfilled, and **working** (observed green + double-checked).
+Each step has its **own implementation plan file** (`../plans/`, see
+`00-plans-index.md`), and code is split across **multiple focused,
+single-responsibility files** (SOLID) — never one large file.
+
 **Required spec format (every design doc):** each spec MUST contain a
 **`Deliverable (user-testable)`** section — a concrete artifact the user can
 exercise plus *how* to test it by hand — and an **`Acceptance criteria`** section
