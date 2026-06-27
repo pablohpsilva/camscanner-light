@@ -116,9 +116,15 @@ verify_android_run() {
     sleep 5; t=$((t + 5))
   done
   if [ "$launched" -eq 1 ]; then
-    sleep 6  # let Flutter paint its first frame (past the native splash) before capturing evidence
+    # The gate PASSES on the resumed-activity signal above. The screenshot is
+    # CORROBORATING evidence only — give Flutter time to paint past the native
+    # splash. NOTE: `gfxinfo "Total frames rendered"` does NOT track
+    # Flutter/Impeller, so a frame-count poll is useless here; a fixed settle is
+    # the honest option. The AUTHORITATIVE on-device UI proof is the widget test
+    # now and an integration_test later (see VERIFICATION.md known-limitation 3).
+    sleep 12
     "$ADB" -s "$dev" exec-out screencap -p >"$EVIDENCE_DIR/android-nx-run.png" 2>/dev/null
-    pass "android: \`nx run mobile:run\` launched app (device shows it RESUMED after force-stop negative control; screenshot android-nx-run.png)"
+    pass "android: \`nx run mobile:run\` launched app (RESUMED after force-stop negative control; screenshot android-nx-run.png is corroborating only)"
   else
     fail "android: app never became the resumed activity [silence=fail] (see $log)"
   fi

@@ -85,3 +85,12 @@ tool's stdout, where the tool is flaky:
 2. **Back-to-back device runs** can still degrade the emulator (port/DDS
    exhaustion). Give a cooldown between full script runs; the per-platform
    signals above tolerate a single degraded run, but a fresh device is best.
+3. **Screenshots are not programmatically validated.** The gate captures a
+   screenshot for human inspection but does not assert its *contents*, so a
+   splash and the real UI are equally invisible to the gate logic. The Android
+   capture now waits for painted frames (`dumpsys gfxinfo … Total frames
+   rendered ≥ 5`) instead of a fixed sleep, so the evidence is trustworthy — but
+   the **proper fix is an on-device integration test** (`integration_test`) that
+   pumps the real app and asserts the rendered widgets. Add that as the harness
+   matures; until then the in-process widget tests are the authoritative UI proof
+   and the screenshots are corroborating evidence.
