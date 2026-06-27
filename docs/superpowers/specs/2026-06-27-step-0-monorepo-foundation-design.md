@@ -103,10 +103,10 @@ crashing, then running `nx run mobile:analyze` and seeing no errors.
 
 ## Acceptance criteria (each closed only by a passing test)
 
-- [ ] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *manual run on both targets, output shown*
-- [ ] The launched app shows a blank/placeholder screen — *manual observation / screenshot*
-- [ ] `nx run mobile:analyze` passes with no errors — *command output*
-- [ ] Repo is a git repo with a proper `.gitignore` and the workspace committed — *`git status` / `git log`*
+- [ ] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *manual run on both targets, output shown* (pending: controller to verify on devices)
+- [ ] The launched app shows a blank/placeholder screen — *manual observation / screenshot* (pending: controller to verify on devices)
+- [x] `nx run mobile:analyze` passes with no errors — *observed: "No issues found! (ran in 5.7s)" — 2026-06-27*
+- [x] Repo is a git repo with a proper `.gitignore` and the workspace committed — *observed: clean working tree after 3 commits — 2026-06-27*
 
 ## Risks / notes
 
