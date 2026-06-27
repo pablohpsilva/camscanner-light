@@ -17,3 +17,6 @@ apps/mobile/.flutter-plugins-dependencies
 .DS_Store
 .idea/
 .vscode/
+
+# Superpowers SDD scratch
+.superpowers/
