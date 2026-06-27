@@ -30,6 +30,15 @@ Android, and Web** (mobile-first; Web later).
   are selectable/searchable. OCR arrives in Feature 08; PDF export (Feature 07)
   is designed with a **pluggable text layer** so searchable PDFs become the
   default with no rework. This raises the bar on capture quality.
+- **Metadata scrubbing (security/privacy), always-on:** every file we write —
+  exported/captured images and generated PDFs — must have personal/identifying
+  metadata stripped. Images: remove EXIF (GPS, device make/model/serial,
+  timestamps, software tags). PDFs: remove author, creator, producer, and
+  device/creation metadata. Implemented as a single shared, testable metadata
+  scrubber (DRY) that every export path passes through. Designed in Feature 07.
+- **PDF password protection (optional):** users can encrypt a generated PDF with
+  a password (standard PDF encryption, AES-256). Offered at export (Feature 07)
+  and on existing PDFs (Feature 09). User-managed — no recovery if forgotten.
 
 ## Decomposition (sub-projects)
 
@@ -52,8 +61,8 @@ Each sub-project / feature gets its own design doc, then plan, then build.
 | 03 | Manual crop & perspective (corners + flatten) | `features/03-manual-crop-perspective.md` | Approved |
 | 04 | Auto edge detection | `features/04-auto-edge-detection.md` | Approved |
 | 05 | Scan enhancement (filters) | `features/05-scan-enhancement.md` | Approved |
-| 06 | Multi-page documents | `features/06-multi-page-documents.md` | Next |
-| 07 | PDF export | `features/07-pdf-export.md` | Pending |
+| 06 | Multi-page documents | `features/06-multi-page-documents.md` | Approved |
+| 07 | PDF export | `features/07-pdf-export.md` | Next |
 | 08 | OCR / text extraction | `features/08-ocr-text-extraction.md` | Pending |
 | 09 | PDF editing | `features/09-pdf-editing.md` | Pending |
 | 10 | PDF conversion | `features/10-pdf-conversion.md` | Pending |
