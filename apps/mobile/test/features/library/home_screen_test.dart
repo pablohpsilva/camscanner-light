@@ -66,4 +66,22 @@ void main() {
     expect(find.byKey(const Key('documents-error')), findsOneWidget);
     expect(find.byKey(const Key('documents-retry')), findsOneWidget);
   });
+
+  testWidgets('tapping a document opens the page viewer', (tester) async {
+    final repo = FakeDocumentRepository(documents: [
+      Document(
+          id: 1,
+          name: 'Scan 2026-06-27 20.26.42',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42)),
+    ]);
+    await pumpHome(tester, repo);
+
+    await tester.tap(find.byKey(const Key('document-tile-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('page-viewer-delete')), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Scan 2026-06-27 20.26.42'),
+        findsOneWidget);
+  });
 }

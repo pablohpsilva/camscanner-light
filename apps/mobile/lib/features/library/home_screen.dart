@@ -5,6 +5,7 @@ import '../scan/scan_dependencies.dart';
 import 'document_repository.dart';
 import 'document_summary.dart';
 import 'library_dependencies.dart';
+import 'page_viewer_screen.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
 
@@ -93,6 +94,21 @@ class _HomeScreenState extends State<HomeScreen> {
     await _load(); // a save may have happened while we were away
   }
 
+  Future<void> _openDocument(DocumentSummary s) async {
+    final repo = _repository;
+    if (repo == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PageViewerScreen(
+          documentId: s.document.id,
+          name: s.document.name,
+          repository: repo,
+        ),
+      ),
+    );
+    await _load(); // a delete may have happened in the viewer
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,7 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ? _buildError()
               : _summaries.isEmpty
                   ? const EmptyDocumentsView()
-                  : DocumentsListView(summaries: _summaries),
+                  : DocumentsListView(
+                      summaries: _summaries, onOpen: _openDocument),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _repository == null ? null : _openScan,
         icon: const Icon(Icons.document_scanner_outlined),

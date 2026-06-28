@@ -37,4 +37,21 @@ void main() {
     expect(find.textContaining('· 1 page'), findsOneWidget);
     expect(find.textContaining('· 3 pages'), findsOneWidget);
   });
+
+  testWidgets('tapping a tile invokes onOpen with that summary', (tester) async {
+    DocumentSummary? opened;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(
+          summaries: [summary(1), summary(2, pageCount: 3)],
+          onOpen: (s) => opened = s,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('document-tile-2')));
+    expect(opened, isNotNull);
+    expect(opened!.document.id, 2);
+  });
 }

@@ -7,7 +7,8 @@ import 'document_thumbnail.dart';
 /// first (the repository orders the list).
 class DocumentsListView extends StatelessWidget {
   final List<DocumentSummary> summaries;
-  const DocumentsListView({super.key, required this.summaries});
+  final ValueChanged<DocumentSummary>? onOpen;
+  const DocumentsListView({super.key, required this.summaries, this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +25,7 @@ class DocumentsListView extends StatelessWidget {
           title: Text(d.name),
           subtitle: Text(
               '${_formatLocal(d.createdAt.toLocal())} · ${_pages(s.pageCount)}'),
+          onTap: onOpen == null ? null : () => onOpen!(s),
         );
       },
     );
