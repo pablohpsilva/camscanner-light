@@ -1,0 +1,41 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+
+/// A small, upright document thumbnail. Renders the stored JPEG via [Image.file]
+/// with [cacheWidth] so the codec downsamples at decode (low memory). The stored
+/// file keeps its EXIF Orientation tag, which Flutter honors — so it shows
+/// upright with no re-encode. A null or unreadable path degrades to a neutral
+/// placeholder (never a crash, never a host-test hang).
+class DocumentThumbnail extends StatelessWidget {
+  final String? path;
+  final double size;
+  const DocumentThumbnail({super.key, required this.path, this.size = 48});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final placeholder = Container(
+      width: size,
+      height: size,
+      color: scheme.surfaceContainerHighest,
+      child: Icon(Icons.description_outlined, color: scheme.onSurfaceVariant),
+    );
+
+    final path = this.path;
+    if (path == null) return placeholder;
+
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Image.file(
+        File(path),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        cacheWidth: (size * dpr).round(),
+        errorBuilder: (context, error, stack) => placeholder,
+      ),
+    );
+  }
+}
