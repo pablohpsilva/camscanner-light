@@ -201,16 +201,7 @@ Add the method (alongside the other overrides):
   }
 ```
 
-(`deleteDocument` is added in Task 2; until then the fake will not satisfy the interface. To keep Task 1 compiling on its own, also add the minimal override now — it is fully specified in Task 2 Step 5 and identical:)
-
-```dart
-  @override
-  Future<void> deleteDocument(int documentId) async {
-    if (throwOnDelete) throw StateError('fake: delete failed');
-    deletedIds.add(documentId);
-    documents.removeWhere((d) => d.id == documentId);
-  }
-```
+Do **not** add `deleteDocument` to the fake in this task: the interface does not declare it until Task 2, so an `@override` here would annotate a non-overriding member and fail `flutter analyze` (Step 8). The `throwOnDelete` and `deletedIds` fields added above are public, so they raise no unused-field warning while they sit idle until Task 2.
 
 - [ ] **Step 7: Run the tests to verify they pass**
 
@@ -240,9 +231,8 @@ git commit -m "feat(b3): PageImage read model + getDocumentPages (position-asc, 
 **Files:**
 - Modify: `apps/mobile/lib/features/library/document_repository.dart`
 - Modify: `apps/mobile/lib/features/library/drift/drift_document_repository.dart`
+- Modify: `apps/mobile/test/support/fake_library.dart` (add the `deleteDocument` override — fields exist from Task 1)
 - Test: `apps/mobile/test/features/library/drift_document_repository_test.dart`
-
-(The fake's `deleteDocument` was already added in Task 1 Step 6.)
 
 **Interfaces:**
 - Consumes (existing): `DocumentFileStore.deleteDocumentDir(int docId) → Future<void>` (guards `if (await dir.exists())`); `_db.transaction(...)`, `_db.delete(table)`.
@@ -346,9 +336,9 @@ In `apps/mobile/lib/features/library/drift/drift_document_repository.dart`, add 
   }
 ```
 
-- [ ] **Step 5: Confirm the fake override exists**
+- [ ] **Step 5: Add the fake override**
 
-Verify `apps/mobile/test/support/fake_library.dart` contains the `deleteDocument` override added in Task 1 Step 6 (idempotent — do not duplicate it):
+In `apps/mobile/test/support/fake_library.dart`, add the `deleteDocument` override (the `throwOnDelete` and `deletedIds` fields already exist from Task 1; add the method alongside the other overrides):
 
 ```dart
   @override
@@ -374,6 +364,7 @@ Expected: `No issues found!`
 ```bash
 git add apps/mobile/lib/features/library/document_repository.dart \
         apps/mobile/lib/features/library/drift/drift_document_repository.dart \
+        apps/mobile/test/support/fake_library.dart \
         apps/mobile/test/features/library/drift_document_repository_test.dart
 git commit -m "feat(b3): deleteDocument — row-first transactional delete + durable across reopen"
 ```
@@ -517,7 +508,7 @@ void main() {
     await tester.tap(find.byKey(const Key('page-viewer-delete')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-confirm')));
-    await tester.pump(); // let the SnackBar appear
+    await tester.pumpAndSettle(); // drive the async throw -> catch -> SnackBar
 
     expect(find.text("Couldn't delete"), findsOneWidget);
     expect(find.byType(PageViewerScreen), findsOneWidget);
