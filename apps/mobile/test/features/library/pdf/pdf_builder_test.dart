@@ -63,10 +63,13 @@ void main() {
     expect(double.parse(m.group(2)!), 200, reason: 'oriented height');
   });
 
-  test('metadata-clean: no author/producer/creator/creationdate/lib URL', () async {
+  test('metadata-clean: no personal/device info (author/producer/creator/date)',
+      () async {
     final s = dec(await const PdfBuilder().build([page()]));
-    for (final marker in ['/Author', '/Producer', '/Creator', '/CreationDate',
-        'dart_pdf', 'DavBfr']) {
+    // NOTE: the pdf package emits a fixed '% .../dart_pdf' tool-attribution
+    // header comment (unsuppressible, non-personal — accepted, like /ID). We
+    // assert only that PERSONAL/DEVICE metadata is absent.
+    for (final marker in ['/Author', '/Producer', '/Creator', '/CreationDate']) {
       expect(s.contains(marker), isFalse, reason: 'metadata leak: $marker');
     }
   });

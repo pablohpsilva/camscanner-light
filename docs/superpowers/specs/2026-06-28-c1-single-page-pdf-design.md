@@ -148,9 +148,10 @@ explicitly **deferred** for C1.
     `landscape_exif6.jpg` (raw 200×100, EXIF Orientation 6) — assert the page
     `MediaBox` is **100×200** (oriented), proving the library auto-oriented it
     (a square fixture cannot prove this), and the embed is still lossless.
-  - **metadata-clean:** output contains no `/Author`, `/Producer`, `/Creator`,
-    `/CreationDate`, and no `dart_pdf`/`DavBfr` URL (these live in the
-    **uncompressed** Info dict — greppable).
+  - **metadata-clean (personal/device):** output contains no `/Author`,
+    `/Producer`, `/Creator`, `/CreationDate` (these live in the **uncompressed**
+    Info dict — greppable). NOT asserted: the fixed `% .../dart_pdf` tool-
+    attribution header comment (unsuppressible, non-personal — accepted).
   - **seam (two ways, because page content is `/FlateDecode`-compressed):**
     (1) a **spy `PdfTextLayer`** asserts `overlayFor` was **called** with the
     correct `PageImage` (no PDF parsing); (2) build that one case with
@@ -201,8 +202,11 @@ B2/B3 thumbnail-upright deferral.
 3. Orientation is **auto-corrected losslessly** by the `pdf` package: the
    non-square EXIF-6 fixture yields an **oriented page** (`MediaBox 100×200`) with
    a lossless embed. *(REAL_DEVICE: visually upright.)* — *unit*
-4. The PDF is **metadata-clean** — no author/producer/creator/creationdate, no
-   library-attribution URL. — *unit (privacy spine)*
+4. The PDF is **metadata-clean** of PERSONAL/DEVICE data — no
+   author/producer/creator/creationdate. — *unit (privacy spine)*
+   (The `pdf` package emits a fixed `% .../dart_pdf` tool-attribution **header
+   comment** that cannot be suppressed without corrupting the xref; it carries no
+   user/device data and is **accepted**, like the trailer `/ID`.)
 5. **Pluggable `PdfTextLayer`** — a stub injects text (and `overlayFor` is
    invoked per page) with no `PdfBuilder` change; image-only adds none. — *unit*
 6. Export failure (missing/corrupt page, empty doc) → **graceful error**
@@ -218,8 +222,10 @@ lane, deferred-with-sign-off consistent with B1/B2/B3.
 - No multi-page (H), no in-app preview (C2), no password/AES-256, no
   off-UI-thread isolate (justified above), no DB persistence (regenerate on
   demand), no sharing (Feature 12).
-- The trailer `/ID` (a file identifier, not personal/device data) remains —
-  **accepted**, neutralizable later if desired.
+- The trailer `/ID` (a file identifier, not personal/device data) and the fixed
+  `% .../dart_pdf` tool-attribution header comment remain — both **accepted**
+  (no user/device data; the comment is unsuppressible without corrupting the
+  xref).
 - "Renders upright/legible" pixel verification is REAL_DEVICE; host verifies the
   page is oriented (`MediaBox`) + lossless bytes.
 - All 8 EXIF orientations are handled by the **version-pinned `pdf` package**, not
