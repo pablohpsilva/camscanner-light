@@ -60,11 +60,32 @@ DocumentRepository.listDocumentSummaries() : Future<List<DocumentSummary>>
 - Newest-first (order by `createdAt` desc), same ordering guarantee as B1.
 - Computed with **grouped / aggregate Drift queries — no N+1**. Concretely: one
   grouped query joining `Documents` ⟕ `Pages` for the per-document `COUNT`, and
-  one query selecting position-1 page paths keyed by `documentId`; zip in Dart.
-  (Exact Drift code is the plan's job.)
-- **Replaces** `listDocuments()`. B1's only caller is `HomeScreen` (+ tests /
-  `FakeDocumentRepository` / BDD steps), so the dead method is removed (YAGNI);
-  callers, the fake, and the BDD steps update to the summary read.
+  one query selecting the **lowest-`position`** page path per `documentId`
+  (`MIN(position)` — not literally `position == 1`, so it stays correct if a
+  future multi-page document loses page 1); zip in Dart. (Exact Drift code is the
+  plan's job.)
+- **Replaces** `listDocuments()`. The exact migration surface (every caller and
+  test) is:
+  - `lib/.../document_repository.dart` — interface method
+  - `lib/.../drift/drift_document_repository.dart` — implementation
+  - `lib/.../home_screen.dart:60` — the only production caller
+  - `test/.../drift_document_repository_test.dart:65,84` — repository test
+  - `test/support/fake_library.dart:48` — the fake (see below)
+  The dead `listDocuments()` is removed (YAGNI).
+
+### No schema change / no migration
+
+Page count and thumbnail path are **derived at read time** (aggregate + join) —
+**no new columns**. `schemaVersion` stays **1**; no migration step is added.
+This bounds B2's storage risk: the on-disk format is unchanged from B1.
+
+### Fake repository shape (host tests)
+
+`FakeDocumentRepository` currently builds a `Document` in `createFromCapture` but
+**never creates a page row**. When it moves to `listDocumentSummaries()` it must
+**synthesize**, per document: `pageCount: 1` and a **non-loadable**
+`thumbnailPath` (e.g. an obviously-missing path) — so host widget tests render
+the placeholder via `errorBuilder` instead of hanging on a real `Image.file`.
 
 ### DIP / responsibility boundaries
 
@@ -139,6 +160,20 @@ actually destroys:
   capture flow, **tear down and re-pump a fresh app widget tree** pointed at the
   **same file**, assert the saved document appears on the home list with its
   page-count text.
+
+  > **Why the existing helper can't be reused.** `tempLibraryDependencies()`
+  > (`fake_library.dart:63`) constructs **`NativeDatabase.memory()`** *and* a
+  > fresh `createTemp('b1bdd')` dir **inside the factory closure** — so each
+  > `createRepository()` call yields a *new empty* DB and a *new empty*
+  > documents dir; a re-pump gets a clean slate and nothing persists. Tier 2
+  > therefore needs a **new** helper (e.g. `persistentLibraryDependencies(dbFile,
+  > baseDir)`) that captures **both** a **file-backed** `NativeDatabase(dbFile)`
+  > at a **stable path** **and** a **stable `DocumentFileStore` baseDir**
+  > *outside* the factory, and reuses both across re-pumps. The DB file alone is
+  > insufficient: if the documents dir also rotates, the page file written on the
+  > first pump is orphaned and every thumbnail resolves to "missing".
+  > `tempLibraryDependencies()` stays as-is for the existing (memory) success
+  > scenario; Tier 2 is a **new** scenario.
 - **Tier 3 (REAL_DEVICE, deferred-with-sign-off, like B1):** `adb shell am
   force-stop com.camscannerlight.mobile` (or swipe-away) then relaunch on the
   SM-A166B; the document shows with an **upright** thumbnail. Carries the two
