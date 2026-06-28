@@ -95,4 +95,89 @@ void main() {
         reason: 'transaction must roll the row back');
     expect(Directory('${base.path}/documents').existsSync(), isFalse);
   });
+
+  test('listDocumentSummaries reports page count and first-page path',
+      () async {
+    final doc = await repo().createFromCapture(capture);
+    // Add a second page directly (multi-page capture is not built yet).
+    await db.into(db.pages).insert(PagesCompanion.insert(
+        documentId: doc.id,
+        position: 2,
+        relativeImagePath: 'documents/${doc.id}/page_2.jpg'));
+
+    final summaries = await repo().listDocumentSummaries();
+    expect(summaries, hasLength(1));
+    expect(summaries.single.document.id, doc.id);
+    expect(summaries.single.pageCount, 2);
+    expect(summaries.single.thumbnailPath, startsWith(base.path));
+    expect(summaries.single.thumbnailPath,
+        endsWith('documents/${doc.id}/page_1.jpg'),
+        reason: 'first page is MIN(position) = position 1');
+  });
+
+  test('listDocumentSummaries returns newest first', () async {
+    final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+    void seedSource() => File(capture.path).writeAsBytesSync(fixture);
+
+    var t = DateTime.utc(2026, 6, 27, 10);
+    final r = DriftDocumentRepository(
+      db: db,
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(base),
+      clock: () => t,
+    );
+    seedSource();
+    await r.createFromCapture(capture);
+    t = DateTime.utc(2026, 6, 27, 12);
+    seedSource();
+    await r.createFromCapture(capture);
+
+    final s = await r.listDocumentSummaries();
+    expect(s, hasLength(2));
+    expect(s.first.document.createdAt.isAfter(s.last.document.createdAt), isTrue);
+  });
+
+  test('a document with no page yields pageCount 0 and a null thumbnail',
+      () async {
+    await db.into(db.documents).insert(DocumentsCompanion.insert(
+        name: 'orphan',
+        createdAt: DateTime.utc(2026, 1, 1),
+        modifiedAt: DateTime.utc(2026, 1, 1)));
+    final s = await repo().listDocumentSummaries();
+    expect(s.single.pageCount, 0);
+    expect(s.single.thumbnailPath, isNull);
+  });
+
+  test('Tier 1: documents persist across a DB close/reopen on disk', () async {
+    final dir = Directory.systemTemp.createTempSync('b2persist');
+    final dbFile = File('${dir.path}/camscanner.sqlite');
+    final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+    final src = File('${dir.path}/cap.jpg')..writeAsBytesSync(fixture);
+
+    final db1 = AppDatabase(NativeDatabase(dbFile));
+    final repo1 = DriftDocumentRepository(
+      db: db1,
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(dir),
+      clock: () => DateTime.utc(2026, 6, 27, 9),
+    );
+    final saved = await repo1.createFromCapture(CapturedImage(src.path));
+    await db1.close();
+
+    final db2 = AppDatabase(NativeDatabase(dbFile));
+    final repo2 = DriftDocumentRepository(
+      db: db2,
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(dir),
+      clock: () => DateTime.utc(2026, 6, 27, 9),
+    );
+    final summaries = await repo2.listDocumentSummaries();
+    await db2.close();
+    dir.deleteSync(recursive: true);
+
+    expect(summaries, hasLength(1));
+    expect(summaries.single.document.id, saved.id);
+    expect(summaries.single.pageCount, 1);
+    expect(summaries.single.thumbnailPath, endsWith('page_1.jpg'));
+  });
 }

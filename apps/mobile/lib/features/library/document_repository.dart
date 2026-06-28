@@ -1,5 +1,6 @@
 import '../scan/captured_image.dart';
 import 'document.dart';
+import 'document_summary.dart';
 
 /// The only persistence surface the widget layer knows (DIP). The Drift
 /// implementation hides the DB, scrubber, file store, and clock.
@@ -10,6 +11,10 @@ abstract interface class DocumentRepository {
 
   /// All documents, newest first.
   Future<List<Document>> listDocuments();
+
+  /// All documents (newest first) with page count and first-page thumbnail path
+  /// (absolute, resolved at read time; null when the document has no page).
+  Future<List<DocumentSummary>> listDocumentSummaries();
 }
 
 class DocumentSaveException implements Exception {

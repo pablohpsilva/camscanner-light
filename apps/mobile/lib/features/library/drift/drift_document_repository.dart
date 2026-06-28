@@ -6,6 +6,7 @@ import '../../scan/captured_image.dart';
 import '../document.dart';
 import '../document_file_store.dart';
 import '../document_repository.dart';
+import '../document_summary.dart';
 import '../image_metadata_scrubber.dart';
 import 'app_database.dart' hide Document;
 
@@ -77,6 +78,42 @@ class DriftDocumentRepository implements DocumentRepository {
             createdAt: r.createdAt,
             modifiedAt: r.modifiedAt))
         .toList();
+  }
+
+  @override
+  Future<List<DocumentSummary>> listDocumentSummaries() async {
+    // (1) page count per document, newest doc first — one grouped query.
+    final pageCount = _db.pages.id.count();
+    final query = _db.select(_db.documents).join([
+      leftOuterJoin(_db.pages, _db.pages.documentId.equalsExp(_db.documents.id)),
+    ])
+      ..addColumns([pageCount])
+      ..groupBy([_db.documents.id])
+      ..orderBy([OrderingTerm.desc(_db.documents.createdAt)]);
+    final rows = await query.get();
+
+    // (2) lowest-position page path per document — one query, no N+1.
+    final pages = await (_db.select(_db.pages)
+          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+        .get();
+    final firstPathByDoc = <int, String>{};
+    for (final pg in pages) {
+      firstPathByDoc.putIfAbsent(pg.documentId, () => pg.relativeImagePath);
+    }
+
+    return rows.map((row) {
+      final d = row.readTable(_db.documents);
+      final rel = firstPathByDoc[d.id];
+      return DocumentSummary(
+        document: Document(
+            id: d.id,
+            name: d.name,
+            createdAt: d.createdAt,
+            modifiedAt: d.modifiedAt),
+        pageCount: row.read(pageCount) ?? 0,
+        thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
+      );
+    }).toList();
   }
 
   String _defaultName(DateTime t) {

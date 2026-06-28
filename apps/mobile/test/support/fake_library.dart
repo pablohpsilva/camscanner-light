@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
+import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
@@ -50,6 +51,20 @@ class FakeDocumentRepository implements DocumentRepository {
       throw StateError('fake: list failed');
     }
     return List<Document>.unmodifiable(documents);
+  }
+
+  @override
+  Future<List<DocumentSummary>> listDocumentSummaries() async {
+    if (throwOnList) {
+      throw StateError('fake: list failed');
+    }
+    // Synthesize: every fake document has one page and a deliberately
+    // NON-LOADABLE thumbnail path (host tests must not load a real Image.file).
+    return List<DocumentSummary>.unmodifiable(documents.map((d) =>
+        DocumentSummary(
+            document: d,
+            pageCount: 1,
+            thumbnailPath: '/nonexistent/thumb-${d.id}.jpg')));
   }
 }
 
