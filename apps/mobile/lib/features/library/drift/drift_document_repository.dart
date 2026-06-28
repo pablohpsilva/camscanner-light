@@ -8,6 +8,7 @@ import '../document_file_store.dart';
 import '../document_repository.dart';
 import '../document_summary.dart';
 import '../image_metadata_scrubber.dart';
+import '../page_image.dart';
 import 'app_database.dart' hide Document;
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
@@ -100,6 +101,20 @@ class DriftDocumentRepository implements DocumentRepository {
         thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
       );
     }).toList();
+  }
+
+  @override
+  Future<List<PageImage>> getDocumentPages(int documentId) async {
+    final pages = await (_db.select(_db.pages)
+          ..where((t) => t.documentId.equals(documentId))
+          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+        .get();
+    return pages
+        .map((pg) => PageImage(
+              position: pg.position,
+              imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
+            ))
+        .toList();
   }
 
   String _defaultName(DateTime t) {

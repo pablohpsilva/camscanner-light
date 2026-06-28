@@ -124,6 +124,31 @@ void main() {
     expect(s.single.thumbnailPath, isNull);
   });
 
+  test('getDocumentPages returns pages position-asc with absolute paths',
+      () async {
+    final doc = await repo().createFromCapture(capture);
+    await db.into(db.pages).insert(PagesCompanion.insert(
+        documentId: doc.id,
+        position: 2,
+        relativeImagePath: 'documents/${doc.id}/page_2.jpg'));
+
+    final pages = await repo().getDocumentPages(doc.id);
+
+    expect(pages.map((p) => p.position), [1, 2]);
+    expect(pages.first.imagePath, startsWith(base.path));
+    expect(pages.first.imagePath, endsWith('documents/${doc.id}/page_1.jpg'));
+    expect(pages.first.imagePath.startsWith('/'), isTrue,
+        reason: 'viewer needs an absolute path resolved at read time');
+  });
+
+  test('getDocumentPages returns empty for a document with no pages', () async {
+    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
+        name: 'empty',
+        createdAt: DateTime.utc(2026, 1, 1),
+        modifiedAt: DateTime.utc(2026, 1, 1)));
+    expect(await repo().getDocumentPages(id), isEmpty);
+  });
+
   test('Tier 1: documents persist across a DB close/reopen on disk', () async {
     final dir = Directory.systemTemp.createTempSync('b2persist');
     final dbFile = File('${dir.path}/camscanner.sqlite');

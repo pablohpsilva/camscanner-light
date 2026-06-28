@@ -10,6 +10,7 @@ import 'package:mobile/features/library/drift/app_database.dart' show AppDatabas
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
+import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 /// In-memory fake repository for host tests. Optionally throws, or blocks on a
@@ -17,15 +18,22 @@ import 'package:mobile/features/scan/captured_image.dart';
 class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnCreate;
   final bool throwOnList;
+  final bool throwOnGetPages;
+  final bool throwOnDelete;
   final Completer<void>? gate;
   final List<Document> documents;
+  final List<PageImage>? pages; // null => synthesize one non-loadable page
   int createCalls = 0;
+  final List<int> deletedIds = <int>[];
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
     this.throwOnList = false,
+    this.throwOnGetPages = false,
+    this.throwOnDelete = false,
     this.gate,
     List<Document>? documents,
+    this.pages,
   }) : documents = documents ?? <Document>[];
 
   @override
@@ -43,6 +51,13 @@ class FakeDocumentRepository implements DocumentRepository {
     );
     documents.insert(0, doc);
     return doc;
+  }
+
+  @override
+  Future<List<PageImage>> getDocumentPages(int documentId) async {
+    if (throwOnGetPages) throw StateError('fake: getDocumentPages failed');
+    return pages ??
+        [PageImage(position: 1, imagePath: '/nonexistent/page-$documentId-1.jpg')];
   }
 
   @override
