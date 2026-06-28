@@ -223,7 +223,11 @@ same storage. The new claim B3 must prove is that **delete is durable**.
 - **`PageViewerScreen`:** loading→loaded; loaded asserts `InteractiveViewer` +
   `Image.file` with the right path/key per page using **non-loadable paths →
   assert wiring, not pixels** (the `flutter-image-file-host-test-hang` lesson;
-  re-confirmed by spike 3); **zero-pages → empty placeholder**;
+  re-confirmed by spike 3: no hang, `find.byType(InteractiveViewer)` +
+  `image is FileImage` with the right path + `errorBuilder != null` are all
+  assertable). **The viewer asserts `image is FileImage`, NOT `ResizeImage`** —
+  the viewer decodes full-res (no `cacheWidth`), unlike B2's thumbnail; do not
+  copy B2's `ResizeImage` matcher here. **zero-pages → empty placeholder**;
   **`getDocumentPages` throws → error state (`page-viewer-error`) shown, no
   crash; retry re-runs the load**; delete → confirm dialog → **Delete** calls
   `deleteDocument` + pops; **Cancel** → no call; **delete throws → no pop, error
