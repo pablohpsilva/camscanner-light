@@ -292,6 +292,13 @@ Change the existing `repo()` helper — add `pdfBuilder: const PdfBuilder(),`:
       );
 ```
 
+**Also add `pdfBuilder: const PdfBuilder(),` (after the `clock:` line) to the FIVE other inline `DriftDocumentRepository(...)` constructions in this same file** — making `pdfBuilder` required would otherwise break their compilation:
+- the `final r = DriftDocumentRepository(...)` in **`listDocumentSummaries returns newest first`**,
+- `repo1` and `repo2` in **`Tier 1: documents persist across a DB close/reopen on disk`**,
+- `repo1` and `repo2` in **`Tier 1: a delete is durable across a DB close/reopen`**.
+
+(Find them all with `grep -n 'DriftDocumentRepository(' test/features/library/drift_document_repository_test.dart` — there are 6 constructions total; every one needs the new param.)
+
 Add these tests inside `main()`:
 ```dart
   test('exportPdf writes export.pdf and returns a valid PDF file', () async {
@@ -469,7 +476,7 @@ Expected: PASS (existing + the two new `exportPdf` tests).
 - [ ] **Step 9: Full host suite + analyze (the ctor change touches every repo construction)**
 
 Run: `cd apps/mobile && flutter test && flutter analyze`
-Expected: `All tests passed!` and `No issues found!` (the new required `pdfBuilder` param is supplied at all four construction sites: `_defaultCreateRepository`, `tempLibraryDependencies`, `persistentLibraryDependencies`, the repo test `repo()` helper).
+Expected: `All tests passed!` and `No issues found!` (the new required `pdfBuilder` param is supplied at **all nine** construction sites: `_defaultCreateRepository`, `tempLibraryDependencies`, `persistentLibraryDependencies`, and the **six** in `drift_document_repository_test.dart` — the `repo()` helper + five inline. A compile error here means an inline site was missed.)
 
 - [ ] **Step 10: Commit**
 
@@ -809,10 +816,10 @@ Expected: `GATE: PASS` (exit 0) — static asserts, host tests, analyze, coverag
 - Tier-2 integration + silent-stub guard → Task 4.
 - Verify harness (static asserts, no-stub guard, coverage floor 70, fail-closed, REAL_DEVICE) → Task 5.
 - Acceptance criteria: 1 (valid 1-page) T1/T4 · 2 (lossless) T1 · 3 (auto-orient/oriented MediaBox) T1 · 4 (metadata-clean) T1 · 5 (seam) T1 · 6 (graceful failure) T2+T3 · 7 (REAL_DEVICE upright) T5 deferred lane.
-- Migration surface (interface+drift+fake+three factory sites+repo-test helper) → Task 2 Steps 5–9.
+- Migration surface (interface+drift+fake+**all 9** `DriftDocumentRepository` construction sites: `_defaultCreateRepository`, `tempLibraryDependencies`, `persistentLibraryDependencies`, and the 6 in the repo test) → Task 2 Steps 1, 5–9.
 
 **2. Placeholder scan:** none — every code step has complete code; every run step has an exact command + expected output.
 
-**3. Type consistency:** `PdfBuilder({PdfTextLayer textLayer})` + `build(List<PageImage>, {bool compress})` identical across Tasks 1–2; `PdfTextLayer.overlayFor(PageImage) → List<pw.Widget>` matches the spy + ImageOnlyTextLayer; `exportPdf(int) → Future<File>` matches interface, Drift impl, fake, and the viewer call; `DriftDocumentRepository` ctor's new `required PdfBuilder pdfBuilder` is supplied at all four construction sites (Task 2 Steps 5–9 enumerate them); keys `page-viewer-export` match between Task 3 widget + Task 4 step + Task 5 assert.
+**3. Type consistency:** `PdfBuilder({PdfTextLayer textLayer})` + `build(List<PageImage>, {bool compress})` identical across Tasks 1–2; `PdfTextLayer.overlayFor(PageImage) → List<pw.Widget>` matches the spy + ImageOnlyTextLayer; `exportPdf(int) → Future<File>` matches interface, Drift impl, fake, and the viewer call; `DriftDocumentRepository` ctor's new `required PdfBuilder pdfBuilder` is supplied at all **nine** construction sites (Task 2 Step 1 covers the 6 in the repo test; Steps 6–7 cover the 3 production/factory sites); keys `page-viewer-export` match between Task 3 widget + Task 4 step + Task 5 assert.
 
 **Note (intentional refinement vs the spec sketch):** `PdfBuilder` holds `textLayer` as an injected **field** (const-constructible) and `build` takes `pages` + an optional `compress` flag, rather than the spec's indicative `build(pages, textLayer)` — field injection matches how `scrubber`/`fileStore` are injected, and `compress:false` is the verified seam-test hook (Gap G).
