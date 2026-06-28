@@ -77,9 +77,10 @@ class FakeDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('fake: export failed');
     }
     exportedIds.add(documentId);
-    final f = File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
-    await f.writeAsBytes(const [0x25, 0x50, 0x44, 0x46]); // %PDF
-    return f;
+    // Return a path without real I/O — callers (e.g. _exportPdf) discard the
+    // File; widget tests need the future to complete synchronously so that
+    // pumpAndSettle can drive the success SnackBar before settling.
+    return File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
   }
 
   @override

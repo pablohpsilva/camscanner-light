@@ -133,4 +133,37 @@ void main() {
     expect(find.byType(PageViewerScreen), findsOneWidget);
     expect(repo.deletedIds, isEmpty);
   });
+
+  testWidgets('export success shows a "PDF saved" SnackBar and stays',
+      (tester) async {
+    final repo = FakeDocumentRepository();
+    await pushViewer(tester, repo, id: 4);
+
+    await tester.tap(find.byKey(const Key('page-viewer-export')));
+    await tester.pumpAndSettle();
+
+    expect(repo.exportedIds, contains(4));
+    expect(find.text('PDF saved'), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
+  });
+
+  testWidgets('export failure shows an error SnackBar and stays',
+      (tester) async {
+    final repo = FakeDocumentRepository(throwOnExport: true);
+    await pushViewer(tester, repo);
+
+    await tester.tap(find.byKey(const Key('page-viewer-export')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't export PDF"), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
+  });
+
+  testWidgets('export is disabled in the error state', (tester) async {
+    await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
+    expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
+    final btn =
+        tester.widget<IconButton>(find.byKey(const Key('page-viewer-export')));
+    expect(btn.onPressed, isNull);
+  });
 }
