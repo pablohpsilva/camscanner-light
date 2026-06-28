@@ -152,12 +152,32 @@ the *bad* case (row present, file gone → permanent dangling reference).
 - If the DB delete itself throws, the viewer **stays put** and shows a transient
   "Couldn't delete" `SnackBar` (capture the messenger before the `await`).
 
-### Confirm dialog
+### Confirm dialog + delete sequence (the screen owns it, not the dialog)
 
-`AlertDialog` — "Delete this document? This can't be undone." → **Cancel**
-(key `page-viewer-delete-cancel`) / **Delete** (destructive, key
-`page-viewer-delete-confirm`). Async-gap safety: capture `Navigator` /
-`ScaffoldMessenger` before the `await`, `if (!mounted) return` after.
+The dialog is a pure `showDialog<bool>` that performs **no** side effect — it
+only returns the user's choice. The **screen** owns the sequence, so the failure
+SnackBar lands on the viewer's own Scaffold and there is no captured-Navigator-
+inside-the-dialog dance:
+
+```
+final ok = await showDialog<bool>(context: ..., builder: ...);  // dialog returns true/false only
+if (ok != true) return;                       // Cancel / dismiss → nothing happens
+try {
+  await widget.repository.deleteDocument(widget.documentId);
+  if (!mounted) return;
+  Navigator.of(context).pop();                // leave the viewer → Home._load() reflects the delete
+} catch (_) {
+  if (!mounted) return;
+  ScaffoldMessenger.of(context)
+      .showSnackBar(const SnackBar(content: Text("Couldn't delete")));  // stay on the viewer
+}
+```
+
+`AlertDialog` copy — "Delete this document? This can't be undone." → **Cancel**
+(key `page-viewer-delete-cancel`, returns `false`) / **Delete** (destructive,
+key `page-viewer-delete-confirm`, returns `true`). Exactly **two** Navigator
+operations occur and in this order: the dialog closes (returning its bool),
+then — only on success — the viewer pops. The failure path pops neither.
 
 ## Restart / durability proof (three tiers — B3 is read + delete, not save)
 
@@ -264,7 +284,8 @@ not read as gated the same way as 1–4.
    files — see the honest limit above; enforced by code review, not a gated
    assertion).
 6. A missing/corrupt page file yields a placeholder; zero pages yields an empty
-   state; never a crash or a hang.
+   state; a **failed page load yields a retryable error state**
+   (`page-viewer-error` + `page-viewer-retry`); never a crash or a hang.
 7. Tier-2 integration passes on emulator + iOS sim (open → view → delete → gone).
 8. EXIF-clean + transactional + B2 list guarantees regression-pass (privacy
    spine intact).
