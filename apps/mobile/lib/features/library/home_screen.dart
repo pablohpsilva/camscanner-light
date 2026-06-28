@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
-import 'document.dart';
 import 'document_repository.dart';
+import 'document_summary.dart';
 import 'library_dependencies.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
@@ -27,7 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   DocumentRepository? _repository;
-  List<Document> _documents = const [];
+  List<DocumentSummary> _summaries = const [];
   bool _loading = true;
   bool _error = false;
 
@@ -57,10 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final repo = _repository;
     if (repo == null) return;
     try {
-      final docs = await repo.listDocuments();
+      final docs = await repo.listDocumentSummaries();
       if (!mounted) return;
       setState(() {
-        _documents = docs;
+        _summaries = docs;
         _loading = false;
       });
     } catch (_) {
@@ -103,9 +103,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CircularProgressIndicator())
           : _error
               ? _buildError()
-              : _documents.isEmpty
+              : _summaries.isEmpty
                   ? const EmptyDocumentsView()
-                  : DocumentsListView(documents: _documents),
+                  : DocumentsListView(summaries: _summaries),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _repository == null ? null : _openScan,
         icon: const Icon(Icons.document_scanner_outlined),

@@ -9,9 +9,6 @@ abstract interface class DocumentRepository {
   /// Throws [DocumentSaveException] on any failure (the capture is not lost).
   Future<Document> createFromCapture(CapturedImage capture);
 
-  /// All documents, newest first.
-  Future<List<Document>> listDocuments();
-
   /// All documents (newest first) with page count and first-page thumbnail path
   /// (absolute, resolved at read time; null when the document has no page).
   Future<List<DocumentSummary>> listDocumentSummaries();

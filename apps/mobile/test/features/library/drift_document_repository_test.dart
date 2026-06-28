@@ -62,30 +62,6 @@ void main() {
         reason: 'path MUST be relative, never absolute');
   });
 
-  test('listDocuments returns newest first', () async {
-    // The repository deletes the temp SOURCE after a successful save (it lives
-    // under systemTemp, as the test base does), so reseed it before each call.
-    final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
-    void seedSource() => File(capture.path).writeAsBytesSync(fixture);
-
-    var t = DateTime.utc(2026, 6, 27, 10);
-    final r = DriftDocumentRepository(
-      db: db,
-      scrubber: const JpegExifScrubber(),
-      fileStore: DocumentFileStore(base),
-      clock: () => t,
-    );
-    seedSource();
-    await r.createFromCapture(capture);
-    t = DateTime.utc(2026, 6, 27, 12);
-    seedSource();
-    await r.createFromCapture(capture);
-
-    final docs = await r.listDocuments();
-    expect(docs, hasLength(2));
-    expect(docs.first.createdAt.isAfter(docs.last.createdAt), isTrue);
-  });
-
   test('a failed write rolls back — no orphan document row, no dir', () async {
     await expectLater(
       repo(scrubber: _ThrowingScrubber()).createFromCapture(capture),

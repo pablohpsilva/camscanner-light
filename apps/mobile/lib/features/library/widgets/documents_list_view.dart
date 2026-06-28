@@ -1,30 +1,35 @@
 import 'package:flutter/material.dart';
 
-import '../document.dart';
+import '../document_summary.dart';
+import 'document_thumbnail.dart';
 
-/// Basic name + date list of saved documents (B1). No thumbnails — that is B2,
-/// and rendering local image files here would risk the Image.file host-test
-/// hang. Newest first (the repository orders the list).
+/// Rich list of saved documents: thumbnail, name, date, page count. Newest
+/// first (the repository orders the list).
 class DocumentsListView extends StatelessWidget {
-  final List<Document> documents;
-  const DocumentsListView({super.key, required this.documents});
+  final List<DocumentSummary> summaries;
+  const DocumentsListView({super.key, required this.summaries});
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       key: const Key('documents-list'),
-      itemCount: documents.length,
+      itemCount: summaries.length,
       itemBuilder: (context, i) {
-        final d = documents[i];
+        final s = summaries[i];
+        final d = s.document;
         return ListTile(
           key: Key('document-tile-${d.id}'),
-          leading: const Icon(Icons.description_outlined),
+          leading: DocumentThumbnail(
+              key: Key('document-thumb-${d.id}'), path: s.thumbnailPath),
           title: Text(d.name),
-          subtitle: Text(_formatLocal(d.createdAt.toLocal())),
+          subtitle: Text(
+              '${_formatLocal(d.createdAt.toLocal())} · ${_pages(s.pageCount)}'),
         );
       },
     );
   }
+
+  String _pages(int n) => n == 1 ? '1 page' : '$n pages';
 
   String _formatLocal(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');

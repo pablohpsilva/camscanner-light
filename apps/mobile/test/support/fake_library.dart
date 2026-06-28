@@ -46,14 +46,6 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<Document>> listDocuments() async {
-    if (throwOnList) {
-      throw StateError('fake: list failed');
-    }
-    return List<Document>.unmodifiable(documents);
-  }
-
-  @override
   Future<List<DocumentSummary>> listDocumentSummaries() async {
     if (throwOnList) {
       throw StateError('fake: list failed');

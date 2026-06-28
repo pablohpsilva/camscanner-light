@@ -67,20 +67,6 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<Document>> listDocuments() async {
-    final rows = await (_db.select(_db.documents)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
-    return rows
-        .map((r) => Document(
-            id: r.id,
-            name: r.name,
-            createdAt: r.createdAt,
-            modifiedAt: r.modifiedAt))
-        .toList();
-  }
-
-  @override
   Future<List<DocumentSummary>> listDocumentSummaries() async {
     // (1) page count per document, newest doc first — one grouped query.
     final pageCount = _db.pages.id.count();
