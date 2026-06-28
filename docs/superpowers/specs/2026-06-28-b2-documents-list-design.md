@@ -156,10 +156,16 @@ actually destroys:
   `db.close()`, open a **brand-new** `AppDatabase` on the **same file**, assert
   `listDocumentSummaries()` returns the doc with correct `pageCount` and a
   resolvable thumbnail path.
-- **Tier 2:** pump the real app against a persistent temp DB file, save via the
-  capture flow, **tear down and re-pump a fresh app widget tree** pointed at the
-  **same file**, assert the saved document appears on the home list with its
-  page-count text.
+- **Tier 2:** **seed** a document directly into a persistent on-disk SQLite file
+  via a throwaway connection that is then **closed** (modelling "this data was
+  persisted before the current app instance started"), then **launch the app
+  fresh** against the **same** DB file and documents dir, and assert the seeded
+  document appears on the home list with its page-count text. This is a truer
+  cold-start *read* than re-pumping inside one live process (which never kills
+  the process or its DB connection), it is deterministic (no camera-tap flow),
+  and — by seeding only the row, not the image file — it also exercises the
+  missing-file→placeholder path on-device. (The app's own *save* path is already
+  proven by B1's flow + Tier 1's repository persistence.)
 
   > **Why the existing helper can't be reused.** `tempLibraryDependencies()`
   > (`fake_library.dart:63`) constructs **`NativeDatabase.memory()`** *and* a
