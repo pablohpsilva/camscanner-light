@@ -313,11 +313,21 @@ void main() {
     expect(find.byType(Image), findsNothing);
   });
 
-  testWidgets('a non-loadable path falls back to the placeholder (no hang)',
+  // IMPORTANT (verified by spike): on host, Image.file's real dart:io read does
+  // NOT complete inside flutter_test's FakeAsync zone, so errorBuilder never
+  // fires here — asserting the rendered placeholder for a non-null path is
+  // UNRELIABLE. Image.file also does NOT hang (a non-loadable path settles).
+  // So we assert the WIRING deterministically (downsampled provider +
+  // errorBuilder); the missing-file→placeholder *rendering* is a Flutter
+  // contract, verified on-device (REAL_DEVICE lane). cacheWidth wraps the
+  // FileImage in a ResizeImage.
+  testWidgets('a non-null path builds a downsampled Image with errorBuilder',
       (tester) async {
     await pump(tester, '/nonexistent/missing-thumb.jpg');
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.description_outlined), findsOneWidget);
+    await tester.pump(); // single pump; no settle (and none needed)
+    final img = tester.widget<Image>(find.byType(Image));
+    expect(img.errorBuilder, isNotNull);
+    expect(img.image, isA<ResizeImage>());
   });
 }
 ```
@@ -378,7 +388,7 @@ class DocumentThumbnail extends StatelessWidget {
 - [ ] **Step 4: Run it — verify it passes**
 
 Run: `cd apps/mobile && flutter test test/features/library/widgets/document_thumbnail_test.dart`
-Expected: PASS (both tests).
+Expected: PASS (both tests). `ResizeImage` is exported by `package:flutter/material.dart` (already imported). Do **not** add a `pumpAndSettle` + `findsOneWidget` on the placeholder icon for the non-null case — it will fail (errorBuilder doesn't fire in the host FakeAsync zone).
 
 - [ ] **Step 5: Commit**
 
