@@ -149,6 +149,60 @@ void main() {
     expect(await repo().getDocumentPages(id), isEmpty);
   });
 
+  test('deleteDocument removes the document, its pages, and its on-disk dir',
+      () async {
+    final doc = await repo().createFromCapture(capture);
+    final dir = Directory('${base.path}/documents/${doc.id}');
+    expect(dir.existsSync(), isTrue);
+
+    await repo().deleteDocument(doc.id);
+
+    expect(await db.select(db.documents).get(), isEmpty);
+    expect(await db.select(db.pages).get(), isEmpty);
+    expect(dir.existsSync(), isFalse);
+  });
+
+  test('deleteDocument on a non-existent id is a no-op (no throw)', () async {
+    await repo().deleteDocument(99999); // never inserted
+    expect(await db.select(db.documents).get(), isEmpty);
+  });
+
+  test('Tier 1: a delete is durable across a DB close/reopen on disk',
+      () async {
+    final dir = Directory.systemTemp.createTempSync('b3delpersist');
+    final dbFile = File('${dir.path}/camscanner.sqlite');
+    final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+    final src = File('${dir.path}/cap.jpg')..writeAsBytesSync(fixture);
+
+    final db1 = AppDatabase(NativeDatabase(dbFile));
+    final repo1 = DriftDocumentRepository(
+      db: db1,
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(dir),
+      clock: () => DateTime.utc(2026, 6, 27, 9),
+    );
+    final saved = await repo1.createFromCapture(CapturedImage(src.path));
+    await repo1.deleteDocument(saved.id);
+    await db1.close(); // destroy the connection
+
+    final db2 = AppDatabase(NativeDatabase(dbFile)); // brand-new, same file
+    final repo2 = DriftDocumentRepository(
+      db: db2,
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(dir),
+      clock: () => DateTime.utc(2026, 6, 27, 9),
+    );
+    final summaries = await repo2.listDocumentSummaries();
+    final pages = await repo2.getDocumentPages(saved.id);
+    await db2.close();
+    final dirGone = !Directory('${dir.path}/documents/${saved.id}').existsSync();
+    dir.deleteSync(recursive: true);
+
+    expect(summaries, isEmpty, reason: 'the delete must survive a reopen');
+    expect(pages, isEmpty);
+    expect(dirGone, isTrue);
+  });
+
   test('Tier 1: documents persist across a DB close/reopen on disk', () async {
     final dir = Directory.systemTemp.createTempSync('b2persist');
     final dbFile = File('${dir.path}/camscanner.sqlite');

@@ -117,6 +117,22 @@ class DriftDocumentRepository implements DocumentRepository {
         .toList();
   }
 
+  @override
+  Future<void> deleteDocument(int documentId) async {
+    // Row-first: the DB delete is authoritative. Explicit page delete (not
+    // relying solely on the FK cascade pragma), then the document row.
+    await _db.transaction(() async {
+      await (_db.delete(_db.pages)
+            ..where((t) => t.documentId.equals(documentId)))
+          .go();
+      await (_db.delete(_db.documents)..where((t) => t.id.equals(documentId)))
+          .go();
+    });
+    // Best-effort file cleanup AFTER commit. Worst case = harmless orphan files
+    // (no row references them). deleteDocumentDir guards dir-absent.
+    await _fileStore.deleteDocumentDir(documentId);
+  }
+
   String _defaultName(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return 'Scan ${t.year}-${two(t.month)}-${two(t.day)} '

@@ -17,6 +17,11 @@ abstract interface class DocumentRepository {
   /// Pages of [documentId], position ascending, with ABSOLUTE image paths
   /// (resolved at read time). Empty when the document has no pages.
   Future<List<PageImage>> getDocumentPages(int documentId);
+
+  /// Deletes [documentId], its pages, and its on-disk image files. Row-first:
+  /// an authoritative DB delete (pages then document, one transaction), then a
+  /// best-effort file cleanup. A non-existent id is a no-op.
+  Future<void> deleteDocument(int documentId);
 }
 
 class DocumentSaveException implements Exception {

@@ -61,6 +61,13 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<void> deleteDocument(int documentId) async {
+    if (throwOnDelete) throw StateError('fake: delete failed');
+    deletedIds.add(documentId);
+    documents.removeWhere((d) => d.id == documentId);
+  }
+
+  @override
   Future<List<DocumentSummary>> listDocumentSummaries() async {
     if (throwOnList) {
       throw StateError('fake: list failed');
