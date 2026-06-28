@@ -96,7 +96,7 @@ class DriftDocumentRepository implements DocumentRepository {
             name: d.name,
             createdAt: d.createdAt,
             modifiedAt: d.modifiedAt),
-        pageCount: row.read(pageCount) ?? 0,
+        pageCount: row.read(pageCount)!,
         thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
       );
     }).toList();

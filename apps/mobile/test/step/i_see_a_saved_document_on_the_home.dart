@@ -6,5 +6,11 @@ Future<void> iSeeASavedDocumentOnTheHome(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.widgetWithText(AppBar, 'Documents'), findsOneWidget);
   expect(find.byKey(const Key('documents-list')), findsOneWidget);
-  expect(find.textContaining('Scan '), findsWidgets);
+  expect(
+    find.descendant(
+      of: find.byKey(const Key('documents-list')),
+      matching: find.textContaining('Scan '),
+    ),
+    findsWidgets,
+  );
 }

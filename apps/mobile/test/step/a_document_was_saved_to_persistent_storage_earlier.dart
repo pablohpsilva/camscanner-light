@@ -19,6 +19,10 @@ Future<void> aDocumentWasSavedToPersistentStorageEarlier(
   persistentDir = dir;
   persistentDbFile = File('${dir.path}/camscanner.sqlite');
 
+  addTearDown(() async {
+    if (await dir.exists()) await dir.delete(recursive: true);
+  });
+
   final db = AppDatabase(NativeDatabase(persistentDbFile!));
   final docId = await db.into(db.documents).insert(DocumentsCompanion.insert(
         name: 'Scan 2026-06-27 20.26.42',

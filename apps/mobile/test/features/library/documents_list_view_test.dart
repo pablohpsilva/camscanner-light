@@ -24,6 +24,8 @@ void main() {
             summaries: [summary(1), summary(2, pageCount: 3)]),
       ),
     ));
+    // Safe to settle ONLY because thumbnail paths are non-loadable (a real
+    // loadable Image.file would hang host tests). Keep these paths non-loadable.
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('documents-list')), findsOneWidget);
