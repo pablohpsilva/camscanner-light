@@ -75,6 +75,8 @@ PageImage { int position; String imagePath; }   // imagePath = ABSOLUTE, resolve
   test (existing tests keep compiling because `onOpen` is optional).
 - `test/support/fake_library.dart` — `FakeDocumentRepository` gains
   `getDocumentPages` + `deleteDocument`.
+- `integration_test/b3_view_and_delete.feature` + generated `_test.dart`, and
+  the new `test/step/` files it references (see Tier 2) — **new**.
 
 ## Viewer UI — `PageViewerScreen` (StatefulWidget)
 
@@ -82,14 +84,21 @@ Constructed with `documentId`, `name`, and the `repository` (the same instance
 `HomeScreen` already holds).
 
 - Loads pages in `initState` → **loading / error / loaded / empty** states (same
-  shape as `HomeScreen`).
+  shape as `HomeScreen`), each with a test key:
+  - `page-viewer-loading` — `CircularProgressIndicator` while reading pages.
+  - `page-viewer-error` — `getDocumentPages` threw; shows a message + a
+    **retry** (`page-viewer-retry`) that re-runs `getDocumentPages` (mirrors
+    `HomeScreen`'s error/retry).
+  - `page-viewer-empty` — zero pages (data anomaly or a race against delete);
+    an explicit "this document has no pages" placeholder, never a blank
+    `PageView` or crash.
 - **Loaded:** a `PageView` of zoomable pages. Each page =
   `InteractiveViewer` (pinch-zoom + pan) wrapping
   `Image.file(File(p.imagePath), errorBuilder: → placeholder)`. Decodes
-  **full-resolution** (no `cacheWidth`) so zoom is usable. Page dots (`1/1`
-  today) when >1 page. Per-page key `page-viewer-page-<position>`.
-- **Empty** (zero pages — data anomaly or a race against delete): an explicit
-  "this document has no pages" placeholder, never a blank `PageView` or crash.
+  **full-resolution** (no `cacheWidth`) so zoom is usable. Per-page key
+  `page-viewer-page-<position>`. A page indicator (`page-viewer-indicator`)
+  shows **always**, reading `1 / N` (`1 / 1` today) — it confirms
+  multi-page-readiness and matches the approved viewer mockup.
 - **AppBar:** title = document name; automatic back; a **delete** action
   (`Icons.delete_outline`, key `page-viewer-delete`).
 
@@ -172,6 +181,16 @@ same storage. The new claim B3 must prove is that **delete is durable**.
   confirm → assert back on the home list with the document gone. (Seeding only
   the row, not the image file, also exercises the missing-file placeholder in
   the viewer and the `dir-absent` branch of `deleteDocumentDir`.)
+  - New feature: `integration_test/b3_view_and_delete.feature` and its generated
+    `_test.dart`. New step files under `test/step/`: open the document
+    (taps `document-tile-<id>`), see the page viewer (`page-viewer-page-1`),
+    tap delete (`page-viewer-delete`), confirm delete
+    (`page-viewer-delete-confirm`), the document is gone.
+  - **Silent-stub guard (B2 lesson):** `bdd_widget_test` **silently generates an
+    empty stub** when a Gherkin step name does not map to its expected
+    camelCase step file — a **vacuous pass**. Each new step's generated wiring
+    MUST be confirmed to call a real, asserting step implementation (no empty
+    stub), exactly as B2 required.
 - **Tier 3 (REAL_DEVICE, deferred-with-sign-off):** on the SM-A166B, pinch-zoom
   actually magnifies and the page renders upright; after a real `adb shell am
   force-stop` + relaunch, a deleted document is still gone.
@@ -184,10 +203,12 @@ same storage. The new claim B3 must prove is that **delete is durable**.
 - **`PageViewerScreen`:** loading→loaded; loaded asserts `InteractiveViewer` +
   `Image.file` with the right path/key per page using **non-loadable paths →
   assert wiring, not pixels** (the `flutter-image-file-host-test-hang` lesson;
-  re-confirmed by spike 3); **zero-pages → empty placeholder**; delete →
-  confirm dialog → **Delete** calls `deleteDocument` + pops; **Cancel** → no
-  call; **delete throws → no pop, error SnackBar, viewer still present** (the
-  failure branch is tested, not vacuously uncovered).
+  re-confirmed by spike 3); **zero-pages → empty placeholder**;
+  **`getDocumentPages` throws → error state (`page-viewer-error`) shown, no
+  crash; retry re-runs the load**; delete → confirm dialog → **Delete** calls
+  `deleteDocument` + pops; **Cancel** → no call; **delete throws → no pop, error
+  SnackBar, viewer still present**. (Both the load-error and the delete-error
+  branches are tested, not vacuously uncovered.)
 - **`DocumentsListView`:** tile `onTap` invokes `onOpen` with the correct
   summary; with `onOpen == null` the tile has no tap handler (existing tests).
 - **Regression (privacy spine):** B1 EXIF-clean + transactional-save and B2 list
@@ -224,6 +245,8 @@ not read as gated the same way as 1–4.
 - coverage floor 70 (excluding `*.g.dart`),
 - integration android + ios (`verify_integration_android` / `_ios`
   `b3_view_and_delete_test.dart`),
+- **no-empty-stub guard:** assert each new B3 generated step calls a real step
+  implementation (the B2 silent-stub / vacuous-pass hazard),
 - the **Tier-1 delete-durability test** as a named required check,
 - **EXIF-clean regression** (privacy spine),
 - negative control: `VERIFY_SKIP_DEVICE=1 → GATE: FAIL` (fail-closed),
