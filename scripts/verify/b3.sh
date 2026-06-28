@@ -53,6 +53,8 @@ assert_file_has "generated b3 test calls the open step" \
   "apps/mobile/integration_test/b3_view_and_delete_test.dart" "iOpenTheFirstDocument(tester)"
 assert_file_has "generated b3 test calls the delete step" \
   "apps/mobile/integration_test/b3_view_and_delete_test.dart" "iDeleteTheOpenDocument(tester)"
+assert_file_has "generated b3 test calls the gone-from-home step" \
+  "apps/mobile/integration_test/b3_view_and_delete_test.dart" "theDocumentIsGoneFromTheHome(tester)"
 
 # ---- Generated code is current (Drift unchanged + new BDD test) ----
 assert_cmd "codegen is up to date" "Built with build_runner" \
