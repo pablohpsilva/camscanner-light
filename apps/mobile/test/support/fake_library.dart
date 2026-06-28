@@ -6,6 +6,7 @@ import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/document_summary.dart';
+import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
@@ -20,17 +21,20 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnList;
   final bool throwOnGetPages;
   final bool throwOnDelete;
+  final bool throwOnExport;
   final Completer<void>? gate;
   final List<Document> documents;
   final List<PageImage>? pages; // null => synthesize one non-loadable page
   int createCalls = 0;
   final List<int> deletedIds = <int>[];
+  final List<int> exportedIds = <int>[];
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
     this.throwOnList = false,
     this.throwOnGetPages = false,
     this.throwOnDelete = false,
+    this.throwOnExport = false,
     this.gate,
     List<Document>? documents,
     this.pages,
@@ -68,6 +72,17 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<File> exportPdf(int documentId) async {
+    if (throwOnExport) {
+      throw const DocumentExportException('fake: export failed');
+    }
+    exportedIds.add(documentId);
+    final f = File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
+    await f.writeAsBytes(const [0x25, 0x50, 0x44, 0x46]); // %PDF
+    return f;
+  }
+
+  @override
   Future<List<DocumentSummary>> listDocumentSummaries() async {
     if (throwOnList) {
       throw StateError('fake: list failed');
@@ -96,6 +111,7 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
         fileStore:
             DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
         clock: DateTime.now,
+        pdfBuilder: const PdfBuilder(),
       ),
     );
 
@@ -119,5 +135,6 @@ LibraryDependencies persistentLibraryDependencies({
         scrubber: const JpegExifScrubber(),
         fileStore: DocumentFileStore(baseDir),
         clock: DateTime.now,
+        pdfBuilder: const PdfBuilder(),
       ),
     );

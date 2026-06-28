@@ -8,6 +8,7 @@ import 'document_repository.dart';
 import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
 import 'jpeg_exif_scrubber.dart';
+import 'pdf/pdf_builder.dart';
 
 typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
 
@@ -28,5 +29,6 @@ Future<DocumentRepository> _defaultCreateRepository() async {
     scrubber: const JpegExifScrubber(),
     fileStore: DocumentFileStore(docsDir),
     clock: DateTime.now,
+    pdfBuilder: const PdfBuilder(),
   );
 }

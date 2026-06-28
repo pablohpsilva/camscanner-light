@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../scan/captured_image.dart';
 import 'document.dart';
 import 'document_summary.dart';
@@ -22,6 +24,10 @@ abstract interface class DocumentRepository {
   /// an authoritative DB delete (pages then document, one transaction), then a
   /// best-effort file cleanup. A non-existent id is a no-op.
   Future<void> deleteDocument(int documentId);
+
+  /// Generates a PDF of [documentId] to on-device storage and returns the file.
+  /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
+  Future<File> exportPdf(int documentId);
 }
 
 class DocumentSaveException implements Exception {
@@ -29,4 +35,11 @@ class DocumentSaveException implements Exception {
   const DocumentSaveException(this.message);
   @override
   String toString() => 'DocumentSaveException: $message';
+}
+
+class DocumentExportException implements Exception {
+  final String message;
+  const DocumentExportException(this.message);
+  @override
+  String toString() => 'DocumentExportException: $message';
 }

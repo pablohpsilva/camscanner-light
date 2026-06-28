@@ -9,6 +9,7 @@ import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/image_metadata_scrubber.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
+import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 /// A scrubber that throws — to drive the crash-safety rollback test.
@@ -43,6 +44,7 @@ void main() {
         scrubber: scrubber ?? const JpegExifScrubber(),
         fileStore: DocumentFileStore(base),
         clock: clock,
+        pdfBuilder: const PdfBuilder(),
       );
 
   test('createFromCapture writes a scrubbed JPEG and a document+page row',
@@ -101,6 +103,7 @@ void main() {
       scrubber: const JpegExifScrubber(),
       fileStore: DocumentFileStore(base),
       clock: () => t,
+      pdfBuilder: const PdfBuilder(),
     );
     seedSource();
     await r.createFromCapture(capture);
@@ -180,6 +183,7 @@ void main() {
       scrubber: const JpegExifScrubber(),
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
+      pdfBuilder: const PdfBuilder(),
     );
     final saved = await repo1.createFromCapture(CapturedImage(src.path));
     await repo1.deleteDocument(saved.id);
@@ -191,6 +195,7 @@ void main() {
       scrubber: const JpegExifScrubber(),
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
+      pdfBuilder: const PdfBuilder(),
     );
     final summaries = await repo2.listDocumentSummaries();
     final pages = await repo2.getDocumentPages(saved.id);
@@ -215,6 +220,7 @@ void main() {
       scrubber: const JpegExifScrubber(),
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
+      pdfBuilder: const PdfBuilder(),
     );
     final saved = await repo1.createFromCapture(CapturedImage(src.path));
     await db1.close();
@@ -225,6 +231,7 @@ void main() {
       scrubber: const JpegExifScrubber(),
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
+      pdfBuilder: const PdfBuilder(),
     );
     final summaries = await repo2.listDocumentSummaries();
     await db2.close();
@@ -234,5 +241,31 @@ void main() {
     expect(summaries.single.document.id, saved.id);
     expect(summaries.single.pageCount, 1);
     expect(summaries.single.thumbnailPath, endsWith('page_1.jpg'));
+  });
+
+  test('exportPdf writes export.pdf and returns a valid PDF file', () async {
+    final doc = await repo().createFromCapture(capture);
+    final file = await repo().exportPdf(doc.id);
+
+    expect(file.path, endsWith('documents/${doc.id}/export.pdf'));
+    expect(file.existsSync(), isTrue);
+    final head = file.readAsBytesSync().sublist(0, 4);
+    expect(head, [0x25, 0x50, 0x44, 0x46]); // %PDF
+  });
+
+  test('exportPdf throws DocumentExportException when the page file is missing',
+      () async {
+    // Seed a doc + page row, but never write the image file on disk.
+    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
+        name: 'noimg',
+        createdAt: DateTime.utc(2026, 1, 1),
+        modifiedAt: DateTime.utc(2026, 1, 1)));
+    await db.into(db.pages).insert(PagesCompanion.insert(
+        documentId: id, position: 1, relativeImagePath: 'documents/$id/page_1.jpg'));
+
+    await expectLater(
+      repo().exportPdf(id),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 }

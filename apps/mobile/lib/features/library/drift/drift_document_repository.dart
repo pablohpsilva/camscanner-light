@@ -9,6 +9,7 @@ import '../document_repository.dart';
 import '../document_summary.dart';
 import '../image_metadata_scrubber.dart';
 import '../page_image.dart';
+import '../pdf/pdf_builder.dart';
 import 'app_database.dart' hide Document;
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
@@ -19,16 +20,19 @@ class DriftDocumentRepository implements DocumentRepository {
   final ImageMetadataScrubber _scrubber;
   final DocumentFileStore _fileStore;
   final DateTime Function() _clock;
+  final PdfBuilder _pdfBuilder;
 
   DriftDocumentRepository({
     required AppDatabase db,
     required ImageMetadataScrubber scrubber,
     required DocumentFileStore fileStore,
     required DateTime Function() clock,
+    required PdfBuilder pdfBuilder,
   })  : _db = db, // ignore: prefer_initializing_formals
         _scrubber = scrubber, // ignore: prefer_initializing_formals
         _fileStore = fileStore, // ignore: prefer_initializing_formals
-        _clock = clock; // ignore: prefer_initializing_formals
+        _clock = clock, // ignore: prefer_initializing_formals
+        _pdfBuilder = pdfBuilder; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(CapturedImage capture) async {
@@ -131,6 +135,22 @@ class DriftDocumentRepository implements DocumentRepository {
     // Best-effort file cleanup AFTER commit. Worst case = harmless orphan files
     // (no row references them). deleteDocumentDir guards dir-absent.
     await _fileStore.deleteDocumentDir(documentId);
+  }
+
+  @override
+  Future<File> exportPdf(int documentId) async {
+    final pages = await getDocumentPages(documentId);
+    if (pages.isEmpty) {
+      throw const DocumentExportException('export failed: no pages');
+    }
+    try {
+      final bytes = await _pdfBuilder.build(pages);
+      final rel = _fileStore.pdfRelativeFor(documentId);
+      await _fileStore.writeRelative(rel, bytes);
+      return _fileStore.absoluteFor(rel);
+    } catch (e) {
+      throw DocumentExportException('export failed: $e');
+    }
   }
 
   String _defaultName(DateTime t) {

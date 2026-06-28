@@ -13,6 +13,8 @@ class DocumentFileStore {
   String relativeFor(int docId, int position) =>
       'documents/$docId/page_$position.jpg';
 
+  String pdfRelativeFor(int docId) => 'documents/$docId/export.pdf';
+
   File absoluteFor(String relativePath) =>
       File(p.join(baseDir.path, relativePath));
 
