@@ -39,11 +39,12 @@ sharing (Feature 12), DB persistence of the artifact.
 
 ## Dependency
 
-The pure-Dart **`pdf`** package (DavBfr) — fully on-device, no network.
-**Spike-confirmed** on this toolchain:
+The pure-Dart **`pdf`** package (DavBfr), pinned to **`^3.11.1`** — fully
+on-device, no network. **Version-pinned because C1 delegates EXIF orientation to
+it** (see Orientation). **Spike-confirmed** on this toolchain:
 - `pw.MemoryImage(jpegBytes)` embeds the JPEG **losslessly** — the output PDF
   contains `/DCTDecode` and the **original JPEG bytes verbatim** (no decode, no
-  re-encode).
+  re-encode) — **and auto-orients from EXIF** (oriented `.width`/`.height`).
 - The **default `pw.Document()` is already metadata-clean**: it emits **no**
   `/Producer`, `/Creator`, `/Author`, or `/CreationDate`. (Counter-intuitively,
   passing `producer: ''` is *worse* — it injects a `dart_pdf` attribution URL
@@ -58,9 +59,9 @@ widget knows; the build is a pure unit.
 ```
 PdfBuilder
   build(List<PageImage> pages, PdfTextLayer textLayer) : Future<Uint8List>
-    • reads each page JPEG's bytes + EXIF Orientation (exif pkg)
-    • embeds the raw JPEG LOSSLESSLY (pw.MemoryImage → /DCTDecode)
-    • orientation: pageMatrix() applies pdfOrientationTransform(exif) (see below)
+    • pw.MemoryImage(jpegBytes) — embeds the raw JPEG LOSSLESSLY (/DCTDecode)
+      AND auto-orients from EXIF (spike-confirmed); .width/.height are oriented
+    • page = PdfPageFormat(provider.width, provider.height)  // oriented aspect
     • Stacks textLayer.overlayFor(page) over the image (image-only → nothing)
     • builds with the DEFAULT pw.Document() — no info fields (metadata-clean)
 
@@ -83,23 +84,20 @@ class ImageOnlyTextLayer implements PdfTextLayer { overlayFor(_) => const []; }
 - **DIP intact:** the viewer calls `widget.repository.exportPdf(documentId)` —
   the **same one-dependency shape as `deleteDocument`**. The viewer stays dumb.
 
-### Orientation: lossless matrix-rotate (pure mapping, all 8 values)
+### Orientation: delegated to the `pdf` package (lossless auto-orient)
 
-PDF image XObjects ignore EXIF Orientation, so a JPEG that displays upright
-on-screen (via its tag) would render rotated in a PDF. C1 corrects it with the
-PDF transform matrix on the **losslessly-embedded** raw JPEG (no re-encode).
+A naive worry is that PDF image XObjects ignore EXIF Orientation. **Spike result:
+they don't have to** — `pw.MemoryImage(jpegBytes)` reads the EXIF Orientation and
+**auto-orients losslessly**: for the EXIF-6 fixture (raw 200×100) the provider
+reports **100×200**, the page comes out **100×200**, and the embed stays
+`/DCTDecode` with the **original JPEG bytes verbatim** (no re-encode). So C1
+embeds the raw JPEG and sizes the page to the provider's oriented dimensions —
+**no manual matrix, no `pdfOrientationTransform`** (which would *double-correct*).
 
-The mapping is a **pure, independently-tested function**:
-
-```
-pdfOrientationTransform(int exifOrientation) : ({int quarterTurns, bool flip})
-  1→(0,false) 2→(0,true) 3→(2,false) 4→(2,true)
-  5→(1,true)  6→(1,false) 7→(3,true) 8→(3,false)   // 1=90° CW
-```
-
-The builder swaps the **page** width/height for the 90°/270° cases (orientations
-5,6,7,8) so the page aspect matches the corrected image aspect. The image
-dimensions are read from the JPEG header (no full decode).
+The 8-orientation correctness is therefore the **`pdf` package's** responsibility
+(version-pinned, see Dependency). Host asserts the page is **oriented** (the
+non-square EXIF-6 fixture → `MediaBox 100×200`) and **lossless**; pixel-level
+uprightness is REAL_DEVICE.
 
 ### Why off-thread is safely deferred (not hand-waved)
 
@@ -126,29 +124,30 @@ explicitly **deferred** for C1.
 
 - `lib/.../document_repository.dart` — add `exportPdf` + `DocumentExportException`.
 - `lib/.../drift/drift_document_repository.dart` — implement `exportPdf` (inject `PdfBuilder`).
-- `lib/.../pdf/pdf_builder.dart` — **new** `PdfBuilder` + `pdfOrientationTransform`.
+- `lib/.../pdf/pdf_builder.dart` — **new** `PdfBuilder` (delegates orientation to `pdf`).
 - `lib/.../pdf/pdf_text_layer.dart` — **new** `PdfTextLayer` + `ImageOnlyTextLayer`.
 - `lib/.../document_file_store.dart` — add `pdfRelativeFor`.
 - `lib/.../library_dependencies.dart` — construct the real `PdfBuilder`.
 - `lib/.../page_viewer_screen.dart` — Export action + success/error SnackBars.
 - `test/support/fake_library.dart` — `FakeDocumentRepository.exportPdf` + a `throwOnExport` flag (returns a synthesized temp `File`).
 - `pubspec.yaml` — add `pdf`.
-- New non-square fixture (see Testing) + new test files + `integration_test/c1_export_pdf.feature` (+ generated test + steps).
+- `test/fixtures/landscape_exif6.jpg` — **committed** non-square (200×100 raw)
+  EXIF-Orientation-6 fixture (already generated + verified: `exif` reads "Rotated
+  90 CW") for the orientation test.
+- New test files + `integration_test/c1_export_pdf.feature` (+ generated test + steps).
 
 ## Testing (TDD/BDD first)
 
-- **`pdfOrientationTransform` (pure):** unit-test **all 8** EXIF values →
-  expected `(quarterTurns, flip)` — exercises the flip cases (2,4,5,7) with no
-  image fixture.
 - **`PdfBuilder`:**
   - valid 1-page PDF (`%PDF` header; exactly one page object — use a **robust
     tokenizer** for the page count, NOT a naive `/Type /Page` literal: the `pdf`
     package may emit `/Type/Page` without a space).
   - **lossless:** `/DCTDecode` present **and** the original JPEG bytes appear
     **verbatim** in the output.
-  - **orientation (non-vacuous):** uses a **new non-square fixture** (e.g.
-    200×100) tagged **EXIF Orientation = 6** — assert the **page width/height are
-    swapped** to the corrected aspect (a square fixture cannot prove this).
+  - **orientation (non-vacuous, delegated):** uses the committed non-square
+    `landscape_exif6.jpg` (raw 200×100, EXIF Orientation 6) — assert the page
+    `MediaBox` is **100×200** (oriented), proving the library auto-oriented it
+    (a square fixture cannot prove this), and the embed is still lossless.
   - **metadata-clean:** output contains no `/Author`, `/Producer`, `/Creator`,
     `/CreationDate`, and no `dart_pdf`/`DavBfr` URL (these live in the
     **uncompressed** Info dict — greppable).
@@ -170,21 +169,21 @@ explicitly **deferred** for C1.
 
 | Tier | Proves | Automatable |
 |---|---|---|
-| 1 — host (`PdfBuilder` + `exportPdf` on a temp store) | valid + lossless + metadata-clean + page-dim swap + seam fires | ✅ in-gate |
+| 1 — host (`PdfBuilder` + `exportPdf` on a temp store) | valid + lossless + metadata-clean + oriented page (`MediaBox 100×200`) + seam fires | ✅ in-gate |
 | 2 — integration (android + ios) | seed doc → cold launch → open → tap Export → "PDF saved" SnackBar + `export.pdf` exists & is a valid 1-page PDF | ✅ |
 | 3 — **REAL_DEVICE** (deferred) | the exported PDF opens and the page is **visually upright + legible** | ❌ manual |
 
-Host asserts the **page-dimension swap + that a transform is applied + lossless
-bytes**; the *pixel-level* upright/legibility is REAL_DEVICE, consistent with the
+Host asserts the **oriented page (`MediaBox`) + lossless bytes**; the
+*pixel-level* upright/legibility is REAL_DEVICE, consistent with the
 B2/B3 thumbnail-upright deferral.
 
 ## Verification harness
 
 `scripts/verify/c1.sh` on the existing `lib.sh`:
-- static asserts: `PdfBuilder`, `pdfOrientationTransform`, `exportPdf` on the
-  interface, `PdfTextLayer`/`ImageOnlyTextLayer`, `pdf` in `pubspec`,
-  `pdfRelativeFor`, `schemaVersion => 1` (no schema change), scrubber
-  `minimalExifApp1` (privacy regression),
+- static asserts: `PdfBuilder`, `exportPdf` on the interface,
+  `PdfTextLayer`/`ImageOnlyTextLayer`, `pdf:` in `pubspec`, `pdfRelativeFor`,
+  the committed `landscape_exif6.jpg` fixture exists, `schemaVersion => 1` (no
+  schema change), scrubber `minimalExifApp1` (privacy regression),
 - codegen-current, `mobile:test`, `analyze`, coverage floor 70,
 - `verify_integration_android`/`_ios c1_export_pdf_test.dart`,
 - **no-empty-stub guard** (each new BDD step is real + the generated test calls
@@ -199,9 +198,9 @@ B2/B3 thumbnail-upright deferral.
    JPEG. — *BDD: export · unit: valid single page*
 2. The embedded image is **lossless** (`/DCTDecode` + original JPEG verbatim, no
    re-encode). — *unit*
-3. Orientation is **matrix-corrected**: `pdfOrientationTransform` is correct for
-   all 8 EXIF values, and the page dimensions swap for 90°/270° (non-square
-   fixture). *(REAL_DEVICE: visually upright.)* — *unit*
+3. Orientation is **auto-corrected losslessly** by the `pdf` package: the
+   non-square EXIF-6 fixture yields an **oriented page** (`MediaBox 100×200`) with
+   a lossless embed. *(REAL_DEVICE: visually upright.)* — *unit*
 4. The PDF is **metadata-clean** — no author/producer/creator/creationdate, no
    library-attribution URL. — *unit (privacy spine)*
 5. **Pluggable `PdfTextLayer`** — a stub injects text (and `overlayFor` is
@@ -222,16 +221,19 @@ lane, deferred-with-sign-off consistent with B1/B2/B3.
 - The trailer `/ID` (a file identifier, not personal/device data) remains —
   **accepted**, neutralizable later if desired.
 - "Renders upright/legible" pixel verification is REAL_DEVICE; host verifies the
-  page-dim swap + transform wiring + lossless bytes.
-- Mirrored EXIF orientations (2,4,5,7) are covered by the pure-function test, not
-  by image fixtures (no such camera fixture exists yet).
+  page is oriented (`MediaBox`) + lossless bytes.
+- All 8 EXIF orientations are handled by the **version-pinned `pdf` package**, not
+  by our own code; host proves auto-orientation is active via the EXIF-6 fixture,
+  REAL_DEVICE spot-checks the visual.
 
 ## Spikes
 
-**Already green (this design):** (1) `pdf` lossless JPEG embed + metadata-clean
-default; (2) `exif` reads Orientation from a real `JpegExifScrubber` output.
-**For the plan's first task:** confirm the `PdfBuilder` orientation path yields
-the host-assertable **page-dim swap** on the new non-square EXIF-6 fixture.
+**All green (this design):** (1) `pdf` lossless JPEG embed + metadata-clean
+default; (2) `exif` reads Orientation from a real `JpegExifScrubber` output;
+(3) `pw.MemoryImage` **auto-orients** the EXIF-6 fixture losslessly (page →
+`MediaBox 100×200`, `/DCTDecode`, verbatim bytes) — orientation is the library's
+job; (4) the committed `landscape_exif6.jpg` fixture is generated + verified.
+No orientation premise remains open for the plan.
 
 ## Privacy spine (binding, unchanged)
 
