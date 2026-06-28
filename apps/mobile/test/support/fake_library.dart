@@ -23,6 +23,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnDelete;
   final bool throwOnExport;
   final Completer<void>? gate;
+  final Completer<void>? exportGate;
   final List<Document> documents;
   final List<PageImage>? pages; // null => synthesize one non-loadable page
   int createCalls = 0;
@@ -36,6 +37,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnDelete = false,
     this.throwOnExport = false,
     this.gate,
+    this.exportGate,
     List<Document>? documents,
     this.pages,
   }) : documents = documents ?? <Document>[];
@@ -76,6 +78,7 @@ class FakeDocumentRepository implements DocumentRepository {
     if (throwOnExport) {
       throw const DocumentExportException('fake: export failed');
     }
+    if (exportGate != null) await exportGate!.future;
     exportedIds.add(documentId);
     // Return a path without real I/O — callers (e.g. _exportPdf) discard the
     // File; widget tests need the future to complete synchronously so that

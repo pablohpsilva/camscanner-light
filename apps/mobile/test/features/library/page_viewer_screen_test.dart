@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -165,5 +167,32 @@ void main() {
     final btn =
         tester.widget<IconButton>(find.byKey(const Key('page-viewer-export')));
     expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('export is disabled in the empty state', (tester) async {
+    await pushViewer(tester, FakeDocumentRepository(pages: const []));
+    expect(find.byKey(const Key('page-viewer-empty')), findsOneWidget);
+    final btn =
+        tester.widget<IconButton>(find.byKey(const Key('page-viewer-export')));
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('both AppBar actions are disabled while an export is in flight',
+      (tester) async {
+    final gate = Completer<void>();
+    final repo = FakeDocumentRepository(exportGate: gate);
+    await pushViewer(tester, repo);
+
+    await tester.tap(find.byKey(const Key('page-viewer-export')));
+    await tester.pump(); // start the export; gate holds it open
+    IconButton btn(String k) =>
+        tester.widget<IconButton>(find.byKey(Key(k)));
+    expect(btn('page-viewer-export').onPressed, isNull);
+    expect(btn('page-viewer-delete').onPressed, isNull);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('PDF saved'), findsOneWidget);
+    expect(btn('page-viewer-export').onPressed, isNotNull);
   });
 }

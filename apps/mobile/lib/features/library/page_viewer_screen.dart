@@ -35,6 +35,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   List<PageImage>? _pages;
   bool _loading = true;
   bool _error = false;
+  bool _exporting = false;
   int _current = 0;
 
   @override
@@ -71,6 +72,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   Future<void> _exportPdf() async {
+    setState(() => _exporting = true);
     try {
       await widget.repository.exportPdf(widget.documentId);
       if (!mounted) return;
@@ -82,6 +84,8 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't export PDF")),
       );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
     }
   }
 
@@ -126,12 +130,15 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           IconButton(
             key: const Key('page-viewer-export'),
             icon: const Icon(Icons.picture_as_pdf),
-            onPressed: (_loading || _error) ? null : _exportPdf,
+            onPressed: (_loading || _error || _exporting ||
+                    (_pages?.isEmpty ?? true))
+                ? null
+                : _exportPdf,
           ),
           IconButton(
             key: const Key('page-viewer-delete'),
             icon: const Icon(Icons.delete_outline),
-            onPressed: (_loading || _error) ? null : _confirmAndDelete,
+            onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
           ),
         ],
       ),
