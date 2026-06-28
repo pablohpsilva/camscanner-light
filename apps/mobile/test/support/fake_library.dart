@@ -80,3 +80,22 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
 /// Library deps whose repository always fails — for the save-failure scenario.
 LibraryDependencies failingLibraryDependencies() =>
     fakeLibraryDependencies(FakeDocumentRepository(throwOnCreate: true));
+
+/// A persistent (file-backed) LibraryDependencies that reuses the SAME db file
+/// and documents baseDir on every createRepository() call — so data written
+/// before one app pump is still there when a later pump reads it. This is the
+/// Tier-2 restart proof. (Contrast tempLibraryDependencies(), which builds a
+/// fresh NativeDatabase.memory() AND a fresh temp dir per call, and therefore
+/// cannot persist across a re-pump.)
+LibraryDependencies persistentLibraryDependencies({
+  required File dbFile,
+  required Directory baseDir,
+}) =>
+    LibraryDependencies(
+      createRepository: () async => DriftDocumentRepository(
+        db: AppDatabase(NativeDatabase(dbFile)),
+        scrubber: const JpegExifScrubber(),
+        fileStore: DocumentFileStore(baseDir),
+        clock: DateTime.now,
+      ),
+    );
