@@ -112,6 +112,13 @@ void main() {
     expect(find.byType(PageViewerScreen), findsOneWidget);
   });
 
+  testWidgets('delete is disabled in the error state', (tester) async {
+    await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
+    expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
+    final btn = tester.widget<IconButton>(find.byKey(const Key('page-viewer-delete')));
+    expect(btn.onPressed, isNull);
+  });
+
   testWidgets('delete failure stays on the viewer and shows an error SnackBar',
       (tester) async {
     final repo = FakeDocumentRepository(throwOnDelete: true);

@@ -111,7 +111,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           IconButton(
             key: const Key('page-viewer-delete'),
             icon: const Icon(Icons.delete_outline),
-            onPressed: _loading ? null : _confirmAndDelete,
+            onPressed: (_loading || _error) ? null : _confirmAndDelete,
           ),
         ],
       ),
