@@ -32,7 +32,7 @@
 | `apps/mobile/lib/features/library/document_repository.dart` | MODIFY. `createFromCapture({CropCorners? corners})`. | 3 |
 | `apps/mobile/lib/features/library/drift/drift_document_repository.dart` | MODIFY. Write/read corners. | 3 |
 | `apps/mobile/test/support/fake_library.dart` | MODIFY. Fake records corners; returns new PageImage. | 3 |
-| `apps/mobile/test/features/library/drift/drift_document_repository_test.dart` | MODIFY. Corner round-trip tests. | 3 |
+| `apps/mobile/test/features/library/drift_document_repository_test.dart` | MODIFY. Corner round-trip tests. | 3 |
 | `apps/mobile/lib/features/scan/widgets/crop_overlay.dart` | NEW. `CropOverlay` widget. | 4 |
 | `apps/mobile/test/features/scan/widgets/crop_overlay_test.dart` | NEW. Widget tests. | 4 |
 | `apps/mobile/lib/features/scan/capture_review_screen.dart` | MODIFY → StatefulWidget; overlay + decode + reset; `onAccept` signature. | 5 |
@@ -253,7 +253,7 @@ Change `schemaVersion` and `migration`:
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
           if (from < 2) {
-            await m.addColumn(_db.pages, _db.pages.corners);
+            await m.addColumn(pages, pages.corners);
           }
         },
         beforeOpen: (details) async {
@@ -262,7 +262,7 @@ Change `schemaVersion` and `migration`:
       );
 ```
 
-NOTE: inside `AppDatabase` the tables are referenced as `pages`/`documents` (the generated accessors), NOT `_db.pages`. Use `m.addColumn(pages, pages.corners)`. (Correct the snippet above to `pages`/`pages.corners` — `_db` does not exist in this scope.)
+NOTE: inside `AppDatabase` the tables are the generated accessors `pages`/`documents` (the migration closure captures `this`) — that is why it is `pages, pages.corners` and NOT `_db.pages`.
 
 - [ ] **Step 2: Regenerate Drift code**
 
@@ -378,7 +378,7 @@ git commit -m "feat(e1): Pages.corners column + schemaVersion 1->2 migration (te
 - Modify: `apps/mobile/lib/features/library/document_repository.dart`
 - Modify: `apps/mobile/lib/features/library/drift/drift_document_repository.dart`
 - Modify: `apps/mobile/test/support/fake_library.dart`
-- Test: `apps/mobile/test/features/library/drift/drift_document_repository_test.dart`
+- Test: `apps/mobile/test/features/library/drift_document_repository_test.dart`
 
 **Interfaces:**
 - Consumes: `CropCorners` (Task 1), `Pages.corners` (Task 2).
@@ -386,33 +386,31 @@ git commit -m "feat(e1): Pages.corners column + schemaVersion 1->2 migration (te
 
 - [ ] **Step 1: Write the failing repo round-trip tests**
 
-Append to `apps/mobile/test/features/library/drift/drift_document_repository_test.dart` (inside `main()`; reuse the file's existing `repo()`/temp-store helper and a capture fixture — match the existing tests' setup for building a `CapturedImage`):
+This file already has (verified): a synchronous `DriftDocumentRepository repo({ImageMetadataScrubber? scrubber})` helper bound to a shared in-memory `db` + temp `base`, and a top-level `late CapturedImage capture` built in `setUp` from `test/fixtures/exif_sample.jpg`. Reuse them — do NOT invent `sampleCapture()` and note `repo()` is **synchronous** (no `await`). Add the imports `import 'package:flutter/painting.dart';` (for `Offset`) and `import 'package:mobile/features/library/crop_corners.dart';` at the top. Append inside `main()`:
 
 ```dart
   test('createFromCapture persists the given corners; getDocumentPages reads them back',
       () async {
-    final r = await repo(); // existing helper: real in-memory Drift + temp store
     const corners = CropCorners(
       topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.12),
       bottomRight: Offset(0.88, 0.9), bottomLeft: Offset(0.08, 0.92));
-    final doc = await r.createFromCapture(await sampleCapture(), corners: corners);
-    final pages = await r.getDocumentPages(doc.id);
+    final doc = await repo().createFromCapture(capture, corners: corners);
+    final pages = await repo().getDocumentPages(doc.id);
     expect(pages.single.corners, corners);
   });
 
   test('createFromCapture with no corners reads back fullFrame', () async {
-    final r = await repo();
-    final doc = await r.createFromCapture(await sampleCapture());
-    final pages = await r.getDocumentPages(doc.id);
+    final doc = await repo().createFromCapture(capture);
+    final pages = await repo().getDocumentPages(doc.id);
     expect(pages.single.corners, CropCorners.fullFrame);
   });
 ```
 
-(Use the existing test file's capture helper; if it inlines the temp JPEG creation, factor a local `sampleCapture()` or reuse the inline pattern already present. Add `import 'package:flutter/painting.dart';` and `import 'package:mobile/features/library/crop_corners.dart';` if not present.)
+(`repo()` returns a repository bound to the same shared `db`/`base`, so calling it twice in one test reads/writes the same database.)
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `cd apps/mobile && flutter test test/features/library/drift/drift_document_repository_test.dart`
+Run: `cd apps/mobile && flutter test test/features/library/drift_document_repository_test.dart`
 Expected: FAIL — `corners` named param undefined on `createFromCapture`; `PageImage.corners` undefined.
 
 - [ ] **Step 3: Add `corners` to `PageImage`**
@@ -508,7 +506,7 @@ The Fake's `getDocumentPages` returns `PageImage(position:1, imagePath:...)` —
 
 - [ ] **Step 7: Run the repo tests + full suite + analyze**
 
-Run: `cd apps/mobile && flutter test test/features/library/drift/drift_document_repository_test.dart` → PASS.
+Run: `cd apps/mobile && flutter test test/features/library/drift_document_repository_test.dart` → PASS.
 Run: `pnpm nx run mobile:test --skip-nx-cache` → `All tests passed!` (existing B3 viewer / C1 PDF tests still green — they read only `imagePath`).
 Run: `pnpm nx run mobile:analyze --skip-nx-cache` → `Successfully ran target analyze`.
 
@@ -519,7 +517,7 @@ git add apps/mobile/lib/features/library/page_image.dart \
         apps/mobile/lib/features/library/document_repository.dart \
         apps/mobile/lib/features/library/drift/drift_document_repository.dart \
         apps/mobile/test/support/fake_library.dart \
-        apps/mobile/test/features/library/drift/drift_document_repository_test.dart
+        apps/mobile/test/features/library/drift_document_repository_test.dart
 git commit -m "feat(e1): persist + read per-page crop corners (repo, PageImage, fake)"
 ```
 
@@ -654,10 +652,29 @@ void main() {
   });
 
   testWidgets('disabled overlay ignores drags', (tester) async {
-    final out = await pump(tester, enabled: false);
+    // NOTE: capture the callback ACROSS the drag (do not use pump()'s return,
+    // which snapshots before the drag and would make this assertion vacuous).
+    CropCorners? out;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 400, height: 300,
+            child: CropOverlay(
+              imageSize: const Size(1000, 750),
+              image: const ColoredBox(color: Colors.black),
+              corners: CropCorners.fullFrame,
+              enabled: false,
+              onCornersChanged: (c) => out = c,
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
     await tester.drag(find.byKey(const Key('crop-handle-tl')), const Offset(40, 30));
     await tester.pumpAndSettle();
-    expect(out, isNull);
+    expect(out, isNull); // disabled => onCornersChanged never fired during the drag
   });
 
   testWidgets('handles carry semantic labels', (tester) async {
@@ -1432,6 +1449,6 @@ git commit -m "test(e1): verify gate (static asserts + both-platform integration
 - `e1.sh` incl. schemaVersion=2, orientation contract guard, privacy, no-stub, fail-closed (Verification) → Task 7.
 - Acceptance criteria 1–9 → covered across Tasks 1–7 (1/2 overlay+drag Tasks 4/5; 3 frame/role Task 1; 4 persist+non-destructive Task 3; 5 migration Task 2; 6 a11y Task 4; 7 privacy Task 7 asserts; 8 E2 contract = Global Constraints + Task 7 orientation assert; 9 TDD/BDD+gate Tasks 1–7).
 
-**2. Placeholder scan** — no TBD/TODO; every code step has complete code; every command states its expected marker. The one prose correction (use `pages`/`pages.corners`, not `_db.pages`, inside `AppDatabase`) is called out explicitly in Task 2 Step 1.
+**2. Placeholder scan** — no TBD/TODO; every code step has complete code; every command states its expected marker. Task 2's `onUpgrade` snippet shows the correct `pages, pages.corners` directly (the migration closure captures `this`); the repo-impl code in Task 3 Step 5 correctly uses the repository's `_db` field — the two contexts are distinct and both shown correctly.
 
 **3. Type consistency** — `CropCorners` (role-tagged fields, `fullFrame`, `toStorage`/`tryParse`), `createFromCapture(CapturedImage, {CropCorners? corners})`, `save(image, {CropCorners corners = CropCorners.fullFrame})`, `PageImage({..., corners = CropCorners.fullFrame})`, `CropOverlay({imageSize, image, corners, onCornersChanged, enabled})`, `onAccept: ValueChanged<CropCorners>`, and keys (`crop-overlay`, `crop-handle-{tl,tr,br,bl}`, `crop-reset`) are used identically across Tasks 1→7. Consistent.
