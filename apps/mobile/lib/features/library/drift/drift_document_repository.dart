@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 
 import '../../scan/captured_image.dart';
+import '../crop_corners.dart';
 import '../document.dart';
 import '../document_file_store.dart';
 import '../document_repository.dart';
@@ -35,7 +36,7 @@ class DriftDocumentRepository implements DocumentRepository {
         _pdfBuilder = pdfBuilder; // ignore: prefer_initializing_formals
 
   @override
-  Future<Document> createFromCapture(CapturedImage capture) async {
+  Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners}) async {
     final now = _clock();
     final createdUtc = now.toUtc();
     final name = _defaultName(now);
@@ -56,7 +57,10 @@ class DriftDocumentRepository implements DocumentRepository {
         }
         await _db.into(_db.pages).insert(
               PagesCompanion.insert(
-                  documentId: docId, position: 1, relativeImagePath: rel),
+                  documentId: docId,
+                  position: 1,
+                  relativeImagePath: rel,
+                  corners: Value(corners?.toStorage())),
             );
         return Document(
             id: docId,
@@ -117,6 +121,7 @@ class DriftDocumentRepository implements DocumentRepository {
         .map((pg) => PageImage(
               position: pg.position,
               imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
+              corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
             ))
         .toList();
   }

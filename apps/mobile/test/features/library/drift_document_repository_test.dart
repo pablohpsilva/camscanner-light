@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
@@ -319,5 +320,21 @@ void main() {
       repo().rename(99999, 'Whatever'),
       throwsA(isA<DocumentRenameException>()),
     );
+  });
+
+  test('createFromCapture persists the given corners; getDocumentPages reads them back',
+      () async {
+    const corners = CropCorners(
+      topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.12),
+      bottomRight: Offset(0.88, 0.9), bottomLeft: Offset(0.08, 0.92));
+    final doc = await repo().createFromCapture(capture, corners: corners);
+    final pages = await repo().getDocumentPages(doc.id);
+    expect(pages.single.corners, corners);
+  });
+
+  test('createFromCapture with no corners reads back fullFrame', () async {
+    final doc = await repo().createFromCapture(capture);
+    final pages = await repo().getDocumentPages(doc.id);
+    expect(pages.single.corners, CropCorners.fullFrame);
   });
 }
