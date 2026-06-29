@@ -166,8 +166,8 @@ class _DragHandleState extends State<_DragHandle> {
     return GestureDetector(
       onPanStart: widget.enabled ? _onPanStart : null,
       onPanUpdate: widget.enabled ? _onPanUpdate : null,
-      onPanEnd: _onPanEnd,
-      onPanCancel: _onPanCancel,
+      onPanEnd: widget.enabled ? _onPanEnd : null,
+      onPanCancel: widget.enabled ? _onPanCancel : null,
       child: Container(
         width: _r * 2,
         height: _r * 2,
