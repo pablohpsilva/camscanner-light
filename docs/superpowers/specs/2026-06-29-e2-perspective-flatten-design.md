@@ -38,10 +38,16 @@ rather than the original angled capture. The original image is never modified
 ## The coordinate-frame contract (inherited from E1)
 
 Corners are normalized `[0..1]` in the **EXIF-applied display frame**. The
-`image` package decoder honors EXIF Orientation, so decoding the stored JPEG via
-the `image` package gives the same oriented pixels that Flutter's `Image.file`
-displays. Denormalization for the homography uses the decoded pixel dimensions
-(width × height from the decoded `img.Image`), never a raw JPEG SOF header.
+`image` package does **NOT** automatically apply EXIF Orientation on
+`img.decodeImage()` — `img.bakeOrientation(src)` must be called immediately
+after decode to rotate the pixel data into the display frame before any
+coordinate math. After baking, `src.width/height` match the display-frame
+dimensions and the flat output carries no Orientation tag (pixels are already
+correctly oriented). Skipping this step would apply corners in the raw sensor
+frame, producing a misaligned warp on any rotated capture.
+
+Denormalization for the homography uses the baked pixel dimensions
+(`src.width × src.height`), never a raw JPEG SOF header.
 
 ## Architecture
 
@@ -113,7 +119,10 @@ function so `compute()` can serialize it.
 **Algorithm (inside `compute`):**
 
 1. `corners == CropCorners.fullFrame` → return null.
-2. Decode JPEG: `img.Image src = img.decodeImage(bytes)!`.
+2. Decode and orient: `img.Image src = img.bakeOrientation(img.decodeImage(bytes)!)`.
+   `bakeOrientation` rotates pixel data to match the EXIF Orientation tag then
+   strips the tag — `src.width/height` are now in the display frame, matching
+   the stored corners.
 3. Denormalize corners to pixel coords:
    `px = corner.dx * src.width`, `py = corner.dy * src.height`.
 4. **Convexity guard:** compute 2-D cross-products at TL, TR, BR, BL; if any
@@ -334,6 +343,8 @@ stripped by the `image` package re-encode (no GPS/device metadata in output).
 
 - **Verify `scripts/verify/e2.sh` (new):**
   Static asserts: `ImageWarper`; `WarpException`; `PerspectiveWarper`;
+  `bakeOrientation` call present in `perspective_warper.dart` (guards the
+  EXIF-frame contract — absence = silent misalignment on rotated captures);
   `flatRelativePath` column + `onUpgrade` `addColumn`; `flatRelativeFor`;
   `displayPath` getter; `image:` in pubspec; schema v3; no-uncommitted-generated-diff;
   codegen current; `mobile:test` + `mobile:analyze`; `assert_coverage_floor 70`;
@@ -355,6 +366,10 @@ stripped by the `image` package re-encode (no GPS/device metadata in output).
   bottom-edge), height = max(left-edge, right-edge) — *unit: output-size formula*
 - [ ] Self-crossing quads throw `WarpException`; degenerate (< 2 px) throws
   `WarpException` — *unit: convexity + degenerate guards*
+- [ ] `img.bakeOrientation()` is applied before coordinate math — corners (stored
+  in EXIF-applied frame) are correctly aligned with decoded pixels on any
+  rotated capture — *static assert in verify script + unit: warp of a
+  synthetically rotated image produces correct output*
 - [ ] Schema v2 → v3 migration adds `flatRelativePath`; existing rows survive as
   null; fresh write round-trips — *migration test*
 - [ ] `PageViewerScreen` and `PdfBuilder` use `displayPath` (flat when available,
