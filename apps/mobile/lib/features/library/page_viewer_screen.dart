@@ -219,7 +219,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             return InteractiveViewer(
               key: Key('page-viewer-page-${pg.position}'),
               child: Image.file(
-                File(pg.imagePath),
+                File(pg.displayPath),
                 fit: BoxFit.contain,
                 errorBuilder: (c, e, s) => const Center(
                   child: Icon(Icons.broken_image_outlined, size: 64),

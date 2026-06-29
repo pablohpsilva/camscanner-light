@@ -23,6 +23,14 @@ class Pages extends Table {
       integer().references(Documents, #id, onDelete: KeyAction.cascade)();
   IntColumn get position => integer()();
   TextColumn get relativeImagePath => text()();
+
+  /// Normalized crop quad (E1) as "x0,y0,...,x3,y3"; null = uncropped (full
+  /// frame). See CropCorners.
+  TextColumn get corners => text().nullable()();
+
+  /// Perspective-flattened image path (E2), relative to the app documents dir;
+  /// null until the flatten step has been run for this page.
+  TextColumn get flatRelativePath => text().nullable()();
 }
 
 @DriftDatabase(tables: [Documents, Pages])
@@ -30,18 +38,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
-        // SQLite ignores FK actions (Pages.documentId onDelete cascade) unless
-        // foreign_keys is enabled per connection.
+        onUpgrade: (m, from, to) async {
+          if (from < 2) await m.addColumn(pages, pages.corners);
+          if (from < 3) await m.addColumn(pages, pages.flatRelativePath);
+        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
-        // Future columns (folderId/tags in D; corners/mode/enhancement in
-        // E/F/G) bump schemaVersion and add steps here.
       );
 }
 

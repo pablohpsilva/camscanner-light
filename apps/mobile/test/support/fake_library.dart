@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
+import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/image_warper.dart';
+import 'package:mobile/features/library/perspective_warper.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -30,6 +34,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final List<PageImage>? pages; // null => synthesize one non-loadable page
   int createCalls = 0;
   int listCalls = 0;
+  CropCorners? lastSavedCorners;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -49,8 +54,9 @@ class FakeDocumentRepository implements DocumentRepository {
   }) : documents = documents ?? <Document>[];
 
   @override
-  Future<Document> createFromCapture(CapturedImage capture) async {
+  Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners}) async {
     createCalls++;
+    lastSavedCorners = corners;
     if (gate != null) await gate!.future;
     if (throwOnCreate) {
       throw const DocumentSaveException('fake: save failed');
@@ -136,6 +142,23 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 }
 
+/// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
+/// return null (no-op), or throw [WarpException].
+class FakeImageWarper implements ImageWarper {
+  final bool throws;
+  final Uint8List? returnValue;
+  int calls = 0;
+
+  FakeImageWarper({this.throws = false, this.returnValue});
+
+  @override
+  Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) async {
+    calls++;
+    if (throws) throw WarpException('fake: warp failed');
+    return returnValue;
+  }
+}
+
 /// LibraryDependencies whose factory returns the given fake repository.
 LibraryDependencies fakeLibraryDependencies(FakeDocumentRepository repo) =>
     LibraryDependencies(createRepository: () async => repo);
@@ -151,6 +174,7 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
             DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
         clock: DateTime.now,
         pdfBuilder: const PdfBuilder(),
+        warper: const PerspectiveWarper(),
       ),
     );
 
@@ -175,5 +199,6 @@ LibraryDependencies persistentLibraryDependencies({
         fileStore: DocumentFileStore(baseDir),
         clock: DateTime.now,
         pdfBuilder: const PdfBuilder(),
+        warper: const PerspectiveWarper(),
       ),
     );
