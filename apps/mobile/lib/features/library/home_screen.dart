@@ -8,6 +8,7 @@ import 'library_dependencies.dart';
 import 'page_viewer_screen.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
+import 'widgets/rename_dialog.dart';
 
 /// The app's home: the document library. Builds the repository, lists saved
 /// documents (name + date), and opens the camera. Reloads the list whenever the
@@ -109,6 +110,23 @@ class _HomeScreenState extends State<HomeScreen> {
     await _load(); // a delete may have happened in the viewer
   }
 
+  Future<void> _renameDocument(DocumentSummary s) async {
+    final repo = _repository;
+    if (repo == null) return;
+    final newName = await showRenameDialog(context, s.document.name);
+    if (newName == null) return;
+    if (!mounted) return;
+    try {
+      await repo.rename(s.document.id, newName);
+      await _load(); // refresh the list (no spinner; order is stable)
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't rename")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,7 +140,9 @@ class _HomeScreenState extends State<HomeScreen> {
               : _summaries.isEmpty
                   ? const EmptyDocumentsView()
                   : DocumentsListView(
-                      summaries: _summaries, onOpen: _openDocument),
+                      summaries: _summaries,
+                      onOpen: _openDocument,
+                      onRename: _renameDocument),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _repository == null ? null : _openScan,
         icon: const Icon(Icons.document_scanner_outlined),

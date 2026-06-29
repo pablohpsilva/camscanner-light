@@ -4,11 +4,18 @@ import '../document_summary.dart';
 import 'document_thumbnail.dart';
 
 /// Rich list of saved documents: thumbnail, name, date, page count. Newest
-/// first (the repository orders the list).
+/// first (the repository orders the list). Each row has an optional overflow
+/// menu (Rename) when [onRename] is provided.
 class DocumentsListView extends StatelessWidget {
   final List<DocumentSummary> summaries;
   final ValueChanged<DocumentSummary>? onOpen;
-  const DocumentsListView({super.key, required this.summaries, this.onOpen});
+  final ValueChanged<DocumentSummary>? onRename;
+  const DocumentsListView({
+    super.key,
+    required this.summaries,
+    this.onOpen,
+    this.onRename,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +32,19 @@ class DocumentsListView extends StatelessWidget {
           title: Text(d.name),
           subtitle: Text(
               '${_formatLocal(d.createdAt.toLocal())} · ${_pages(s.pageCount)}'),
+          trailing: onRename == null
+              ? null
+              : PopupMenuButton<String>(
+                  key: Key('document-menu-${d.id}'),
+                  onSelected: (_) => onRename!(s),
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      key: Key('document-rename-${d.id}'),
+                      value: 'rename',
+                      child: const Text('Rename'),
+                    ),
+                  ],
+                ),
           onTap: onOpen == null ? null : () => onOpen!(s),
         );
       },

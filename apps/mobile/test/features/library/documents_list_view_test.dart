@@ -54,4 +54,41 @@ void main() {
     expect(opened, isNotNull);
     expect(opened!.document.id, 2);
   });
+
+  testWidgets('shows a per-document rename menu when onRename is set',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(summaries: [summary(1)], onRename: (_) {}),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-menu-1')), findsOneWidget);
+  });
+
+  testWidgets('omits the rename menu when onRename is null', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: DocumentsListView(summaries: [summary(1)])),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-menu-1')), findsNothing);
+  });
+
+  testWidgets('selecting Rename invokes onRename with that summary',
+      (tester) async {
+    DocumentSummary? renamed;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(
+            summaries: [summary(2)], onRename: (s) => renamed = s),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-rename-2')));
+    await tester.pumpAndSettle();
+    expect(renamed, isNotNull);
+    expect(renamed!.document.id, 2);
+  });
 }

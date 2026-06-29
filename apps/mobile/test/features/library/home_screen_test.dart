@@ -84,4 +84,54 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Scan 2026-06-27 20.26.42'),
         findsOneWidget);
   });
+
+  testWidgets('renaming from the list menu updates the document name',
+      (tester) async {
+    final repo = FakeDocumentRepository(documents: [
+      Document(
+          id: 1,
+          name: 'Scan 2026-06-27 20.26.42',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42)),
+    ]);
+    await pumpHome(tester, repo);
+
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-rename-1')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('rename-field')), 'Invoices');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rename-save')));
+    await tester.pumpAndSettle();
+
+    expect(repo.renamedTo, contains('Invoices'));
+    expect(find.text('Invoices'), findsOneWidget);
+    expect(find.text('Scan 2026-06-27 20.26.42'), findsNothing);
+  });
+
+  testWidgets('a rename failure shows an error SnackBar', (tester) async {
+    final repo = FakeDocumentRepository(
+      throwOnRename: true,
+      documents: [
+        Document(
+            id: 1,
+            name: 'Scan 2026-06-27 20.26.42',
+            createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+            modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42)),
+      ],
+    );
+    await pumpHome(tester, repo);
+
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-rename-1')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('rename-field')), 'X');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rename-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't rename"), findsOneWidget);
+  });
 }
