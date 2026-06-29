@@ -456,12 +456,16 @@ class SortControlBar extends StatelessWidget {
     return Padding(
       key: const Key('sort-control-bar'),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
+      // Wrap (not Row): three chips + the active chip's direction arrow can
+      // exceed a narrow phone's width and overflow a Row. Wrap flows to a
+      // second line instead. (Host tests at 800x600 would not catch a Row
+      // overflow; only the device lane would.)
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
           _chip('sort-chip-name', 'Name', SortCriterion.name),
-          const SizedBox(width: 8),
           _chip('sort-chip-created', 'Created', SortCriterion.created),
-          const SizedBox(width: 8),
           _chip('sort-chip-modified', 'Modified', SortCriterion.modified),
         ],
       ),
@@ -632,6 +636,32 @@ Tests:
     final dyApple = tester.getCenter(find.text('apple')).dy;
     final dyZebra = tester.getCenter(find.text('Zebra')).dy;
     expect(dyApple, lessThan(dyZebra));
+  });
+
+  testWidgets('renaming under an active Name sort re-positions the document',
+      (tester) async {
+    final repo = FakeDocumentRepository(documents: twoDocs());
+    await pumpHome(tester, repo);
+    // Activate Name sort (asc): apple above Zebra.
+    await tester.tap(find.byKey(const Key('sort-chip-name')));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(find.text('apple')).dy,
+        lessThan(tester.getCenter(find.text('Zebra')).dy));
+    // Rename 'apple' (id 1) to 'zzz' via its row menu -> under Name asc it must
+    // drop below 'Zebra' (z-e-b... < z-z-z). Proves the active sort is
+    // preserved across _load() and the renamed doc re-positions.
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-rename-1')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('rename-field')), 'zzz');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rename-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('apple'), findsNothing);
+    expect(tester.getCenter(find.text('Zebra')).dy,
+        lessThan(tester.getCenter(find.text('zzz')).dy),
+        reason: 'after rename to zzz, Zebra sorts above it under Name asc');
   });
 
   testWidgets('sorting does not trigger a repository re-query',
