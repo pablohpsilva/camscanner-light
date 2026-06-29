@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:drift/native.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/image_warper.dart';
+import 'package:mobile/features/library/perspective_warper.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -173,6 +174,7 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
             DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
         clock: DateTime.now,
         pdfBuilder: const PdfBuilder(),
+        warper: const PerspectiveWarper(),
       ),
     );
 
@@ -197,5 +199,6 @@ LibraryDependencies persistentLibraryDependencies({
         fileStore: DocumentFileStore(baseDir),
         clock: DateTime.now,
         pdfBuilder: const PdfBuilder(),
+        warper: const PerspectiveWarper(),
       ),
     );

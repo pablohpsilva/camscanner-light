@@ -9,9 +9,12 @@ import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/image_metadata_scrubber.dart';
+import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/scan/captured_image.dart';
+
+import '../../support/fake_library.dart';
 
 /// A scrubber that throws — to drive the crash-safety rollback test.
 class _ThrowingScrubber implements ImageMetadataScrubber {
@@ -39,13 +42,17 @@ void main() {
     if (base.existsSync()) base.deleteSync(recursive: true);
   });
 
-  DriftDocumentRepository repo({ImageMetadataScrubber? scrubber}) =>
+  DriftDocumentRepository repo({
+    ImageMetadataScrubber? scrubber,
+    ImageWarper? warper,
+  }) =>
       DriftDocumentRepository(
         db: db,
         scrubber: scrubber ?? const JpegExifScrubber(),
         fileStore: DocumentFileStore(base),
         clock: clock,
         pdfBuilder: const PdfBuilder(),
+        warper: warper ?? FakeImageWarper(),
       );
 
   test('createFromCapture writes a scrubbed JPEG and a document+page row',
@@ -105,6 +112,7 @@ void main() {
       fileStore: DocumentFileStore(base),
       clock: () => t,
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     seedSource();
     await r.createFromCapture(capture);
@@ -185,6 +193,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final saved = await repo1.createFromCapture(CapturedImage(src.path));
     await repo1.deleteDocument(saved.id);
@@ -197,6 +206,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final summaries = await repo2.listDocumentSummaries();
     final pages = await repo2.getDocumentPages(saved.id);
@@ -222,6 +232,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final saved = await repo1.createFromCapture(CapturedImage(src.path));
     await db1.close();
@@ -233,6 +244,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final summaries = await repo2.listDocumentSummaries();
     await db2.close();
@@ -282,6 +294,7 @@ void main() {
       fileStore: DocumentFileStore(base),
       clock: () => t,
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final doc = await r.createFromCapture(capture);
     t = DateTime.utc(2026, 6, 27, 12); // clock advances before the rename
@@ -336,5 +349,96 @@ void main() {
     final doc = await repo().createFromCapture(capture);
     final pages = await repo().getDocumentPages(doc.id);
     expect(pages.single.corners, CropCorners.fullFrame);
+  });
+
+  group('E2 — warp on save', () {
+    test('non-full-frame corners: flatRelativePath written and round-trips', () async {
+      final fakeBytes = Uint8List.fromList([0xFF, 0xD8, 0x01]); // fake JPEG marker
+      final warper = FakeImageWarper(returnValue: fakeBytes);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: corners);
+
+      // Warper was called once.
+      expect(warper.calls, 1);
+
+      // Flat file exists on disk.
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue);
+      expect(flatFile.readAsBytesSync(), fakeBytes);
+
+      // getDocumentPages round-trips flatImagePath.
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, flatFile.path);
+      expect(pages.single.displayPath, flatFile.path);
+    });
+
+    test('full-frame corners: flatRelativePath stays null', () async {
+      final warper = FakeImageWarper();
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: CropCorners.fullFrame);
+      expect(warper.calls, 0); // short-circuited before calling warper
+
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, isNull);
+      expect(pages.single.displayPath, pages.single.imagePath);
+    });
+
+    test('null corners (unset): flatRelativePath stays null', () async {
+      final warper = FakeImageWarper();
+      final doc = await repo(warper: warper).createFromCapture(capture);
+      expect(warper.calls, 0);
+
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, isNull);
+    });
+
+    test('warper throws WarpException: save still succeeds, flatRelativePath null',
+        () async {
+      final warper = FakeImageWarper(throws: true);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: corners);
+      expect(doc.id, greaterThan(0));
+
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, isNull);
+      // Original file still written.
+      final origFile =
+          File('${base.path}/documents/${doc.id}/page_1.jpg');
+      expect(origFile.existsSync(), isTrue);
+    });
+
+    test('listDocumentSummaries: thumbnailPath prefers flat path', () async {
+      final fakeBytes = Uint8List.fromList([0xFF, 0xD8, 0x02]);
+      final warper = FakeImageWarper(returnValue: fakeBytes);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: corners);
+
+      final summaries =
+          await repo(warper: warper).listDocumentSummaries();
+      final flatPath =
+          '${base.path}/documents/${doc.id}/page_1_flat.jpg';
+      expect(summaries.single.thumbnailPath, flatPath);
+    });
   });
 }

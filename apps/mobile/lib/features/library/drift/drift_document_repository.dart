@@ -9,6 +9,7 @@ import '../document_file_store.dart';
 import '../document_repository.dart';
 import '../document_summary.dart';
 import '../image_metadata_scrubber.dart';
+import '../image_warper.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import 'app_database.dart' hide Document;
@@ -22,6 +23,7 @@ class DriftDocumentRepository implements DocumentRepository {
   final DocumentFileStore _fileStore;
   final DateTime Function() _clock;
   final PdfBuilder _pdfBuilder;
+  final ImageWarper _warper;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -29,11 +31,13 @@ class DriftDocumentRepository implements DocumentRepository {
     required DocumentFileStore fileStore,
     required DateTime Function() clock,
     required PdfBuilder pdfBuilder,
+    required ImageWarper warper,
   })  : _db = db, // ignore: prefer_initializing_formals
         _scrubber = scrubber, // ignore: prefer_initializing_formals
         _fileStore = fileStore, // ignore: prefer_initializing_formals
         _clock = clock, // ignore: prefer_initializing_formals
-        _pdfBuilder = pdfBuilder; // ignore: prefer_initializing_formals
+        _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
+        _warper = warper; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners}) async {
@@ -47,20 +51,34 @@ class DriftDocumentRepository implements DocumentRepository {
                   name: name, createdAt: createdUtc, modifiedAt: createdUtc),
             );
         final rel = _fileStore.relativeFor(docId, 1);
+        // Hoist scrubbed out of try so it's in scope for the warp block.
+        late final Uint8List scrubbed;
         try {
           final raw = await File(capture.path).readAsBytes();
-          final scrubbed = _scrubber.scrub(Uint8List.fromList(raw));
+          scrubbed = _scrubber.scrub(Uint8List.fromList(raw));
           await _fileStore.writeRelative(rel, scrubbed);
         } catch (e) {
           await _fileStore.deleteDocumentDir(docId); // best-effort cleanup
           rethrow; // rolls back the inserted document row
+        }
+        // E2: perspective-flatten best-effort. Original is already on disk.
+        String? flatRel;
+        if (corners != null && corners != CropCorners.fullFrame) {
+          try {
+            final flat = await _warper.warp(scrubbed, corners);
+            if (flat != null) {
+              flatRel = _fileStore.flatRelativeFor(docId, 1);
+              await _fileStore.writeRelative(flatRel, flat);
+            }
+          } catch (_) {/* WarpException or IO — flat stays null, save proceeds */}
         }
         await _db.into(_db.pages).insert(
               PagesCompanion.insert(
                   documentId: docId,
                   position: 1,
                   relativeImagePath: rel,
-                  corners: Value(corners?.toStorage())),
+                  corners: Value(corners?.toStorage()),
+                  flatRelativePath: Value(flatRel)),
             );
         return Document(
             id: docId,
@@ -93,7 +111,8 @@ class DriftDocumentRepository implements DocumentRepository {
         .get();
     final firstPathByDoc = <int, String>{};
     for (final pg in pages) {
-      firstPathByDoc.putIfAbsent(pg.documentId, () => pg.relativeImagePath);
+      firstPathByDoc.putIfAbsent(
+          pg.documentId, () => pg.flatRelativePath ?? pg.relativeImagePath);
     }
 
     return rows.map((row) {
@@ -122,6 +141,9 @@ class DriftDocumentRepository implements DocumentRepository {
               position: pg.position,
               imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
               corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
+              flatImagePath: pg.flatRelativePath == null
+                  ? null
+                  : _fileStore.absoluteFor(pg.flatRelativePath!).path,
             ))
         .toList();
   }

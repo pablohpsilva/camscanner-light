@@ -9,6 +9,7 @@ import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
 import 'jpeg_exif_scrubber.dart';
 import 'pdf/pdf_builder.dart';
+import 'perspective_warper.dart';
 
 typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
 
@@ -30,5 +31,6 @@ Future<DocumentRepository> _defaultCreateRepository() async {
     fileStore: DocumentFileStore(docsDir),
     clock: DateTime.now,
     pdfBuilder: const PdfBuilder(),
+    warper: const PerspectiveWarper(),
   );
 }
