@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     try {
       await repo.rename(s.document.id, newName);
-      await _load(); // refresh the list (no spinner; order is stable)
+      await _load(); // refresh the list (no spinner; active sort re-applies)
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

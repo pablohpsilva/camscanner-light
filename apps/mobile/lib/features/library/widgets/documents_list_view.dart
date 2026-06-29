@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../document_summary.dart';
 import 'document_thumbnail.dart';
 
-/// Rich list of saved documents: thumbnail, name, date, page count. Newest
-/// first (the repository orders the list). Each row has an optional overflow
-/// menu (Rename) when [onRename] is provided.
+/// Rich list of saved documents: thumbnail, name, date, page count. Rendered in
+/// the order it is given — the caller (HomeScreen) applies the user's chosen
+/// sort (D3). Each row has an optional overflow menu (Rename) when [onRename]
+/// is provided.
 class DocumentsListView extends StatelessWidget {
   final List<DocumentSummary> summaries;
   final ValueChanged<DocumentSummary>? onOpen;
