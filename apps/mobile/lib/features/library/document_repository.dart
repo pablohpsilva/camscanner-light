@@ -36,6 +36,14 @@ abstract interface class DocumentRepository {
   /// the updated document. Throws [DocumentRenameException] when the trimmed
   /// name is empty or no document with that id exists. The name stays on-device.
   Future<Document> rename(int documentId, String newName);
+
+  /// Re-warps the page at [position] using [corners] and updates the stored
+  /// flat image. If [corners] == [CropCorners.fullFrame], deletes the flat
+  /// file (best-effort) and clears [flatRelativePath] in the DB. Throws
+  /// [DocumentSaveException] when the page row does not exist. Rethrows
+  /// [WarpException] or IO errors on warp/write failure (DB unchanged).
+  Future<void> updatePageCorners(
+      int documentId, int position, CropCorners corners);
 }
 
 class DocumentSaveException implements Exception {

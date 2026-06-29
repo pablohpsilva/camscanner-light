@@ -205,6 +205,13 @@ class DriftDocumentRepository implements DocumentRepository {
     );
   }
 
+  @override
+  Future<void> updatePageCorners(
+      int documentId, int position, CropCorners corners) {
+    // TODO(e3/task-N): implement real warp + DB update.
+    throw UnimplementedError('updatePageCorners not yet implemented');
+  }
+
   String _defaultName(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return 'Scan ${t.year}-${two(t.month)}-${two(t.day)} '

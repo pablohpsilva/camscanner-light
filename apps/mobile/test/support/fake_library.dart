@@ -27,6 +27,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnDelete;
   final bool throwOnExport;
   final bool throwOnRename;
+  final bool throwOnUpdate;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -35,6 +36,8 @@ class FakeDocumentRepository implements DocumentRepository {
   int createCalls = 0;
   int listCalls = 0;
   CropCorners? lastSavedCorners;
+  int? lastUpdatedPosition;
+  CropCorners? lastUpdatedCorners;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -46,6 +49,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnDelete = false,
     this.throwOnExport = false,
     this.throwOnRename = false,
+    this.throwOnUpdate = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -139,6 +143,16 @@ class FakeDocumentRepository implements DocumentRepository {
     );
     if (i >= 0) documents[i] = updated; // so listDocumentSummaries reflects it
     return updated;
+  }
+
+  @override
+  Future<void> updatePageCorners(
+      int documentId, int position, CropCorners corners) async {
+    if (throwOnUpdate) {
+      throw DocumentSaveException('fake: update failed');
+    }
+    lastUpdatedPosition = position;
+    lastUpdatedCorners = corners;
   }
 }
 
