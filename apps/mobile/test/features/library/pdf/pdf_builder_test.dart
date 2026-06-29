@@ -86,4 +86,20 @@ void main() {
         await const PdfBuilder().build([page()], compress: false);
     expect(dec(imageOnly).contains('SEAMTEXT'), isFalse);
   });
+
+  test('E2: uses displayPath — reads flat file when flatImagePath is set', () async {
+    // imagePath points nowhere; only flatImagePath is readable.
+    // If PdfBuilder uses imagePath it throws; if it uses displayPath it passes.
+    final tmp = await Directory.systemTemp.createTemp('e2pdf');
+    final flatFile = File('${tmp.path}/flat.jpg');
+    await flatFile.writeAsBytes(jpeg); // reuse the fixture bytes
+    final flatPage = PageImage(
+      position: 1,
+      imagePath: '/nonexistent/page_1.jpg',
+      flatImagePath: flatFile.path,
+    );
+    final pdf = await const PdfBuilder().build([flatPage]);
+    expect(pdf, isNotEmpty);
+    await tmp.delete(recursive: true);
+  });
 }

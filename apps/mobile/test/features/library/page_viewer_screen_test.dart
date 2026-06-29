@@ -239,6 +239,26 @@ void main() {
     expect(find.byType(PageViewerScreen), findsOneWidget);
   });
 
+  // E2: viewer uses displayPath — verify the page key is present regardless of
+  // whether flatImagePath is set (visual path correctness is covered by page_image_test).
+  testWidgets('E2: viewer renders page key when flatImagePath is set',
+      (tester) async {
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(
+          position: 1,
+          imagePath: '/nonexistent/page_1.jpg',
+          flatImagePath: '/nonexistent/page_1_flat.jpg',
+        ),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
+    ));
+    await tester.pump();
+    expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
+  });
+
   testWidgets('the AppBar actions carry screen-reader tooltips',
       (tester) async {
     await pushViewer(tester, FakeDocumentRepository());

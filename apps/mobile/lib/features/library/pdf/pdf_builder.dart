@@ -21,7 +21,7 @@ class PdfBuilder {
   Future<Uint8List> build(List<PageImage> pages, {bool compress = true}) async {
     final doc = pw.Document(compress: compress);
     for (final page in pages) {
-      final bytes = await File(page.imagePath).readAsBytes();
+      final bytes = await File(page.displayPath).readAsBytes();
       final image = pw.MemoryImage(bytes); // lossless + EXIF auto-orient
       final overlay = textLayer.overlayFor(page);
       doc.addPage(
