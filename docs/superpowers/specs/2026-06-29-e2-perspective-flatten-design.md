@@ -57,14 +57,14 @@ createFromCapture(capture, corners)
   → FileStore.writeRelative(rel, scrubbed)   (original, unchanged)
   → corners != fullFrame?
       yes → compute(warpFn, {bytes: scrubbed, corners})
-               image pkg decodes bytes → gets naturalSize
+               image pkg decodes bytes → bakeOrientation → naturalSize
                convexity check → WarpException if crossed
                edge-length output size
                solve homography H, invert → H⁻¹
                inverse-map + bilinear sample → output img.Image
                encodeJpg(quality: 92) → flatBytes
-             → FileStore.writeRelative(flatRel, flatBytes)
              → flatRel = flatRelativeFor(docId, position)
+             → FileStore.writeRelative(flatRel, flatBytes)
              WarpException / any error → flatRel = null
       no  → flatRel = null
   → DB: insert page row (relativeImagePath, flatRelativePath = flatRel)
@@ -286,6 +286,36 @@ final bytes = await File(page.displayPath).readAsBytes();
 
 Wire `PerspectiveWarper()` into `DriftDocumentRepository` at the composition root.
 
+### 11. `test/support/fake_library.dart` (modify)
+
+`DriftDocumentRepository` gains `required ImageWarper warper`, so the two helpers
+that construct it directly will fail to compile without the new argument.
+
+- **`FakeImageWarper`** (add to this file):
+
+```dart
+class FakeImageWarper implements ImageWarper {
+  final bool throws;
+  final Uint8List? returnValue;   // null = simulate full-frame / no-op
+  int calls = 0;
+  FakeImageWarper({this.throws = false, this.returnValue});
+
+  @override
+  Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) async {
+    calls++;
+    if (throws) throw WarpException('fake: warp failed');
+    return returnValue;
+  }
+}
+```
+
+- **`tempLibraryDependencies()`** — add `warper: const PerspectiveWarper()` (uses
+  real warper; integration scenarios exercise the real path).
+- **`persistentLibraryDependencies()`** — same.
+
+`FakeDocumentRepository` itself does not change — it never calls the warper
+(that logic lives only in `DriftDocumentRepository`).
+
 ## Error handling & edge cases
 
 | Scenario | Behavior |
@@ -313,10 +343,6 @@ stripped by the `image` package re-encode (no GPS/device metadata in output).
   dimensions; self-crossing quad → `WarpException`; degenerate (zero-area) →
   `WarpException`; convexity cross-product helper; output-size formula.
 
-- **Unit `image_warper_test.dart` (new):**
-  Interface contract tests against `FakeImageWarper` (verifies callers can depend
-  on the interface alone).
-
 - **Widget `page_viewer_screen_test.dart` (extend):**
   `PageImage` with `flatImagePath` set → viewer file key resolves to flat path;
   `flatImagePath: null` → falls back to `imagePath`.
@@ -334,17 +360,25 @@ stripped by the `image` package re-encode (no GPS/device metadata in output).
 - **Migration `drift/migration_test.dart` (extend):**
   v2 → v3: `flatRelativePath` column appears; existing rows read null; fresh
   write with non-null flat path round-trips.
+  v1 → v3 (cumulative): build a v1 DB (no `corners`, no `flatRelativePath`),
+  open at v3, assert both columns added and old rows survive.
 
 - **BDD `e2_flatten.feature` (new):**
   _Given_ I launch the app _and_ scan a document with non-full-frame corners
-  _When_ I accept _Then_ I open the document and the page viewer shows the
-  flattened image. Reuses existing launch/scan/shutter/accept steps; adds
-  `i_see_the_page_viewer` step (finds `page-viewer-page-0`).
+  _When_ I accept _and_ I open the first document
+  _Then_ I see the page viewer (finds `page-viewer-page-0`).
+  Automated assertion: `page-viewer-page-0` is present in the widget tree —
+  visual correctness (that the image is actually flattened) is deferred to the
+  `REAL_DEVICE` Tier-3 lane. Reuses existing launch/scan/shutter/accept/
+  `i_open_the_first_document` steps; adds one new step
+  `i_see_the_page_viewer` (finds `page-viewer-page-0`).
 
 - **Verify `scripts/verify/e2.sh` (new):**
   Static asserts: `ImageWarper`; `WarpException`; `PerspectiveWarper`;
   `bakeOrientation` call present in `perspective_warper.dart` (guards the
   EXIF-frame contract — absence = silent misalignment on rotated captures);
+  `FakeImageWarper` present in `test/support/fake_library.dart`;
+  `tempLibraryDependencies` passes `warper:` arg;
   `flatRelativePath` column + `onUpgrade` `addColumn`; `flatRelativeFor`;
   `displayPath` getter; `image:` in pubspec; schema v3; no-uncommitted-generated-diff;
   codegen current; `mobile:test` + `mobile:analyze`; `assert_coverage_floor 70`;
