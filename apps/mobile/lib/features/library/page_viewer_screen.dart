@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'document_repository.dart';
 import 'page_image.dart';
+import 'pdf_preview_screen.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
 /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
@@ -74,10 +75,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   Future<void> _exportPdf() async {
     setState(() => _exporting = true);
     try {
-      await widget.repository.exportPdf(widget.documentId);
+      final file = await widget.repository.exportPdf(widget.documentId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PDF saved')),
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              PdfPreviewScreen(pdfPath: file.path, name: widget.name),
+        ),
       );
     } catch (_) {
       if (!mounted) return;

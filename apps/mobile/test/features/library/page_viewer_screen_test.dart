@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
+import 'package:mobile/features/library/pdf_preview_screen.dart';
 
 import '../../support/fake_library.dart';
 
@@ -136,17 +137,17 @@ void main() {
     expect(repo.deletedIds, isEmpty);
   });
 
-  testWidgets('export success shows a "PDF saved" SnackBar and stays',
-      (tester) async {
+  testWidgets('export success navigates to the PDF preview', (tester) async {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo, id: 4);
 
     await tester.tap(find.byKey(const Key('page-viewer-export')));
-    await tester.pumpAndSettle();
+    // pump (NOT settle): the pushed preview opens the real pdfx channel in host.
+    await tester.pump();
+    await tester.pump();
 
     expect(repo.exportedIds, contains(4));
-    expect(find.text('PDF saved'), findsOneWidget);
-    expect(find.byType(PageViewerScreen), findsOneWidget);
+    expect(find.byType(PdfPreviewScreen), findsOneWidget);
   });
 
   testWidgets('export failure shows an error SnackBar and stays',
@@ -191,8 +192,8 @@ void main() {
     expect(btn('page-viewer-delete').onPressed, isNull);
 
     gate.complete();
-    await tester.pumpAndSettle();
-    expect(find.text('PDF saved'), findsOneWidget);
-    expect(btn('page-viewer-export').onPressed, isNotNull);
+    await tester.pump(); // process export completion + navigation (NOT settle — pdfx channel)
+    await tester.pump();
+    expect(find.byType(PdfPreviewScreen), findsOneWidget);
   });
 }
