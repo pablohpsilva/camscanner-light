@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'document_repository.dart';
 import 'page_image.dart';
 import 'pdf_preview_screen.dart';
+import 'widgets/rename_dialog.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
 /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
@@ -38,10 +39,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   bool _error = false;
   bool _exporting = false;
   int _current = 0;
+  late String _name;
 
   @override
   void initState() {
     super.initState();
+    _name = widget.name;
     _load();
   }
 
@@ -80,7 +83,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) =>
-              PdfPreviewScreen(pdfPath: file.path, name: widget.name),
+              PdfPreviewScreen(pdfPath: file.path, name: _name),
         ),
       );
     } catch (_) {
@@ -90,6 +93,22 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _rename() async {
+    final newName = await showRenameDialog(context, _name);
+    if (newName == null) return;
+    if (!mounted) return;
+    try {
+      final updated = await widget.repository.rename(widget.documentId, newName);
+      if (!mounted) return;
+      setState(() => _name = updated.name);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't rename")),
+      );
     }
   }
 
@@ -129,8 +148,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.name),
+        title: Text(_name),
         actions: [
+          IconButton(
+            key: const Key('page-viewer-rename'),
+            icon: const Icon(Icons.edit_outlined),
+            onPressed:
+                (_loading || _error || _exporting) ? null : _rename,
+          ),
           IconButton(
             key: const Key('page-viewer-export'),
             icon: const Icon(Icons.picture_as_pdf),

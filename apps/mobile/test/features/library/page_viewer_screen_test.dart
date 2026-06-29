@@ -178,7 +178,7 @@ void main() {
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('both AppBar actions are disabled while an export is in flight',
+  testWidgets('all AppBar actions are disabled while an export is in flight',
       (tester) async {
     final gate = Completer<void>();
     final repo = FakeDocumentRepository(exportGate: gate);
@@ -188,6 +188,7 @@ void main() {
     await tester.pump(); // start the export; gate holds it open
     IconButton btn(String k) =>
         tester.widget<IconButton>(find.byKey(Key(k)));
+    expect(btn('page-viewer-rename').onPressed, isNull);
     expect(btn('page-viewer-export').onPressed, isNull);
     expect(btn('page-viewer-delete').onPressed, isNull);
 
@@ -195,5 +196,46 @@ void main() {
     await tester.pump(); // process export completion + navigation (NOT settle — pdfx channel)
     await tester.pump();
     expect(find.byType(PdfPreviewScreen), findsOneWidget);
+  });
+
+  testWidgets('rename: confirming Save updates the AppBar title',
+      (tester) async {
+    final repo = FakeDocumentRepository();
+    await pushViewer(tester, repo, id: 3);
+
+    await tester.tap(find.byKey(const Key('page-viewer-rename')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('rename-field')), 'Receipts');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rename-save')));
+    await tester.pumpAndSettle();
+
+    expect(repo.renamedTo, contains('Receipts'));
+    expect(find.widgetWithText(AppBar, 'Receipts'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Scan X'), findsNothing);
+  });
+
+  testWidgets('rename is disabled in the error state', (tester) async {
+    await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
+    expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
+    final btn = tester
+        .widget<IconButton>(find.byKey(const Key('page-viewer-rename')));
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('rename failure shows an error SnackBar and stays',
+      (tester) async {
+    final repo = FakeDocumentRepository(throwOnRename: true);
+    await pushViewer(tester, repo);
+
+    await tester.tap(find.byKey(const Key('page-viewer-rename')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('rename-field')), 'New');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rename-save')));
+    await tester.pumpAndSettle(); // drive the async throw -> catch -> SnackBar
+
+    expect(find.text("Couldn't rename"), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
   });
 }
