@@ -268,4 +268,56 @@ void main() {
       throwsA(isA<DocumentExportException>()),
     );
   });
+
+  test('rename updates the name and bumps modifiedAt; createdAt unchanged',
+      () async {
+    // The shared repo() helper uses a FIXED clock, which cannot show a bump.
+    // Use the advancing-clock pattern (as 'listDocumentSummaries returns newest
+    // first' does): create at T1, rename at T2.
+    var t = DateTime.utc(2026, 6, 27, 10);
+    final r = DriftDocumentRepository(
+      db: db,
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(base),
+      clock: () => t,
+      pdfBuilder: const PdfBuilder(),
+    );
+    final doc = await r.createFromCapture(capture);
+    t = DateTime.utc(2026, 6, 27, 12); // clock advances before the rename
+
+    final renamed = await r.rename(doc.id, 'Tax 2026');
+
+    expect(renamed.name, 'Tax 2026');
+    expect(renamed.createdAt, DateTime.utc(2026, 6, 27, 10));
+    expect(renamed.modifiedAt, DateTime.utc(2026, 6, 27, 12),
+        reason: 'rename bumps modifiedAt to the clock at rename time');
+
+    final row = await (db.select(db.documents)
+          ..where((d) => d.id.equals(doc.id)))
+        .getSingle();
+    expect(row.name, 'Tax 2026', reason: 'the new name is persisted');
+    expect(row.modifiedAt, DateTime.utc(2026, 6, 27, 12));
+  });
+
+  test('rename trims surrounding whitespace', () async {
+    final doc = await repo().createFromCapture(capture);
+    final renamed = await repo().rename(doc.id, '   Spaced Name   ');
+    expect(renamed.name, 'Spaced Name');
+  });
+
+  test('rename throws DocumentRenameException on an empty/whitespace name',
+      () async {
+    final doc = await repo().createFromCapture(capture);
+    await expectLater(
+      repo().rename(doc.id, '   '),
+      throwsA(isA<DocumentRenameException>()),
+    );
+  });
+
+  test('rename throws DocumentRenameException for a non-existent id', () async {
+    await expectLater(
+      repo().rename(99999, 'Whatever'),
+      throwsA(isA<DocumentRenameException>()),
+    );
+  });
 }

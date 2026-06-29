@@ -153,6 +153,31 @@ class DriftDocumentRepository implements DocumentRepository {
     }
   }
 
+  @override
+  Future<Document> rename(int documentId, String newName) async {
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) {
+      throw const DocumentRenameException('rename failed: empty name');
+    }
+    final modifiedUtc = _clock().toUtc();
+    final updated = await (_db.update(_db.documents)
+          ..where((t) => t.id.equals(documentId)))
+        .write(DocumentsCompanion(
+            name: Value(trimmed), modifiedAt: Value(modifiedUtc)));
+    if (updated == 0) {
+      throw const DocumentRenameException('rename failed: no such document');
+    }
+    final row = await (_db.select(_db.documents)
+          ..where((t) => t.id.equals(documentId)))
+        .getSingle();
+    return Document(
+      id: row.id,
+      name: row.name,
+      createdAt: row.createdAt,
+      modifiedAt: row.modifiedAt,
+    );
+  }
+
   String _defaultName(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return 'Scan ${t.year}-${two(t.month)}-${two(t.day)} '

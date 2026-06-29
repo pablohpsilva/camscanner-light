@@ -22,6 +22,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnGetPages;
   final bool throwOnDelete;
   final bool throwOnExport;
+  final bool throwOnRename;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final List<Document> documents;
@@ -29,6 +30,7 @@ class FakeDocumentRepository implements DocumentRepository {
   int createCalls = 0;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
+  final List<String> renamedTo = <String>[];
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
@@ -36,6 +38,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnGetPages = false,
     this.throwOnDelete = false,
     this.throwOnExport = false,
+    this.throwOnRename = false,
     this.gate,
     this.exportGate,
     List<Document>? documents,
@@ -98,6 +101,33 @@ class FakeDocumentRepository implements DocumentRepository {
             document: d,
             pageCount: 1,
             thumbnailPath: '/nonexistent/thumb-${d.id}.jpg')));
+  }
+
+  @override
+  Future<Document> rename(int documentId, String newName) async {
+    if (throwOnRename) {
+      throw const DocumentRenameException('fake: rename failed');
+    }
+    final trimmed = newName.trim();
+    renamedTo.add(trimmed);
+    final i = documents.indexWhere((d) => d.id == documentId);
+    // Build the updated doc. modifiedAt is left as-is: host tests never assert
+    // it (the list UI shows createdAt); the real Drift repo owns the clock+bump.
+    final base = i >= 0
+        ? documents[i]
+        : Document(
+            id: documentId,
+            name: trimmed,
+            createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+            modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42));
+    final updated = Document(
+      id: base.id,
+      name: trimmed,
+      createdAt: base.createdAt,
+      modifiedAt: base.modifiedAt,
+    );
+    if (i >= 0) documents[i] = updated; // so listDocumentSummaries reflects it
+    return updated;
   }
 }
 

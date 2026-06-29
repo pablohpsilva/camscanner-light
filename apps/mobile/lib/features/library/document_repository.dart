@@ -28,6 +28,11 @@ abstract interface class DocumentRepository {
   /// Generates a PDF of [documentId] to on-device storage and returns the file.
   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
   Future<File> exportPdf(int documentId);
+
+  /// Renames [documentId] to [newName] (trimmed) and bumps modifiedAt. Returns
+  /// the updated document. Throws [DocumentRenameException] when the trimmed
+  /// name is empty or no document with that id exists. The name stays on-device.
+  Future<Document> rename(int documentId, String newName);
 }
 
 class DocumentSaveException implements Exception {
@@ -42,4 +47,11 @@ class DocumentExportException implements Exception {
   const DocumentExportException(this.message);
   @override
   String toString() => 'DocumentExportException: $message';
+}
+
+class DocumentRenameException implements Exception {
+  final String message;
+  const DocumentRenameException(this.message);
+  @override
+  String toString() => 'DocumentRenameException: $message';
 }
