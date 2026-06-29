@@ -207,9 +207,45 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<void> updatePageCorners(
-      int documentId, int position, CropCorners corners) {
-    // TODO(e3/task-N): implement real warp + DB update.
-    throw UnimplementedError('updatePageCorners not yet implemented');
+      int documentId, int position, CropCorners corners) async {
+    final page = await (_db.select(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .getSingleOrNull();
+    if (page == null) {
+      throw DocumentSaveException(
+          'updatePageCorners: no page ($documentId, $position)');
+    }
+
+    if (corners == CropCorners.fullFrame) {
+      final flatRel = page.flatRelativePath;
+      if (flatRel != null) {
+        try {
+          await _fileStore.absoluteFor(flatRel).delete();
+        } on FileSystemException {/* already gone — fine */}
+      }
+      await (_db.update(_db.pages)
+            ..where((t) =>
+                t.documentId.equals(documentId) & t.position.equals(position)))
+          .write(PagesCompanion(
+              corners: const Value<String?>(null),
+              flatRelativePath: const Value<String?>(null)));
+      return;
+    }
+
+    // Non-fullFrame: read original JPEG, warp, write flat, update row.
+    final bytes =
+        await _fileStore.absoluteFor(page.relativeImagePath).readAsBytes();
+    final flat = await _warper.warp(bytes, corners);
+    if (flat == null) return; // warper returned null — no-op here
+    final flatRel = _fileStore.flatRelativeFor(documentId, position);
+    await _fileStore.writeRelative(flatRel, flat);
+    await (_db.update(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .write(PagesCompanion(
+            corners: Value(corners.toStorage()),
+            flatRelativePath: Value(flatRel)));
   }
 
   String _defaultName(DateTime t) {

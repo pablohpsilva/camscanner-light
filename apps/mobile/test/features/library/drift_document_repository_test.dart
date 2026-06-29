@@ -441,4 +441,85 @@ void main() {
       expect(summaries.single.thumbnailPath, flatPath);
     });
   });
+
+  group('E3 — updatePageCorners', () {
+    test('non-fullFrame corners: flat written to disk and DB updated', () async {
+      final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x03]);
+      // Create document with NO flat (FakeImageWarper returns null by default).
+      final doc = await repo().createFromCapture(capture);
+      final before = await repo().getDocumentPages(doc.id);
+      expect(before.single.flatImagePath, isNull);
+
+      const newCorners = CropCorners(
+        topLeft: Offset(0.05, 0.05),
+        topRight: Offset(0.95, 0.05),
+        bottomRight: Offset(0.95, 0.95),
+        bottomLeft: Offset(0.05, 0.95),
+      );
+      await repo(warper: FakeImageWarper(returnValue: fakeFlat))
+          .updatePageCorners(doc.id, 1, newCorners);
+
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue);
+      expect(flatFile.readAsBytesSync(), fakeFlat);
+
+      final after = await repo().getDocumentPages(doc.id);
+      expect(after.single.flatImagePath, flatFile.path);
+      expect(after.single.corners, newCorners);
+    });
+
+    test('fullFrame corners: flat file deleted and DB cleared', () async {
+      final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x04]);
+      const initCorners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+      // Create document WITH a flat.
+      final doc = await repo(warper: FakeImageWarper(returnValue: fakeFlat))
+          .createFromCapture(capture, corners: initCorners);
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue, reason: 'pre-condition: flat exists');
+
+      // Re-edit to fullFrame.
+      await repo().updatePageCorners(doc.id, 1, CropCorners.fullFrame);
+
+      expect(flatFile.existsSync(), isFalse,
+          reason: 'flat file must be deleted on fullFrame reset');
+      final after = await repo().getDocumentPages(doc.id);
+      expect(after.single.flatImagePath, isNull);
+      expect(after.single.corners, CropCorners.fullFrame);
+    });
+
+    test('warp throws: method rethrows and DB is unchanged', () async {
+      final doc = await repo().createFromCapture(capture);
+      const badCorners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+
+      await expectLater(
+        repo(warper: FakeImageWarper(throws: true))
+            .updatePageCorners(doc.id, 1, badCorners),
+        throwsA(isA<WarpException>()),
+      );
+
+      // DB must remain unchanged: no flatRelativePath set.
+      final after = await repo().getDocumentPages(doc.id);
+      expect(after.single.flatImagePath, isNull,
+          reason: 'rethrow must not update DB');
+    });
+
+    test('unknown page: throws DocumentSaveException', () async {
+      await expectLater(
+        repo().updatePageCorners(99999, 1, CropCorners.fullFrame),
+        throwsA(isA<DocumentSaveException>()),
+      );
+    });
+  });
 }
