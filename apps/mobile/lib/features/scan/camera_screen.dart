@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
 import '../library/save_controller.dart';
 import 'capture_review_screen.dart';
@@ -68,17 +69,17 @@ class _CameraScreenState extends State<CameraScreen> {
             image: image,
             saving: _saveController.saving,
             onRetake: navigator.pop,
-            onAccept: () => _onAccept(image),
+            onAccept: (corners) => _onAccept(image, corners),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _onAccept(CapturedImage image) async {
+  Future<void> _onAccept(CapturedImage image, CropCorners corners) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final doc = await _saveController.save(image);
+    final doc = await _saveController.save(image, corners: corners);
     if (!mounted) return;
     if (doc == null) {
       messenger.showSnackBar(

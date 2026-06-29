@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../scan/captured_image.dart';
+import 'crop_corners.dart';
 import 'document.dart';
 import 'document_repository.dart';
 
@@ -19,13 +20,15 @@ class SaveController extends ChangeNotifier {
 
   bool _disposed = false;
 
-  /// Persists [image]. Returns the saved [Document], or null if not saved
-  /// (already saving, disposed, or the save failed — caller surfaces failure).
-  Future<Document?> save(CapturedImage image) async {
+  /// Persists [image] with optional crop [corners]. Returns the saved
+  /// [Document], or null if not saved (already saving, disposed, or the save
+  /// failed — caller surfaces failure).
+  Future<Document?> save(CapturedImage image,
+      {CropCorners corners = CropCorners.fullFrame}) async {
     if (_disposed || _status == SaveStatus.saving) return null;
     _set(SaveStatus.saving);
     try {
-      final doc = await _repository.createFromCapture(image);
+      final doc = await _repository.createFromCapture(image, corners: corners);
       if (_disposed) return null;
       _set(SaveStatus.idle);
       return doc;

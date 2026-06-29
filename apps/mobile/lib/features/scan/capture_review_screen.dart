@@ -1,17 +1,41 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../library/crop_corners.dart';
 import 'captured_image.dart';
+import 'widgets/crop_overlay.dart';
 
-/// Shows a freshly captured [image] with Retake / Accept actions. Stateless —
-/// the parent decides what Retake and Accept do (navigation). B1: saving state
-/// disables buttons and shows a spinner overlay while the save is in progress.
-class CaptureReviewScreen extends StatelessWidget {
+/// Default EXIF-applied natural-size resolver: the framework decoder bakes the
+/// Orientation tag, so this size matches the displayed (and stored) image.
+Future<Size> _resolveImageSize(String path) {
+  final completer = Completer<Size>();
+  final stream = FileImage(File(path)).resolve(ImageConfiguration.empty);
+  late final ImageStreamListener listener;
+  listener = ImageStreamListener((info, _) {
+    if (!completer.isCompleted) {
+      completer.complete(Size(
+          info.image.width.toDouble(), info.image.height.toDouble()));
+    }
+    stream.removeListener(listener);
+  }, onError: (e, st) {
+    if (!completer.isCompleted) completer.completeError(e);
+    stream.removeListener(listener);
+  });
+  stream.addListener(listener);
+  return completer.future;
+}
+
+/// Shows a freshly captured [image] with Retake / Reset / Accept. Once the
+/// image's natural size resolves, draws a draggable crop overlay; Accept hands
+/// the chosen [CropCorners] up (the parent saves). Saving disables actions.
+class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
   final VoidCallback onRetake;
-  final VoidCallback onAccept;
+  final ValueChanged<CropCorners> onAccept;
   final bool saving;
+  final Future<Size> Function(String path) decodeImageSize;
 
   const CaptureReviewScreen({
     super.key,
@@ -19,38 +43,66 @@ class CaptureReviewScreen extends StatelessWidget {
     required this.onRetake,
     required this.onAccept,
     this.saving = false,
+    this.decodeImageSize = _resolveImageSize,
   });
 
   @override
+  State<CaptureReviewScreen> createState() => _CaptureReviewScreenState();
+}
+
+class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
+  CropCorners _corners = CropCorners.fullFrame;
+  Size? _imageSize;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.decodeImageSize(widget.image.path).then((size) {
+      if (!mounted) return;
+      setState(() => _imageSize = size);
+    }).catchError((_) {/* leave _imageSize null -> plain image */});
+  }
+
+  Widget _imageWidget() => Image.file(
+        File(widget.image.path),
+        key: const Key('review-image'),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stack) => const Icon(
+          Icons.broken_image_outlined,
+          key: Key('review-image-error'),
+          color: Colors.white54,
+          size: 64,
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
+    final size = _imageSize;
+    final canCrop = size != null && !widget.saving;
     return Scaffold(
       appBar: AppBar(title: const Text('Review')),
       body: Stack(
         children: [
           ColoredBox(
             color: Colors.black,
-            child: Center(
-              child: Image.file(
-                File(image.path),
-                key: const Key('review-image'),
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stack) => const Icon(
-                  Icons.broken_image_outlined,
-                  key: Key('review-image-error'),
-                  color: Colors.white54,
-                  size: 64,
-                ),
-              ),
+            child: SizedBox.expand(
+              child: size == null
+                  ? Center(child: _imageWidget())
+                  : CropOverlay(
+                      imageSize: size,
+                      image: _imageWidget(),
+                      corners: _corners,
+                      enabled: !widget.saving,
+                      onCornersChanged: (c) => setState(() => _corners = c),
+                    ),
             ),
           ),
-          if (saving)
+          if (widget.saving)
             const Positioned.fill(
               child: ColoredBox(
                 color: Colors.black54,
                 child: Center(
-                  child:
-                      CircularProgressIndicator(key: Key('review-saving')),
-                ),
+                    child: CircularProgressIndicator(key: Key('review-saving'))),
               ),
             ),
         ],
@@ -63,13 +115,20 @@ class CaptureReviewScreen extends StatelessWidget {
             children: [
               OutlinedButton.icon(
                 key: const Key('review-retake'),
-                onPressed: saving ? null : onRetake,
+                onPressed: widget.saving ? null : widget.onRetake,
                 icon: const Icon(Icons.replay),
                 label: const Text('Retake'),
               ),
+              TextButton(
+                key: const Key('crop-reset'),
+                onPressed: canCrop
+                    ? () => setState(() => _corners = CropCorners.fullFrame)
+                    : null,
+                child: const Text('Reset'),
+              ),
               FilledButton.icon(
                 key: const Key('review-accept'),
-                onPressed: saving ? null : onAccept,
+                onPressed: widget.saving ? null : () => widget.onAccept(_corners),
                 icon: const Icon(Icons.check),
                 label: const Text('Accept'),
               ),
