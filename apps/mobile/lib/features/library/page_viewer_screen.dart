@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'crop_corners.dart';
 import 'document_repository.dart';
+import 'edit_crop_screen.dart';
 import 'page_image.dart';
 import 'pdf_preview_screen.dart';
 import 'widgets/rename_dialog.dart';
@@ -144,6 +146,29 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _editCrop(PageImage pg) async {
+    final corners = await Navigator.of(context).push<CropCorners>(
+      MaterialPageRoute<CropCorners>(
+        builder: (_) => EditCropScreen(
+          imagePath: pg.imagePath,
+          initialCorners: pg.corners,
+        ),
+      ),
+    );
+    if (corners == null || !mounted) return;
+    try {
+      await widget.repository.updatePageCorners(
+          widget.documentId, pg.position, corners);
+      if (!mounted) return;
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't update crop")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,6 +181,15 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             icon: const Icon(Icons.edit_outlined),
             onPressed:
                 (_loading || _error || _exporting) ? null : _rename,
+          ),
+          IconButton(
+            key: const Key('page-viewer-edit'),
+            tooltip: 'Edit crop',
+            icon: const Icon(Icons.crop),
+            onPressed: (_loading || _error || _exporting ||
+                    (_pages?.isEmpty ?? true))
+                ? null
+                : () => _editCrop(_pages![_current]),
           ),
           IconButton(
             key: const Key('page-viewer-export'),
