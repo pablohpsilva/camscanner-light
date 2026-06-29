@@ -25,9 +25,11 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnRename;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
+  final Completer<void>? listGate;
   final List<Document> documents;
   final List<PageImage>? pages; // null => synthesize one non-loadable page
   int createCalls = 0;
+  int listCalls = 0;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -41,6 +43,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnRename = false,
     this.gate,
     this.exportGate,
+    this.listGate,
     List<Document>? documents,
     this.pages,
   }) : documents = documents ?? <Document>[];
@@ -91,11 +94,11 @@ class FakeDocumentRepository implements DocumentRepository {
 
   @override
   Future<List<DocumentSummary>> listDocumentSummaries() async {
+    listCalls++;
+    if (listGate != null) await listGate!.future;
     if (throwOnList) {
       throw StateError('fake: list failed');
     }
-    // Synthesize: every fake document has one page and a deliberately
-    // NON-LOADABLE thumbnail path (host tests must not load a real Image.file).
     return List<DocumentSummary>.unmodifiable(documents.map((d) =>
         DocumentSummary(
             document: d,

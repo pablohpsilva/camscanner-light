@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
 import 'document_repository.dart';
+import 'document_sort.dart';
 import 'document_summary.dart';
 import 'library_dependencies.dart';
 import 'page_viewer_screen.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
 import 'widgets/rename_dialog.dart';
+import 'widgets/sort_control_bar.dart';
 
 /// The app's home: the document library. Builds the repository, lists saved
 /// documents (name + date), and opens the camera. Reloads the list whenever the
@@ -32,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<DocumentSummary> _summaries = const [];
   bool _loading = true;
   bool _error = false;
+  DocumentSort _sort = DocumentSort.initial;
 
   @override
   void initState() {
@@ -110,6 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
     await _load(); // a delete may have happened in the viewer
   }
 
+  void _onSortCriterion(SortCriterion c) =>
+      setState(() => _sort = nextSort(_sort, c));
+
   Future<void> _renameDocument(DocumentSummary s) async {
     final repo = _repository;
     if (repo == null) return;
@@ -139,10 +145,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ? _buildError()
               : _summaries.isEmpty
                   ? const EmptyDocumentsView()
-                  : DocumentsListView(
-                      summaries: _summaries,
-                      onOpen: _openDocument,
-                      onRename: _renameDocument),
+                  : Column(
+                      children: [
+                        SortControlBar(
+                          sort: _sort,
+                          onCriterionTapped: _onSortCriterion,
+                        ),
+                        Expanded(
+                          child: DocumentsListView(
+                            summaries: sortDocuments(_summaries, _sort),
+                            onOpen: _openDocument,
+                            onRename: _renameDocument,
+                          ),
+                        ),
+                      ],
+                    ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _repository == null ? null : _openScan,
         icon: const Icon(Icons.document_scanner_outlined),
