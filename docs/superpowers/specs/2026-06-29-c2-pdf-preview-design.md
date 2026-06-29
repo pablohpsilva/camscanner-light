@@ -34,15 +34,21 @@ Spike-confirmed: renders a PDF on the iOS sim and **pulls no network package**
   verify gate already runs it); the personal `pbxproj` keeps absorbing that
   churn **uncommitted**, as today.
 
-> **⚠️ Load-bearing premise NOT yet verified — the plan's gating first task.**
-> The render spike used `PdfView`/`PdfController` on a **text** PDF. C2 depends
-> on three things that spike did NOT cover: (A) `PdfViewPinch`/`PdfControllerPinch`
-> (the *pinch* variant), (E) rendering an **actual C1 image PDF** (DCTDecode
-> JPEG, not text), and (F) the exact controller + `loaderBuilder`/`errorBuilder`
-> state-wiring. The plan's **first task is a spike**: open a real `PdfBuilder`
-> image PDF in `PdfViewPinch` on **both Android and iOS**, confirm it renders +
-> zooms, and pin the state-wiring. If `PdfViewPinch` doesn't behave, fall back to
-> `PdfView` (paged) — but zoom (criterion 3) then needs re-evaluation.
+> **Gating premise — now VERIFIED by spike (Android).** A real `PdfBuilder`
+> **image** PDF (DCTDecode JPEG) renders in **`PdfViewPinch`** on the Android
+> emulator (`pagesCount == 1`, no exception) — covering (A) the pinch variant
+> and (E) the real image PDF. **iOS image-render is gate-verified** (an earlier
+> spike showed `pdfx` builds + renders on the iOS sim; the C2 `verify_integration_ios`
+> confirms the image case). Two concrete findings the spike forced:
+> - **(F) Error handling MUST be done in the screen, not via `errorBuilder`.** The
+>   spike proved `PdfViewPinch`'s `errorBuilder` does **not** catch a
+>   `PdfDocument.openFile` failure — the exception propagates from
+>   `PdfxPlatformPigeon.openFile`. So the screen opens the doc via the injectable
+>   opener in `initState` wrapped in **try/catch** → explicit loading/error/loaded
+>   states; on success it builds `PdfViewPinch` from the resolved doc.
+> - **`pdf`/`pdfx` `PdfDocument` collision.** Both packages export `PdfDocument`;
+>   any file importing both (e.g. a test that generates a PDF via `pdf` and opens
+>   it via `pdfx`) MUST `import 'package:pdf/...' hide PdfDocument;`.
 
 ## The C1 supersession (migration surface — replace, not evolve)
 
@@ -76,13 +82,14 @@ title) + an **injectable opener** `Future<PdfDocument> Function(String) opener`
 defaulting to `PdfDocument.openFile` (a const static tear-off) — the seam that
 makes loading/error host-testable without the native plugin.
 
-- States **loading / error / loaded**, keys `pdf-preview-loading` /
-  `pdf-preview-error` / `pdf-preview-view`. (Exact wiring — explicit `initState`
-  states vs. `PdfViewPinch`'s `loaderBuilder`/`errorBuilder` driven by the
-  injected opener — is pinned by the gating spike; whichever is chosen MUST keep
-  the error state assertable in host via a throwing opener.)
-- **Loaded:** `PdfViewPinch` (pinch-zoom). Controller disposed in `dispose`.
-- **Error** (corrupt/unreadable PDF): message + back.
+- **`initState`:** `opener(pdfPath)` wrapped in **try/catch** → states
+  **loading / error / loaded**, keys `pdf-preview-loading` / `pdf-preview-error`
+  / `pdf-preview-view`. (Spike-pinned: do NOT rely on `PdfViewPinch.errorBuilder`
+  — it doesn't catch `openFile` failures. Catching in the screen also keeps the
+  error state assertable in host via a throwing opener.)
+- **Loaded:** build `PdfViewPinch(controller: PdfControllerPinch(document: doc))`
+  from the resolved doc (spike-confirmed render). Controller disposed in `dispose`.
+- **Error** (`opener` threw — corrupt/unreadable/missing PDF): message + back.
 
 ## Error handling (two distinct failure points)
 
@@ -151,8 +158,11 @@ deferred-with-sign-off.
   coverage on that file; fine against the 70 floor).
 - `pdfx` reintroduces CocoaPods on iOS (`Podfile` committed; pod churn in the
   uncommitted `pbxproj`).
-- `PdfViewPinch` + real-image-PDF render + state-wiring are **unverified until
-  the plan's gating spike** (A/E/F above).
+- **`pdf`/`pdfx` both export `PdfDocument`** — any file importing both must
+  `hide PdfDocument` from `package:pdf` (spike-found).
+- `PdfViewPinch` rendering a real image PDF + the error-via-`initState`-catch
+  wiring are **spike-verified on Android** (above); iOS image-render is
+  gate-verified, not separately spiked.
 
 ## Privacy spine (binding, unchanged)
 
