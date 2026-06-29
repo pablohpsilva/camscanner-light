@@ -13,6 +13,9 @@ class DocumentFileStore {
   String relativeFor(int docId, int position) =>
       'documents/$docId/page_$position.jpg';
 
+  String flatRelativeFor(int docId, int position) =>
+      'documents/$docId/page_${position}_flat.jpg';
+
   String pdfRelativeFor(int docId) => 'documents/$docId/export.pdf';
 
   File absoluteFor(String relativePath) =>

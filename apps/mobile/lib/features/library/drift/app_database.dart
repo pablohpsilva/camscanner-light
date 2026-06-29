@@ -27,6 +27,10 @@ class Pages extends Table {
   /// Normalized crop quad (E1) as "x0,y0,...,x3,y3"; null = uncropped (full
   /// frame). See CropCorners.
   TextColumn get corners => text().nullable()();
+
+  /// Perspective-flattened image path (E2), relative to the app documents dir;
+  /// null until the flatten step has been run for this page.
+  TextColumn get flatRelativePath => text().nullable()();
 }
 
 @DriftDatabase(tables: [Documents, Pages])
@@ -34,15 +38,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.addColumn(pages, pages.corners);
-          }
+          if (from < 2) await m.addColumn(pages, pages.corners);
+          if (from < 3) await m.addColumn(pages, pages.flatRelativePath);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
