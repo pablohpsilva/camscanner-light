@@ -56,6 +56,10 @@ class SortControlBar extends StatelessWidget {
               key: Key(sort.direction == SortDirection.asc
                   ? 'sort-direction-asc'
                   : 'sort-direction-desc'),
+              // Screen readers announce the chip label + this, e.g. "Name,
+              // ascending" — the arrow is otherwise unlabeled.
+              semanticLabel:
+                  sort.direction == SortDirection.asc ? 'ascending' : 'descending',
               size: 16,
             ),
           ],

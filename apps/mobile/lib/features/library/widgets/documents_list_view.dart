@@ -37,6 +37,7 @@ class DocumentsListView extends StatelessWidget {
               ? null
               : PopupMenuButton<String>(
                   key: Key('document-menu-${d.id}'),
+                  tooltip: 'Document options',
                   onSelected: (_) => onRename!(s),
                   itemBuilder: (context) => [
                     PopupMenuItem<String>(

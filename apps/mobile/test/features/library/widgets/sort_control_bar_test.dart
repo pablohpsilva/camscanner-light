@@ -60,4 +60,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(taps, [SortCriterion.name, SortCriterion.modified]);
   });
+
+  testWidgets('the active direction arrow carries a screen-reader label',
+      (tester) async {
+    await pumpBar(tester, DocumentSort.initial); // created, desc
+    expect(
+        tester.widget<Icon>(find.byKey(const Key('sort-direction-desc')))
+            .semanticLabel,
+        'descending');
+    await pumpBar(tester,
+        const DocumentSort(SortCriterion.name, SortDirection.asc));
+    expect(
+        tester.widget<Icon>(find.byKey(const Key('sort-direction-asc')))
+            .semanticLabel,
+        'ascending');
+  });
 }

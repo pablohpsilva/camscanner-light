@@ -152,12 +152,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         actions: [
           IconButton(
             key: const Key('page-viewer-rename'),
+            tooltip: 'Rename',
             icon: const Icon(Icons.edit_outlined),
             onPressed:
                 (_loading || _error || _exporting) ? null : _rename,
           ),
           IconButton(
             key: const Key('page-viewer-export'),
+            tooltip: 'Export PDF',
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: (_loading || _error || _exporting ||
                     (_pages?.isEmpty ?? true))
@@ -166,6 +168,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           ),
           IconButton(
             key: const Key('page-viewer-delete'),
+            tooltip: 'Delete',
             icon: const Icon(Icons.delete_outline),
             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
           ),

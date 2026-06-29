@@ -238,4 +238,14 @@ void main() {
     expect(find.text("Couldn't rename"), findsOneWidget);
     expect(find.byType(PageViewerScreen), findsOneWidget);
   });
+
+  testWidgets('the AppBar actions carry screen-reader tooltips',
+      (tester) async {
+    await pushViewer(tester, FakeDocumentRepository());
+    String? tip(String key) =>
+        tester.widget<IconButton>(find.byKey(Key(key))).tooltip;
+    expect(tip('page-viewer-rename'), 'Rename');
+    expect(tip('page-viewer-export'), 'Export PDF');
+    expect(tip('page-viewer-delete'), 'Delete');
+  });
 }

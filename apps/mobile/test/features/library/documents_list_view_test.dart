@@ -91,4 +91,20 @@ void main() {
     expect(renamed, isNotNull);
     expect(renamed!.document.id, 2);
   });
+
+  testWidgets('the rename menu carries a screen-reader tooltip',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(summaries: [summary(1)], onRename: (_) {}),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<PopupMenuButton<String>>(
+                find.byKey(const Key('document-menu-1')))
+            .tooltip,
+        'Document options');
+  });
 }
