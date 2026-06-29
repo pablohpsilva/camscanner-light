@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -136,6 +138,23 @@ class FakeDocumentRepository implements DocumentRepository {
     );
     if (i >= 0) documents[i] = updated; // so listDocumentSummaries reflects it
     return updated;
+  }
+}
+
+/// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
+/// return null (no-op), or throw [WarpException].
+class FakeImageWarper implements ImageWarper {
+  final bool throws;
+  final Uint8List? returnValue;
+  int calls = 0;
+
+  FakeImageWarper({this.throws = false, this.returnValue});
+
+  @override
+  Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) async {
+    calls++;
+    if (throws) throw WarpException('fake: warp failed');
+    return returnValue;
   }
 }
 
