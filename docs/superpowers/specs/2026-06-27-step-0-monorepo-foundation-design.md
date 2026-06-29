@@ -103,10 +103,10 @@ crashing, then running `nx run mobile:analyze` and seeing no errors.
 
 ## Acceptance criteria (each closed only by a passing test)
 
-- [ ] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *manual run on both targets, output shown*
-- [ ] The launched app shows a blank/placeholder screen — *manual observation / screenshot*
-- [ ] `nx run mobile:analyze` passes with no errors — *command output*
-- [ ] Repo is a git repo with a proper `.gitignore` and the workspace committed — *`git status` / `git log`*
+- [x] `nx run mobile:run` launches on an iOS simulator **and** an Android emulator without crashing — *independently verified 2026-06-27 via `scripts/verify/step-0.sh` (GATE: PASS, 12/12) run by a separate adversarial verifier. **Both** platforms launched via the **literal `nx run mobile:run`** target (logs open with `> nx run mobile:run -d …`): Android "Launching lib/main.dart… / Dart VM Service available"; iOS "Launching lib/main.dart on iPhone 15 Pro / Xcode build done / Dart VM Service available". Force-stop/terminate negative controls confirmed each run launched the app (not stale state); screenshots `.superpowers/verify/{android,ios}-nx-run.png` show the running app.*
+- [x] The launched app shows a blank/placeholder screen — *observed 2026-06-27: default Flutter placeholder rendered on both; screenshots /tmp/ios_step0_screen.png, /tmp/android_step0_screen.png*
+- [x] `nx run mobile:analyze` passes with no errors — *observed: "No issues found! (ran in 5.7s)" — 2026-06-27*
+- [x] Repo is a git repo with a proper `.gitignore` and the workspace committed — *observed: clean working tree after 3 commits — 2026-06-27*
 
 ## Risks / notes
 

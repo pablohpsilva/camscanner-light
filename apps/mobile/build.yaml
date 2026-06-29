@@ -1,0 +1,22 @@
+targets:
+  $default:
+    sources:
+      - integration_test/**   # build_runner does not scan integration_test by default
+      - test/**
+      - lib/**
+      - $package$
+    builders:
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true
+      bdd_widget_test|featureBuilder:
+        options:
+          # Share one step folder between widget tests and integration tests.
+          # Steps live in test/step/; the generated integration_test/*_test.dart
+          # imports them with relative path ../test/step/<step>.dart.
+          stepFolderName: step
+          # includeIntegrationTestBinding defaults to true — the generator will
+          # emit IntegrationTestWidgetsFlutterBinding.ensureInitialized() when
+          # the feature file lives under integration_test/.
+        generate_for:
+          - integration_test/**

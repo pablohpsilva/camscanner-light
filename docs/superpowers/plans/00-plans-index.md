@@ -14,16 +14,38 @@ Definition of Done in `../specs/00-overview-roadmap.md`).
 A step's plan file is **written only after** its predecessor passes the gate — we
 plan and build progressively, not speculatively.
 
+**Verification harness (binding) — see `../VERIFICATION.md`.** Every step ships
+`scripts/verify/<step>.sh` (built on `scripts/verify/lib.sh`) that encodes its
+acceptance criteria as asserts — exact command + success marker, exit-code check,
+caches disabled, negative controls, **silence = FAIL**. The gate is that script
+exiting 0, and an **independent adversarial verifier subagent** must run it from
+a clean state and agree before the step is marked done. The final task of every
+plan is "author `scripts/verify/<step>.sh` and pass it under the independent
+verifier."
+
+Any step that adds/changes UI also ships an
+`apps/mobile/integration_test/<step>_*.dart` test asserting the rendered widget
+tree on each device (run via `verify_integration_{android,ios}`) — the
+**authoritative on-device UI check**, mutation-verified once; screenshots are
+corroborating only.
+
+**BDD-from-.feature standard (from A3 onwards):** BDD scenarios are authored
+as `.feature` files (Gherkin) under `apps/mobile/integration_test/` and
+generated into on-device integration tests via `bdd_widget_test` + `build_runner`.
+Step definitions live in `apps/mobile/test/step/` (shared, reusable).
+Generated `*_test.dart` files are committed (idempotent). The A2 scenarios are
+the reference example (`a2_scan_permission.feature` → `a2_scan_permission_test.dart`).
+
 ## Plan files (ordered)
 
 Status: ✅ written & ready · ⏳ pending (written when its predecessor passes the gate)
 
 | Order | Step | Spec | Plan file | Status |
 |------|------|------|-----------|--------|
-| 0 | Monorepo foundation | `step-0` design | `2026-06-27-step-0-monorepo-foundation.md` | ✅ |
-| A1 | App shell: home (empty Documents list) + Scan button | 02, 01 | `…-a1-app-shell.md` | ⏳ |
-| A2 | Camera preview + permission | 01 | `…-a2-camera-preview.md` | ⏳ |
-| A3 | Capture photo → review screen | 01 | `…-a3-capture-review.md` | ⏳ |
+| 0 | Monorepo foundation | `step-0` design | `2026-06-27-step-0-monorepo-foundation.md` | ✅ **built & gated** |
+| A1 | App shell: home (empty Documents list) + Scan button | 02, 01 | `2026-06-27-a1-app-shell.md` | ✅ **built & gated** |
+| A2 | Camera preview + permission | 01 | `2026-06-27-a2-camera-preview.md` | ✅ **built & gated** |
+| A3 | Capture photo → review screen | 01 | `2026-06-27-a3-capture-review.md` | ✅ **built & gated** |
 | B1 | Save photo + document record (storage) | 02, 06 | `…-b1-persist-page.md` | ⏳ |
 | B2 | Documents list reads storage | 02 | `…-b2-list-from-storage.md` | ⏳ |
 | B3 | Page viewer | 02 | `…-b3-page-viewer.md` | ⏳ |

@@ -48,6 +48,21 @@ If any of 1–6 is unmet, the work is **not done**. Each feature's "Acceptance
 criteria" section is the checklist; each item is closed only by a passing,
 double-checked test. This gate is referenced by every feature spec.
 
+**Verification harness (binding) — see `../VERIFICATION.md`.** Adopted after a
+"done" was once claimed on a check that silently did nothing (a missing tool
+produced no output, and absence of output was mistaken for success). For every
+step:
+- Each acceptance criterion maps to an exact command + expected **success
+  marker**; **silence/empty output/missing tool = FAIL**, never a pass; exit
+  codes are asserted; caches disabled; **negative controls** used where state
+  could be stale.
+- Every step ships **`scripts/verify/<step>.sh`** (sourcing
+  `scripts/verify/lib.sh`) that encodes these as asserts and **exits non-zero on
+  any failure**. The progression gate is this script exiting 0, observed.
+- An **independent adversarial verifier subagent** runs that script from a clean
+  state and must agree before the step is marked done. The controller does not
+  self-certify device/runtime criteria.
+
 **Progression gate (binding):** work proceeds **one step at a time**. We do
 **not** start the next step until the current step's acceptance criteria are all
 developed, tested, fulfilled, and **working** (observed green + double-checked).

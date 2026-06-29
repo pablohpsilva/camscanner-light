@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "libs/*"
+onlyBuiltDependencies:
+  - nx
+allowBuilds:
+  nx: true
+patchedDependencies:
+  '@nxrocks/nx-flutter@10.0.1': patches/@nxrocks__nx-flutter@10.0.1.patch

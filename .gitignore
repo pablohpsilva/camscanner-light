@@ -5,8 +5,9 @@ node_modules/
 # Flutter
 apps/mobile/.dart_tool/
 apps/mobile/build/
-.flutter-plugins
-.flutter-plugins-dependencies
+apps/mobile/ios/Pods/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
 
 # Nx
 .nx/cache
@@ -16,3 +17,6 @@ apps/mobile/build/
 .DS_Store
 .idea/
 .vscode/
+
+# Superpowers SDD scratch
+.superpowers/

@@ -1,0 +1,26 @@
+diff --git a/src/utils/deps-utils.js b/src/utils/deps-utils.js
+index b58a6d47737e307ec86cea99e596851aba5180d7..140c3e1db9aff22b9cd5ded06aa0788a80ea4fe3 100644
+--- a/src/utils/deps-utils.js
++++ b/src/utils/deps-utils.js
+@@ -2,7 +2,7 @@
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.getPackageInfo = getPackageInfo;
+ const js_yaml_1 = require("js-yaml");
+-const fileutils_1 = require("@nx/workspace/src/utilities/fileutils");
++const fileutils_1 = { fileExists: require("fs").existsSync };
+ const common_1 = require("@nxrocks/common");
+ function getPackageInfo(project) {
+     if ((0, fileutils_1.fileExists)((0, common_1.getProjectFilePath)(project, 'pubspec.yaml'))) {
+diff --git a/src/utils/flutter-utils.js b/src/utils/flutter-utils.js
+index d1121d1e2e065fa5162397ab1e8a2871556be0df..be2a167491eede41284b2f2629a24df5de09a6ca 100644
+--- a/src/utils/flutter-utils.js
++++ b/src/utils/flutter-utils.js
+@@ -4,7 +4,7 @@ exports.isFlutterInstalled = isFlutterInstalled;
+ exports.isFlutterProject = isFlutterProject;
+ exports.quote = quote;
+ exports.buildFlutterCreateOptions = buildFlutterCreateOptions;
+-const fileutils_1 = require("@nx/workspace/src/utilities/fileutils");
++const fileutils_1 = { fileExists: require("fs").existsSync };
+ const common_1 = require("@nxrocks/common");
+ const child_process_1 = require("child_process");
+ function isFlutterInstalled(useFvm = false) {

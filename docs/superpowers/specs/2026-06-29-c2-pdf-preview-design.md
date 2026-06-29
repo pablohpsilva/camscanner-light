@@ -1,0 +1,173 @@
+# C2 — In-app PDF preview (design)
+
+**Status:** approved (design phase)
+**Date:** 2026-06-29
+**Roadmap:** group **C (PDF)**, step **C2** — completes the walking-skeleton milestone (capture → save → generate PDF → **view PDF**).
+**Depends on:** C1 (`PdfBuilder` + `repository.exportPdf` — lossless, metadata-clean single-page PDF on disk), B3 (`PageViewerScreen` + the Export action), B1 (storage).
+**Feeds:** Feature 12 (sharing), group H (multi-page).
+
+## Goal
+
+Render the PDF that C1 generates **inside the app, on-device**. Tapping the
+viewer's Export action regenerates `documents/<id>/export.pdf` and navigates to a
+`PdfPreviewScreen` that renders it with pinch-zoom. This **supersedes** C1's
+"PDF saved" SnackBar — the preview *is* the confirmation.
+
+## Scope (locked)
+
+**In:** Export → regenerate (C1) → navigate to an on-device PDF preview
+(`pdfx`, pinch-zoom). Back returns to the viewer.
+**Deferred:** share/print/save-elsewhere (Feature 12), multi-page (group H),
+PDF text selection (image-only PDFs today), PDF thumbnails.
+
+## Renderer: `pdfx` (`^2.9.0`)
+
+Spike-confirmed: renders a PDF on the iOS sim and **pulls no network package**
+(its tree: `photo_view`, `synchronized`, `universal_platform`, `uuid` — no
+`http`), the cleanest privacy story. Chosen over `printing` (which pulls `http`).
+
+- **Pinch-zoom** via `PdfViewPinch` + `PdfControllerPinch`.
+- **iOS infra consequence:** `pdfx` does **not** support Swift Package Manager
+  (the existing plugins do), so it **reintroduces CocoaPods** on iOS — a
+  `Podfile` + pod build phases. The CocoaPods integration is **committed**
+  (`Podfile`, `Podfile.lock`, the `#include?` pod xcconfig lines, the workspace
+  `Pods.xcodeproj` ref) for a clean tree + reproducible iOS builds — `pdfx` is a
+  permanent native dep. ONLY the personal `pbxproj` stays **uncommitted**; its
+  pod build phases regenerate via `pod install` at build (the `#include?` is
+  optional, so a fresh checkout builds before the first `pod install`).
+
+> **Gating premise — now VERIFIED by spike (Android).** A real `PdfBuilder`
+> **image** PDF (DCTDecode JPEG) renders in **`PdfViewPinch`** on the Android
+> emulator (`pagesCount == 1`, no exception) — covering (A) the pinch variant
+> and (E) the real image PDF. **iOS image-render is gate-verified** (an earlier
+> spike showed `pdfx` builds + renders on the iOS sim; the C2 `verify_integration_ios`
+> confirms the image case). Two concrete findings the spike forced:
+> - **(F) Error handling MUST be done in the screen, not via `errorBuilder`.** The
+>   spike proved `PdfViewPinch`'s `errorBuilder` does **not** catch a
+>   `PdfDocument.openFile` failure — the exception propagates from
+>   `PdfxPlatformPigeon.openFile`. So the screen opens the doc via the injectable
+>   opener in `initState` wrapped in **try/catch** → explicit loading/error/loaded
+>   states; on success it builds `PdfViewPinch` from the resolved doc.
+> - **`pdf`/`pdfx` `PdfDocument` collision.** Both packages export `PdfDocument`;
+>   any file importing both (e.g. a test that generates a PDF via `pdf` and opens
+>   it via `pdfx`) MUST `import 'package:pdf/...' hide PdfDocument;`.
+
+## The C1 supersession (migration surface — replace, not evolve)
+
+C2 removes the "PDF saved" SnackBar, so C1's gate must stop asserting it. Chosen
+approach: **replace** the C1 export scenario with a C2 preview scenario.
+
+- **Production:** `page_viewer_screen.dart` `_exportPdf` — on success,
+  `Navigator.push(PdfPreviewScreen(...))` **instead of** the "PDF saved"
+  SnackBar. Failure path (`exportPdf` throws → "Couldn't export PDF" SnackBar,
+  stay, no nav) is **unchanged**.
+- **Delete (move/replace):** `integration_test/c1_export_pdf.feature` + its
+  generated `c1_export_pdf_test.dart` + the `the_pdf_is_saved.dart` step.
+- **Add:** `integration_test/c2_pdf_preview.feature` (capture→save→open→export→
+  **see preview**) + generated test + `the_pdf_preview_opens.dart` step. The
+  export step `i_export_the_open_document_to_pdf.dart` is **reused** (export
+  still happens; only the outcome changed).
+- **Update C1's viewer test:** the export-success widget test asserts navigation
+  to `PdfPreviewScreen`, not the "PDF saved" SnackBar.
+- **Update `scripts/verify/c1.sh`:** drop the `the_pdf_is_saved`/"PDF saved"
+  static assert and the `c1_export_pdf_test` integration + generated-step-call
+  asserts. **Kept:** C1's repo-level generation proof (`exportPdf` writes
+  `export.pdf`) and the export-action existence assert — generation is unchanged.
+
+`exportPdf` still writes `export.pdf` **before** navigating, so the preview
+appearing proves the full round-trip (generate → view).
+
+## `PdfPreviewScreen` (StatefulWidget)
+
+Constructed with `pdfPath` (absolute path to `export.pdf`) + `name` (AppBar
+title) + an **injectable opener** `Future<PdfDocument> Function(String) opener`
+defaulting to `PdfDocument.openFile` (a const static tear-off) — the seam that
+makes loading/error host-testable without the native plugin.
+
+- **`initState`:** `opener(pdfPath)` wrapped in **try/catch** → states
+  **loading / error / loaded**, keys `pdf-preview-loading` / `pdf-preview-error`
+  / `pdf-preview-view`. (Spike-pinned: do NOT rely on `PdfViewPinch.errorBuilder`
+  — it doesn't catch `openFile` failures. Catching in the screen also keeps the
+  error state assertable in host via a throwing opener.)
+- **Loaded:** build `PdfViewPinch(controller: PdfControllerPinch(document: doc))`
+  from the resolved doc (spike-confirmed render). Controller disposed in `dispose`.
+- **Error** (`opener` threw — corrupt/unreadable/missing PDF): message + back.
+
+## Error handling (two distinct failure points)
+
+- **Regenerate fails** (`exportPdf` throws): viewer "Couldn't export PDF"
+  SnackBar, **no navigation** (unchanged from C1).
+- **Preview open fails** (pdfx can't open the file): the preview's **error
+  state**, never a crash.
+
+## Testing (host vs device — honest split for a native renderer)
+
+- **Host (`PdfPreviewScreen`):** inject a **throwing opener** → assert the
+  **error** state (`pdf-preview-error`); assert the initial **loading** state.
+  The **loaded/render path is NOT host-testable** (native plugin + an
+  un-fakeable `PdfDocument`) — covered on-device.
+- **Host (viewer):** export **success → navigates to `PdfPreviewScreen`**
+  (replaces C1's SnackBar assertion). **Use `tester.pump()`, not
+  `pumpAndSettle()`**, when asserting the pushed preview — a real-opener preview
+  hits the pdfx MethodChannel in host and could hang/flake on settle; one pump
+  leaves it in the loading state with the screen present. Export **failure →
+  SnackBar, no nav**.
+- **Integration (Tier-2, android+ios):** `c2_pdf_preview` — capture→save→open→
+  export→**`PdfViewPinch` present** on-device, rendering the real `export.pdf`.
+- **Regression:** B1/B2/B3 + C1 **repo** tests unaffected.
+
+## Proof tiers
+
+| Tier | Proves | Automatable |
+|---|---|---|
+| 1 — host | preview loading+error states; viewer navigates to preview on export | ✅ in-gate |
+| 2 — integration (android+ios) | export → `PdfViewPinch` renders the real `export.pdf` on-device | ✅ |
+| 3 — **REAL_DEVICE** (deferred) | the page is **visually** correct + pinch-zoom magnifies | ❌ manual |
+
+## Verification harness — `scripts/verify/c2.sh`
+
+Static asserts (`pdfx:` in `pubspec`, `PdfPreviewScreen`, `PdfViewPinch`, viewer
+pushes `PdfPreviewScreen`, `schemaVersion => 1`,
+scrubber `minimalExifApp1`) · codegen-current · `mobile:test` · `analyze` ·
+coverage floor 70 · `verify_integration_android/ios c2_pdf_preview_test.dart` ·
+**no-empty-stub guard** (the new steps are real + the generated test calls them) ·
+negative control `VERIFY_SKIP_DEVICE=1 → GATE: FAIL` · opt-in REAL_DEVICE Tier-3.
+
+## Acceptance criteria
+
+1. Tapping Export regenerates the PDF and **opens the in-app preview** (navigates
+   to `PdfPreviewScreen`). — *widget + BDD*
+2. The preview **renders the real `export.pdf` on-device** (`PdfViewPinch`). —
+   *integration (host: wiring); pixels REAL_DEVICE*
+3. Pinch-zoom is available. — *host: `PdfViewPinch` wired; REAL_DEVICE: magnifies*
+4. A corrupt/unreadable PDF → **error state**, never a crash. — *host (injected
+   throwing opener)*
+5. Regenerate failure → SnackBar, stays on the viewer (no nav). — *widget*
+6. **Privacy spine:** rendered on-device; `pdfx` pulls no network package;
+   nothing shared/uploaded. — *dep-tree + code review*
+7. *(REAL_DEVICE, deferred)* the PDF is visually correct + zoom works.
+
+Criteria 1–6 gated (2/3 host = wiring, render on emulator/sim); 7 REAL_DEVICE
+deferred-with-sign-off.
+
+## Known gaps / non-goals (explicit)
+
+- No share/print/save-elsewhere (Feature 12), no multi-page (group H), no text
+  selection (image-only PDFs), no PDF thumbnails.
+- Render **pixels** + the zoom **gesture** are REAL_DEVICE; host proves states +
+  wiring (the native-renderer hazard, like B2/B3 thumbnails).
+- `PdfPreviewScreen`'s loaded branch is host-uncovered native code (thins
+  coverage on that file; fine against the 70 floor).
+- `pdfx` reintroduces CocoaPods on iOS — the integration (Podfile/lock, pod
+  xcconfig includes, workspace) is committed; only the `pbxproj` stays uncommitted.
+- **`pdf`/`pdfx` both export `PdfDocument`** — any file importing both must
+  `hide PdfDocument` from `package:pdf` (spike-found).
+- `PdfViewPinch` rendering a real image PDF + the error-via-`initState`-catch
+  wiring are **spike-verified on Android** (above); iOS image-render is
+  gate-verified, not separately spiked.
+
+## Privacy spine (binding, unchanged)
+
+The PDF is rendered **on-device** by `pdfx` (no network package in its dep tree).
+Nothing is uploaded, shared, or sent off-device. The preview reads the same local
+`export.pdf` C1 wrote.
