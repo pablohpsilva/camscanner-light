@@ -11,13 +11,13 @@ import './../test/step/i_tap_the_shutter.dart';
 import './../test/step/i_tap_accept.dart';
 import './../test/step/i_open_the_first_document.dart';
 import './../test/step/i_export_the_open_document_to_pdf.dart';
-import './../test/step/the_pdf_is_saved.dart';
+import './../test/step/the_pdf_preview_opens.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('''Export a document to PDF''', () {
-    testWidgets('''Capture, save, then export the document to PDF''',
+  group('''Preview a document as PDF''', () {
+    testWidgets('''Capture, save, then preview the document as a PDF''',
         (tester) async {
       await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
       await iTapTheScanButton(tester);
@@ -25,7 +25,7 @@ void main() {
       await iTapAccept(tester);
       await iOpenTheFirstDocument(tester);
       await iExportTheOpenDocumentToPdf(tester);
-      await thePdfIsSaved(tester);
+      await thePdfPreviewOpens(tester);
     });
   });
 }
