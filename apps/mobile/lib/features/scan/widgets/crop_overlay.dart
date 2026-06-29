@@ -1,0 +1,221 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+import '../../library/crop_corners.dart';
+
+/// Draggable 4-corner crop overlay drawn over a captured image (E1). Controlled:
+/// the parent owns the [corners] state. Renders the injected [image] in the
+/// BoxFit.contain rect and places handles in that same rect, so they align by
+/// construction. Drag is delta-based and clamps each corner to image bounds
+/// (topology is NOT enforced — E2 guards degenerate quads). [imageSize] is the
+/// EXIF-applied natural size, injected so this widget needs no image decode.
+class CropOverlay extends StatelessWidget {
+  final Size imageSize;
+  final Widget image;
+  final CropCorners corners;
+  final ValueChanged<CropCorners> onCornersChanged;
+  final bool enabled;
+  const CropOverlay({
+    super.key,
+    required this.imageSize,
+    required this.image,
+    required this.corners,
+    required this.onCornersChanged,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      key: const Key('crop-overlay'),
+      builder: (context, constraints) {
+        if (imageSize.width <= 0 || imageSize.height <= 0) {
+          return image; // degenerate size: show the image, no handles
+        }
+        final box = Size(constraints.maxWidth, constraints.maxHeight);
+        final scale = math.min(
+            box.width / imageSize.width, box.height / imageSize.height);
+        final display = imageSize * scale;
+        final rect =
+            Offset((box.width - display.width) / 2,
+                (box.height - display.height) / 2) &
+            display;
+
+        Offset posOf(Offset n) =>
+            rect.topLeft + Offset(n.dx * rect.width, n.dy * rect.height);
+
+        void emitNew(String role, Offset newNorm) {
+          switch (role) {
+            case 'tl':
+              onCornersChanged(CropCorners(
+                  topLeft: newNorm,
+                  topRight: corners.topRight,
+                  bottomRight: corners.bottomRight,
+                  bottomLeft: corners.bottomLeft));
+            case 'tr':
+              onCornersChanged(CropCorners(
+                  topLeft: corners.topLeft,
+                  topRight: newNorm,
+                  bottomRight: corners.bottomRight,
+                  bottomLeft: corners.bottomLeft));
+            case 'br':
+              onCornersChanged(CropCorners(
+                  topLeft: corners.topLeft,
+                  topRight: corners.topRight,
+                  bottomRight: newNorm,
+                  bottomLeft: corners.bottomLeft));
+            case 'bl':
+              onCornersChanged(CropCorners(
+                  topLeft: corners.topLeft,
+                  topRight: corners.topRight,
+                  bottomRight: corners.bottomRight,
+                  bottomLeft: newNorm));
+          }
+        }
+
+        const r = 22.0;
+
+        Widget buildHandle(String role, String label, Offset cornerNorm) {
+          final center = posOf(cornerNorm);
+          return Positioned(
+            left: center.dx - r,
+            top: center.dy - r,
+            child: Semantics(
+              label: label,
+              child: _DragHandle(
+                key: Key('crop-handle-$role'),
+                enabled: enabled,
+                cornerNorm: cornerNorm,
+                rectSize: rect.size,
+                onNewNorm: (n) => emitNew(role, n),
+              ),
+            ),
+          );
+        }
+
+        return Stack(
+          children: [
+            Positioned.fromRect(rect: rect, child: image),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _QuadPainter(rect: rect, corners: corners),
+                ),
+              ),
+            ),
+            buildHandle('tl', 'Top-left crop corner', corners.topLeft),
+            buildHandle('tr', 'Top-right crop corner', corners.topRight),
+            buildHandle('br', 'Bottom-right crop corner', corners.bottomRight),
+            buildHandle('bl', 'Bottom-left crop corner', corners.bottomLeft),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Stateful handle widget. Accumulates incremental [DragUpdateDetails.delta]
+/// values from [onPanStart] so that the emitted norm always represents the
+/// corner's position relative to where the gesture STARTED, regardless of how
+/// many sub-events the test framework (or OS) breaks the drag into.
+class _DragHandle extends StatefulWidget {
+  const _DragHandle({
+    super.key,
+    required this.enabled,
+    required this.cornerNorm,
+    required this.rectSize,
+    required this.onNewNorm,
+  });
+
+  final bool enabled;
+  final Offset cornerNorm; // current normalized corner from parent
+  final Size rectSize;
+  final void Function(Offset) onNewNorm;
+
+  @override
+  State<_DragHandle> createState() => _DragHandleState();
+}
+
+class _DragHandleState extends State<_DragHandle> {
+  static const double _r = 22.0;
+
+  Offset? _startNorm; // corner norm captured at onPanStart
+  Offset _accumulated = Offset.zero; // sum of incremental deltas this gesture
+
+  void _onPanStart(DragStartDetails _) {
+    _startNorm = widget.cornerNorm;
+    _accumulated = Offset.zero;
+  }
+
+  void _onPanUpdate(DragUpdateDetails d) {
+    final sn = _startNorm;
+    if (sn == null) return;
+    _accumulated += d.delta;
+    widget.onNewNorm(Offset(
+      (sn.dx + _accumulated.dx / widget.rectSize.width).clamp(0.0, 1.0),
+      (sn.dy + _accumulated.dy / widget.rectSize.height).clamp(0.0, 1.0),
+    ));
+  }
+
+  void _onPanEnd(DragEndDetails _) => _startNorm = null;
+  void _onPanCancel() => _startNorm = null;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanStart: widget.enabled ? _onPanStart : null,
+      onPanUpdate: widget.enabled ? _onPanUpdate : null,
+      onPanEnd: _onPanEnd,
+      onPanCancel: _onPanCancel,
+      child: Container(
+        width: _r * 2,
+        height: _r * 2,
+        alignment: Alignment.center,
+        child: Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.blue, width: 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuadPainter extends CustomPainter {
+  final Rect rect;
+  final CropCorners corners;
+  _QuadPainter({required this.rect, required this.corners});
+
+  Offset _p(Offset n) =>
+      rect.topLeft + Offset(n.dx * rect.width, n.dy * rect.height);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final quad = Path()
+      ..moveTo(_p(corners.topLeft).dx, _p(corners.topLeft).dy)
+      ..lineTo(_p(corners.topRight).dx, _p(corners.topRight).dy)
+      ..lineTo(_p(corners.bottomRight).dx, _p(corners.bottomRight).dy)
+      ..lineTo(_p(corners.bottomLeft).dx, _p(corners.bottomLeft).dy)
+      ..close();
+    // Dim outside the quad.
+    final outside = Path.combine(
+        PathOperation.difference, Path()..addRect(Offset.zero & size), quad);
+    canvas.drawPath(outside, Paint()..color = Colors.black54);
+    // Quad outline.
+    canvas.drawPath(
+        quad,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = Colors.blue);
+  }
+
+  @override
+  bool shouldRepaint(_QuadPainter old) =>
+      old.rect != rect || old.corners != corners;
+}
