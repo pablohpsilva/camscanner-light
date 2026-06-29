@@ -108,8 +108,8 @@ class WarpException implements Exception {
 ```
 
 `naturalSize` is derived by the implementation from the decoded bytes (not a
-parameter) — the `image` package gives `img.width` / `img.height` after decode,
-already in the EXIF-applied frame. This keeps the interface minimal.
+parameter) — after `img.decodeImage()` + `img.bakeOrientation()`, `src.width/height`
+are in the EXIF-applied display frame. This keeps the interface minimal.
 
 ### 2. `lib/features/library/perspective_warper.dart` (new)
 
@@ -284,7 +284,8 @@ final bytes = await File(page.displayPath).readAsBytes();
 
 ### 10. `lib/features/library/library_dependencies.dart` (modify)
 
-Wire `PerspectiveWarper()` into `DriftDocumentRepository` at the composition root.
+Add `warper: const PerspectiveWarper()` to the `DriftDocumentRepository(...)` call
+inside `_defaultCreateRepository()` (the production wiring function).
 
 ### 11. `test/support/fake_library.dart` (modify)
 
@@ -341,7 +342,11 @@ stripped by the `image` package re-encode (no GPS/device metadata in output).
 - **Unit `perspective_warper_test.dart` (new):**
   `fullFrame` → null; valid non-trivial quad → returns JPEG with edge-length
   dimensions; self-crossing quad → `WarpException`; degenerate (zero-area) →
-  `WarpException`; convexity cross-product helper; output-size formula.
+  `WarpException`; convexity cross-product helper; output-size formula;
+  **rotated-image round-trip**: synthesize a JPEG with EXIF Orientation ≠ 1
+  (90° rotation), warp with a known rectangular quad in the display frame, assert
+  output dimensions match edge-length in the display (not sensor) frame — guards
+  the `bakeOrientation` contract is exercised end-to-end.
 
 - **Widget `page_viewer_screen_test.dart` (extend):**
   `PageImage` with `flatImagePath` set → viewer file key resolves to flat path;
