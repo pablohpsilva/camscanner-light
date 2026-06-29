@@ -29,12 +29,12 @@ Spike-confirmed: renders a PDF on the iOS sim and **pulls no network package**
 - **Pinch-zoom** via `PdfViewPinch` + `PdfControllerPinch`.
 - **iOS infra consequence:** `pdfx` does **not** support Swift Package Manager
   (the existing plugins do), so it **reintroduces CocoaPods** on iOS — a
-  `Podfile` + pod build phases. The **`Podfile` is NOT committed** — `flutter`
-  auto-generates it at iOS build and the verify gate's `pod install` handles it
-  (proven across this project's iOS gate runs); committing it adds iOS-tooling
-  friction with no build benefit. Pod integration (Podfile + pbxproj phases) is
-  regenerated at build; the personal `pbxproj` keeps absorbing that churn
-  **uncommitted**, as today.
+  `Podfile` + pod build phases. The CocoaPods integration is **committed**
+  (`Podfile`, `Podfile.lock`, the `#include?` pod xcconfig lines, the workspace
+  `Pods.xcodeproj` ref) for a clean tree + reproducible iOS builds — `pdfx` is a
+  permanent native dep. ONLY the personal `pbxproj` stays **uncommitted**; its
+  pod build phases regenerate via `pod install` at build (the `#include?` is
+  optional, so a fresh checkout builds before the first `pod install`).
 
 > **Gating premise — now VERIFIED by spike (Android).** A real `PdfBuilder`
 > **image** PDF (DCTDecode JPEG) renders in **`PdfViewPinch`** on the Android
@@ -158,8 +158,8 @@ deferred-with-sign-off.
   wiring (the native-renderer hazard, like B2/B3 thumbnails).
 - `PdfPreviewScreen`'s loaded branch is host-uncovered native code (thins
   coverage on that file; fine against the 70 floor).
-- `pdfx` reintroduces CocoaPods on iOS (`Podfile` NOT committed — `flutter`
-  auto-generates it at build; pod churn stays in the uncommitted `pbxproj`).
+- `pdfx` reintroduces CocoaPods on iOS — the integration (Podfile/lock, pod
+  xcconfig includes, workspace) is committed; only the `pbxproj` stays uncommitted.
 - **`pdf`/`pdfx` both export `PdfDocument`** — any file importing both must
   `hide PdfDocument` from `package:pdf` (spike-found).
 - `PdfViewPinch` rendering a real image PDF + the error-via-`initState`-catch
