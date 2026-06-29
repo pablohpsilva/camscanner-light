@@ -99,6 +99,8 @@ class FakeDocumentRepository implements DocumentRepository {
     if (throwOnList) {
       throw StateError('fake: list failed');
     }
+    // Synthesize: every fake document has one page and a deliberately
+    // NON-LOADABLE thumbnail path (host tests must not load a real Image.file).
     return List<DocumentSummary>.unmodifiable(documents.map((d) =>
         DocumentSummary(
             document: d,

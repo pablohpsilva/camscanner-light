@@ -207,28 +207,44 @@ void main() {
 
   testWidgets('renaming under an active Name sort re-positions the document',
       (tester) async {
-    final repo = FakeDocumentRepository(documents: twoDocs());
+    // Distinct names AND timestamps so the Name-asc order differs from the
+    // default (created-desc) order — that gap is what lets this test tell
+    // "sort survived _load()" apart from "sort silently reverted to default".
+    final repo = FakeDocumentRepository(documents: [
+      Document(
+          id: 1,
+          name: 'zzz',
+          createdAt: DateTime.utc(2026, 1, 1, 10), // older
+          modifiedAt: DateTime.utc(2026, 1, 1, 10)),
+      Document(
+          id: 2,
+          name: 'mmm',
+          createdAt: DateTime.utc(2026, 1, 1, 12), // newer
+          modifiedAt: DateTime.utc(2026, 1, 1, 12)),
+    ]);
     await pumpHome(tester, repo);
-    // Activate Name sort (asc): apple above Zebra.
+    // Activate Name sort (asc): mmm above zzz.
     await tester.tap(find.byKey(const Key('sort-chip-name')));
     await tester.pumpAndSettle();
-    expect(tester.getCenter(find.text('apple')).dy,
-        lessThan(tester.getCenter(find.text('Zebra')).dy));
-    // Rename 'apple' (id 1) to 'zzz' via its row menu -> under Name asc it must
-    // drop below 'Zebra' (z-e-b... < z-z-z). Proves the active sort is
-    // preserved across _load() and the renamed doc re-positions.
+    expect(tester.getCenter(find.text('mmm')).dy,
+        lessThan(tester.getCenter(find.text('zzz')).dy));
+    // Rename 'zzz' (id 1, the OLDER doc) to 'aaa' via its row menu.
     await tester.tap(find.byKey(const Key('document-menu-1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('document-rename-1')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('rename-field')), 'zzz');
+    await tester.enterText(find.byKey(const Key('rename-field')), 'aaa');
     await tester.pump();
     await tester.tap(find.byKey(const Key('rename-save')));
     await tester.pumpAndSettle();
-    expect(find.text('apple'), findsNothing);
-    expect(tester.getCenter(find.text('Zebra')).dy,
-        lessThan(tester.getCenter(find.text('zzz')).dy),
-        reason: 'after rename to zzz, Zebra sorts above it under Name asc');
+    expect(find.text('zzz'), findsNothing);
+    // Under Name-asc, 'aaa' < 'mmm' -> aaa on top. The DEFAULT (created-desc)
+    // would instead put mmm (newer) on top, so this assertion FAILS if the sort
+    // reverted to default. It therefore proves BOTH repositioning (id1 moved
+    // bottom->top) AND that the active Name sort survived _load().
+    expect(tester.getCenter(find.text('aaa')).dy,
+        lessThan(tester.getCenter(find.text('mmm')).dy),
+        reason: 'renamed doc re-positions under the still-active Name sort');
   });
 
   testWidgets('sorting does not trigger a repository re-query',
