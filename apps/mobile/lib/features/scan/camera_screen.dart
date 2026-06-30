@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
@@ -15,6 +17,7 @@ import 'widgets/permission_denied_view.dart';
 
 /// The Scan screen: requests camera permission and shows the live preview, or
 /// a graceful fallback. Capture (shutter) → review screen lives here (A3/B1).
+/// F3: periodic detection loop draws a live quad outline on the preview.
 class CameraScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentRepository repository;
@@ -33,6 +36,9 @@ class _CameraScreenState extends State<CameraScreen> {
   late final ScanController _controller;
   late final SaveController _saveController;
   late final EdgeDetector _edgeDetector;
+  Timer? _sampleTimer;
+  DetectionResult? _liveResult;
+  bool _isSampling = false;
 
   @override
   void initState() {
@@ -44,10 +50,40 @@ class _CameraScreenState extends State<CameraScreen> {
     _controller.start();
     _saveController = SaveController(repository: widget.repository);
     _edgeDetector = widget.dependencies.createEdgeDetector();
+    _startSampleTimer();
+  }
+
+  void _startSampleTimer() {
+    _sampleTimer = Timer.periodic(
+      const Duration(milliseconds: 800),
+      (_) => unawaited(_doSample()),
+    );
+  }
+
+  Future<void> _doSample() async {
+    if (_isSampling ||
+        _controller.capturing ||
+        _controller.status != ScanStatus.ready) {
+      return;
+    }
+    _isSampling = true;
+    try {
+      final bytes = await _controller.preview.sampleFrame();
+      if (!mounted || bytes == null) return;
+      final result = await _edgeDetector.detect(bytes);
+      if (!mounted) return;
+      setState(() {
+        _liveResult =
+            (result != null && result.confidence >= 0.5) ? result : null;
+      });
+    } finally {
+      _isSampling = false;
+    }
   }
 
   @override
   void dispose() {
+    _sampleTimer?.cancel();
     // _edgeDetector is not disposed — OpenCvEdgeDetector is a const stateless instance.
     _controller.dispose();
     _saveController.dispose();
@@ -55,6 +91,8 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _onShutter() async {
+    _sampleTimer?.cancel();
+    _sampleTimer = null;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final image = await _controller.capture();
@@ -63,6 +101,9 @@ class _CameraScreenState extends State<CameraScreen> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Could not capture photo. Try again.')),
       );
+      if (mounted && _controller.status == ScanStatus.ready) {
+        _startSampleTimer();
+      }
       return;
     }
     await navigator.push(
@@ -79,6 +120,9 @@ class _CameraScreenState extends State<CameraScreen> {
         ),
       ),
     );
+    if (mounted && _controller.status == ScanStatus.ready) {
+      _startSampleTimer();
+    }
   }
 
   Future<void> _onAccept(CapturedImage image, CropCorners corners) async {
@@ -114,6 +158,8 @@ class _CameraScreenState extends State<CameraScreen> {
                 controller: _controller.preview,
                 capturing: _controller.capturing,
                 onShutter: _onShutter,
+                liveCorners: _liveResult?.corners,
+                previewSize: _controller.preview.previewSize,
               );
             case ScanStatus.permissionDenied:
               return PermissionDeniedView(
