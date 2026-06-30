@@ -48,6 +48,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   void dispose() {
+    // _edgeDetector is not disposed — OpenCvEdgeDetector is a const stateless instance.
     _controller.dispose();
     _saveController.dispose();
     super.dispose();

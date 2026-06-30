@@ -227,14 +227,20 @@ void main() {
   });
 
   testWidgets('confidence < 0.5 → blue overlay', (tester) async {
+    CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: lowResult),
+      onAccept: (c) => accepted = c,
     )));
     await tester.pumpAndSettle();
     expect(
       tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
       Colors.blue,
     );
+    // Corners are still pre-filled from the detection result, even at low confidence.
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle();
+    expect(accepted, detectedCorners);
   });
 
   testWidgets('null detection → full-frame corners, blue overlay', (tester) async {
@@ -324,6 +330,10 @@ void main() {
     await tester.tap(find.byKey(const Key('review-accept')));
     await tester.pumpAndSettle();
     expect(accepted, CropCorners.fullFrame);
+    expect(
+      tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
+      Colors.blue,
+    );
   });
 
   testWidgets('readBytes throws → full-frame fallback, no crash', (tester) async {
@@ -338,6 +348,48 @@ void main() {
     )));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle();
+    expect(accepted, CropCorners.fullFrame);
+    expect(
+      tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
+      Colors.blue,
+    );
+  });
+
+  testWidgets('confidence exactly 0.5 → green overlay', (tester) async {
+    const exactResult = DetectionResult(corners: detectedCorners, confidence: 0.5);
+    await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
+      edgeDetector: FakeEdgeDetector(result: exactResult),
+    )));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
+      Colors.green,
+    );
+  });
+
+  testWidgets('green cue persists after Reset', (tester) async {
+    CropCorners? accepted;
+    await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
+      edgeDetector: FakeEdgeDetector(result: highResult),
+      onAccept: (c) => accepted = c,
+    )));
+    await tester.pumpAndSettle();
+    // Overlay is green for high-confidence detection.
+    expect(
+      tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
+      Colors.green,
+    );
+    // Tap Reset — sets _userInteracted = true, resets corners to fullFrame.
+    await tester.tap(find.byKey(const Key('crop-reset')));
+    await tester.pumpAndSettle();
+    // Green persists: _detectionConfidence is NOT cleared by Reset.
+    expect(
+      tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
+      Colors.green,
+    );
+    // Corners are back to fullFrame after Reset.
     await tester.tap(find.byKey(const Key('review-accept')));
     await tester.pumpAndSettle();
     expect(accepted, CropCorners.fullFrame);

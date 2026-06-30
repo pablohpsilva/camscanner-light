@@ -189,6 +189,29 @@ void main() {
     final deco = container.decoration! as BoxDecoration;
     expect(deco.border, Border.all(color: Colors.green, width: 2));
   });
+
+  testWidgets('highlightColor Colors.green propagates to quad painter',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 400,
+        height: 600,
+        child: CropOverlay(
+          imageSize: const Size(400, 600),
+          image: const ColoredBox(color: Colors.grey),
+          corners: CropCorners.fullFrame,
+          onCornersChanged: (_) {},
+          highlightColor: Colors.green,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    // _QuadPainter is private; access its fields via a dynamic cast on the
+    // last CustomPaint in the overlay subtree (the quad outline painter).
+    final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).last);
+    // ignore: avoid_dynamic_calls
+    expect((paint.painter! as dynamic).highlightColor, Colors.green);
+  });
 }
 
 void _noop(CropCorners _) {}
