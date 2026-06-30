@@ -60,10 +60,10 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | F1 | Auto contour detection | 04 | `…-f1-detect.md` | ⏳ |
 | F2 | Pre-fill crop corners | 04 | `…-f2-prefill.md` | ⏳ |
 | F3 | Live edge overlay (stretch) | 04 | `…-f3-live-overlay.md` | ⏳ |
-| G1 | Grayscale filter | 05 | `…-g1-grayscale.md` | ⏳ |
-| G2 | Black & White filter | 05 | `…-g2-bw.md` | ⏳ |
-| G3 | Color / Auto-Magic filter | 05 | `…-g3-color-auto.md` | ⏳ |
-| G4 | Filter picker UI | 05 | `…-g4-picker.md` | ⏳ |
+| G1 | Grayscale filter | 05 | `2026-06-30-g1-grayscale.md` | ✅ **built & gated** |
+| G2 | Black & White filter | 05 | `2026-06-30-g2-bw.md` | ✅ **built & gated** |
+| G3 | Color / Auto-Magic filter | 05 | `2026-07-01-g3-color-auto.md` | ✅ **built & gated** |
+| G4 | Filter picker UI | 05 | `2026-07-01-g4-filter-picker.md` | ✅ **built & gated** |
 | H1 | Add multiple pages | 06 | `…-h1-add-pages.md` | ⏳ |
 | H2 | Page thumbnail strip | 06 | `…-h2-thumbnails.md` | ⏳ |
 | H3 | Reorder pages | 06 | `…-h3-reorder.md` | ⏳ |
