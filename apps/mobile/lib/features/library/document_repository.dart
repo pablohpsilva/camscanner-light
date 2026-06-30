@@ -4,16 +4,20 @@ import '../scan/captured_image.dart';
 import 'crop_corners.dart';
 import 'document.dart';
 import 'document_summary.dart';
+import 'image_enhancer.dart';
 import 'page_image.dart';
 
 /// The only persistence surface the widget layer knows (DIP). The Drift
 /// implementation hides the DB, scrubber, file store, and clock.
 abstract interface class DocumentRepository {
   /// Persists [capture] (EXIF-scrubbed) and creates a one-page document with the
-  /// page's crop [corners] (defaults to full-frame). Image bytes are NOT
-  /// transformed — corners are metadata (E1). Throws [DocumentSaveException] on
-  /// failure (the capture is not lost).
-  Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners});
+  /// page's crop [corners] (defaults to full-frame). When [enhancer] is provided
+  /// it is applied to the saved bytes after the warp (silent on failure).
+  Future<Document> createFromCapture(
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  });
 
   /// All documents (newest first) with page count and first-page thumbnail path
   /// (absolute, resolved at read time; null when the document has no page).

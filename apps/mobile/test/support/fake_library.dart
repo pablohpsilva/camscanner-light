@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/perspective_warper.dart';
 import 'package:mobile/features/library/document.dart';
@@ -36,6 +37,7 @@ class FakeDocumentRepository implements DocumentRepository {
   int createCalls = 0;
   int listCalls = 0;
   CropCorners? lastSavedCorners;
+  ImageEnhancer? lastSavedEnhancer;
   int? lastUpdatedPosition;
   CropCorners? lastUpdatedCorners;
   final List<int> deletedIds = <int>[];
@@ -58,9 +60,11 @@ class FakeDocumentRepository implements DocumentRepository {
   }) : documents = documents ?? <Document>[];
 
   @override
-  Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners}) async {
+  Future<Document> createFromCapture(CapturedImage capture,
+      {CropCorners? corners, ImageEnhancer? enhancer}) async {
     createCalls++;
     lastSavedCorners = corners;
+    lastSavedEnhancer = enhancer;
     if (gate != null) await gate!.future;
     if (throwOnCreate) {
       throw const DocumentSaveException('fake: save failed');

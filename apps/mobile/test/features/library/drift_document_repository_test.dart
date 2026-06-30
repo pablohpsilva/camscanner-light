@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' show Offset;
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/grayscale_enhancer.dart';
+import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
@@ -20,6 +23,26 @@ import '../../support/fake_library.dart';
 class _ThrowingScrubber implements ImageMetadataScrubber {
   @override
   Uint8List scrub(Uint8List bytes) => throw const MetadataScrubException('boom');
+}
+
+/// Records enhance() calls for assertions; returns bytes unchanged.
+class _RecordingEnhancer implements ImageEnhancer {
+  int calls = 0;
+
+  @override
+  Future<Uint8List> enhance(Uint8List bytes) async {
+    calls++;
+    return bytes;
+  }
+}
+
+/// Always throws — tests that enhancement failure is silent.
+class _ThrowingEnhancer implements ImageEnhancer {
+  const _ThrowingEnhancer();
+
+  @override
+  Future<Uint8List> enhance(Uint8List bytes) async =>
+      throw Exception('enhance failed');
 }
 
 void main() {
@@ -521,5 +544,46 @@ void main() {
         throwsA(isA<DocumentSaveException>()),
       );
     });
+  });
+
+  const _testCorners = CropCorners(
+    topLeft: Offset(0.1, 0.1),
+    topRight: Offset(0.9, 0.1),
+    bottomRight: Offset(0.9, 0.9),
+    bottomLeft: Offset(0.1, 0.9),
+  );
+
+  test(
+      'createFromCapture applies enhancer to flat bytes on cropped capture',
+      () async {
+    final enhancer = _RecordingEnhancer();
+    // FakeImageWarper with a non-null returnValue simulates a successful warp.
+    final r = repo(warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
+    await r.createFromCapture(capture,
+        corners: _testCorners, enhancer: enhancer);
+    expect(enhancer.calls, 1,
+        reason: 'enhancer must be called once on the flat bytes');
+  });
+
+  test(
+      'createFromCapture applies enhancer to original bytes on full-frame capture',
+      () async {
+    final enhancer = _RecordingEnhancer();
+    // No corners → full-frame path; FakeImageWarper(returnValue: null) → no warp.
+    final r = repo(warper: FakeImageWarper());
+    await r.createFromCapture(capture, enhancer: enhancer);
+    expect(enhancer.calls, 1,
+        reason: 'enhancer must be called once on the scrubbed original');
+  });
+
+  test('createFromCapture proceeds silently when enhancer throws', () async {
+    final r = repo(
+        warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
+    await expectLater(
+      r.createFromCapture(capture,
+          corners: _testCorners, enhancer: const _ThrowingEnhancer()),
+      completes,
+      reason: 'enhancement failure must not abort the save',
+    );
   });
 }

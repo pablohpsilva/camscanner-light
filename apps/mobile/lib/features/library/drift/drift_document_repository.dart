@@ -8,6 +8,7 @@ import '../document.dart';
 import '../document_file_store.dart';
 import '../document_repository.dart';
 import '../document_summary.dart';
+import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
 import '../page_image.dart';
@@ -40,7 +41,11 @@ class DriftDocumentRepository implements DocumentRepository {
         _warper = warper; // ignore: prefer_initializing_formals
 
   @override
-  Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners}) async {
+  Future<Document> createFromCapture(
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  }) async {
     final now = _clock();
     final createdUtc = now.toUtc();
     final name = _defaultName(now);
@@ -51,24 +56,39 @@ class DriftDocumentRepository implements DocumentRepository {
                   name: name, createdAt: createdUtc, modifiedAt: createdUtc),
             );
         final rel = _fileStore.relativeFor(docId, 1);
-        // Hoist scrubbed out of try so it's in scope for the warp block.
         late final Uint8List scrubbed;
         try {
           final raw = await File(capture.path).readAsBytes();
           scrubbed = _scrubber.scrub(Uint8List.fromList(raw));
-          await _fileStore.writeRelative(rel, scrubbed);
+          // G1: for full-frame (no warp), apply enhancement to the original
+          // before writing. bakeOrientation runs inside GrayscaleEnhancer.
+          final isFullFrame = corners == null || corners == CropCorners.fullFrame;
+          Uint8List bytesToStore = scrubbed;
+          if (enhancer != null && isFullFrame) {
+            try {
+              bytesToStore = await enhancer.enhance(scrubbed);
+            } catch (_) {} // silent: use unenhanced scrubbed bytes
+          }
+          await _fileStore.writeRelative(rel, bytesToStore);
         } catch (e) {
           await _fileStore.deleteDocumentDir(docId); // best-effort cleanup
           rethrow; // rolls back the inserted document row
         }
-        // E2: perspective-flatten best-effort. Original is already on disk.
+        // E2 + G1: perspective-flatten, then enhance the flat.
+        // Original (rel) is already on disk for the full-frame path.
         String? flatRel;
         if (corners != null && corners != CropCorners.fullFrame) {
           try {
-            final flat = await _warper.warp(scrubbed, corners);
+            Uint8List? flat = await _warper.warp(scrubbed, corners);
             if (flat != null) {
+              // Orientation already baked by warper — enhancer gets clean bytes.
+              if (enhancer != null) {
+                try {
+                  flat = await enhancer.enhance(flat);
+                } catch (_) {} // silent: store unenhanced warp result
+              }
               flatRel = _fileStore.flatRelativeFor(docId, 1);
-              await _fileStore.writeRelative(flatRel, flat);
+              await _fileStore.writeRelative(flatRel, flat!);
             }
           } catch (_) {/* WarpException or IO — flat stays null, save proceeds */}
         }
