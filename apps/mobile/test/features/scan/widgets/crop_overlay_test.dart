@@ -142,6 +142,53 @@ void main() {
     expect(find.bySemanticsLabel('Top-left crop corner'), findsOneWidget);
     expect(find.bySemanticsLabel('Bottom-right crop corner'), findsOneWidget);
   });
+
+  testWidgets('default highlightColor is Colors.blue', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 400,
+        height: 600,
+        child: CropOverlay(
+          imageSize: const Size(400, 600),
+          image: const ColoredBox(color: Colors.grey),
+          corners: CropCorners.fullFrame,
+          onCornersChanged: (_) {},
+        ),
+      ),
+    ));
+    expect(
+      tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
+      Colors.blue,
+    );
+  });
+
+  testWidgets('highlightColor Colors.green propagates to handle border',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 400,
+        height: 600,
+        child: CropOverlay(
+          imageSize: const Size(400, 600),
+          image: const ColoredBox(color: Colors.grey),
+          corners: CropCorners.fullFrame,
+          onCornersChanged: (_) {},
+          highlightColor: Colors.green,
+        ),
+      ),
+    ));
+    // _DragHandle renders: GestureDetector > Container(44×44) > Container(18×18, decoration)
+    // The inner Container has the BoxDecoration with the border.
+    final handle = find.byKey(const Key('crop-handle-tl'));
+    final decoratedContainer = find.descendant(
+      of: handle,
+      matching: find.byWidgetPredicate(
+          (w) => w is Container && w.decoration is BoxDecoration),
+    );
+    final container = tester.widget<Container>(decoratedContainer);
+    final deco = container.decoration! as BoxDecoration;
+    expect(deco.border, Border.all(color: Colors.green, width: 2));
+  });
 }
 
 void _noop(CropCorners _) {}
