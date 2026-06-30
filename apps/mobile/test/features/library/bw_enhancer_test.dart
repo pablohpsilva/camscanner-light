@@ -33,8 +33,8 @@ void main() {
       final decoded = img.decodeImage(resultBytes)!;
       for (final p in decoded) {
         final r = p.r.toInt();
-        expect(r == 0 || r == 255, isTrue,
-            reason: 'Expected binary pixel (0 or 255), got $r at (${p.x},${p.y})');
+        expect(r <= 10 || r >= 245, isTrue,
+            reason: 'Expected near-binary pixel (≤10 or ≥245), got $r at (${p.x},${p.y})');
       }
     });
 
@@ -56,8 +56,8 @@ void main() {
       final decoded = img.decodeImage(resultBytes)!;
       for (final p in decoded) {
         final r = p.r.toInt();
-        expect(r == 0 || r == 255, isTrue,
-            reason: 'Binary output expected for bimodal input');
+        expect(r <= 10 || r >= 245, isTrue,
+            reason: 'Expected near-binary pixel (≤10 or ≥245), got $r at (${p.x},${p.y})');
       }
     });
 

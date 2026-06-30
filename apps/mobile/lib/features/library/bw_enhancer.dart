@@ -27,7 +27,6 @@ Uint8List _bwFn(Uint8List bytes) {
     final t = _otsuThreshold(oriented);         // automatic split — no magic numbers
 
     // Manually apply threshold: set each pixel to 0 or 255 based on comparison to t
-    // Iterate through the image and update each pixel
     for (final px in oriented) {
       final luminance = px.r.toInt();
       final bwValue = luminance < t ? 0 : 255;
@@ -36,7 +35,7 @@ Uint8List _bwFn(Uint8List bytes) {
       px.b = bwValue;
     }
 
-    return Uint8List.fromList(img.encodePng(oriented));
+    return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
   } catch (_) {
     return bytes;
   }
