@@ -1253,80 +1253,91 @@ Future<void> iSeeTheCropOverlayWithBlueHandles(WidgetTester tester) async {
 
 - [ ] **Step 4: Write the verify script**
 
-Create `scripts/verify/f2.sh` (make it executable: `chmod +x scripts/verify/f2.sh`):
+First, read `scripts/verify/f1.sh` to see the exact helper function names from `lib.sh` (e.g., `assert_contains`, `pass`, `fail`, `section`). Then create `scripts/verify/f2.sh` following the same pattern.
+
+If `lib.sh` does not provide file-level assert helpers, use direct `grep` as shown below. The logic below is definitive; adapt function names to match `f1.sh`.
+
+Create `scripts/verify/f2.sh` and make it executable (`chmod +x scripts/verify/f2.sh`):
 
 ```bash
 #!/usr/bin/env bash
 # scripts/verify/f2.sh — F2 pre-fill crop corners gate
 set -euo pipefail
 REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
-source "$REPO_ROOT/scripts/verify/lib.sh"
-
 MOBILE="$REPO_ROOT/apps/mobile"
 
-section "Static asserts"
+_pass() { echo "PASS: $1"; }
+_fail() { echo "FAIL: $1" >&2; exit 1; }
 
-assert_file_contains \
+echo "=== F2 static asserts ==="
+
+grep -q "EdgeDetectorFactory" \
   "$MOBILE/lib/features/scan/scan_dependencies.dart" \
-  "EdgeDetectorFactory" \
-  "ScanDependencies declares EdgeDetectorFactory"
+  && _pass "ScanDependencies declares EdgeDetectorFactory" \
+  || _fail "ScanDependencies must declare EdgeDetectorFactory"
 
-assert_file_contains \
+grep -q "createEdgeDetector" \
   "$MOBILE/lib/features/scan/scan_dependencies.dart" \
-  "createEdgeDetector" \
-  "ScanDependencies has createEdgeDetector field"
+  && _pass "ScanDependencies has createEdgeDetector" \
+  || _fail "ScanDependencies missing createEdgeDetector"
 
-assert_file_contains \
+grep -q "EdgeDetector? edgeDetector" \
   "$MOBILE/lib/features/scan/capture_review_screen.dart" \
-  "EdgeDetector? edgeDetector" \
-  "CaptureReviewScreen has edgeDetector param"
+  && _pass "CaptureReviewScreen has edgeDetector param" \
+  || _fail "CaptureReviewScreen missing edgeDetector param"
 
-assert_file_contains \
+grep -q "_userInteracted" \
   "$MOBILE/lib/features/scan/capture_review_screen.dart" \
-  "_userInteracted" \
-  "_userInteracted guard present in CaptureReviewScreen"
+  && _pass "_userInteracted guard present" \
+  || _fail "_userInteracted guard missing in capture_review_screen.dart"
 
-assert_file_contains \
+grep -q "Colors.green" \
   "$MOBILE/lib/features/scan/capture_review_screen.dart" \
-  "Colors.green" \
-  "Green cue referenced in CaptureReviewScreen"
+  && _pass "Green cue referenced in CaptureReviewScreen" \
+  || _fail "Colors.green missing in capture_review_screen.dart"
 
-assert_file_contains \
+grep -q "Color highlightColor" \
   "$MOBILE/lib/features/scan/widgets/crop_overlay.dart" \
-  "Color highlightColor" \
-  "CropOverlay has highlightColor param"
+  && _pass "CropOverlay has highlightColor param" \
+  || _fail "CropOverlay missing highlightColor param"
 
-assert_not_file_contains \
-  "$MOBILE/lib/features/scan/capture_review_screen.dart" \
-  "opencv_dart" \
-  "DIP boundary: opencv_dart not imported in capture_review_screen.dart"
-
-assert_file_exists \
-  "$MOBILE/integration_test/f2_auto_corners.feature" \
-  "F2 BDD feature file exists"
-
-assert_file_exists \
-  "$MOBILE/integration_test/f2_auto_corners_test.dart" \
-  "F2 BDD test file exists"
-
-section "Analyze"
-(cd "$MOBILE" && flutter analyze) || fail "flutter analyze reported issues"
-
-section "Host test suite"
-(cd "$MOBILE" && flutter test) || fail "flutter test failed"
-
-if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
-  warn "VERIFY_SKIP_DEVICE=1 — skipping on-device BDD (f2_auto_corners_test.dart)"
+# DIP: capture_review_screen must NOT import opencv_dart
+if grep -q "opencv_dart" \
+    "$MOBILE/lib/features/scan/capture_review_screen.dart"; then
+  _fail "DIP violation: opencv_dart imported in capture_review_screen.dart"
 else
-  section "On-device BDD (requires connected device)"
-  (cd "$MOBILE" && flutter test integration_test/f2_auto_corners_test.dart) \
-    || fail "F2 BDD integration tests failed"
+  _pass "DIP: opencv_dart not in capture_review_screen.dart"
 fi
 
-pass "F2 verify complete"
-```
+test -f "$MOBILE/integration_test/f2_auto_corners.feature" \
+  && _pass "BDD feature file exists" \
+  || _fail "F2 BDD feature file missing"
 
-> **Note:** `assert_file_contains`, `assert_not_file_contains`, `assert_file_exists`, `section`, `warn`, `pass`, and `fail` are helpers from `scripts/verify/lib.sh`. Follow the same patterns used in `scripts/verify/f1.sh`.
+test -f "$MOBILE/integration_test/f2_auto_corners_test.dart" \
+  && _pass "BDD test file exists" \
+  || _fail "F2 BDD test file missing"
+
+echo "=== flutter analyze ==="
+(cd "$MOBILE" && flutter analyze) \
+  && _pass "flutter analyze clean" \
+  || _fail "flutter analyze reported issues"
+
+echo "=== host test suite ==="
+(cd "$MOBILE" && flutter test) \
+  && _pass "host suite green" \
+  || _fail "flutter test failed"
+
+if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
+  echo "SKIP: VERIFY_SKIP_DEVICE=1 — skipping on-device BDD"
+else
+  echo "=== on-device BDD ==="
+  (cd "$MOBILE" && flutter test integration_test/f2_auto_corners_test.dart) \
+    && _pass "BDD integration tests green" \
+    || _fail "F2 BDD integration tests failed"
+fi
+
+echo "=== F2 VERIFY COMPLETE ==="
+```
 
 - [ ] **Step 5: Run the verify script (static asserts + host suite)**
 
