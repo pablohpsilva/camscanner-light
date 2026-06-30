@@ -61,7 +61,8 @@ class DriftDocumentRepository implements DocumentRepository {
           final raw = await File(capture.path).readAsBytes();
           scrubbed = _scrubber.scrub(Uint8List.fromList(raw));
           // G1: for full-frame (no warp), apply enhancement to the original
-          // before writing. bakeOrientation runs inside GrayscaleEnhancer.
+          // before writing. Each ImageEnhancer is responsible for baking EXIF
+          // orientation before encoding (encodeJpg strips EXIF).
           final isFullFrame = corners == null || corners == CropCorners.fullFrame;
           Uint8List bytesToStore = scrubbed;
           if (enhancer != null && isFullFrame) {
@@ -82,13 +83,14 @@ class DriftDocumentRepository implements DocumentRepository {
             Uint8List? flat = await _warper.warp(scrubbed, corners);
             if (flat != null) {
               // Orientation already baked by warper — enhancer gets clean bytes.
+              Uint8List flatBytes = flat;
               if (enhancer != null) {
                 try {
-                  flat = await enhancer.enhance(flat);
+                  flatBytes = await enhancer.enhance(flat);
                 } catch (_) {} // silent: store unenhanced warp result
               }
               flatRel = _fileStore.flatRelativeFor(docId, 1);
-              await _fileStore.writeRelative(flatRel, flat!);
+              await _fileStore.writeRelative(flatRel, flatBytes);
             }
           } catch (_) {/* WarpException or IO — flat stays null, save proceeds */}
         }
