@@ -37,8 +37,8 @@ assert_file_has "list view has the onOpen callback" \
   "apps/mobile/lib/features/library/widgets/documents_list_view.dart" "ValueChanged<DocumentSummary>? onOpen"
 assert_file_has "home wires tap-to-open" \
   "apps/mobile/lib/features/library/home_screen.dart" "PageViewerScreen("
-assert_file_has "no schema bump (schemaVersion stays 1)" \
-  "apps/mobile/lib/features/library/drift/app_database.dart" "int get schemaVersion => 1;"
+assert_file_has "no schema bump (schemaVersion unchanged from when B3 was merged)" \
+  "apps/mobile/lib/features/library/drift/app_database.dart" "int get schemaVersion => 3;"
 assert_file_has "scrubber is still byte-level (privacy regression)" \
   "apps/mobile/lib/features/library/jpeg_exif_scrubber.dart" "minimalExifApp1"
 
@@ -61,6 +61,11 @@ assert_cmd "codegen is up to date" "Built with build_runner" \
   bash -c "cd apps/mobile && dart run build_runner build 2>&1"
 assert_cmd "no uncommitted generated diff (drift + b3 bdd)" "" \
   bash -c "git diff --exit-code -- apps/mobile/lib/features/library/drift/app_database.g.dart apps/mobile/integration_test/b3_view_and_delete_test.dart >/dev/null 2>&1 && echo OK || (echo 'GENERATED FILES STALE'; exit 1)"
+
+# ---- OpenCV host library (required by scan tests in the shared suite) ----
+bash "$ROOT/scripts/setup-cv-host-test.sh"
+export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
+export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
 
 # ---- Static criteria: unit + widget tests, analyze, coverage ----
 assert_cmd "b3 unit + widget tests pass" "All tests passed!" \

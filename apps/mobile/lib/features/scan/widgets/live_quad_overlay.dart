@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../library/crop_corners.dart';
@@ -59,6 +60,8 @@ class LiveQuadOverlay extends StatelessWidget {
   }
 }
 
+const double _kStrokeWidth = 2.0;
+
 class _LiveQuadPainter extends CustomPainter {
   final List<Offset> points;
   final Color color;
@@ -71,7 +74,7 @@ class _LiveQuadPainter extends CustomPainter {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
+      ..strokeWidth = _kStrokeWidth
       ..strokeCap = StrokeCap.round;
     final path = Path()
       ..moveTo(points[0].dx, points[0].dy)
@@ -84,5 +87,5 @@ class _LiveQuadPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LiveQuadPainter old) =>
-      old.points != points || old.color != color;
+      !listEquals(old.points, points) || old.color != color;
 }

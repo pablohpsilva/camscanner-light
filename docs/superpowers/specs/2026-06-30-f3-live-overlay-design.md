@@ -269,7 +269,7 @@ Step definitions needed (new files in `test/step/`):
 | Layer | What is tested |
 |-------|---------------|
 | Widget: `LiveQuadOverlay` | Renders quad lines at correct screen positions for known corners + previewSize; invisible quad when no widget is built |
-| Widget: `CameraPreviewView` | Overlay present when `liveResult` non-null; absent when null; shutter button still tappable (IgnorePointer) |
+| Widget: `CameraPreviewView` | Overlay present when `liveCorners` non-null; absent when null; shutter button still tappable (IgnorePointer) |
 | Widget: `CameraScreen` | After `pump(900ms)` with `liveDetectionScanDependencies(confident result)` → overlay visible; with null result → overlay absent |
 | Widget: `CameraScreen` | `sampleFrame` not called while `_controller.capturing` is true |
 | BDD integration | Both scenarios above, on-device with fakes |
