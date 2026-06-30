@@ -356,6 +356,23 @@ Uint8List _concaveQuadImage(int w, int h) {
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
+/// Black image with a white-filled chevron/arrow (>) shape.
+/// 4 vertices with one inward-pointing right-side indentation — non-convex.
+/// Distinct from the dart shape: the concave vertex is on the RIGHT side.
+Uint8List _chevronImage(int w, int h) {
+  final image = img.Image(width: w, height: h, numChannels: 3);
+  img.fill(image, color: img.ColorRgb8(0, 0, 0));
+  // Chevron ">": left-top, right-tip, left-bottom, left-center (indented inward).
+  final verts = [
+    (x: w * 0.15, y: h * 0.20),  // left-top
+    (x: w * 0.85, y: h * 0.50),  // right tip (arrow point)
+    (x: w * 0.15, y: h * 0.80),  // left-bottom
+    (x: w * 0.45, y: h * 0.50),  // left-center indent (makes non-convex)
+  ];
+  _fillPolygonPixels(image, verts);
+  return Uint8List.fromList(img.encodeJpg(image, quality: 95));
+}
+
 /// Black image with a white rectangle tilted by [angleDeg] degrees.
 Uint8List _tiltedRectImage(int w, int h, double angleDeg) {
   final image = img.Image(width: w, height: h, numChannels: 3);
@@ -570,6 +587,11 @@ void main() {
 
     test('concave quad (dart/arrowhead) → null (fails isContourConvex)', () async {
       final bytes = _concaveQuadImage(640, 480);
+      expect(await detector.detect(bytes), isNull);
+    });
+
+    test('non-convex quad (arrow/chevron ">") → null (fails isContourConvex)', () async {
+      final bytes = _chevronImage(640, 480);
       expect(await detector.detect(bytes), isNull);
     });
 
@@ -890,9 +912,11 @@ List<double>? _runPipeline(Uint8List bytes) {
 
     // Step 7: Extract points and sort into canonical roles.
     // NOTE: cv.Point has int fields x and y. Convert to double for arithmetic.
+    // Extract to a non-null local so flow analysis works inside the closure.
+    final bestPoints = best!;
     final pts = List.generate(
-      best.length,
-      (i) => (x: best![i].x.toDouble(), y: best[i].y.toDouble()),
+      bestPoints.length,
+      (i) => (x: bestPoints[i].x.toDouble(), y: bestPoints[i].y.toDouble()),
     );
 
     // topLeft = smallest (x + y); bottomRight = largest (x + y)
