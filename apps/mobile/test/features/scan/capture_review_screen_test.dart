@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
@@ -43,7 +44,7 @@ void main() {
       home: CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/capture.jpg'),
         onRetake: () => retook = true,
-        onAccept: (corners) => accepted = true,
+        onAccept: (corners, _) => accepted = true,
       ),
     ));
     await tester.pump();
@@ -64,7 +65,7 @@ void main() {
       home: CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/x.jpg'),
         onRetake: () {},
-        onAccept: (corners) {},
+        onAccept: (corners, _) {},
         saving: true,
       ),
     ));
@@ -77,7 +78,7 @@ void main() {
   // ── New tests for the crop overlay integration (Task 5) ──────────────────
 
   CaptureReviewScreen subject({
-    required ValueChanged<CropCorners> onAccept,
+    required void Function(CropCorners, ImageEnhancer) onAccept,
     VoidCallback? onRetake,
     bool saving = false,
     Future<Size> Function(String)? decode,
@@ -91,7 +92,7 @@ void main() {
       );
 
   testWidgets('shows the crop overlay once the size resolves', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_) {})));
+    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, __) {})));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('crop-overlay')), findsOneWidget);
   });
@@ -100,7 +101,7 @@ void main() {
       (tester) async {
     final never = Completer<Size>();
     await tester.pumpWidget(MaterialApp(
-        home: subject(onAccept: (_) {}, decode: (_) => never.future)));
+        home: subject(onAccept: (_, __) {}, decode: (_) => never.future)));
     await tester.pump(); // do not settle (would hang on the pending future)
     expect(find.byKey(const Key('review-image')), findsOneWidget);
     expect(find.byKey(const Key('crop-overlay')), findsNothing);
@@ -108,7 +109,7 @@ void main() {
 
   testWidgets('Accept passes the current corners', (tester) async {
     CropCorners? accepted;
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (c) => accepted = c)));
+    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (c, _) => accepted = c)));
     await tester.pumpAndSettle();
     await tester.drag(find.byKey(const Key('crop-handle-tl')), const Offset(40, 30));
     await tester.pumpAndSettle();
@@ -120,7 +121,7 @@ void main() {
 
   testWidgets('Reset restores full-frame corners', (tester) async {
     CropCorners? accepted;
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (c) => accepted = c)));
+    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (c, _) => accepted = c)));
     await tester.pumpAndSettle();
     await tester.drag(find.byKey(const Key('crop-handle-tl')), const Offset(40, 30));
     await tester.pumpAndSettle();
@@ -132,7 +133,7 @@ void main() {
   });
 
   testWidgets('saving disables the overlay and Reset', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_) {}, saving: true)));
+    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, __) {}, saving: true)));
     // Use pump() not pumpAndSettle(): CircularProgressIndicator is indeterminate
     // and its animation controller never stops, so pumpAndSettle() always times out.
     await tester.pump(); // schedule decode microtask
@@ -145,7 +146,7 @@ void main() {
       (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(
-        home: subject(onAccept: (c) => accepted = c, decode: (_) async => throw 'boom')));
+        home: subject(onAccept: (c, _) => accepted = c, decode: (_) async => throw 'boom')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('crop-overlay')), findsNothing);
     await tester.tap(find.byKey(const Key('review-accept')));
@@ -162,7 +163,7 @@ void main() {
       home: Scaffold(
         body: Builder(builder: (ctx) => ElevatedButton(
           onPressed: () => Navigator.of(ctx).push(MaterialPageRoute<void>(
-              builder: (_) => subject(onAccept: (_) {}, decode: (_) => later.future))),
+              builder: (_) => subject(onAccept: (_, __) {}, decode: (_) => later.future))),
           child: const Text('open'))),
       ),
     ));
@@ -191,13 +192,13 @@ void main() {
   // run without real file I/O (FakeEdgeDetector ignores the bytes it receives).
   CaptureReviewScreen subjectWithDetector({
     EdgeDetector? edgeDetector,
-    ValueChanged<CropCorners>? onAccept,
+    void Function(CropCorners, ImageEnhancer)? onAccept,
     VoidCallback? onRetake,
   }) =>
       CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/cap.jpg'),
         onRetake: onRetake ?? () {},
-        onAccept: onAccept ?? (_) {},
+        onAccept: onAccept ?? (_, __) {},
         decodeImageSize: (_) async => const Size(1000, 750),
         readBytes: (_) async => Uint8List(0),   // bytes irrelevant; FakeEdgeDetector ignores them
         edgeDetector: edgeDetector,
@@ -207,7 +208,7 @@ void main() {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: highResult),
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
     )));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('review-accept')));
@@ -230,7 +231,7 @@ void main() {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: lowResult),
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
     )));
     await tester.pumpAndSettle();
     expect(
@@ -247,7 +248,7 @@ void main() {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: null),
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
     )));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('review-accept')));
@@ -263,7 +264,7 @@ void main() {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: null,
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
     )));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('review-accept')));
@@ -276,7 +277,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: CaptureReviewScreen(
       image: const CapturedImage('/nonexistent/cap.jpg'),
       onRetake: () {},
-      onAccept: (_) {},
+      onAccept: (_, __) {},
       decodeImageSize: (_) async => const Size(1000, 750),
       readBytes: (_) async => Uint8List(0),
       edgeDetector: _SlowDetector(completer),
@@ -298,7 +299,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: CaptureReviewScreen(
       image: const CapturedImage('/nonexistent/cap.jpg'),
       onRetake: () {},
-      onAccept: (_) {},
+      onAccept: (_, __) {},
       decodeImageSize: (_) async => const Size(1000, 750),
       readBytes: (_) async => Uint8List(0),
       edgeDetector: _SlowDetector(completer),
@@ -320,7 +321,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: CaptureReviewScreen(
       image: const CapturedImage('/nonexistent/cap.jpg'),
       onRetake: () {},
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
       decodeImageSize: (_) async => const Size(1000, 750),
       readBytes: (_) async => Uint8List(0),
       edgeDetector: _ThrowingDetector(),
@@ -341,7 +342,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: CaptureReviewScreen(
       image: const CapturedImage('/nonexistent/cap.jpg'),
       onRetake: () {},
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
       decodeImageSize: (_) async => const Size(1000, 750),
       readBytes: (_) async => throw Exception('no file'),
       edgeDetector: FakeEdgeDetector(result: highResult),
@@ -373,7 +374,7 @@ void main() {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: highResult),
-      onAccept: (c) => accepted = c,
+      onAccept: (c, _) => accepted = c,
     )));
     await tester.pumpAndSettle();
     // Overlay is green for high-confidence detection.

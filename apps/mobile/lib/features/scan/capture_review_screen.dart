@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
+import '../library/grayscale_enhancer.dart';
+import '../library/image_enhancer.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
@@ -32,7 +34,7 @@ Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
   final VoidCallback onRetake;
-  final ValueChanged<CropCorners> onAccept;
+  final void Function(CropCorners corners, ImageEnhancer enhancer) onAccept;
   final bool saving;
   final Future<Size> Function(String path) decodeImageSize;
   final Future<Uint8List> Function(String path) readBytes;   // NEW
@@ -58,6 +60,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   Size? _imageSize;
   double? _detectionConfidence;   // NEW: null = pending/failed; ≥0 = result received
   bool _userInteracted = false;   // NEW: true once user touches a handle or taps Reset
+  bool _grayscale = false;
 
   Color get _highlightColor =>
       (_detectionConfidence ?? -1) >= 0.5 ? Colors.green : Colors.blue;
@@ -107,7 +110,17 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
     final size = _imageSize;
     final canCrop = size != null && !widget.saving;
     return Scaffold(
-      appBar: AppBar(title: const Text('Review')),
+      appBar: AppBar(
+        title: const Text('Review'),
+        actions: [
+          IconButton(
+            key: const Key('grayscale-toggle'),
+            icon: Icon(_grayscale ? Icons.filter_b_and_w : Icons.filter_b_and_w_outlined),
+            tooltip: _grayscale ? 'Grayscale on' : 'Grayscale off',
+            onPressed: () => setState(() => _grayscale = !_grayscale),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           ColoredBox(
@@ -162,7 +175,12 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
               ),
               FilledButton.icon(
                 key: const Key('review-accept'),
-                onPressed: widget.saving ? null : () => widget.onAccept(_corners),
+                onPressed: widget.saving
+                    ? null
+                    : () => widget.onAccept(
+                          _corners,
+                          _grayscale ? const GrayscaleEnhancer() : const NoneEnhancer(),
+                        ),
                 icon: const Icon(Icons.check),
                 label: const Text('Accept'),
               ),

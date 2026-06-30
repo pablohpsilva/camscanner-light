@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
+import '../library/image_enhancer.dart';
 import '../library/save_controller.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
@@ -116,7 +117,7 @@ class _CameraScreenState extends State<CameraScreen> {
             edgeDetector: _edgeDetector,
             saving: _saveController.saving,
             onRetake: navigator.pop,
-            onAccept: (corners) => _onAccept(image, corners),
+            onAccept: (corners, enhancer) => _onAccept(image, corners, enhancer),
           ),
         ),
       ),
@@ -126,10 +127,12 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> _onAccept(CapturedImage image, CropCorners corners) async {
+  Future<void> _onAccept(
+      CapturedImage image, CropCorners corners, ImageEnhancer enhancer) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final doc = await _saveController.save(image, corners: corners);
+    final doc = await _saveController.save(image,
+        corners: corners, enhancer: enhancer);
     if (!mounted) return;
     if (doc == null) {
       messenger.showSnackBar(
