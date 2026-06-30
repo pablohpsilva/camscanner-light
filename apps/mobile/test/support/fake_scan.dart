@@ -39,11 +39,17 @@ class FakeCameraPermissionService implements CameraPermissionService {
 class FakeCameraPreviewController implements CameraPreviewController {
   final bool unavailable;
   final String? captureReturnPath;
+  final Uint8List? sampleFrameResult;
   bool disposed = false;
   bool captureCalled = false;
+  int sampleFrameCalls = 0;
   CameraUnavailableException? captureError;
 
-  FakeCameraPreviewController({this.unavailable = false, this.captureReturnPath});
+  FakeCameraPreviewController({
+    this.unavailable = false,
+    this.captureReturnPath,
+    this.sampleFrameResult,
+  });
 
   @override
   Future<void> initialize() async {
@@ -72,6 +78,15 @@ class FakeCameraPreviewController implements CameraPreviewController {
     await file.writeAsBytes(kFakeJpegBytes);
     return CapturedImage(file.path);
   }
+
+  @override
+  Future<Uint8List?> sampleFrame() async {
+    sampleFrameCalls++;
+    return sampleFrameResult;
+  }
+
+  @override
+  Size get previewSize => const Size(1920, 1080);
 
   @override
   Future<void> dispose() async {
@@ -135,4 +150,21 @@ ScanDependencies grantedScanDependenciesWithDetector(DetectionResult? result) =>
           FakeCameraPermissionService(CameraPermissionStatus.granted),
       createPreviewController: FakeCameraPreviewController.new,
       createEdgeDetector: () => FakeEdgeDetector(result: result),
+    );
+
+/// [ScanDependencies] with controllable frame sampling and edge detection.
+/// Use in F3 widget and BDD tests. The preview controller returns
+/// [sampleFrameResult] (defaults to [kFakeJpegBytes]) from [sampleFrame()];
+/// the edge detector returns [detectionResult] from [detect()].
+ScanDependencies liveDetectionScanDependencies({
+  required DetectionResult? detectionResult,
+  Uint8List? sampleFrameResult,
+}) =>
+    ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: () => FakeCameraPreviewController(
+        sampleFrameResult: sampleFrameResult ?? kFakeJpegBytes,
+      ),
+      createEdgeDetector: () => FakeEdgeDetector(result: detectionResult),
     );

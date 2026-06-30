@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/widgets.dart';
 
@@ -56,6 +59,30 @@ class PluginCameraPreviewController implements CameraPreviewController {
     } on CameraException catch (e) {
       throw CameraUnavailableException(e.description ?? e.code);
     }
+  }
+
+  @override
+  Future<Uint8List?> sampleFrame() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return null;
+    try {
+      final file = await controller.takePicture();
+      final bytes = await File(file.path).readAsBytes();
+      await File(file.path).delete();
+      return bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Size get previewSize {
+    final controller = _controller!;
+    final size = controller.value.previewSize!;
+    final rot = controller.description.sensorOrientation;
+    return (rot == 90 || rot == 270)
+        ? Size(size.height, size.width)
+        : size;
   }
 
   @override

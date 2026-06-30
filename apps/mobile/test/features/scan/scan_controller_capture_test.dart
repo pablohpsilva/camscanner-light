@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +32,12 @@ class _GatedCapture implements CameraPreviewController {
   }
 
   @override
+  Future<Uint8List?> sampleFrame() async => null;
+
+  @override
+  Size get previewSize => Size.zero;
+
+  @override
   Future<void> dispose() async {
     disposed = true;
   }
@@ -48,6 +55,12 @@ class _ThrowingCapture implements CameraPreviewController {
 
   @override
   Future<CapturedImage> capture() async => throw StateError('unexpected boom');
+
+  @override
+  Future<Uint8List?> sampleFrame() async => null;
+
+  @override
+  Size get previewSize => Size.zero;
 
   @override
   Future<void> dispose() async {}
