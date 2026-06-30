@@ -1060,7 +1060,6 @@ git commit -m "feat(f1): OpenCvEdgeDetector with full unit test suite"
 Create `apps/mobile/integration_test/f1_edge_detection_test.dart`:
 
 ```dart
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
