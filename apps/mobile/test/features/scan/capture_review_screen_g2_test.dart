@@ -29,13 +29,13 @@ Future<void> _pump(
 
 void main() {
   testWidgets('B&W toggle button is present in the AppBar', (tester) async {
-    await _pump(tester, onAccept: (_, __) {});
+    await _pump(tester, onAccept: (_, _) {});
     expect(find.byKey(const Key('bw-toggle')), findsOneWidget);
   });
 
   testWidgets('tapping B&W toggle changes its tooltip to B&W on',
       (tester) async {
-    await _pump(tester, onAccept: (_, __) {});
+    await _pump(tester, onAccept: (_, _) {});
 
     final before =
         tester.widget<IconButton>(find.byKey(const Key('bw-toggle')));

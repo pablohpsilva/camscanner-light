@@ -42,7 +42,7 @@ int _otsuThreshold(img.Image src) {
   }
   final total = src.width * src.height;
   double sum = 0;
-  for (var i = 0; i < 256; i++) sum += i * hist[i];
+  for (var i = 0; i < 256; i++) { sum += i * hist[i]; }
 
   double sumB = 0, maxVar = 0;
   int wB = 0, threshold = 128;
