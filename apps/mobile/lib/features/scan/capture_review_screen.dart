@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
+import '../library/bw_enhancer.dart';
 import '../library/grayscale_enhancer.dart';
 import '../library/image_enhancer.dart';
 import 'captured_image.dart';
@@ -30,6 +31,8 @@ Future<Size> _resolveImageSize(String path) {
 }
 
 Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
+
+enum _EnhancerMode { none, grayscale, bw }
 
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
@@ -60,7 +63,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   Size? _imageSize;
   double? _detectionConfidence;   // NEW: null = pending/failed; ≥0 = result received
   bool _userInteracted = false;   // NEW: true once user touches a handle or taps Reset
-  bool _grayscale = false;
+  _EnhancerMode _mode = _EnhancerMode.none;
 
   Color get _highlightColor =>
       (_detectionConfidence ?? -1) >= 0.5 ? Colors.green : Colors.blue;
@@ -115,9 +118,28 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
         actions: [
           IconButton(
             key: const Key('grayscale-toggle'),
-            icon: Icon(_grayscale ? Icons.filter_b_and_w : Icons.filter_b_and_w_outlined),
-            tooltip: _grayscale ? 'Grayscale on' : 'Grayscale off',
-            onPressed: () => setState(() => _grayscale = !_grayscale),
+            icon: Icon(_mode == _EnhancerMode.grayscale
+                ? Icons.filter_b_and_w
+                : Icons.filter_b_and_w_outlined),
+            tooltip: _mode == _EnhancerMode.grayscale ? 'Grayscale on' : 'Grayscale off',
+            onPressed: () => setState(() => _mode =
+                _mode == _EnhancerMode.grayscale
+                    ? _EnhancerMode.none
+                    : _EnhancerMode.grayscale),
+          ),
+          IconButton(
+            key: const Key('bw-toggle'),
+            icon: Icon(
+              Icons.contrast,
+              color: _mode == _EnhancerMode.bw
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _mode == _EnhancerMode.bw ? 'B&W on' : 'B&W off',
+            onPressed: () => setState(() => _mode =
+                _mode == _EnhancerMode.bw
+                    ? _EnhancerMode.none
+                    : _EnhancerMode.bw),
           ),
         ],
       ),
@@ -179,7 +201,11 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                     ? null
                     : () => widget.onAccept(
                           _corners,
-                          _grayscale ? const GrayscaleEnhancer() : const NoneEnhancer(),
+                          switch (_mode) {
+                            _EnhancerMode.grayscale => const GrayscaleEnhancer(),
+                            _EnhancerMode.bw       => const BwEnhancer(),
+                            _EnhancerMode.none     => const NoneEnhancer(),
+                          },
                         ),
                 icon: const Icon(Icons.check),
                 label: const Text('Accept'),
