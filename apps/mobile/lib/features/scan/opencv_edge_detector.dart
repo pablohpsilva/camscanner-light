@@ -78,10 +78,11 @@ List<double>? _runPipeline(Uint8List bytes) {
     hierarchy = null;
 
     // Step 6: Find the largest convex 4-point approximation.
-    // Skip quads whose area is less than 1% of the image — sub-threshold
-    // shapes are noise, not documents, and would otherwise produce a
-    // misleadingly high angle score with a near-zero area score.
-    final minQuadArea = rows * cols * 0.01;
+    // Skip quads whose area is less than 5% of the image — per spec:
+    // "Rect occupying < 5% of image → null or confidence < 0.3."
+    // Because the confidence formula floors at ~0.4 for any detected rect,
+    // the only compliant path is to gate here and return null.
+    final minQuadArea = rows * cols * 0.05;
     double bestArea = 0;
     for (int i = 0; i < contours.length; i++) {
       // contours[i] returns a reference owned by contours — do NOT dispose it.
