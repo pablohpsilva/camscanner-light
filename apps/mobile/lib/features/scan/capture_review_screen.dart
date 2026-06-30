@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
+import '../library/auto_enhancer.dart';
 import '../library/bw_enhancer.dart';
+import '../library/color_enhancer.dart';
 import '../library/grayscale_enhancer.dart';
 import '../library/image_enhancer.dart';
 import 'captured_image.dart';
@@ -32,7 +34,7 @@ Future<Size> _resolveImageSize(String path) {
 
 Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
 
-enum _EnhancerMode { none, grayscale, bw }
+enum _EnhancerMode { none, grayscale, bw, auto, color }
 
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
@@ -141,6 +143,34 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                     ? _EnhancerMode.none
                     : _EnhancerMode.bw),
           ),
+          IconButton(
+            key: const Key('auto-toggle'),
+            icon: Icon(
+              Icons.auto_fix_high,
+              color: _mode == _EnhancerMode.auto
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _mode == _EnhancerMode.auto ? 'Auto on' : 'Auto off',
+            onPressed: () => setState(() => _mode =
+                _mode == _EnhancerMode.auto
+                    ? _EnhancerMode.none
+                    : _EnhancerMode.auto),
+          ),
+          IconButton(
+            key: const Key('color-toggle'),
+            icon: Icon(
+              Icons.color_lens,
+              color: _mode == _EnhancerMode.color
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _mode == _EnhancerMode.color ? 'Color on' : 'Color off',
+            onPressed: () => setState(() => _mode =
+                _mode == _EnhancerMode.color
+                    ? _EnhancerMode.none
+                    : _EnhancerMode.color),
+          ),
         ],
       ),
       body: Stack(
@@ -203,8 +233,10 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                           _corners,
                           switch (_mode) {
                             _EnhancerMode.grayscale => const GrayscaleEnhancer(),
-                            _EnhancerMode.bw       => const BwEnhancer(),
-                            _EnhancerMode.none     => const NoneEnhancer(),
+                            _EnhancerMode.bw        => const BwEnhancer(),
+                            _EnhancerMode.auto      => const AutoEnhancer(),
+                            _EnhancerMode.color     => const ColorEnhancer(),
+                            _EnhancerMode.none      => const NoneEnhancer(),
                           },
                         ),
                 icon: const Icon(Icons.check),
