@@ -39,6 +39,7 @@
 | Modify | `apps/mobile/lib/features/scan/camera_screen.dart` |
 | Modify | `apps/mobile/test/features/scan/capture_review_screen_test.dart` |
 | Create | `apps/mobile/test/features/scan/capture_review_screen_g1_test.dart` |
+| Create | `apps/mobile/test/features/scan/camera_screen_g1_test.dart` |
 | Create | `apps/mobile/integration_test/g1_grayscale.feature` |
 | Create (generated) | `apps/mobile/integration_test/g1_grayscale_test.dart` |
 | Create | `apps/mobile/test/step/the_review_screen_is_open_with_a_captured_image.dart` |
@@ -69,6 +70,7 @@
 Create `apps/mobile/test/features/library/grayscale_enhancer_test.dart`:
 
 ```dart
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -115,6 +117,22 @@ void main() {
       final garbage = Uint8List.fromList([0x00, 0x01, 0x02, 0x03]);
       final result = await const GrayscaleEnhancer().enhance(garbage);
       expect(result, equals(garbage));
+    });
+
+    test(
+        'bakes EXIF orientation: landscape_exif6 (200×100, orient=6) '
+        'becomes portrait (100×200) after enhance', () async {
+      // landscape_exif6.jpg is 200×100 pixels with EXIF Orientation = 6
+      // (90° CW). After bakeOrientation the stored pixel matrix becomes
+      // 100×200 (portrait). encodeJpg writes no EXIF, so the result is
+      // already in display orientation — no further rotation needed.
+      final bytes = Uint8List.fromList(
+          File('test/fixtures/landscape_exif6.jpg').readAsBytesSync());
+      final result = await const GrayscaleEnhancer().enhance(bytes);
+      final decoded = img.decodeImage(result)!;
+      expect(decoded.width, 100,
+          reason: '90° CW bake swaps width and height');
+      expect(decoded.height, 200);
     });
   });
 }
@@ -189,7 +207,7 @@ Uint8List _grayscaleFn(Uint8List bytes) {
 cd apps/mobile && flutter test test/features/library/grayscale_enhancer_test.dart
 ```
 
-Expected: all 3 tests pass.
+Expected: all 4 tests pass.
 
 - [ ] **Step 6: Commit**
 
@@ -784,13 +802,95 @@ cd apps/mobile && flutter test
 
 Expected: all tests pass. If any compile errors remain in `capture_review_screen_test.dart`, they are due to missed `onAccept` lambda updates — fix them now.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Write and run the `CameraScreen` G1 widget test**
+
+Create `apps/mobile/test/features/scan/camera_screen_g1_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/library/grayscale_enhancer.dart';
+import 'package:mobile/features/library/image_enhancer.dart';
+import 'package:mobile/features/scan/camera_permission_service.dart';
+import 'package:mobile/features/scan/camera_screen.dart';
+import 'package:mobile/features/scan/scan_dependencies.dart';
+
+import '../../support/fake_library.dart';
+import '../../support/fake_scan.dart';
+
+/// [ScanDependencies] that reports permission granted and returns a
+/// non-loadable capture path (avoids Image.file host-test hang).
+ScanDependencies _grantedReview() => ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: () => FakeCameraPreviewController(
+          captureReturnPath: '/nonexistent/g1cam.jpg'),
+    );
+
+void main() {
+  testWidgets(
+      'CameraScreen: grayscale toggle + accept threads GrayscaleEnhancer '
+      'through to FakeDocumentRepository', (tester) async {
+    final repo = FakeDocumentRepository();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(dependencies: _grantedReview(), repository: repo),
+    ));
+    await tester.pumpAndSettle();
+
+    // Open the review screen.
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pumpAndSettle();
+
+    // Toggle grayscale on.
+    await tester.tap(find.byKey(const Key('grayscale-toggle')));
+    await tester.pump();
+
+    // Accept → save path executes; FakeDocumentRepository records enhancer.
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle();
+
+    expect(repo.lastSavedEnhancer, isA<GrayscaleEnhancer>(),
+        reason: 'GrayscaleEnhancer must reach the repository');
+  });
+
+  testWidgets(
+      'CameraScreen: accept without toggle threads NoneEnhancer '
+      'to FakeDocumentRepository', (tester) async {
+    final repo = FakeDocumentRepository();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(dependencies: _grantedReview(), repository: repo),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pumpAndSettle();
+
+    // No toggle — accept immediately.
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle();
+
+    expect(repo.lastSavedEnhancer, isA<NoneEnhancer>(),
+        reason: 'NoneEnhancer must reach the repository when toggle is off');
+  });
+}
+```
+
+Run:
+
+```bash
+cd apps/mobile && flutter test test/features/scan/camera_screen_g1_test.dart
+```
+
+Expected: both tests pass.
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add apps/mobile/lib/features/scan/capture_review_screen.dart \
         apps/mobile/lib/features/scan/camera_screen.dart \
         apps/mobile/test/features/scan/capture_review_screen_test.dart \
-        apps/mobile/test/features/scan/capture_review_screen_g1_test.dart
+        apps/mobile/test/features/scan/capture_review_screen_g1_test.dart \
+        apps/mobile/test/features/scan/camera_screen_g1_test.dart
 git commit -m "feat(g1): grayscale toggle on review screen; onAccept carries ImageEnhancer"
 ```
 
@@ -999,6 +1099,10 @@ assert_file_has "BDD feature file exists" \
 assert_file_has "BDD test file is generated" \
   "apps/mobile/integration_test/g1_grayscale_test.dart" \
   "g1Grayscale"
+
+assert_file_has "CameraScreen G1 test exists" \
+  "apps/mobile/test/features/scan/camera_screen_g1_test.dart" \
+  "GrayscaleEnhancer"
 
 # ---- OpenCV host library (scan tests in shared suite need it) ----
 bash "$ROOT/scripts/setup-cv-host-test.sh"
