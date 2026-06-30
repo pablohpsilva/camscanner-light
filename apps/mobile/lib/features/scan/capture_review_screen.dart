@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
 import 'captured_image.dart';
+import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
 
 /// Default EXIF-applied natural-size resolver: the framework decoder bakes the
@@ -32,6 +33,7 @@ Future<Size> _resolveImageSize(String path) {
 /// the chosen [CropCorners] up (the parent saves). Saving disables actions.
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
+  final EdgeDetector? edgeDetector;
   final VoidCallback onRetake;
   final ValueChanged<CropCorners> onAccept;
   final bool saving;
@@ -40,6 +42,7 @@ class CaptureReviewScreen extends StatefulWidget {
   const CaptureReviewScreen({
     super.key,
     required this.image,
+    this.edgeDetector,
     required this.onRetake,
     required this.onAccept,
     this.saving = false,

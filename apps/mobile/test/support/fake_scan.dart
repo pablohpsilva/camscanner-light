@@ -124,3 +124,15 @@ class FakeEdgeDetector implements EdgeDetector {
     return result;
   }
 }
+
+/// Returns [ScanDependencies] wired with a [FakeEdgeDetector] that returns
+/// [result], plus a granted [FakeCameraPermissionService] and an always-available
+/// [FakeCameraPreviewController] that writes [kFakeJpegBytes] to a temp file.
+/// Use this in BDD step definitions that need controllable edge detection.
+ScanDependencies grantedScanDependenciesWithDetector(DetectionResult? result) =>
+    ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: FakeCameraPreviewController.new,
+      createEdgeDetector: () => FakeEdgeDetector(result: result),
+    );

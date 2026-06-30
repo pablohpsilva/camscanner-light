@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/scan/camera_permission_service_impl.dart';
 import 'package:mobile/features/scan/camera_preview_controller_impl.dart';
+import 'package:mobile/features/scan/opencv_edge_detector.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 void main() {
@@ -11,5 +12,9 @@ void main() {
         isA<PermissionHandlerCameraPermissionService>());
     expect(deps.createPreviewController(),
         isA<PluginCameraPreviewController>());
+  });
+
+  test('createEdgeDetector() returns OpenCvEdgeDetector', () {
+    expect(const ScanDependencies().createEdgeDetector(), isA<OpenCvEdgeDetector>());
   });
 }

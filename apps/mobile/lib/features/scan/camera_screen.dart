@@ -5,6 +5,7 @@ import '../library/document_repository.dart';
 import '../library/save_controller.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
+import 'edge_detector.dart';
 import 'scan_controller.dart';
 import 'scan_dependencies.dart';
 import 'scan_view_state.dart';
@@ -31,6 +32,7 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late final ScanController _controller;
   late final SaveController _saveController;
+  late final EdgeDetector _edgeDetector;
 
   @override
   void initState() {
@@ -41,6 +43,7 @@ class _CameraScreenState extends State<CameraScreen> {
     );
     _controller.start();
     _saveController = SaveController(repository: widget.repository);
+    _edgeDetector = widget.dependencies.createEdgeDetector();
   }
 
   @override
@@ -67,6 +70,7 @@ class _CameraScreenState extends State<CameraScreen> {
           listenable: _saveController,
           builder: (context, _) => CaptureReviewScreen(
             image: image,
+            edgeDetector: _edgeDetector,
             saving: _saveController.saving,
             onRetake: navigator.pop,
             onAccept: (corners) => _onAccept(image, corners),
