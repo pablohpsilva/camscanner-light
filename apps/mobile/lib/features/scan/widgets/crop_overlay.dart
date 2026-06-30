@@ -4,18 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../../library/crop_corners.dart';
 
-/// Draggable 4-corner crop overlay drawn over a captured image (E1). Controlled:
-/// the parent owns the [corners] state. Renders the injected [image] in the
-/// BoxFit.contain rect and places handles in that same rect, so they align by
-/// construction. Drag is delta-based and clamps each corner to image bounds
-/// (topology is NOT enforced — E2 guards degenerate quads). [imageSize] is the
-/// EXIF-applied natural size, injected so this widget needs no image decode.
 class CropOverlay extends StatelessWidget {
   final Size imageSize;
   final Widget image;
   final CropCorners corners;
   final ValueChanged<CropCorners> onCornersChanged;
   final bool enabled;
+  final Color highlightColor;   // NEW
   const CropOverlay({
     super.key,
     required this.imageSize,
@@ -23,6 +18,7 @@ class CropOverlay extends StatelessWidget {
     required this.corners,
     required this.onCornersChanged,
     this.enabled = true,
+    this.highlightColor = Colors.blue,   // NEW — default preserves all existing callers
   });
 
   @override
@@ -31,7 +27,7 @@ class CropOverlay extends StatelessWidget {
       key: const Key('crop-overlay'),
       builder: (context, constraints) {
         if (imageSize.width <= 0 || imageSize.height <= 0) {
-          return image; // degenerate size: show the image, no handles
+          return image;
         }
         final box = Size(constraints.maxWidth, constraints.maxHeight);
         final scale = math.min(
@@ -88,6 +84,7 @@ class CropOverlay extends StatelessWidget {
                 enabled: enabled,
                 cornerNorm: cornerNorm,
                 rectSize: rect.size,
+                highlightColor: highlightColor,   // NEW
                 onNewNorm: (n) => emitNew(role, n),
               ),
             ),
@@ -100,7 +97,11 @@ class CropOverlay extends StatelessWidget {
             Positioned.fill(
               child: IgnorePointer(
                 child: CustomPaint(
-                  painter: _QuadPainter(rect: rect, corners: corners),
+                  painter: _QuadPainter(
+                    rect: rect,
+                    corners: corners,
+                    highlightColor: highlightColor,   // NEW
+                  ),
                 ),
               ),
             ),
@@ -115,10 +116,6 @@ class CropOverlay extends StatelessWidget {
   }
 }
 
-/// Stateful handle widget. Accumulates incremental [DragUpdateDetails.delta]
-/// values from [onPanStart] so that the emitted norm always represents the
-/// corner's position relative to where the gesture STARTED, regardless of how
-/// many sub-events the test framework (or OS) breaks the drag into.
 class _DragHandle extends StatefulWidget {
   const _DragHandle({
     super.key,
@@ -126,12 +123,14 @@ class _DragHandle extends StatefulWidget {
     required this.cornerNorm,
     required this.rectSize,
     required this.onNewNorm,
+    required this.highlightColor,   // NEW
   });
 
   final bool enabled;
-  final Offset cornerNorm; // current normalized corner from parent
+  final Offset cornerNorm;
   final Size rectSize;
   final void Function(Offset) onNewNorm;
+  final Color highlightColor;   // NEW
 
   @override
   State<_DragHandle> createState() => _DragHandleState();
@@ -140,8 +139,8 @@ class _DragHandle extends StatefulWidget {
 class _DragHandleState extends State<_DragHandle> {
   static const double _r = 22.0;
 
-  Offset? _startNorm; // corner norm captured at onPanStart
-  Offset _accumulated = Offset.zero; // sum of incremental deltas this gesture
+  Offset? _startNorm;
+  Offset _accumulated = Offset.zero;
 
   void _onPanStart(DragStartDetails _) {
     _startNorm = widget.cornerNorm;
@@ -178,7 +177,7 @@ class _DragHandleState extends State<_DragHandle> {
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.blue, width: 2),
+            border: Border.all(color: widget.highlightColor, width: 2),   // was Colors.blue
           ),
         ),
       ),
@@ -189,7 +188,12 @@ class _DragHandleState extends State<_DragHandle> {
 class _QuadPainter extends CustomPainter {
   final Rect rect;
   final CropCorners corners;
-  _QuadPainter({required this.rect, required this.corners});
+  final Color highlightColor;   // NEW
+  _QuadPainter({
+    required this.rect,
+    required this.corners,
+    required this.highlightColor,   // NEW
+  });
 
   Offset _p(Offset n) =>
       rect.topLeft + Offset(n.dx * rect.width, n.dy * rect.height);
@@ -202,20 +206,20 @@ class _QuadPainter extends CustomPainter {
       ..lineTo(_p(corners.bottomRight).dx, _p(corners.bottomRight).dy)
       ..lineTo(_p(corners.bottomLeft).dx, _p(corners.bottomLeft).dy)
       ..close();
-    // Dim outside the quad.
     final outside = Path.combine(
         PathOperation.difference, Path()..addRect(Offset.zero & size), quad);
     canvas.drawPath(outside, Paint()..color = Colors.black54);
-    // Quad outline.
     canvas.drawPath(
         quad,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
-          ..color = Colors.blue);
+          ..color = highlightColor);   // was Colors.blue
   }
 
   @override
   bool shouldRepaint(_QuadPainter old) =>
-      old.rect != rect || old.corners != corners;
+      old.rect != rect ||
+      old.corners != corners ||
+      old.highlightColor != highlightColor;   // NEW
 }

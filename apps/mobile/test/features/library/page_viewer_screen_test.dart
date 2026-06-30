@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
@@ -189,6 +190,7 @@ void main() {
     IconButton btn(String k) =>
         tester.widget<IconButton>(find.byKey(Key(k)));
     expect(btn('page-viewer-rename').onPressed, isNull);
+    expect(btn('page-viewer-edit').onPressed, isNull);
     expect(btn('page-viewer-export').onPressed, isNull);
     expect(btn('page-viewer-delete').onPressed, isNull);
 
@@ -239,13 +241,107 @@ void main() {
     expect(find.byType(PageViewerScreen), findsOneWidget);
   });
 
+  // E2: viewer uses displayPath — verify the page key is present regardless of
+  // whether flatImagePath is set (visual path correctness is covered by page_image_test).
+  testWidgets('E2: viewer renders page key when flatImagePath is set',
+      (tester) async {
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(
+          position: 1,
+          imagePath: '/nonexistent/page_1.jpg',
+          flatImagePath: '/nonexistent/page_1_flat.jpg',
+        ),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
+    ));
+    await tester.pump();
+    expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
+  });
+
   testWidgets('the AppBar actions carry screen-reader tooltips',
       (tester) async {
     await pushViewer(tester, FakeDocumentRepository());
     String? tip(String key) =>
         tester.widget<IconButton>(find.byKey(Key(key))).tooltip;
     expect(tip('page-viewer-rename'), 'Rename');
+    expect(tip('page-viewer-edit'), 'Edit crop');
     expect(tip('page-viewer-export'), 'Export PDF');
     expect(tip('page-viewer-delete'), 'Delete');
+  });
+
+  // ── E3 — re-edit crop corners ──────────────────────────────────────────
+
+  testWidgets('edit crop: button is present, enabled, and has correct tooltip',
+      (tester) async {
+    await pushViewer(tester, FakeDocumentRepository());
+    final btn = tester.widget<IconButton>(
+        find.byKey(const Key('page-viewer-edit')));
+    expect(btn.onPressed, isNotNull);
+    expect(btn.tooltip, 'Edit crop');
+  });
+
+  testWidgets(
+      'edit crop: accept returns corners, calls updatePageCorners, reloads viewer',
+      (tester) async {
+    const testCorners = CropCorners(
+      topLeft: Offset(0.1, 0.1),
+      topRight: Offset(0.9, 0.1),
+      bottomRight: Offset(0.9, 0.9),
+      bottomLeft: Offset(0.1, 0.9),
+    );
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(
+          position: 1,
+          imagePath: '/nonexistent/page_1.jpg',
+          corners: testCorners,
+        ),
+      ],
+    );
+    await pushViewer(tester, repo, id: 5);
+
+    await tester.tap(find.byKey(const Key('page-viewer-edit')));
+    await tester.pumpAndSettle();
+
+    // EditCropScreen is now on top; Accept button is in AppBar (always visible).
+    expect(find.byKey(const Key('edit-crop-accept')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('edit-crop-accept')));
+    await tester.pumpAndSettle();
+
+    expect(repo.lastUpdatedCorners, testCorners);
+    expect(repo.lastUpdatedPosition, 1);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
+  });
+
+  testWidgets('edit crop: failure shows SnackBar and stays on viewer',
+      (tester) async {
+    final repo = FakeDocumentRepository(throwOnUpdate: true);
+    await pushViewer(tester, repo);
+
+    await tester.tap(find.byKey(const Key('page-viewer-edit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-crop-accept')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't update crop"), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
+  });
+
+  testWidgets('edit crop is disabled in the error state', (tester) async {
+    await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
+    final btn = tester.widget<IconButton>(
+        find.byKey(const Key('page-viewer-edit')));
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('edit crop is disabled in the empty state', (tester) async {
+    await pushViewer(tester, FakeDocumentRepository(pages: const []));
+    final btn = tester.widget<IconButton>(
+        find.byKey(const Key('page-viewer-edit')));
+    expect(btn.onPressed, isNull);
   });
 }

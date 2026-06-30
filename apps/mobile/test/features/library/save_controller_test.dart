@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/library/grayscale_enhancer.dart';
 import 'package:mobile/features/library/save_controller.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
@@ -59,5 +60,16 @@ void main() {
     gate.complete();
     await Future<void>.value();
     expect(notifications, at, reason: 'no notifyListeners() after dispose');
+  });
+
+  test('save() threads the enhancer to the repository', () async {
+    final repo = FakeDocumentRepository();
+    final c = SaveController(repository: repo);
+    await c.save(
+      const CapturedImage('/tmp/cap.jpg'),
+      enhancer: const GrayscaleEnhancer(),
+    );
+    expect(repo.lastSavedEnhancer, isA<GrayscaleEnhancer>());
+    c.dispose();
   });
 }

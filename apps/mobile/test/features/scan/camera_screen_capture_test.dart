@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
+import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
@@ -24,6 +26,10 @@ class _GatedPreview implements CameraPreviewController {
     await gate.future;
     return const CapturedImage('/nonexistent/capture.jpg');
   }
+  @override
+  Future<Uint8List?> sampleFrame() async => null;
+  @override
+  Size get previewSize => Size.zero;
   @override
   Future<void> dispose() async {}
 }
@@ -177,5 +183,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('review-accept')), findsNothing,
         reason: 'left the review screen after a successful save');
+  });
+
+  testWidgets('CameraScreen passes edgeDetector to CaptureReviewScreen',
+      (tester) async {
+    final fakeDetector = FakeEdgeDetector(result: null);
+    final deps = ScanDependencies(
+      createPermissionService: () =>
+          FakeCameraPermissionService(CameraPermissionStatus.granted),
+      createPreviewController: () =>
+          FakeCameraPreviewController(captureReturnPath: '/nonexistent/capture.jpg'),
+      createEdgeDetector: () => fakeDetector,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: deps,
+        repository: FakeDocumentRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pumpAndSettle();
+    final screen = tester
+        .widget<CaptureReviewScreen>(find.byType(CaptureReviewScreen));
+    expect(screen.edgeDetector, same(fakeDetector));
   });
 }

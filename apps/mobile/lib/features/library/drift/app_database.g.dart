@@ -369,6 +369,17 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _flatRelativePathMeta = const VerificationMeta(
+    'flatRelativePath',
+  );
+  @override
+  late final GeneratedColumn<String> flatRelativePath = GeneratedColumn<String>(
+    'flat_relative_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -376,6 +387,7 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     position,
     relativeImagePath,
     corners,
+    flatRelativePath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -425,6 +437,15 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         corners.isAcceptableOrUnknown(data['corners']!, _cornersMeta),
       );
     }
+    if (data.containsKey('flat_relative_path')) {
+      context.handle(
+        _flatRelativePathMeta,
+        flatRelativePath.isAcceptableOrUnknown(
+          data['flat_relative_path']!,
+          _flatRelativePathMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -454,6 +475,10 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         DriftSqlType.string,
         data['${effectivePrefix}corners'],
       ),
+      flatRelativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}flat_relative_path'],
+      ),
     );
   }
 
@@ -472,12 +497,17 @@ class Page extends DataClass implements Insertable<Page> {
   /// Normalized crop quad (E1) as "x0,y0,...,x3,y3"; null = uncropped (full
   /// frame). See CropCorners.
   final String? corners;
+
+  /// Perspective-flattened image path (E2), relative to the app documents dir;
+  /// null until the flatten step has been run for this page.
+  final String? flatRelativePath;
   const Page({
     required this.id,
     required this.documentId,
     required this.position,
     required this.relativeImagePath,
     this.corners,
+    this.flatRelativePath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -488,6 +518,9 @@ class Page extends DataClass implements Insertable<Page> {
     map['relative_image_path'] = Variable<String>(relativeImagePath);
     if (!nullToAbsent || corners != null) {
       map['corners'] = Variable<String>(corners);
+    }
+    if (!nullToAbsent || flatRelativePath != null) {
+      map['flat_relative_path'] = Variable<String>(flatRelativePath);
     }
     return map;
   }
@@ -501,6 +534,9 @@ class Page extends DataClass implements Insertable<Page> {
       corners: corners == null && nullToAbsent
           ? const Value.absent()
           : Value(corners),
+      flatRelativePath: flatRelativePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(flatRelativePath),
     );
   }
 
@@ -515,6 +551,7 @@ class Page extends DataClass implements Insertable<Page> {
       position: serializer.fromJson<int>(json['position']),
       relativeImagePath: serializer.fromJson<String>(json['relativeImagePath']),
       corners: serializer.fromJson<String?>(json['corners']),
+      flatRelativePath: serializer.fromJson<String?>(json['flatRelativePath']),
     );
   }
   @override
@@ -526,6 +563,7 @@ class Page extends DataClass implements Insertable<Page> {
       'position': serializer.toJson<int>(position),
       'relativeImagePath': serializer.toJson<String>(relativeImagePath),
       'corners': serializer.toJson<String?>(corners),
+      'flatRelativePath': serializer.toJson<String?>(flatRelativePath),
     };
   }
 
@@ -535,12 +573,16 @@ class Page extends DataClass implements Insertable<Page> {
     int? position,
     String? relativeImagePath,
     Value<String?> corners = const Value.absent(),
+    Value<String?> flatRelativePath = const Value.absent(),
   }) => Page(
     id: id ?? this.id,
     documentId: documentId ?? this.documentId,
     position: position ?? this.position,
     relativeImagePath: relativeImagePath ?? this.relativeImagePath,
     corners: corners.present ? corners.value : this.corners,
+    flatRelativePath: flatRelativePath.present
+        ? flatRelativePath.value
+        : this.flatRelativePath,
   );
   Page copyWithCompanion(PagesCompanion data) {
     return Page(
@@ -553,6 +595,9 @@ class Page extends DataClass implements Insertable<Page> {
           ? data.relativeImagePath.value
           : this.relativeImagePath,
       corners: data.corners.present ? data.corners.value : this.corners,
+      flatRelativePath: data.flatRelativePath.present
+          ? data.flatRelativePath.value
+          : this.flatRelativePath,
     );
   }
 
@@ -563,14 +608,21 @@ class Page extends DataClass implements Insertable<Page> {
           ..write('documentId: $documentId, ')
           ..write('position: $position, ')
           ..write('relativeImagePath: $relativeImagePath, ')
-          ..write('corners: $corners')
+          ..write('corners: $corners, ')
+          ..write('flatRelativePath: $flatRelativePath')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, documentId, position, relativeImagePath, corners);
+  int get hashCode => Object.hash(
+    id,
+    documentId,
+    position,
+    relativeImagePath,
+    corners,
+    flatRelativePath,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -579,7 +631,8 @@ class Page extends DataClass implements Insertable<Page> {
           other.documentId == this.documentId &&
           other.position == this.position &&
           other.relativeImagePath == this.relativeImagePath &&
-          other.corners == this.corners);
+          other.corners == this.corners &&
+          other.flatRelativePath == this.flatRelativePath);
 }
 
 class PagesCompanion extends UpdateCompanion<Page> {
@@ -588,12 +641,14 @@ class PagesCompanion extends UpdateCompanion<Page> {
   final Value<int> position;
   final Value<String> relativeImagePath;
   final Value<String?> corners;
+  final Value<String?> flatRelativePath;
   const PagesCompanion({
     this.id = const Value.absent(),
     this.documentId = const Value.absent(),
     this.position = const Value.absent(),
     this.relativeImagePath = const Value.absent(),
     this.corners = const Value.absent(),
+    this.flatRelativePath = const Value.absent(),
   });
   PagesCompanion.insert({
     this.id = const Value.absent(),
@@ -601,6 +656,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     required int position,
     required String relativeImagePath,
     this.corners = const Value.absent(),
+    this.flatRelativePath = const Value.absent(),
   }) : documentId = Value(documentId),
        position = Value(position),
        relativeImagePath = Value(relativeImagePath);
@@ -610,6 +666,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Expression<int>? position,
     Expression<String>? relativeImagePath,
     Expression<String>? corners,
+    Expression<String>? flatRelativePath,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -617,6 +674,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
       if (position != null) 'position': position,
       if (relativeImagePath != null) 'relative_image_path': relativeImagePath,
       if (corners != null) 'corners': corners,
+      if (flatRelativePath != null) 'flat_relative_path': flatRelativePath,
     });
   }
 
@@ -626,6 +684,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Value<int>? position,
     Value<String>? relativeImagePath,
     Value<String?>? corners,
+    Value<String?>? flatRelativePath,
   }) {
     return PagesCompanion(
       id: id ?? this.id,
@@ -633,6 +692,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
       position: position ?? this.position,
       relativeImagePath: relativeImagePath ?? this.relativeImagePath,
       corners: corners ?? this.corners,
+      flatRelativePath: flatRelativePath ?? this.flatRelativePath,
     );
   }
 
@@ -654,6 +714,9 @@ class PagesCompanion extends UpdateCompanion<Page> {
     if (corners.present) {
       map['corners'] = Variable<String>(corners.value);
     }
+    if (flatRelativePath.present) {
+      map['flat_relative_path'] = Variable<String>(flatRelativePath.value);
+    }
     return map;
   }
 
@@ -664,7 +727,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
           ..write('documentId: $documentId, ')
           ..write('position: $position, ')
           ..write('relativeImagePath: $relativeImagePath, ')
-          ..write('corners: $corners')
+          ..write('corners: $corners, ')
+          ..write('flatRelativePath: $flatRelativePath')
           ..write(')'))
         .toString();
   }
@@ -973,6 +1037,7 @@ typedef $$PagesTableCreateCompanionBuilder =
       required int position,
       required String relativeImagePath,
       Value<String?> corners,
+      Value<String?> flatRelativePath,
     });
 typedef $$PagesTableUpdateCompanionBuilder =
     PagesCompanion Function({
@@ -981,6 +1046,7 @@ typedef $$PagesTableUpdateCompanionBuilder =
       Value<int> position,
       Value<String> relativeImagePath,
       Value<String?> corners,
+      Value<String?> flatRelativePath,
     });
 
 final class $$PagesTableReferences
@@ -1030,6 +1096,11 @@ class $$PagesTableFilterComposer extends Composer<_$AppDatabase, $PagesTable> {
 
   ColumnFilters<String> get corners => $composableBuilder(
     column: $table.corners,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get flatRelativePath => $composableBuilder(
+    column: $table.flatRelativePath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1086,6 +1157,11 @@ class $$PagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get flatRelativePath => $composableBuilder(
+    column: $table.flatRelativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DocumentsTableOrderingComposer get documentId {
     final $$DocumentsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1132,6 +1208,11 @@ class $$PagesTableAnnotationComposer
 
   GeneratedColumn<String> get corners =>
       $composableBuilder(column: $table.corners, builder: (column) => column);
+
+  GeneratedColumn<String> get flatRelativePath => $composableBuilder(
+    column: $table.flatRelativePath,
+    builder: (column) => column,
+  );
 
   $$DocumentsTableAnnotationComposer get documentId {
     final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
@@ -1190,12 +1271,14 @@ class $$PagesTableTableManager
                 Value<int> position = const Value.absent(),
                 Value<String> relativeImagePath = const Value.absent(),
                 Value<String?> corners = const Value.absent(),
+                Value<String?> flatRelativePath = const Value.absent(),
               }) => PagesCompanion(
                 id: id,
                 documentId: documentId,
                 position: position,
                 relativeImagePath: relativeImagePath,
                 corners: corners,
+                flatRelativePath: flatRelativePath,
               ),
           createCompanionCallback:
               ({
@@ -1204,12 +1287,14 @@ class $$PagesTableTableManager
                 required int position,
                 required String relativeImagePath,
                 Value<String?> corners = const Value.absent(),
+                Value<String?> flatRelativePath = const Value.absent(),
               }) => PagesCompanion.insert(
                 id: id,
                 documentId: documentId,
                 position: position,
                 relativeImagePath: relativeImagePath,
                 corners: corners,
+                flatRelativePath: flatRelativePath,
               ),
           withReferenceMapper: (p0) => p0
               .map(

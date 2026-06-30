@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/image_enhancer.dart';
+import 'package:mobile/features/library/image_warper.dart';
+import 'package:mobile/features/library/perspective_warper.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -24,6 +28,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnDelete;
   final bool throwOnExport;
   final bool throwOnRename;
+  final bool throwOnUpdate;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -32,6 +37,9 @@ class FakeDocumentRepository implements DocumentRepository {
   int createCalls = 0;
   int listCalls = 0;
   CropCorners? lastSavedCorners;
+  ImageEnhancer? lastSavedEnhancer;
+  int? lastUpdatedPosition;
+  CropCorners? lastUpdatedCorners;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -43,6 +51,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnDelete = false,
     this.throwOnExport = false,
     this.throwOnRename = false,
+    this.throwOnUpdate = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -51,9 +60,11 @@ class FakeDocumentRepository implements DocumentRepository {
   }) : documents = documents ?? <Document>[];
 
   @override
-  Future<Document> createFromCapture(CapturedImage capture, {CropCorners? corners}) async {
+  Future<Document> createFromCapture(CapturedImage capture,
+      {CropCorners? corners, ImageEnhancer? enhancer}) async {
     createCalls++;
     lastSavedCorners = corners;
+    lastSavedEnhancer = enhancer;
     if (gate != null) await gate!.future;
     if (throwOnCreate) {
       throw const DocumentSaveException('fake: save failed');
@@ -137,6 +148,33 @@ class FakeDocumentRepository implements DocumentRepository {
     if (i >= 0) documents[i] = updated; // so listDocumentSummaries reflects it
     return updated;
   }
+
+  @override
+  Future<void> updatePageCorners(
+      int documentId, int position, CropCorners corners) async {
+    if (throwOnUpdate) {
+      throw DocumentSaveException('fake: update failed');
+    }
+    lastUpdatedPosition = position;
+    lastUpdatedCorners = corners;
+  }
+}
+
+/// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
+/// return null (no-op), or throw [WarpException].
+class FakeImageWarper implements ImageWarper {
+  final bool throws;
+  final Uint8List? returnValue;
+  int calls = 0;
+
+  FakeImageWarper({this.throws = false, this.returnValue});
+
+  @override
+  Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) async {
+    calls++;
+    if (throws) throw WarpException('fake: warp failed');
+    return returnValue;
+  }
 }
 
 /// LibraryDependencies whose factory returns the given fake repository.
@@ -154,6 +192,7 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
             DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
         clock: DateTime.now,
         pdfBuilder: const PdfBuilder(),
+        warper: const PerspectiveWarper(),
       ),
     );
 
@@ -178,5 +217,6 @@ LibraryDependencies persistentLibraryDependencies({
         fileStore: DocumentFileStore(baseDir),
         clock: DateTime.now,
         pdfBuilder: const PdfBuilder(),
+        warper: const PerspectiveWarper(),
       ),
     );

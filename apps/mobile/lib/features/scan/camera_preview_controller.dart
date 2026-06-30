@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 
 import 'captured_image.dart';
@@ -25,6 +27,15 @@ abstract interface class CameraPreviewController {
   /// Captures a still image to a temporary file. Only valid after [initialize]
   /// succeeds. Throws [CameraUnavailableException] if capture fails.
   Future<CapturedImage> capture();
+
+  /// Returns JPEG bytes of a sampled still frame, or null on any error.
+  /// Only valid after [initialize()] succeeds. Never throws.
+  Future<Uint8List?> sampleFrame();
+
+  /// Camera native resolution in display-space coordinates — width and height
+  /// are already swapped when sensor orientation is 90° or 270°. Valid after
+  /// [initialize()] succeeds.
+  Size get previewSize;
 
   /// Releases the camera.
   Future<void> dispose();

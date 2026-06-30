@@ -1,22 +1,45 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/image_metadata_scrubber.dart';
+import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/scan/captured_image.dart';
+
+import '../../support/fake_library.dart';
 
 /// A scrubber that throws — to drive the crash-safety rollback test.
 class _ThrowingScrubber implements ImageMetadataScrubber {
   @override
   Uint8List scrub(Uint8List bytes) => throw const MetadataScrubException('boom');
+}
+
+/// Records enhance() calls for assertions; returns bytes unchanged.
+class _RecordingEnhancer implements ImageEnhancer {
+  int calls = 0;
+
+  @override
+  Future<Uint8List> enhance(Uint8List bytes) async {
+    calls++;
+    return bytes;
+  }
+}
+
+/// Always throws — tests that enhancement failure is silent.
+class _ThrowingEnhancer implements ImageEnhancer {
+  const _ThrowingEnhancer();
+
+  @override
+  Future<Uint8List> enhance(Uint8List bytes) async =>
+      throw Exception('enhance failed');
 }
 
 void main() {
@@ -39,13 +62,17 @@ void main() {
     if (base.existsSync()) base.deleteSync(recursive: true);
   });
 
-  DriftDocumentRepository repo({ImageMetadataScrubber? scrubber}) =>
+  DriftDocumentRepository repo({
+    ImageMetadataScrubber? scrubber,
+    ImageWarper? warper,
+  }) =>
       DriftDocumentRepository(
         db: db,
         scrubber: scrubber ?? const JpegExifScrubber(),
         fileStore: DocumentFileStore(base),
         clock: clock,
         pdfBuilder: const PdfBuilder(),
+        warper: warper ?? FakeImageWarper(),
       );
 
   test('createFromCapture writes a scrubbed JPEG and a document+page row',
@@ -105,6 +132,7 @@ void main() {
       fileStore: DocumentFileStore(base),
       clock: () => t,
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     seedSource();
     await r.createFromCapture(capture);
@@ -185,6 +213,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final saved = await repo1.createFromCapture(CapturedImage(src.path));
     await repo1.deleteDocument(saved.id);
@@ -197,6 +226,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final summaries = await repo2.listDocumentSummaries();
     final pages = await repo2.getDocumentPages(saved.id);
@@ -222,6 +252,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final saved = await repo1.createFromCapture(CapturedImage(src.path));
     await db1.close();
@@ -233,6 +264,7 @@ void main() {
       fileStore: DocumentFileStore(dir),
       clock: () => DateTime.utc(2026, 6, 27, 9),
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final summaries = await repo2.listDocumentSummaries();
     await db2.close();
@@ -282,6 +314,7 @@ void main() {
       fileStore: DocumentFileStore(base),
       clock: () => t,
       pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
     );
     final doc = await r.createFromCapture(capture);
     t = DateTime.utc(2026, 6, 27, 12); // clock advances before the rename
@@ -336,5 +369,218 @@ void main() {
     final doc = await repo().createFromCapture(capture);
     final pages = await repo().getDocumentPages(doc.id);
     expect(pages.single.corners, CropCorners.fullFrame);
+  });
+
+  group('E2 — warp on save', () {
+    test('non-full-frame corners: flatRelativePath written and round-trips', () async {
+      final fakeBytes = Uint8List.fromList([0xFF, 0xD8, 0x01]); // fake JPEG marker
+      final warper = FakeImageWarper(returnValue: fakeBytes);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: corners);
+
+      // Warper was called once.
+      expect(warper.calls, 1);
+
+      // Flat file exists on disk.
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue);
+      expect(flatFile.readAsBytesSync(), fakeBytes);
+
+      // getDocumentPages round-trips flatImagePath.
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, flatFile.path);
+      expect(pages.single.displayPath, flatFile.path);
+    });
+
+    test('full-frame corners: flatRelativePath stays null', () async {
+      final warper = FakeImageWarper();
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: CropCorners.fullFrame);
+      expect(warper.calls, 0); // short-circuited before calling warper
+
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, isNull);
+      expect(pages.single.displayPath, pages.single.imagePath);
+    });
+
+    test('null corners (unset): flatRelativePath stays null', () async {
+      final warper = FakeImageWarper();
+      final doc = await repo(warper: warper).createFromCapture(capture);
+      expect(warper.calls, 0);
+
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, isNull);
+    });
+
+    test('warper throws WarpException: save still succeeds, flatRelativePath null',
+        () async {
+      final warper = FakeImageWarper(throws: true);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: corners);
+      expect(doc.id, greaterThan(0));
+
+      final pages = await repo(warper: warper).getDocumentPages(doc.id);
+      expect(pages.single.flatImagePath, isNull);
+      // Original file still written.
+      final origFile =
+          File('${base.path}/documents/${doc.id}/page_1.jpg');
+      expect(origFile.existsSync(), isTrue);
+    });
+
+    test('listDocumentSummaries: thumbnailPath prefers flat path', () async {
+      final fakeBytes = Uint8List.fromList([0xFF, 0xD8, 0x02]);
+      final warper = FakeImageWarper(returnValue: fakeBytes);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+      final doc = await repo(warper: warper).createFromCapture(capture,
+          corners: corners);
+
+      final summaries =
+          await repo(warper: warper).listDocumentSummaries();
+      final flatPath =
+          '${base.path}/documents/${doc.id}/page_1_flat.jpg';
+      expect(summaries.single.thumbnailPath, flatPath);
+    });
+  });
+
+  group('E3 — updatePageCorners', () {
+    test('non-fullFrame corners: flat written to disk and DB updated', () async {
+      final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x03]);
+      // Create document with NO flat (FakeImageWarper returns null by default).
+      final doc = await repo().createFromCapture(capture);
+      final before = await repo().getDocumentPages(doc.id);
+      expect(before.single.flatImagePath, isNull);
+
+      const newCorners = CropCorners(
+        topLeft: Offset(0.05, 0.05),
+        topRight: Offset(0.95, 0.05),
+        bottomRight: Offset(0.95, 0.95),
+        bottomLeft: Offset(0.05, 0.95),
+      );
+      await repo(warper: FakeImageWarper(returnValue: fakeFlat))
+          .updatePageCorners(doc.id, 1, newCorners);
+
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue);
+      expect(flatFile.readAsBytesSync(), fakeFlat);
+
+      final after = await repo().getDocumentPages(doc.id);
+      expect(after.single.flatImagePath, flatFile.path);
+      expect(after.single.corners, newCorners);
+    });
+
+    test('fullFrame corners: flat file deleted and DB cleared', () async {
+      final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x04]);
+      const initCorners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+      // Create document WITH a flat.
+      final doc = await repo(warper: FakeImageWarper(returnValue: fakeFlat))
+          .createFromCapture(capture, corners: initCorners);
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue, reason: 'pre-condition: flat exists');
+
+      // Re-edit to fullFrame.
+      await repo().updatePageCorners(doc.id, 1, CropCorners.fullFrame);
+
+      expect(flatFile.existsSync(), isFalse,
+          reason: 'flat file must be deleted on fullFrame reset');
+      final after = await repo().getDocumentPages(doc.id);
+      expect(after.single.flatImagePath, isNull);
+      expect(after.single.corners, CropCorners.fullFrame);
+    });
+
+    test('warp throws: method rethrows and DB is unchanged', () async {
+      final doc = await repo().createFromCapture(capture);
+      const badCorners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+
+      await expectLater(
+        repo(warper: FakeImageWarper(throws: true))
+            .updatePageCorners(doc.id, 1, badCorners),
+        throwsA(isA<WarpException>()),
+      );
+
+      // DB must remain unchanged: no flatRelativePath set.
+      final after = await repo().getDocumentPages(doc.id);
+      expect(after.single.flatImagePath, isNull,
+          reason: 'rethrow must not update DB');
+    });
+
+    test('unknown page: throws DocumentSaveException', () async {
+      await expectLater(
+        repo().updatePageCorners(99999, 1, CropCorners.fullFrame),
+        throwsA(isA<DocumentSaveException>()),
+      );
+    });
+  });
+
+  const testCorners = CropCorners(
+    topLeft: Offset(0.1, 0.1),
+    topRight: Offset(0.9, 0.1),
+    bottomRight: Offset(0.9, 0.9),
+    bottomLeft: Offset(0.1, 0.9),
+  );
+
+  test(
+      'createFromCapture applies enhancer to flat bytes on cropped capture',
+      () async {
+    final enhancer = _RecordingEnhancer();
+    // FakeImageWarper with a non-null returnValue simulates a successful warp.
+    final r = repo(warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
+    await r.createFromCapture(capture,
+        corners: testCorners, enhancer: enhancer);
+    expect(enhancer.calls, 1,
+        reason: 'enhancer must be called once on the flat bytes');
+  });
+
+  test(
+      'createFromCapture applies enhancer to original bytes on full-frame capture',
+      () async {
+    final enhancer = _RecordingEnhancer();
+    // No corners → full-frame path; FakeImageWarper(returnValue: null) → no warp.
+    final r = repo(warper: FakeImageWarper());
+    await r.createFromCapture(capture, enhancer: enhancer);
+    expect(enhancer.calls, 1,
+        reason: 'enhancer must be called once on the scrubbed original');
+  });
+
+  test('createFromCapture proceeds silently when enhancer throws', () async {
+    final r = repo(
+        warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
+    await expectLater(
+      r.createFromCapture(capture,
+          corners: testCorners, enhancer: const _ThrowingEnhancer()),
+      completes,
+      reason: 'enhancement failure must not abort the save',
+    );
   });
 }
