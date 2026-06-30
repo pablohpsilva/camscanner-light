@@ -21,10 +21,10 @@ detection engine.
 
 ## Imaging backend
 
-`opencv_dart` (pub.dev) — Dart FFI wrapper around the OpenCV C++ library. One
-`pubspec.yaml` dependency, cross-platform (Android + iOS), ships pre-built
+`opencv_dart ^0.9.0` (pub.dev) — Dart FFI wrapper around the OpenCV C++ library.
+One `pubspec.yaml` dependency, cross-platform (Android + iOS), ships pre-built
 OpenCV binaries. All detection work runs inside `compute()` — never on the UI
-thread.
+thread. No explicit `cv.init()` call is required; the FFI binding is loaded lazily.
 
 Rationale over alternatives:
 - **vs. platform channels**: same OpenCV, but no Kotlin/Swift boilerplate and no
@@ -45,6 +45,18 @@ class DetectionResult {
   final CropCorners corners;
   final double confidence;
   const DetectionResult({required this.corners, required this.confidence});
+
+  @override
+  bool operator ==(Object other) =>
+      other is DetectionResult &&
+      corners == other.corners &&
+      confidence == other.confidence;
+
+  @override
+  int get hashCode => Object.hash(corners, confidence);
+
+  @override
+  String toString() => 'DetectionResult(corners: $corners, confidence: $confidence)';
 }
 
 /// DIP boundary for document-edge detection. Concrete engine (OpenCV) is
@@ -58,8 +70,13 @@ abstract interface class EdgeDetector {
 
 ### `lib/features/scan/opencv_edge_detector.dart`
 
-`OpenCvEdgeDetector implements EdgeDetector`. Runs the full pipeline inside
-`compute()`:
+`OpenCvEdgeDetector implements EdgeDetector`. Its `detect()` method calls
+`compute(_runPipeline, bytes)` where `_runPipeline` is a **top-level function**
+(Flutter's `compute()` requires the callback to be top-level or static — an
+instance method will not work). `_runPipeline` returns `DetectionResult?` and
+is the only function that imports `opencv_dart`.
+
+Pipeline steps inside `_runPipeline`:
 
 1. Decode image dimensions from JPEG header.
 2. `cvtColor` → grayscale.
@@ -167,57 +184,35 @@ in `pubspec.yaml`). No binary test assets committed.
 - Large image (4000 × 3000) → completes in < 2 s
 - `detect()` does not block the UI thread (runs in `compute()`)
 
-### BDD integration tests (5 scenarios)
+### Integration tests (on-device, plain `testWidgets`)
 
-File: `integration_test/f1_edge_detection.feature`
+File: `integration_test/f1_edge_detection_test.dart` (hand-written, not
+build\_runner generated).
 
-```gherkin
-Feature: Edge detection on still images
+The existing BDD step pattern uses `WidgetTester` for state sharing through the
+widget tree. F1 has no UI — there is no widget tree to share `Uint8List` inputs
+or `DetectionResult?` outputs between steps. Gherkin BDD therefore does not fit
+F1. The user-visible BDD scenario ("capture a document → crop screen opens with
+corners pre-filled") belongs to F2 where the full widget flow is present.
 
-  Scenario: Document on contrasting background is detected
-    Given a synthetic JPEG with a white rectangle on a dark background
-    When I run edge detection on it
-    Then the detection result is non-null
-    And the confidence is above 0.5
-    And the corners surround the rectangle
+F1's on-device tests call `OpenCvEdgeDetector.detect()` directly inside
+`testWidgets()` groups — 5 scenarios mirroring the approved Gherkin intent:
 
-  Scenario: Uniform image returns no detection
-    Given a uniform white JPEG
-    When I run edge detection on it
-    Then the detection result is null
+```dart
+group('F1 edge detection — on-device', () {
+  late EdgeDetector detector;
+  setUp(() => detector = const OpenCvEdgeDetector());
 
-  Scenario: Non-rectangular shapes return no detection
-    Given a JPEG containing only circular shapes
-    When I run edge detection on it
-    Then the detection result is null
-
-  Scenario: Corrupt input returns null without throwing
-    Given invalid image bytes
-    When I run edge detection on it
-    Then the detection result is null
-
-  Scenario: Corner ordering is canonical
-    Given a synthetic JPEG with a rectangle in the upper-left quadrant
-    When I run edge detection on it
-    Then the topLeft corner has the smallest sum of x and y
-    And the bottomRight corner has the largest sum of x and y
+  testWidgets('white rect on dark background → non-null, confidence > 0.5', ...);
+  testWidgets('uniform white image → null', ...);
+  testWidgets('circular-only shapes → null', ...);
+  testWidgets('corrupt bytes → null, no throw', ...);
+  testWidgets('corner ordering canonical (upper-left rect)', ...);
+});
 ```
 
-**New step files:**
-- `test/step/a_synthetic_jpeg_with_a_white_rectangle_on_a_dark_background.dart`
-- `test/step/a_uniform_white_jpeg.dart`
-- `test/step/a_jpeg_containing_only_circular_shapes.dart`
-- `test/step/invalid_image_bytes.dart`
-- `test/step/a_synthetic_jpeg_with_a_rectangle_in_the_upper_left_quadrant.dart`
-- `test/step/i_run_edge_detection_on_it.dart`
-- `test/step/the_detection_result_is_non_null.dart`
-- `test/step/the_detection_result_is_null.dart`
-- `test/step/the_confidence_is_above_0_5.dart`
-- `test/step/the_corners_surround_the_rectangle.dart`
-- `test/step/the_top_left_corner_has_the_smallest_sum_of_x_and_y.dart`
-- `test/step/the_bottom_right_corner_has_the_largest_sum_of_x_and_y.dart`
-
-Generated: `integration_test/f1_edge_detection_test.dart` (build\_runner, do not edit).
+Fixtures generated programmatically with the `image` package (same as unit
+tests). No Gherkin step files added in F1. No `build_runner` invocation needed.
 
 ### Verify script
 
@@ -226,14 +221,13 @@ Generated: `integration_test/f1_edge_detection_test.dart` (build\_runner, do not
 **Static asserts:**
 - `EdgeDetector` interface in `lib/features/scan/edge_detector.dart`
 - `DetectionResult` class in `lib/features/scan/edge_detector.dart`
+- `DetectionResult` has `operator ==` (equality for test assertions)
 - `OpenCvEdgeDetector` in `lib/features/scan/opencv_edge_detector.dart`
-- `opencv_dart` in `pubspec.yaml`
+- `_runPipeline` top-level function in `opencv_edge_detector.dart`
 - `compute(` in `opencv_edge_detector.dart` (off-thread assertion)
+- `opencv_dart` in `pubspec.yaml`
 - `FakeEdgeDetector` in `test/support/fake_scan.dart`
-- All 12 step files present
-- Feature file present
-- Generated test file present
-- Codegen up to date (build\_runner idempotent)
+- Integration test file `integration_test/f1_edge_detection_test.dart` present
 
 **Suite:** `flutter test apps/mobile` — all tests pass, coverage ≥ 70%.  
 **Analyze:** `flutter analyze apps/mobile` — clean.  
@@ -274,14 +268,12 @@ Cancel path: caller receives `null` → F2 defaults to `CropCorners.fullFrame`.
 
 | Action | File |
 |--------|------|
-| Modify | `apps/mobile/pubspec.yaml` (add `opencv_dart`) |
+| Modify | `apps/mobile/pubspec.yaml` (add `opencv_dart ^0.9.0`) |
 | Create | `apps/mobile/lib/features/scan/edge_detector.dart` |
 | Create | `apps/mobile/lib/features/scan/opencv_edge_detector.dart` |
 | Modify | `apps/mobile/test/support/fake_scan.dart` (add `FakeEdgeDetector`) |
 | Create | `apps/mobile/test/features/scan/opencv_edge_detector_test.dart` |
-| Create | `apps/mobile/integration_test/f1_edge_detection.feature` |
-| Create | `apps/mobile/integration_test/f1_edge_detection_test.dart` (build\_runner) |
-| Create | `apps/mobile/test/step/` (12 new step files) |
+| Create | `apps/mobile/integration_test/f1_edge_detection_test.dart` (hand-written) |
 | Create | `scripts/verify/f1.sh` |
 
 No schema migration. No changes to existing library or scan screens.
