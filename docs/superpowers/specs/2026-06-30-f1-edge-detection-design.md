@@ -83,27 +83,45 @@ tr.dx, tr.dy, br.dx, br.dy, bl.dx, bl.dy, confidence]`. The `detect()` method
 constructs `CropCorners` and `DetectionResult` on the main thread after
 `compute()` returns. `null` from `_runPipeline` means no quad found.
 
-Pipeline steps inside `_runPipeline`:
+**Sync-only rule:** All `opencv_dart` calls inside `_runPipeline` MUST use the
+**synchronous** variants (`cv.cvtColor`, `cv.GaussianBlur`, etc.) — never the
+async variants (`cv.cvtColorAsync`, etc.). The async variants spawn their own
+isolates; calling them inside `compute()` (which already runs in an isolate)
+causes nested isolate spawning and undefined behavior.
 
-1. Decode image dimensions from JPEG header.
-2. `cvtColor` → grayscale.
-3. `GaussianBlur` — 5×5 kernel.
-4. `Canny` — thresholds 75 / 200.
-5. `findContours` — RETR\_EXTERNAL, CHAIN\_APPROX\_SIMPLE.
-6. For each contour: `approxPolyDP` with ε = 2 % of arc length; keep 4-vertex
-   results only.
-7. Select the largest-area 4-vertex quad. If none → return `null`.
+**Mat disposal rule:** Every `Mat` allocated in `_runPipeline` (from `imdecode`,
+`cvtColor`, `GaussianBlur`, `Canny`, `findContours`) MUST be disposed before the
+function returns — on every path (success, null, and exception). `opencv_dart`
+does not GC native memory; an undisposed `Mat` leaks 5–30 MB of heap per call.
+Use `try/finally` or dispose immediately after each operation is no longer needed.
+
+Pipeline steps inside `_runPipeline` (all sync, all Mats disposed):
+
+1. `cv.imdecode(bytes, cv.IMREAD_COLOR)` → `mat`. **Immediately check
+   `mat.isEmpty`; if true, `mat.dispose()` and return `null`** — this is
+   `imdecode`'s silent failure mode for corrupt input (it does NOT throw).
+2. `cv.cvtColor(mat, cv.COLOR_BGR2GRAY)` → `gray`. Dispose `mat`.
+3. `cv.GaussianBlur(gray, (5, 5), 0)` → `blurred`. Dispose `gray`.
+4. `cv.Canny(blurred, 75, 200)` → `edges`. Dispose `blurred`.
+5. `cv.findContours(edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)` →
+   `(contours, hierarchy)`. Dispose `edges` and `hierarchy` (hierarchy is
+   returned but unused with RETR\_EXTERNAL; it still holds native memory).
+6. For each contour: `cv.approxPolyDP(contour, cv.arcLength(contour, true) * 0.02,
+   true)` → keep results with exactly 4 vertices.
+7. Select the largest-area 4-vertex quad (`cv.contourArea`). If none → return `null`.
 8. Sort the four points into canonical roles:
    - topLeft: smallest (x + y)
    - bottomRight: largest (x + y)
    - topRight: smallest (y − x)
    - bottomLeft: largest (y − x)
-9. Normalize pixel coords to [0..1] by dividing by width / height.
+9. Normalize pixel coords to [0..1]: divide x by `mat.cols`, y by `mat.rows`
+   (use the dimensions captured from `mat` before disposal in step 2).
 10. Compute confidence (see below).
-11. Return `DetectionResult(corners: …, confidence: …)`.
+11. Return `List<double>[tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y, confidence]`.
 
-All exceptions (corrupt JPEG, opencv_dart failure, zero contours) are caught;
-the method returns `null` — never rethrows to the caller.
+All exceptions are caught in a `try/catch` wrapping the entire body; the `finally`
+block disposes any Mat that may not have been disposed yet. Returns `null` on any
+exception — never rethrows.
 
 ### Confidence scoring
 
@@ -185,10 +203,12 @@ in `pubspec.yaml`). No binary test assets committed.
 - confidence always clamped to [0.0, 1.0]
 
 **Robustness**
-- Corrupt JPEG bytes → null, no throw
+- Corrupt JPEG bytes → null, no throw (empty-Mat path, not exception)
 - Empty `Uint8List` → null, no throw
 - Single-pixel image → null, no throw
-- Large image (4000 × 3000) → completes in < 2 s
+- Repeated calls do not grow native heap (Mat disposal verified by calling
+  `detect()` 10× in a loop and asserting no crash / no OOM)
+- Large image (4000 × 3000) → completes in < 2 s (integration test)
 - `detect()` does not block the UI thread (runs in `compute()`)
 
 ### Integration tests (on-device, plain `testWidgets`)
@@ -246,9 +266,9 @@ tests). No Gherkin step files added in F1. No `build_runner` invocation needed.
 
 ```
 OpenCvEdgeDetector.detect(bytes)
-  └─ compute(_runPipeline, bytes)        ← isolate, off UI thread
-       ├─ cv.imdecode → Mat (width, height, pixels)
-       ├─ cvtColor → grayscale
+  └─ compute(_runPipeline, bytes)        ← isolate, off UI thread (sync variants only)
+       ├─ cv.imdecode → Mat; if mat.isEmpty → dispose + return null
+       ├─ cvtColor → gray; dispose Mat
        ├─ GaussianBlur (5×5)
        ├─ Canny (75/200)
        ├─ findContours (RETR_EXTERNAL)
@@ -271,17 +291,19 @@ Cancel path: caller receives `null` → F2 defaults to `CropCorners.fullFrame`.
 
 | Failure | Behaviour |
 |---------|-----------|
-| Corrupt / empty bytes | Caught in `compute()`; returns `null` |
-| No 4-point contour found | Returns `null` |
-| `opencv_dart` internal error | Caught; returns `null` |
-| Single-pixel or degenerate image | Returns `null` |
-| Large image (perf) | Completes in < 2 s; asserted in unit test |
+| Corrupt / empty bytes | `imdecode` returns empty `Mat`; `mat.isEmpty` guard returns `null` (not exception) |
+| No 4-point contour found | Returns `null`; all Mats disposed |
+| `opencv_dart` internal error | Caught by outer `try/catch`; `finally` disposes remaining Mats; returns `null` |
+| Single-pixel or degenerate image | `mat.isEmpty` or zero contours; returns `null` |
+| Async variant called in isolate | Prevented by sync-only rule above |
+| Mat not disposed | Prevented by `try/finally` dispose pattern |
+| Large image (perf) | Completes in < 2 s; asserted in integration test |
 
 ## Files changed
 
 | Action | File |
 |--------|------|
-| Modify | `apps/mobile/pubspec.yaml` (add `opencv_dart ^0.9.0`) |
+| Modify | `apps/mobile/pubspec.yaml` (add `opencv_dart` — pin to latest stable at implementation time) |
 | Create | `apps/mobile/lib/features/scan/edge_detector.dart` |
 | Create | `apps/mobile/lib/features/scan/opencv_edge_detector.dart` |
 | Modify | `apps/mobile/test/support/fake_scan.dart` (add `FakeEdgeDetector`) |
