@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/library/auto_enhancer.dart';
 import 'package:mobile/features/library/grayscale_enhancer.dart';
-import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
@@ -20,7 +20,7 @@ ScanDependencies _grantedReview() => ScanDependencies(
 
 void main() {
   testWidgets(
-      'CameraScreen: grayscale toggle + accept threads GrayscaleEnhancer '
+      'CameraScreen: grayscale tile tap + accept threads GrayscaleEnhancer '
       'through to FakeDocumentRepository', (tester) async {
     final repo = FakeDocumentRepository();
     await tester.pumpWidget(MaterialApp(
@@ -32,8 +32,8 @@ void main() {
     await tester.tap(find.byKey(const Key('scan-shutter')));
     await tester.pumpAndSettle();
 
-    // Toggle grayscale on.
-    await tester.tap(find.byKey(const Key('grayscale-toggle')));
+    // Tap grayscale filter tile.
+    await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
     await tester.pump();
 
     // Accept → save path executes; FakeDocumentRepository records enhancer.
@@ -45,7 +45,7 @@ void main() {
   });
 
   testWidgets(
-      'CameraScreen: accept without toggle threads NoneEnhancer '
+      'CameraScreen: accept without tile tap threads AutoEnhancer '
       'to FakeDocumentRepository', (tester) async {
     final repo = FakeDocumentRepository();
     await tester.pumpWidget(MaterialApp(
@@ -56,11 +56,11 @@ void main() {
     await tester.tap(find.byKey(const Key('scan-shutter')));
     await tester.pumpAndSettle();
 
-    // No toggle — accept immediately.
+    // No tile tap — accept immediately. Default mode is Auto.
     await tester.tap(find.byKey(const Key('review-accept')));
     await tester.pumpAndSettle();
 
-    expect(repo.lastSavedEnhancer, isA<NoneEnhancer>(),
-        reason: 'NoneEnhancer must reach the repository when toggle is off');
+    expect(repo.lastSavedEnhancer, isA<AutoEnhancer>(),
+        reason: 'AutoEnhancer must reach the repository when no tile is tapped (Auto is default)');
   });
 }

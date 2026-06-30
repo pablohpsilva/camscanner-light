@@ -8,11 +8,13 @@ import '../library/crop_corners.dart';
 import '../library/auto_enhancer.dart';
 import '../library/bw_enhancer.dart';
 import '../library/color_enhancer.dart';
+import '../library/enhancer_mode.dart';
 import '../library/grayscale_enhancer.dart';
 import '../library/image_enhancer.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
+import 'widgets/filter_picker_strip.dart';
 
 Future<Size> _resolveImageSize(String path) {
   final completer = Completer<Size>();
@@ -33,8 +35,6 @@ Future<Size> _resolveImageSize(String path) {
 }
 
 Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
-
-enum _EnhancerMode { none, grayscale, bw, auto, color }
 
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
@@ -65,7 +65,8 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   Size? _imageSize;
   double? _detectionConfidence;   // NEW: null = pending/failed; ≥0 = result received
   bool _userInteracted = false;   // NEW: true once user touches a handle or taps Reset
-  _EnhancerMode _mode = _EnhancerMode.none;
+  EnhancerMode _mode = EnhancerMode.auto;
+  Uint8List? _sourceBytes;
 
   Color get _highlightColor =>
       (_detectionConfidence ?? -1) >= 0.5 ? Colors.green : Colors.blue;
@@ -78,6 +79,10 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
       setState(() => _imageSize = size);
     }).catchError((_) {});
     _runDetection();   // NEW — concurrent with decodeImageSize
+    widget.readBytes(widget.image.path).then((b) {
+      if (!mounted) return;
+      setState(() => _sourceBytes = b);
+    }).catchError((_) {});
   }
 
   Future<void> _runDetection() async {
@@ -117,90 +122,47 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Review'),
-        actions: [
-          IconButton(
-            key: const Key('grayscale-toggle'),
-            icon: Icon(_mode == _EnhancerMode.grayscale
-                ? Icons.filter_b_and_w
-                : Icons.filter_b_and_w_outlined),
-            tooltip: _mode == _EnhancerMode.grayscale ? 'Grayscale on' : 'Grayscale off',
-            onPressed: () => setState(() => _mode =
-                _mode == _EnhancerMode.grayscale
-                    ? _EnhancerMode.none
-                    : _EnhancerMode.grayscale),
-          ),
-          IconButton(
-            key: const Key('bw-toggle'),
-            icon: Icon(
-              Icons.contrast,
-              color: _mode == _EnhancerMode.bw
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            tooltip: _mode == _EnhancerMode.bw ? 'B&W on' : 'B&W off',
-            onPressed: () => setState(() => _mode =
-                _mode == _EnhancerMode.bw
-                    ? _EnhancerMode.none
-                    : _EnhancerMode.bw),
-          ),
-          IconButton(
-            key: const Key('auto-toggle'),
-            icon: Icon(
-              Icons.auto_fix_high,
-              color: _mode == _EnhancerMode.auto
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            tooltip: _mode == _EnhancerMode.auto ? 'Auto on' : 'Auto off',
-            onPressed: () => setState(() => _mode =
-                _mode == _EnhancerMode.auto
-                    ? _EnhancerMode.none
-                    : _EnhancerMode.auto),
-          ),
-          IconButton(
-            key: const Key('color-toggle'),
-            icon: Icon(
-              Icons.color_lens,
-              color: _mode == _EnhancerMode.color
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            tooltip: _mode == _EnhancerMode.color ? 'Color on' : 'Color off',
-            onPressed: () => setState(() => _mode =
-                _mode == _EnhancerMode.color
-                    ? _EnhancerMode.none
-                    : _EnhancerMode.color),
-          ),
-        ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          ColoredBox(
-            color: Colors.black,
-            child: SizedBox.expand(
-              child: size == null
-                  ? Center(child: _imageWidget())
-                  : CropOverlay(
-                      imageSize: size,
-                      image: _imageWidget(),
-                      corners: _corners,
-                      enabled: !widget.saving,
-                      highlightColor: _highlightColor,   // NEW
-                      onCornersChanged: (c) => setState(() {
-                        _userInteracted = true;   // NEW
-                        _corners = c;
-                      }),
+          Expanded(
+            child: Stack(
+              children: [
+                ColoredBox(
+                  color: Colors.black,
+                  child: SizedBox.expand(
+                    child: size == null
+                        ? Center(child: _imageWidget())
+                        : CropOverlay(
+                            imageSize: size,
+                            image: _imageWidget(),
+                            corners: _corners,
+                            enabled: !widget.saving,
+                            highlightColor: _highlightColor,
+                            onCornersChanged: (c) => setState(() {
+                              _userInteracted = true;
+                              _corners = c;
+                            }),
+                          ),
+                  ),
+                ),
+                if (widget.saving)
+                  const Positioned.fill(
+                    child: ColoredBox(
+                      color: Colors.black54,
+                      child: Center(
+                          child: CircularProgressIndicator(key: Key('review-saving'))),
                     ),
+                  ),
+              ],
             ),
           ),
-          if (widget.saving)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black54,
-                child: Center(
-                    child: CircularProgressIndicator(key: Key('review-saving'))),
-              ),
-            ),
+          FilterPickerStrip(
+            key: const Key('filter-picker-strip'),
+            selectedMode: _mode,
+            onModeChanged: (m) => setState(() => _mode = m),
+            sourceBytes: _sourceBytes,
+          ),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -232,11 +194,11 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                     : () => widget.onAccept(
                           _corners,
                           switch (_mode) {
-                            _EnhancerMode.grayscale => const GrayscaleEnhancer(),
-                            _EnhancerMode.bw        => const BwEnhancer(),
-                            _EnhancerMode.auto      => const AutoEnhancer(),
-                            _EnhancerMode.color     => const ColorEnhancer(),
-                            _EnhancerMode.none      => const NoneEnhancer(),
+                            EnhancerMode.grayscale => const GrayscaleEnhancer(),
+                            EnhancerMode.bw        => const BwEnhancer(),
+                            EnhancerMode.auto      => const AutoEnhancer(),
+                            EnhancerMode.color     => const ColorEnhancer(),
+                            EnhancerMode.none      => const NoneEnhancer(),
                           },
                         ),
                 icon: const Icon(Icons.check),
