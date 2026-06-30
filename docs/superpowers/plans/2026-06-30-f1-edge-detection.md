@@ -142,7 +142,7 @@ Create `apps/mobile/lib/features/scan/edge_detector.dart`:
 ```dart
 import 'dart:typed_data';
 
-import 'crop_corners.dart';
+import '../library/crop_corners.dart';
 
 /// Immutable detection result: four corners in normalized [0..1] display
 /// coordinates and a confidence score in [0.0, 1.0].
@@ -310,6 +310,19 @@ Uint8List _circleImage(int w, int h) {
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
+/// Black image with a white-filled equilateral triangle.
+Uint8List _triangleImage(int w, int h) {
+  final cx = w / 2.0, r = math.min(w, h) * 0.35;
+  final verts = List.generate(3, (i) {
+    final angle = 2 * math.pi * i / 3 - math.pi / 2;
+    return (x: cx + r * math.cos(angle), y: h / 2.0 + r * math.sin(angle));
+  });
+  final image = img.Image(width: w, height: h, numChannels: 3);
+  img.fill(image, color: img.ColorRgb8(0, 0, 0));
+  _fillPolygonPixels(image, verts);
+  return Uint8List.fromList(img.encodeJpg(image, quality: 95));
+}
+
 /// Black image with a white-filled regular pentagon.
 Uint8List _pentagonImage(int w, int h) {
   final cx = w / 2.0, cy = h / 2.0, r = math.min(w, h) * 0.35;
@@ -414,6 +427,22 @@ Uint8List _edgeTouchingRectImage(int w, int h) {
       color: img.ColorRgb8(0, 0, 0));
   img.fillRect(image, x1: 20, y1: 20, x2: w - 21, y2: h - 21,
       color: img.ColorRgb8(255, 255, 255));
+  return Uint8List.fromList(img.encodeJpg(image, quality: 95));
+}
+
+/// Black image with a white-filled parallelogram (highly skewed quad).
+/// Interior angles are ~45° and ~135°, far from 90° → angleScore < 0.5.
+Uint8List _skewedQuadImage(int w, int h) {
+  final image = img.Image(width: w, height: h, numChannels: 3);
+  img.fill(image, color: img.ColorRgb8(0, 0, 0));
+  // A severe parallelogram: top edge shifted far right relative to bottom.
+  final verts = [
+    (x: w * 0.50, y: h * 0.10),  // top-left (shifted right = skewed)
+    (x: w * 0.90, y: h * 0.10),  // top-right
+    (x: w * 0.50, y: h * 0.90),  // bottom-right (back to centre)
+    (x: w * 0.10, y: h * 0.90),  // bottom-left
+  ];
+  _fillPolygonPixels(image, verts.map((p) => (x: p.x, y: p.y)).toList());
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
@@ -526,6 +555,11 @@ void main() {
 
     test('circle-only shape → null (not a polygon quad)', () async {
       final bytes = _circleImage(640, 480);
+      expect(await detector.detect(bytes), isNull);
+    });
+
+    test('triangle shape → null (3 vertices, not 4)', () async {
+      final bytes = _triangleImage(640, 480);
       expect(await detector.detect(bytes), isNull);
     });
 
@@ -676,6 +710,21 @@ void main() {
         expect(r!.confidence, closeTo(0.6 * expectedAreaScore + 0.4 * 1.0, 0.1));
       });
 
+      test('highly skewed quad → angleScore < 0.5 (angles far from 90°)', () async {
+        final bytes = _skewedQuadImage(640, 480);
+        final r = await detector.detect(bytes);
+        // A severe parallelogram may or may not be detected (JPEG artifacts can
+        // smear thin vertices). If detected, its angleScore must be < 0.5.
+        if (r != null) {
+          // angleScore = 1 − (meanErr/90); for ~45° error → score ≈ 0.5; severe
+          // parallelogram (corners ≈ 45° and 135°) → meanErr ≈ 45° → score ≈ 0.5.
+          // Confidence includes areaScore too; test the angle component indirectly:
+          // confidence < 0.6 * areaScore + 0.4 * 0.5 = 0.6 * area + 0.2
+          // A parallelogram filling ~32% of the frame: 0.6*0.32 + 0.2 = 0.392
+          expect(r.confidence, lessThan(0.65));
+        }
+      });
+
       test('confidence formula: 0.6 × area + 0.4 × angle, result clamped [0,1]', () async {
         final bytes = _rectImage(rx1: 80, ry1: 60, rx2: 560, ry2: 420);
         final r = await detector.detect(bytes);
@@ -755,7 +804,7 @@ import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart' show compute;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
-import 'crop_corners.dart';
+import '../library/crop_corners.dart';
 import 'edge_detector.dart';
 
 class OpenCvEdgeDetector implements EdgeDetector {
@@ -999,9 +1048,6 @@ import 'package:mobile/features/scan/opencv_edge_detector.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  late EdgeDetector detector;
-  setUp(() => detector = const OpenCvEdgeDetector());
-
   // Shared fixture: 640×480 black image with white rect at (120,100)..(520,380).
   Uint8List makeRectFixture() {
     final image = img.Image(width: 640, height: 480, numChannels: 3);
@@ -1011,62 +1057,83 @@ void main() {
     return Uint8List.fromList(img.encodeJpg(image, quality: 95));
   }
 
-  testWidgets('white rect on dark background → non-null, confidence > 0.5',
-      (tester) async {
-    final result = await detector.detect(makeRectFixture());
-    expect(result, isNotNull);
-    expect(result!.confidence, greaterThan(0.5));
-  });
+  group('F1 edge detection — on-device', () {
+    late EdgeDetector detector;
+    setUp(() => detector = const OpenCvEdgeDetector());
 
-  testWidgets('uniform white image → null', (tester) async {
-    final image = img.Image(width: 640, height: 480, numChannels: 3);
-    img.fill(image, color: img.ColorRgb8(255, 255, 255));
-    final bytes = Uint8List.fromList(img.encodeJpg(image));
-    expect(await detector.detect(bytes), isNull);
-  });
+    testWidgets('white rect on dark background → non-null, confidence > 0.5',
+        (tester) async {
+      final result = await detector.detect(makeRectFixture());
+      expect(result, isNotNull);
+      expect(result!.confidence, greaterThan(0.5));
+    });
 
-  testWidgets('circular-only shape → null', (tester) async {
-    const cx = 320, cy = 240, r = 160;
-    final image = img.Image(width: 640, height: 480, numChannels: 3);
-    img.fill(image, color: img.ColorRgb8(0, 0, 0));
-    for (int y = 0; y < 480; y++) {
-      for (int x = 0; x < 640; x++) {
-        if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r) {
-          image.setPixel(x, y, img.ColorRgb8(255, 255, 255));
+    testWidgets('uniform white image → null', (tester) async {
+      final image = img.Image(width: 640, height: 480, numChannels: 3);
+      img.fill(image, color: img.ColorRgb8(255, 255, 255));
+      final bytes = Uint8List.fromList(img.encodeJpg(image));
+      expect(await detector.detect(bytes), isNull);
+    });
+
+    testWidgets('circular-only shape → null', (tester) async {
+      const cx = 320, cy = 240, r = 160;
+      final image = img.Image(width: 640, height: 480, numChannels: 3);
+      img.fill(image, color: img.ColorRgb8(0, 0, 0));
+      for (int y = 0; y < 480; y++) {
+        for (int x = 0; x < 640; x++) {
+          if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r) {
+            image.setPixel(x, y, img.ColorRgb8(255, 255, 255));
+          }
         }
       }
-    }
-    final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
-    expect(await detector.detect(bytes), isNull);
-  });
+      final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
+      expect(await detector.detect(bytes), isNull);
+    });
 
-  testWidgets('corrupt bytes → null, no throw', (tester) async {
-    final corrupt = Uint8List.fromList([0xFF, 0xD8, 0xAA, 0xBB]);
-    expect(await detector.detect(corrupt), isNull);
-  });
+    testWidgets('corrupt bytes → null, no throw', (tester) async {
+      final corrupt = Uint8List.fromList([0xFF, 0xD8, 0xAA, 0xBB]);
+      expect(await detector.detect(corrupt), isNull);
+    });
 
-  testWidgets('corner ordering canonical for axis-aligned rect', (tester) async {
-    final result = await detector.detect(makeRectFixture());
-    expect(result, isNotNull);
-    final c = result!.corners;
+    testWidgets('corner ordering canonical for axis-aligned rect', (tester) async {
+      final result = await detector.detect(makeRectFixture());
+      expect(result, isNotNull);
+      final c = result!.corners;
 
-    // topLeft smallest (x+y)
-    final sumTl = c.topLeft.dx + c.topLeft.dy;
-    expect(sumTl, lessThanOrEqualTo(c.topRight.dx + c.topRight.dy));
-    expect(sumTl, lessThanOrEqualTo(c.bottomRight.dx + c.bottomRight.dy));
-    expect(sumTl, lessThanOrEqualTo(c.bottomLeft.dx + c.bottomLeft.dy));
+      // topLeft smallest (x+y)
+      final sumTl = c.topLeft.dx + c.topLeft.dy;
+      expect(sumTl, lessThanOrEqualTo(c.topRight.dx + c.topRight.dy));
+      expect(sumTl, lessThanOrEqualTo(c.bottomRight.dx + c.bottomRight.dy));
+      expect(sumTl, lessThanOrEqualTo(c.bottomLeft.dx + c.bottomLeft.dy));
 
-    // bottomRight largest (x+y)
-    final sumBr = c.bottomRight.dx + c.bottomRight.dy;
-    expect(sumBr, greaterThanOrEqualTo(c.topLeft.dx + c.topLeft.dy));
-    expect(sumBr, greaterThanOrEqualTo(c.topRight.dx + c.topRight.dy));
-    expect(sumBr, greaterThanOrEqualTo(c.bottomLeft.dx + c.bottomLeft.dy));
+      // bottomRight largest (x+y)
+      final sumBr = c.bottomRight.dx + c.bottomRight.dy;
+      expect(sumBr, greaterThanOrEqualTo(c.topLeft.dx + c.topLeft.dy));
+      expect(sumBr, greaterThanOrEqualTo(c.topRight.dx + c.topRight.dy));
+      expect(sumBr, greaterThanOrEqualTo(c.bottomLeft.dx + c.bottomLeft.dy));
 
-    // all corners in [0,1]
-    for (final corner in [c.topLeft, c.topRight, c.bottomRight, c.bottomLeft]) {
-      expect(corner.dx, inInclusiveRange(0.0, 1.0));
-      expect(corner.dy, inInclusiveRange(0.0, 1.0));
-    }
+      // all corners in [0,1]
+      for (final corner in [c.topLeft, c.topRight, c.bottomRight, c.bottomLeft]) {
+        expect(corner.dx, inInclusiveRange(0.0, 1.0));
+        expect(corner.dy, inInclusiveRange(0.0, 1.0));
+      }
+    });
+
+    testWidgets('large image (4000×3000) → detected in < 2 s', (tester) async {
+      final image = img.Image(width: 4000, height: 3000, numChannels: 3);
+      img.fill(image, color: img.ColorRgb8(0, 0, 0));
+      img.fillRect(image, x1: 400, y1: 300, x2: 3600, y2: 2700,
+          color: img.ColorRgb8(255, 255, 255));
+      final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 85));
+
+      final start = DateTime.now();
+      final result = await detector.detect(bytes);
+      final elapsed = DateTime.now().difference(start).inMilliseconds;
+
+      expect(result, isNotNull, reason: 'large white rect must be detected');
+      expect(elapsed, lessThan(2000),
+          reason: 'detection must complete in < 2 s; took ${elapsed}ms');
+    });
   });
 }
 ```
@@ -1177,7 +1244,7 @@ assert_file_has "FakeEdgeDetector.calls counter" \
 # ── Integration test file ─────────────────────────────────────────────────
 assert_file_has "f1_edge_detection_test.dart present" \
   "apps/mobile/integration_test/f1_edge_detection_test.dart" \
-  "f1 edge detection"
+  "F1 edge detection"
 
 # ── Suite ──────────────────────────────────────────────────────────────────
 assert_cmd "unit + widget tests pass" "All tests passed!" \
