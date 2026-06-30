@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -8,8 +9,6 @@ import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
 
-/// Default EXIF-applied natural-size resolver: the framework decoder bakes the
-/// Orientation tag, so this size matches the displayed (and stored) image.
 Future<Size> _resolveImageSize(String path) {
   final completer = Completer<Size>();
   final stream = FileImage(File(path)).resolve(ImageConfiguration.empty);
@@ -28,25 +27,26 @@ Future<Size> _resolveImageSize(String path) {
   return completer.future;
 }
 
-/// Shows a freshly captured [image] with Retake / Reset / Accept. Once the
-/// image's natural size resolves, draws a draggable crop overlay; Accept hands
-/// the chosen [CropCorners] up (the parent saves). Saving disables actions.
+Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
+
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
-  final EdgeDetector? edgeDetector;
   final VoidCallback onRetake;
   final ValueChanged<CropCorners> onAccept;
   final bool saving;
   final Future<Size> Function(String path) decodeImageSize;
+  final Future<Uint8List> Function(String path) readBytes;   // NEW
+  final EdgeDetector? edgeDetector;                          // NEW
 
   const CaptureReviewScreen({
     super.key,
     required this.image,
-    this.edgeDetector,
     required this.onRetake,
     required this.onAccept,
     this.saving = false,
     this.decodeImageSize = _resolveImageSize,
+    this.readBytes = _defaultReadBytes,     // NEW
+    this.edgeDetector,                      // NEW
   });
 
   @override
@@ -56,6 +56,11 @@ class CaptureReviewScreen extends StatefulWidget {
 class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   CropCorners _corners = CropCorners.fullFrame;
   Size? _imageSize;
+  double? _detectionConfidence;   // NEW: null = pending/failed; ≥0 = result received
+  bool _userInteracted = false;   // NEW: true once user touches a handle or taps Reset
+
+  Color get _highlightColor =>
+      (_detectionConfidence ?? -1) >= 0.5 ? Colors.green : Colors.blue;
 
   @override
   void initState() {
@@ -63,7 +68,26 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
     widget.decodeImageSize(widget.image.path).then((size) {
       if (!mounted) return;
       setState(() => _imageSize = size);
-    }).catchError((_) {/* leave _imageSize null -> plain image */});
+    }).catchError((_) {});
+    _runDetection();   // NEW — concurrent with decodeImageSize
+  }
+
+  Future<void> _runDetection() async {
+    final detector = widget.edgeDetector;
+    if (detector == null) return;
+    try {
+      final bytes = await widget.readBytes(widget.image.path);
+      final result = await detector.detect(bytes);
+      if (!mounted || _userInteracted) return;
+      if (result != null) {
+        setState(() {
+          _corners = result.corners;
+          _detectionConfidence = result.confidence;
+        });
+      }
+    } catch (_) {
+      // Silent fallback — leave _corners as fullFrame, _detectionConfidence null.
+    }
   }
 
   Widget _imageWidget() => Image.file(
@@ -96,7 +120,11 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                       image: _imageWidget(),
                       corners: _corners,
                       enabled: !widget.saving,
-                      onCornersChanged: (c) => setState(() => _corners = c),
+                      highlightColor: _highlightColor,   // NEW
+                      onCornersChanged: (c) => setState(() {
+                        _userInteracted = true;   // NEW
+                        _corners = c;
+                      }),
                     ),
             ),
           ),
@@ -125,7 +153,10 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
               TextButton(
                 key: const Key('crop-reset'),
                 onPressed: canCrop
-                    ? () => setState(() => _corners = CropCorners.fullFrame)
+                    ? () => setState(() {
+                          _userInteracted = true;           // NEW — block in-flight detection
+                          _corners = CropCorners.fullFrame;
+                        })
                     : null,
                 child: const Text('Reset'),
               ),
