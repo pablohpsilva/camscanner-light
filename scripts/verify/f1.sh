@@ -17,7 +17,7 @@ require_tool git
 # ── Setup OpenCV library for host tests ────────────────────────────────────
 # The test suite requires DARTCV_LIB_PATH and DYLD_LIBRARY_PATH for
 # opencv_dart to run on the macOS host. Source setup script to download if needed.
-bash scripts/setup-cv-host-test.sh >/dev/null 2>&1 || true
+bash scripts/setup-cv-host-test.sh
 export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
 export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
 
@@ -103,9 +103,9 @@ verify_integration_ios f1_edge_detection_test.dart
 # ── Opt-in REAL_DEVICE Tier-3 ─────────────────────────────────────────────
 if [ "${REAL_DEVICE:-0}" = "1" ]; then
   echo "-- REAL_DEVICE Tier-3 lane --"
-  echo "MANUAL: Capture a document with the camera."
-  echo "Verify the crop overlay appears with corners pre-positioned at document edges."
-  echo "(Note: F1 delivers the detector only. F2 wires it into the UI.)"
+  echo "MANUAL: Open the app and capture a document."
+  echo "Verify: detect() returns a non-null DetectionResult for a live JPEG."
+  echo "(F2 will display the result in the crop overlay — not part of F1.)"
 fi
 
 verify_summary

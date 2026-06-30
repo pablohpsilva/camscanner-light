@@ -166,11 +166,12 @@ Uint8List _perspectiveRectImage(int w, int h) {
 Uint8List _twoRectsImage(int w, int h) {
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
-  // Large rect (left side)
+  // Large rect (left side): 270×320 = 86,400px / 307,200 = 28.1% — well above 5% gate
   img.fillRect(image, x1: 50, y1: 80, x2: 320, y2: 400,
       color: img.ColorRgb8(255, 255, 255));
-  // Small rect (right side)
-  img.fillRect(image, x1: 400, y1: 200, x2: 520, y2: 300,
+  // Small rect (right side): 170×100 = 17,000px / 307,200 = 5.5% — clears 5% gate
+  // so both quads reach the area>bestArea comparison; large wins.
+  img.fillRect(image, x1: 380, y1: 200, x2: 550, y2: 300,
       color: img.ColorRgb8(255, 255, 255));
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
@@ -389,10 +390,9 @@ void main() {
       expect(await detector.detect(_edgeTouchingRectImage(640, 480)), isNotNull);
     });
 
-    test('tiny rect (< 5% image area) → null or confidence < 0.3', () async {
+    test('tiny rect (< 5% image area) → null', () async {
       final bytes = _tinyRectImage(640, 480);
-      final result = await detector.detect(bytes);
-      if (result != null) expect(result.confidence, lessThan(0.3));
+      expect(await detector.detect(bytes), isNull);
     });
 
     // ── Corner ordering ───────────────────────────────────────────────────
@@ -503,7 +503,7 @@ void main() {
         }
       });
 
-      test('confidence formula: 0.6 × area + 0.4 × angle, result clamped [0,1]', () async {
+      test('confidence: clamped to [0.0, 1.0]', () async {
         final bytes = _rectImage(rx1: 80, ry1: 60, rx2: 560, ry2: 420);
         final r = await detector.detect(bytes);
         expect(r, isNotNull);

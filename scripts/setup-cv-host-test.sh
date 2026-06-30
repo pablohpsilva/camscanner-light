@@ -15,16 +15,26 @@ set -euo pipefail
 DARTCV_VERSION="4.12.0.2"
 INSTALL_DIR="/tmp/dartcv_lib"
 
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then
+  TARBALL="libdartcv-macos-arm64.tar.gz"
+elif [ "$ARCH" = "x86_64" ]; then
+  TARBALL="libdartcv-macos-x64.tar.gz"
+else
+  echo "Unsupported architecture: $ARCH"
+  exit 1
+fi
+
 if [ -f "$INSTALL_DIR/lib/libdartcv.dylib" ]; then
   echo "libdartcv.dylib already present at $INSTALL_DIR/lib/libdartcv.dylib"
   echo "Run with: export DARTCV_LIB_PATH=$INSTALL_DIR/lib/libdartcv.dylib"
   exit 0
 fi
 
-echo "Downloading dartcv4 $DARTCV_VERSION macOS arm64..."
+echo "Downloading dartcv4 $DARTCV_VERSION macOS $ARCH..."
 mkdir -p "$INSTALL_DIR"
 curl -fsSL \
-  "https://github.com/rainyl/dartcv/releases/download/${DARTCV_VERSION}/libdartcv-macos-arm64.tar.gz" \
+  "https://github.com/rainyl/dartcv/releases/download/${DARTCV_VERSION}/${TARBALL}" \
   -o "$INSTALL_DIR/dartcv.tar.gz"
 
 tar -xzf "$INSTALL_DIR/dartcv.tar.gz" -C "$INSTALL_DIR"
