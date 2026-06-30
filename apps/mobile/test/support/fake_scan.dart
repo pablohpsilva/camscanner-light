@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/captured_image.dart';
+import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 /// A minimal valid 1×1 JPEG (SOI … EOI). The fake writes this so the review
@@ -109,3 +110,17 @@ ScanDependencies unavailableScanDependencies() => ScanDependencies(
       createPreviewController: () =>
           FakeCameraPreviewController(unavailable: true),
     );
+
+/// Fake [EdgeDetector] for host tests. Returns a fixed [DetectionResult] or
+/// null; counts calls.
+class FakeEdgeDetector implements EdgeDetector {
+  final DetectionResult? result;
+  int calls = 0;
+  FakeEdgeDetector({this.result});
+
+  @override
+  Future<DetectionResult?> detect(Uint8List bytes) async {
+    calls++;
+    return result;
+  }
+}
