@@ -54,6 +54,7 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void _startSampleTimer() {
+    _sampleTimer?.cancel();
     _sampleTimer = Timer.periodic(
       const Duration(milliseconds: 800),
       (_) => unawaited(_doSample()),
@@ -69,7 +70,7 @@ class _CameraScreenState extends State<CameraScreen> {
     _isSampling = true;
     try {
       final bytes = await _controller.preview.sampleFrame();
-      if (!mounted || bytes == null) return;
+      if (!mounted || bytes == null || _sampleTimer == null) return;
       final result = await _edgeDetector.detect(bytes);
       if (!mounted) return;
       setState(() {
