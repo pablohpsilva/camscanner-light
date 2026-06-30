@@ -73,8 +73,15 @@ abstract interface class EdgeDetector {
 `OpenCvEdgeDetector implements EdgeDetector`. Its `detect()` method calls
 `compute(_runPipeline, bytes)` where `_runPipeline` is a **top-level function**
 (Flutter's `compute()` requires the callback to be top-level or static — an
-instance method will not work). `_runPipeline` returns `DetectionResult?` and
-is the only function that imports `opencv_dart`.
+instance method will not work). `_runPipeline` is the only function that
+imports `opencv_dart`.
+
+**Isolate boundary safety:** `CropCorners` contains `Offset` from `dart:ui`,
+which has uncertain sendability across isolate boundaries. To avoid this,
+`_runPipeline` returns `List<double>?` — nine primitives: `[tl.dx, tl.dy,
+tr.dx, tr.dy, br.dx, br.dy, bl.dx, bl.dy, confidence]`. The `detect()` method
+constructs `CropCorners` and `DetectionResult` on the main thread after
+`compute()` returns. `null` from `_runPipeline` means no quad found.
 
 Pipeline steps inside `_runPipeline`:
 
@@ -224,6 +231,7 @@ tests). No Gherkin step files added in F1. No `build_runner` invocation needed.
 - `DetectionResult` has `operator ==` (equality for test assertions)
 - `OpenCvEdgeDetector` in `lib/features/scan/opencv_edge_detector.dart`
 - `_runPipeline` top-level function in `opencv_edge_detector.dart`
+- `List<double>` return type in `_runPipeline` (isolate-safe primitives)
 - `compute(` in `opencv_edge_detector.dart` (off-thread assertion)
 - `opencv_dart` in `pubspec.yaml`
 - `FakeEdgeDetector` in `test/support/fake_scan.dart`
@@ -238,7 +246,8 @@ tests). No Gherkin step files added in F1. No `build_runner` invocation needed.
 
 ```
 OpenCvEdgeDetector.detect(bytes)
-  └─ compute(_pipeline, bytes)          ← isolate, off UI thread
+  └─ compute(_runPipeline, bytes)        ← isolate, off UI thread
+       ├─ cv.imdecode → Mat (width, height, pixels)
        ├─ cvtColor → grayscale
        ├─ GaussianBlur (5×5)
        ├─ Canny (75/200)
@@ -247,7 +256,11 @@ OpenCvEdgeDetector.detect(bytes)
        ├─ largest area quad selected
        ├─ sort → topLeft/topRight/bottomRight/bottomLeft
        ├─ normalize to [0..1]
-       └─ confidence = 0.6×areaScore + 0.4×angleScore
+       ├─ confidence = 0.6×areaScore + 0.4×angleScore
+       └─ return List<double>[tl.dx, tl.dy, tr.dx, tr.dy, br.dx, br.dy,
+                              bl.dx, bl.dy, confidence]   ← primitives only
+  back on main thread:
+  └─ detect() converts List<double> → CropCorners → DetectionResult
   → DetectionResult(corners, confidence)   ← returned to caller
   → null                                   ← if no quad found or any exception
 ```
