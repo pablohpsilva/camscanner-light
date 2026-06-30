@@ -72,7 +72,7 @@ class _CameraScreenState extends State<CameraScreen> {
       final bytes = await _controller.preview.sampleFrame();
       if (!mounted || bytes == null || _sampleTimer == null) return;
       final result = await _edgeDetector.detect(bytes);
-      if (!mounted) return;
+      if (!mounted || _sampleTimer == null) return;
       setState(() {
         _liveResult =
             (result != null && result.confidence >= 0.5) ? result : null;
