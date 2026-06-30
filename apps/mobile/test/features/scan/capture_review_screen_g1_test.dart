@@ -31,12 +31,12 @@ Future<void> _pump(
 void main() {
   testWidgets('grayscale toggle button is present in the AppBar',
       (tester) async {
-    await _pump(tester, onAccept: (_, __) {});
+    await _pump(tester, onAccept: (_, _) {});
     expect(find.byKey(const Key('grayscale-toggle')), findsOneWidget);
   });
 
   testWidgets('tapping toggle changes its tooltip', (tester) async {
-    await _pump(tester, onAccept: (_, __) {});
+    await _pump(tester, onAccept: (_, _) {});
 
     final before = tester.widget<IconButton>(
         find.byKey(const Key('grayscale-toggle')));

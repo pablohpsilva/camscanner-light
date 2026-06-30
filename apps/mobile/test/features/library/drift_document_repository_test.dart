@@ -1,11 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' show Offset;
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
-import 'package:mobile/features/library/grayscale_enhancer.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -546,7 +543,7 @@ void main() {
     });
   });
 
-  const _testCorners = CropCorners(
+  const testCorners = CropCorners(
     topLeft: Offset(0.1, 0.1),
     topRight: Offset(0.9, 0.1),
     bottomRight: Offset(0.9, 0.9),
@@ -560,7 +557,7 @@ void main() {
     // FakeImageWarper with a non-null returnValue simulates a successful warp.
     final r = repo(warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
     await r.createFromCapture(capture,
-        corners: _testCorners, enhancer: enhancer);
+        corners: testCorners, enhancer: enhancer);
     expect(enhancer.calls, 1,
         reason: 'enhancer must be called once on the flat bytes');
   });
@@ -581,7 +578,7 @@ void main() {
         warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
     await expectLater(
       r.createFromCapture(capture,
-          corners: _testCorners, enhancer: const _ThrowingEnhancer()),
+          corners: testCorners, enhancer: const _ThrowingEnhancer()),
       completes,
       reason: 'enhancement failure must not abort the save',
     );

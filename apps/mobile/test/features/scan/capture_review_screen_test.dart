@@ -92,7 +92,7 @@ void main() {
       );
 
   testWidgets('shows the crop overlay once the size resolves', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, __) {})));
+    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, _) {})));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('crop-overlay')), findsOneWidget);
   });
@@ -101,7 +101,7 @@ void main() {
       (tester) async {
     final never = Completer<Size>();
     await tester.pumpWidget(MaterialApp(
-        home: subject(onAccept: (_, __) {}, decode: (_) => never.future)));
+        home: subject(onAccept: (_, _) {}, decode: (_) => never.future)));
     await tester.pump(); // do not settle (would hang on the pending future)
     expect(find.byKey(const Key('review-image')), findsOneWidget);
     expect(find.byKey(const Key('crop-overlay')), findsNothing);
@@ -133,7 +133,7 @@ void main() {
   });
 
   testWidgets('saving disables the overlay and Reset', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, __) {}, saving: true)));
+    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, _) {}, saving: true)));
     // Use pump() not pumpAndSettle(): CircularProgressIndicator is indeterminate
     // and its animation controller never stops, so pumpAndSettle() always times out.
     await tester.pump(); // schedule decode microtask
@@ -163,7 +163,7 @@ void main() {
       home: Scaffold(
         body: Builder(builder: (ctx) => ElevatedButton(
           onPressed: () => Navigator.of(ctx).push(MaterialPageRoute<void>(
-              builder: (_) => subject(onAccept: (_, __) {}, decode: (_) => later.future))),
+              builder: (_) => subject(onAccept: (_, _) {}, decode: (_) => later.future))),
           child: const Text('open'))),
       ),
     ));
@@ -198,7 +198,7 @@ void main() {
       CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/cap.jpg'),
         onRetake: onRetake ?? () {},
-        onAccept: onAccept ?? (_, __) {},
+        onAccept: onAccept ?? (_, _) {},
         decodeImageSize: (_) async => const Size(1000, 750),
         readBytes: (_) async => Uint8List(0),   // bytes irrelevant; FakeEdgeDetector ignores them
         edgeDetector: edgeDetector,
@@ -277,7 +277,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: CaptureReviewScreen(
       image: const CapturedImage('/nonexistent/cap.jpg'),
       onRetake: () {},
-      onAccept: (_, __) {},
+      onAccept: (_, _) {},
       decodeImageSize: (_) async => const Size(1000, 750),
       readBytes: (_) async => Uint8List(0),
       edgeDetector: _SlowDetector(completer),
@@ -299,7 +299,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: CaptureReviewScreen(
       image: const CapturedImage('/nonexistent/cap.jpg'),
       onRetake: () {},
-      onAccept: (_, __) {},
+      onAccept: (_, _) {},
       decodeImageSize: (_) async => const Size(1000, 750),
       readBytes: (_) async => Uint8List(0),
       edgeDetector: _SlowDetector(completer),
