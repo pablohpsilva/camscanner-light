@@ -119,7 +119,10 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
       const BwEnhancer().enhance(small),
     ]);
 
-    if (!mounted) return;
+    if (!mounted) {
+      _generating = false;
+      return;
+    }
     setState(() {
       _thumbs = {
         EnhancerMode.auto: results[0],
