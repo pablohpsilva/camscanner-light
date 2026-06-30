@@ -21,10 +21,19 @@ detection engine.
 
 ## Imaging backend
 
-`opencv_dart ^0.9.0` (pub.dev) — Dart FFI wrapper around the OpenCV C++ library.
-One `pubspec.yaml` dependency, cross-platform (Android + iOS), ships pre-built
-OpenCV binaries. All detection work runs inside `compute()` — never on the UI
-thread. No explicit `cv.init()` call is required; the FFI binding is loaded lazily.
+`opencv_dart` (pub.dev) — Dart FFI wrapper around the OpenCV C++ library.
+One `pubspec.yaml` dependency, cross-platform (Android, iOS, macOS, Linux, Windows),
+ships pre-built OpenCV binaries including macOS host binaries (enabling `flutter test`
+unit tests without a device). All detection work runs inside `compute()` — never on
+the UI thread.
+
+**Version:** pin to latest stable at implementation time (run `flutter pub add opencv_dart`
+and commit the resulting `pubspec.lock`).
+
+**Initialization:** some `opencv_dart` versions require `await cv.init()` before first
+use. The implementer must check the chosen version's README. If required, add a single
+`await cv.init()` call in `apps/mobile/lib/main.dart` before `runApp()` — this is the
+only change to files outside `lib/features/scan/` and is noted in the files-changed table.
 
 Rationale over alternatives:
 - **vs. platform channels**: same OpenCV, but no Kotlin/Swift boilerplate and no
@@ -107,8 +116,10 @@ Pipeline steps inside `_runPipeline` (all sync, all Mats disposed):
    `(contours, hierarchy)`. Dispose `edges` and `hierarchy` (hierarchy is
    returned but unused with RETR\_EXTERNAL; it still holds native memory).
 6. For each contour: `cv.approxPolyDP(contour, cv.arcLength(contour, true) * 0.02,
-   true)` → keep results with exactly 4 vertices.
-7. Select the largest-area 4-vertex quad (`cv.contourArea`). If none → return `null`.
+   true)` → keep results with **exactly 4 vertices AND `cv.isContourConvex(approx) == true`**.
+   Non-convex 4-point shapes (overlapping documents, table corners) are discarded.
+   The feature spec requires "largest **convex** 4-point quad" — this is how it is enforced.
+7. Select the largest-area convex 4-vertex quad (`cv.contourArea`). If none → return `null`.
 8. Sort the four points into canonical roles:
    - topLeft: smallest (x + y)
    - bottomRight: largest (x + y)
@@ -167,8 +178,12 @@ Used by F2 widget tests to inject a fixed detection result without running OpenC
 
 File: `test/features/scan/opencv_edge_detector_test.dart`
 
-All fixtures are generated programmatically using the `image` package (already
-in `pubspec.yaml`). No binary test assets committed.
+These tests call the real `OpenCvEdgeDetector.detect()` via `opencv_dart` FFI.
+`opencv_dart` ships macOS host binaries, so `flutter test` (which runs on macOS)
+loads the native library without a device. If the CI runner is not macOS, move
+these tests to the integration test file. All fixtures are generated
+programmatically using the `image` package (already in `pubspec.yaml`). No
+binary test assets committed.
 
 **Algorithm correctness**
 - White rect on dark background → non-null, confidence > 0.5
@@ -176,7 +191,8 @@ in `pubspec.yaml`). No binary test assets committed.
 - Uniform black → null
 - Low-contrast gray noise → null or confidence < 0.3
 - Pentagon / triangle / circle contours → null
-- Concave shape → null
+- Concave 4-vertex shape → null (fails `isContourConvex` check)
+- Non-convex quad (arrow/chevron shape) → null
 - Two rects present → largest selected
 - Portrait-oriented rect → corners correct
 - Landscape-oriented rect → corners correct
@@ -252,6 +268,7 @@ tests). No Gherkin step files added in F1. No `build_runner` invocation needed.
 - `OpenCvEdgeDetector` in `lib/features/scan/opencv_edge_detector.dart`
 - `_runPipeline` top-level function in `opencv_edge_detector.dart`
 - `List<double>` return type in `_runPipeline` (isolate-safe primitives)
+- `isContourConvex` in `opencv_edge_detector.dart` (convexity filter)
 - `compute(` in `opencv_edge_detector.dart` (off-thread assertion)
 - `opencv_dart` in `pubspec.yaml`
 - `FakeEdgeDetector` in `test/support/fake_scan.dart`
@@ -272,7 +289,7 @@ OpenCvEdgeDetector.detect(bytes)
        ├─ GaussianBlur (5×5)
        ├─ Canny (75/200)
        ├─ findContours (RETR_EXTERNAL)
-       ├─ approxPolyDP per contour (ε = 2% perimeter) → keep 4-vertex
+       ├─ approxPolyDP per contour (ε = 2% perimeter) → keep 4-vertex + convex
        ├─ largest area quad selected
        ├─ sort → topLeft/topRight/bottomRight/bottomLeft
        ├─ normalize to [0..1]
@@ -292,7 +309,7 @@ Cancel path: caller receives `null` → F2 defaults to `CropCorners.fullFrame`.
 | Failure | Behaviour |
 |---------|-----------|
 | Corrupt / empty bytes | `imdecode` returns empty `Mat`; `mat.isEmpty` guard returns `null` (not exception) |
-| No 4-point contour found | Returns `null`; all Mats disposed |
+| No convex 4-point contour found | Returns `null`; all Mats disposed |
 | `opencv_dart` internal error | Caught by outer `try/catch`; `finally` disposes remaining Mats; returns `null` |
 | Single-pixel or degenerate image | `mat.isEmpty` or zero contours; returns `null` |
 | Async variant called in isolate | Prevented by sync-only rule above |
@@ -303,7 +320,8 @@ Cancel path: caller receives `null` → F2 defaults to `CropCorners.fullFrame`.
 
 | Action | File |
 |--------|------|
-| Modify | `apps/mobile/pubspec.yaml` (add `opencv_dart` — pin to latest stable at implementation time) |
+| Modify | `apps/mobile/pubspec.yaml` (add `opencv_dart`, latest stable) |
+| Possibly modify | `apps/mobile/lib/main.dart` (add `await cv.init()` if required by chosen version) |
 | Create | `apps/mobile/lib/features/scan/edge_detector.dart` |
 | Create | `apps/mobile/lib/features/scan/opencv_edge_detector.dart` |
 | Modify | `apps/mobile/test/support/fake_scan.dart` (add `FakeEdgeDetector`) |
