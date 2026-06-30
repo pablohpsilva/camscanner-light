@@ -26,16 +26,15 @@ Uint8List _bwFn(Uint8List bytes) {
     img.grayscale(oriented);                    // mutates in place
     final t = _otsuThreshold(oriented);         // automatic split — no magic numbers
 
-    // Manually apply threshold: set each pixel to 0 or 255 based on comparison to t
+    // Apply threshold: create a new binary image
+    final bw = img.Image(width: oriented.width, height: oriented.height, numChannels: 3);
     for (final px in oriented) {
       final luminance = px.r.toInt();
       final bwValue = luminance < t ? 0 : 255;
-      px.r = bwValue;
-      px.g = bwValue;
-      px.b = bwValue;
+      bw.setPixelRgba(px.x, px.y, bwValue, bwValue, bwValue, 255);
     }
 
-    return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
+    return Uint8List.fromList(img.encodeJpg(bw, quality: 92));
   } catch (_) {
     return bytes;
   }

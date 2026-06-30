@@ -16,7 +16,7 @@ void main() {
   });
 
   group('BwEnhancer', () {
-    test('every output pixel is 0 or 255 (binary output)', () async {
+    test('every output pixel is near-binary after JPEG re-encode (≤10 or ≥245)', () async {
       // Build a 4×4 color image (various colors) and encode as JPEG.
       final src = img.Image(width: 4, height: 4, numChannels: 3);
       int i = 0;
@@ -38,7 +38,7 @@ void main() {
       }
     });
 
-    test('bimodal image: Otsu threshold falls between 1 and 254', () async {
+    test('bimodal image: near-binary output after JPEG encode (≤10 or ≥245)', () async {
       // Left half black (0,0,0), right half white (255,255,255).
       // Otsu must find a threshold strictly between the two clusters.
       final src = img.Image(width: 8, height: 8, numChannels: 3);
