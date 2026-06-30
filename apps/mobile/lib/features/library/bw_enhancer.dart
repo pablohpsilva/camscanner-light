@@ -24,17 +24,9 @@ Uint8List _bwFn(Uint8List bytes) {
     // For already-baked flat bytes (post-warp), this is a safe no-op.
     final oriented = img.bakeOrientation(decoded);
     img.grayscale(oriented);                    // mutates in place
-    final t = _otsuThreshold(oriented);         // automatic split — no magic numbers
-
-    // Apply threshold: create a new binary image
-    final bw = img.Image(width: oriented.width, height: oriented.height, numChannels: 3);
-    for (final px in oriented) {
-      final luminance = px.r.toInt();
-      final bwValue = luminance < t ? 0 : 255;
-      bw.setPixelRgba(px.x, px.y, bwValue, bwValue, bwValue, 255);
-    }
-
-    return Uint8List.fromList(img.encodeJpg(bw, quality: 92));
+    final t = _otsuThreshold(oriented);                           // automatic split — no magic numbers
+    img.luminanceThreshold(oriented, threshold: t / 255.0);       // mutates in place; pixels → 0 or maxVal
+    return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
   } catch (_) {
     return bytes;
   }
