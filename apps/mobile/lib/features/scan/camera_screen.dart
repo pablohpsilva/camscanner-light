@@ -9,6 +9,7 @@ import '../library/save_controller.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
+import 'gallery_picker.dart';
 import 'scan_controller.dart';
 import 'scan_dependencies.dart';
 import 'scan_view_state.dart';
@@ -45,6 +46,7 @@ class _CameraScreenState extends State<CameraScreen> {
   late final ScanController _controller;
   late final SaveController _saveController;
   late final EdgeDetector _edgeDetector;
+  late final GalleryPicker _galleryPicker;
   Timer? _sampleTimer;
   DetectionResult? _liveResult;
   bool _isSampling = false;
@@ -61,6 +63,7 @@ class _CameraScreenState extends State<CameraScreen> {
     _controller.start();
     _saveController = SaveController(repository: widget.repository);
     _edgeDetector = widget.dependencies.createEdgeDetector();
+    _galleryPicker = widget.dependencies.createGalleryPicker();
     _startSampleTimer();
   }
 
@@ -102,22 +105,8 @@ class _CameraScreenState extends State<CameraScreen> {
     super.dispose();
   }
 
-  Future<void> _onShutter() async {
-    _sampleTimer?.cancel();
-    _sampleTimer = null;
+  Future<void> _reviewAndSave(CapturedImage image) async {
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final image = await _controller.capture();
-    if (!mounted) return;
-    if (image == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Could not capture photo. Try again.')),
-      );
-      if (mounted && _controller.status == ScanStatus.ready) {
-        _startSampleTimer();
-      }
-      return;
-    }
     await navigator.push(
       MaterialPageRoute<void>(
         builder: (_) => ListenableBuilder(
@@ -132,9 +121,51 @@ class _CameraScreenState extends State<CameraScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _onShutter() async {
+    _sampleTimer?.cancel();
+    _sampleTimer = null;
+    final messenger = ScaffoldMessenger.of(context);
+    final image = await _controller.capture();
+    if (!mounted) return;
+    if (image == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not capture photo. Try again.')),
+      );
+      if (mounted && _controller.status == ScanStatus.ready) {
+        _startSampleTimer();
+      }
+      return;
+    }
+    await _reviewAndSave(image);
     if (mounted && _controller.status == ScanStatus.ready) {
       _startSampleTimer();
     }
+  }
+
+  Future<void> _onImport() async {
+    _sampleTimer?.cancel();
+    _sampleTimer = null;
+    final messenger = ScaffoldMessenger.of(context);
+    CapturedImage? image;
+    try {
+      image = await _galleryPicker.pick();
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Couldn't import photo")),
+      );
+      if (_controller.status == ScanStatus.ready) _startSampleTimer();
+      return;
+    }
+    if (!mounted) return;
+    if (image == null) {
+      if (_controller.status == ScanStatus.ready) _startSampleTimer();
+      return;
+    }
+    await _reviewAndSave(image);
+    if (mounted && _controller.status == ScanStatus.ready) _startSampleTimer();
   }
 
   Future<void> _onAccept(
@@ -201,16 +232,21 @@ class _CameraScreenState extends State<CameraScreen> {
         title: _pageCount == 0
             ? const Text('Scan')
             : Text('$_pageCount page${_pageCount == 1 ? '' : 's'} saved'),
-        actions: _pageCount > 0
-            ? [
-                IconButton(
-                  key: const Key('camera-done'),
-                  icon: const Icon(Icons.check),
-                  tooltip: 'Done scanning',
-                  onPressed: _onDone,
-                ),
-              ]
-            : null,
+        actions: [
+          IconButton(
+            key: const Key('camera-import'),
+            icon: const Icon(Icons.photo_library_outlined),
+            tooltip: 'Import from gallery',
+            onPressed: _onImport,
+          ),
+          if (_pageCount > 0)
+            IconButton(
+              key: const Key('camera-done'),
+              icon: const Icon(Icons.check),
+              tooltip: 'Done scanning',
+              onPressed: _onDone,
+            ),
+        ],
       ),
       body: ListenableBuilder(
         listenable: _controller,
