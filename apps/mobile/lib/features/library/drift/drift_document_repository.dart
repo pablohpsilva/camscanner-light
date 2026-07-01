@@ -680,6 +680,66 @@ class DriftDocumentRepository implements DocumentRepository {
     });
   }
 
+  @override
+  Future<void> mergeInto(int targetDocumentId, int sourceDocumentId) async {
+    if (targetDocumentId == sourceDocumentId) {
+      throw const DocumentSaveException('mergeInto: target == source');
+    }
+    try {
+      final maxRow = await (_db.select(_db.pages)
+            ..where((p) => p.documentId.equals(targetDocumentId))
+            ..orderBy([(p) => OrderingTerm.desc(p.position)])
+            ..limit(1))
+          .getSingleOrNull();
+      final targetMax = maxRow?.position ?? 0;
+      final sourcePages = await (_db.select(_db.pages)
+            ..where((p) => p.documentId.equals(sourceDocumentId))
+            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
+          .get();
+
+      // Copy files first (outside the DB txn), building the row inserts.
+      final inserts = <PagesCompanion>[];
+      var k = 0;
+      for (final src in sourcePages) {
+        k++;
+        final imageRel =
+            'documents/$targetDocumentId/page_m${sourceDocumentId}_${src.position}.jpg';
+        final srcBytes =
+            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
+        await _fileStore.writeRelative(imageRel, srcBytes);
+        String? flatRel;
+        if (src.flatRelativePath != null) {
+          final flatBytes =
+              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
+          flatRel = _fileStore.flatForImage(imageRel);
+          await _fileStore.writeRelative(flatRel, flatBytes);
+        }
+        inserts.add(PagesCompanion.insert(
+          documentId: targetDocumentId,
+          position: targetMax + k,
+          relativeImagePath: imageRel,
+          corners: Value(src.corners),
+          flatRelativePath: Value(flatRel),
+          ocrText: Value(src.ocrText),
+          ocrBoxes: Value(src.ocrBoxes),
+        ));
+      }
+      await _db.transaction(() async {
+        for (final c in inserts) {
+          await _db.into(_db.pages).insert(c);
+        }
+      });
+      await (_db.update(_db.documents)
+            ..where((d) => d.id.equals(targetDocumentId)))
+          .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+    } catch (e) {
+      if (e is DocumentSaveException) rethrow;
+      throw DocumentSaveException('mergeInto failed: $e');
+    }
+    // Remove the now-copied source (rows + dir). Separate from the txn above.
+    await deleteDocument(sourceDocumentId);
+  }
+
   /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
   /// save — and does not run for the NoOp engine (skips wasted work in tests).
   void _triggerOcr(int documentId, int position) {

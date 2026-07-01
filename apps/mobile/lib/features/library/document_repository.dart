@@ -124,6 +124,14 @@ abstract interface class DocumentRepository {
   /// when the page row is missing.
   Future<void> runOcr(int documentId, int position);
 
+  /// Appends every page of [sourceDocumentId] (in position order) to
+  /// [targetDocumentId] — copying each page's image, flat derivative, corners,
+  /// and cached OCR text/boxes verbatim — then deletes the source document.
+  /// Merged files are named from the source id so they never collide with the
+  /// target's existing files. Nothing leaves the device. Throws
+  /// [DocumentSaveException] when target == source or on any IO/DB failure.
+  Future<void> mergeInto(int targetDocumentId, int sourceDocumentId);
+
   /// Materializes the page at [position] of [documentId]'s cached recognized
   /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
   /// named `<sanitized-document-name>_page_<position>.txt` under the system temp

@@ -313,6 +313,18 @@ class FakeDocumentRepository implements DocumentRepository {
     lastReplacedPagePosition = position;
   }
 
+  int? lastMergeTarget;
+  int? lastMergeSource;
+
+  @override
+  Future<void> mergeInto(int targetDocumentId, int sourceDocumentId) async {
+    if (throwOnUpdate) {
+      throw const DocumentSaveException('fake: merge failed');
+    }
+    lastMergeTarget = targetDocumentId;
+    lastMergeSource = sourceDocumentId;
+  }
+
   int rotateCalls = 0;
   int? lastRotatedPosition;
 
