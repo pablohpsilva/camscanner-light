@@ -12,6 +12,7 @@ import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
 import '../ocr/ocr_engine.dart';
+import '../ocr/ocr_result.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import 'app_database.dart' hide Document;
@@ -113,6 +114,7 @@ class DriftDocumentRepository implements DocumentRepository {
             modifiedAt: createdUtc);
       });
       await _deleteTempSource(capture.path);
+      _triggerOcr(doc.id, 1);
       return doc;
     } catch (e) {
       throw DocumentSaveException('save failed: $e');
@@ -171,6 +173,7 @@ class DriftDocumentRepository implements DocumentRepository {
                   ? null
                   : _fileStore.absoluteFor(pg.flatRelativePath!).path,
               ocrText: pg.ocrText,
+              ocrWords: OcrResult.decodeBoxes(pg.ocrBoxes),
             ))
         .toList();
   }
@@ -386,6 +389,7 @@ class DriftDocumentRepository implements DocumentRepository {
         return newPosition;
       });
       await _deleteTempSource(capture.path);
+      _triggerOcr(documentId, position);
       return position;
     } catch (e) {
       if (e is DocumentSaveException) rethrow;
@@ -550,6 +554,14 @@ class DriftDocumentRepository implements DocumentRepository {
             ..where((d) => d.id.equals(documentId)))
           .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
     });
+  }
+
+  /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
+  /// save — and does not run for the NoOp engine (skips wasted work in tests).
+  void _triggerOcr(int documentId, int position) {
+    if (_ocrEngine is NoOpOcrEngine) return;
+    // ignore: discarded_futures
+    runOcr(documentId, position).catchError((_) {});
   }
 
   String _defaultName(DateTime t) {

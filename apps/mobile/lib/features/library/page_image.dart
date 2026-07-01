@@ -1,4 +1,5 @@
 import 'crop_corners.dart';
+import 'ocr/ocr_result.dart';
 
 /// One page's resolved image for the viewer. [imagePath] is the original
 /// EXIF-scrubbed capture (absolute). [flatImagePath] is the perspective-
@@ -10,6 +11,7 @@ class PageImage {
   final CropCorners corners;
   final String? flatImagePath;
   final String? ocrText;
+  final List<OcrWordBox> ocrWords;
 
   const PageImage({
     required this.position,
@@ -17,6 +19,7 @@ class PageImage {
     this.corners = CropCorners.fullFrame,
     this.flatImagePath,
     this.ocrText,
+    this.ocrWords = const [],
   });
 
   /// Flat image when available; original otherwise.

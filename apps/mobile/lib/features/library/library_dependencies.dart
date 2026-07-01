@@ -9,6 +9,8 @@ import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
 import 'hybrid_warper.dart';
 import 'jpeg_exif_scrubber.dart';
+import 'ocr/mlkit_ocr_engine.dart';
+import 'pdf/ocr_pdf_text_layer.dart';
 import 'pdf/pdf_builder.dart';
 
 typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
@@ -30,7 +32,8 @@ Future<DocumentRepository> _defaultCreateRepository() async {
     scrubber: const JpegExifScrubber(),
     fileStore: DocumentFileStore(docsDir),
     clock: DateTime.now,
-    pdfBuilder: const PdfBuilder(),
+    pdfBuilder: const PdfBuilder(textLayer: OcrPdfTextLayer()),
     warper: const HybridWarper(),
+    ocrEngine: const MlKitOcrEngine(),
   );
 }

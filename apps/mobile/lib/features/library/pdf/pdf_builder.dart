@@ -23,7 +23,8 @@ class PdfBuilder {
     for (final page in pages) {
       final bytes = await File(page.displayPath).readAsBytes();
       final image = pw.MemoryImage(bytes); // lossless + EXIF auto-orient
-      final overlay = textLayer.overlayFor(page);
+      final overlay = textLayer.overlayFor(
+          page, image.width!.toDouble(), image.height!.toDouble());
       doc.addPage(
         pw.Page(
           pageFormat:

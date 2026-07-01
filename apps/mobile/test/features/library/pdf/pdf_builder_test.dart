@@ -15,7 +15,7 @@ class _SpyTextLayer implements PdfTextLayer {
   final List<pw.Widget> overlay;
   _SpyTextLayer({this.overlay = const []});
   @override
-  List<pw.Widget> overlayFor(PageImage page) {
+  List<pw.Widget> overlayFor(PageImage page, double width, double height) {
     calls.add(page);
     return overlay;
   }
