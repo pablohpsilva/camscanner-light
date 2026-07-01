@@ -82,6 +82,11 @@ void main() {
     expect(tags['Image DateTime'], isNull);
     expect(tags.keys.where((k) => k.startsWith('GPS')), isEmpty,
         reason: 'exported image has no GPS/personal metadata');
+    // Positively lock the "Orientation kept" contract through the export path:
+    // the scrub must PRESERVE Orientation, not strip all EXIF (which would make
+    // the personal-tag-absence checks above pass vacuously).
+    expect(tags['Image Orientation'].toString(), 'Rotated 90 CW',
+        reason: 'export preserves Orientation losslessly');
   });
 
   test('uses the flat image when flatRelativePath is set', () async {
