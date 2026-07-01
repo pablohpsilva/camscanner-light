@@ -356,7 +356,7 @@ void main() {
 
   // ── H2 — Page thumbnail strip ──────────────────────────────────────────
 
-  testWidgets('H2: strip is present; tapping thumb 0 fires animateToPage',
+  testWidgets('H2: strip is present with correct tile keys for 2-page document',
       (tester) async {
     // Two-page repo so the strip has two tiles.
     final repo = FakeDocumentRepository(
