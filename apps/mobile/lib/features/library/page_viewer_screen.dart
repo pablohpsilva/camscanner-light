@@ -197,6 +197,24 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _exportPageAsImage() async {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty) return;
+    final page = pages[_current];
+    try {
+      await widget.repository.exportPageAsImage(widget.documentId, page.position);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Page saved as image')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't export image")),
+      );
+    }
+  }
+
   Future<void> _retakePage() async {
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
@@ -312,6 +330,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             onSelected: (v) {
               if (v == 'retake') unawaited(_retakePage());
               if (v == 'delete') unawaited(_confirmAndDeletePage());
+              if (v == 'export-image') unawaited(_exportPageAsImage());
             },
             itemBuilder: (_) => const [
               PopupMenuItem<String>(
@@ -323,6 +342,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'delete',
                 key: Key('page-viewer-delete-page'),
                 child: Text('Delete page'),
+              ),
+              PopupMenuItem<String>(
+                value: 'export-image',
+                key: Key('page-viewer-export-image'),
+                child: Text('Export as image'),
               ),
             ],
           ),
