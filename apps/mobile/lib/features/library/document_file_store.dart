@@ -16,6 +16,14 @@ class DocumentFileStore {
   String flatRelativeFor(int docId, int position) =>
       'documents/$docId/page_${position}_flat.jpg';
 
+  /// Derivative ("flat") path for the page whose image is at [relativeImagePath].
+  /// Inserts `_flat` before the extension (`.../page_7.jpg` -> `.../page_7_flat.jpg`)
+  /// so the flat is 1:1 with the page's own image file — stable under reorder,
+  /// unlike a position-derived name. For a never-reordered page this equals
+  /// flatRelativeFor(docId, position), so already-stored flats still resolve.
+  String flatForImage(String relativeImagePath) =>
+      '${p.withoutExtension(relativeImagePath)}_flat${p.extension(relativeImagePath)}';
+
   String pdfRelativeFor(int docId) => 'documents/$docId/export.pdf';
 
   File absoluteFor(String relativePath) =>

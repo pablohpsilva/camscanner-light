@@ -465,7 +465,7 @@ void main() {
   group('E3 — updatePageCorners', () {
     test('non-fullFrame corners: flat written to disk and DB updated', () async {
       final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x03]);
-      // Create document with NO flat (FakeImageWarper returns null by default).
+      // Create document with NO flat (no corners → full-frame, so warp is skipped).
       final doc = await repo().createFromCapture(capture);
       final before = await repo().getDocumentPages(doc.id);
       expect(before.single.flatImagePath, isNull);
@@ -566,7 +566,7 @@ void main() {
       'createFromCapture applies enhancer to original bytes on full-frame capture',
       () async {
     final enhancer = _RecordingEnhancer();
-    // No corners → full-frame path; FakeImageWarper(returnValue: null) → no warp.
+    // No corners → full-frame path; warp is skipped regardless of FakeImageWarper's return value.
     final r = repo(warper: FakeImageWarper());
     await r.createFromCapture(capture, enhancer: enhancer);
     expect(enhancer.calls, 1,

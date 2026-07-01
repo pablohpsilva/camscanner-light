@@ -260,7 +260,9 @@ class DriftDocumentRepository implements DocumentRepository {
         await _fileStore.absoluteFor(page.relativeImagePath).readAsBytes();
     final flat = await _warper.warp(bytes, corners);
     if (flat == null) return; // warper returned null — no-op here
-    final flatRel = _fileStore.flatRelativeFor(documentId, position);
+    // Derive the flat name from the page's own image path so it remains stable
+    // under reorder (unlike a position-derived name which can collide).
+    final flatRel = _fileStore.flatForImage(page.relativeImagePath);
     await _fileStore.writeRelative(flatRel, flat);
     await (_db.update(_db.pages)
           ..where((t) =>
@@ -433,8 +435,10 @@ class DriftDocumentRepository implements DocumentRepository {
             }
             // Reuse the existing flat path when present → overwrite in place,
             // never orphan a stale derivative (positions can drift after reorders).
+            // For a new flat, derive the name from the page's own image path
+            // (stable under reorder) rather than from position (collision-prone).
             flatRel = row.flatRelativePath ??
-                _fileStore.flatRelativeFor(documentId, position);
+                _fileStore.flatForImage(row.relativeImagePath);
             await _fileStore.writeRelative(flatRel, flatBytes);
           }
         } catch (_) {}

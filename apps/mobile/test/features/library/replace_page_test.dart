@@ -112,4 +112,61 @@ void main() {
     expect(File('${base.path}/$afterPath').existsSync(), isTrue,
         reason: 'flat file must exist at the reused path');
   });
+
+  test('replacePage after reorder does not collide with another page\'s flat',
+      () async {
+    final r = repo();
+
+    // 1. Create doc: page 1 full-frame — image page_1.jpg, no flat.
+    final doc = await r.createFromCapture(freshCapture('a.jpg'));
+
+    // 2. Add page 2 with corners — writes flat page_2_flat.jpg.
+    await r.addPageToDocument(doc.id, freshCapture('b.jpg'), corners: corners);
+
+    // Capture page 2's stored flatRelativePath before the reorder.
+    final pagesAfterAdd = await db.select(db.pages).get();
+    final page2RowBefore =
+        pagesAfterAdd.firstWhere((p) => p.relativeImagePath.endsWith('page_2.jpg'));
+    final page2FlatBefore = page2RowBefore.flatRelativePath;
+    expect(page2FlatBefore, isNotNull,
+        reason: 'page 2 must have a flat after addPageToDocument with corners');
+
+    // 3. reorderPages: page B (old position 2) → position 1,
+    //    page A (old position 1) → position 2.
+    await r.reorderPages(doc.id, [2, 1]);
+
+    // 4. Retake page A (now at position 2) WITH corners.
+    const retakeCorners = CropCorners(
+      topLeft: Offset(0.2, 0.2), topRight: Offset(0.8, 0.2),
+      bottomRight: Offset(0.8, 0.8), bottomLeft: Offset(0.2, 0.8));
+    await r.replacePage(doc.id, 2, freshCapture('a2.jpg'),
+        corners: retakeCorners);
+
+    // 5. Query both page rows.
+    final allPages = await db.select(db.pages).get();
+    final pageA =
+        allPages.firstWhere((p) => p.relativeImagePath.endsWith('page_1.jpg'));
+    final pageB =
+        allPages.firstWhere((p) => p.relativeImagePath.endsWith('page_2.jpg'));
+
+    // page A's flat must be derived from ITS OWN image path (page_1_flat.jpg).
+    expect(pageA.flatRelativePath, isNotNull);
+    expect(pageA.flatRelativePath!.endsWith('page_1_flat.jpg'), isTrue,
+        reason: 'page A flat must be derived from its image path, not position');
+
+    // page B's flat must be UNCHANGED (page_2_flat.jpg, not overwritten).
+    expect(pageB.flatRelativePath, equals(page2FlatBefore),
+        reason: 'page B flat must not be overwritten by page A\'s retake');
+    expect(pageB.flatRelativePath!.endsWith('page_2_flat.jpg'), isTrue);
+
+    // Collision guard: the two flat paths must be different.
+    expect(pageA.flatRelativePath, isNot(equals(pageB.flatRelativePath)),
+        reason: 'flat paths must differ — collision means silent corruption');
+
+    // Both flat files must exist on disk.
+    expect(File('${base.path}/${pageA.flatRelativePath}').existsSync(), isTrue,
+        reason: 'page A flat file must exist on disk');
+    expect(File('${base.path}/${pageB.flatRelativePath}').existsSync(), isTrue,
+        reason: 'page B flat file must exist on disk');
+  });
 }
