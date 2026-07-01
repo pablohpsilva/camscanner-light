@@ -277,11 +277,11 @@ void main() {
     expect(summaries.single.thumbnailPath, endsWith('page_1.jpg'));
   });
 
-  test('exportPdf writes export.pdf and returns a valid PDF file', () async {
+  test('exportPdf returns a temp PDF file with a valid PDF header', () async {
     final doc = await repo().createFromCapture(capture);
     final file = await repo().exportPdf(doc.id);
 
-    expect(file.path, endsWith('documents/${doc.id}/export.pdf'));
+    expect(file.path, endsWith('.pdf'));
     expect(file.existsSync(), isTrue);
     final head = file.readAsBytesSync().sublist(0, 4);
     expect(head, [0x25, 0x50, 0x44, 0x46]); // %PDF

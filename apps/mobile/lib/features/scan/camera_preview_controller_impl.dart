@@ -12,6 +12,7 @@ class PluginCameraPreviewController implements CameraPreviewController {
   PluginCameraPreviewController();
 
   CameraController? _controller;
+  bool _takingPicture = false;
 
   @override
   Future<void> initialize() async {
@@ -53,11 +54,22 @@ class PluginCameraPreviewController implements CameraPreviewController {
     if (controller == null || !controller.value.isInitialized) {
       throw const CameraUnavailableException('capture() before initialize()');
     }
+    // A live-detection sample may have a takePicture in flight; the camera plugin
+    // rejects concurrent captures. Wait (bounded) for it to clear, then claim the
+    // camera. Single-threaded Dart makes the check-then-set between awaits atomic.
+    var waited = 0;
+    while (_takingPicture && waited < 3000) {
+      await Future.delayed(const Duration(milliseconds: 25));
+      waited += 25;
+    }
+    _takingPicture = true;
     try {
       final file = await controller.takePicture();
       return CapturedImage(file.path);
     } on CameraException catch (e) {
       throw CameraUnavailableException(e.description ?? e.code);
+    } finally {
+      _takingPicture = false;
     }
   }
 
@@ -65,6 +77,8 @@ class PluginCameraPreviewController implements CameraPreviewController {
   Future<Uint8List?> sampleFrame() async {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return null;
+    if (_takingPicture) return null;
+    _takingPicture = true;
     try {
       final file = await controller.takePicture();
       final bytes = await File(file.path).readAsBytes();
@@ -72,6 +86,8 @@ class PluginCameraPreviewController implements CameraPreviewController {
       return bytes;
     } catch (_) {
       return null;
+    } finally {
+      _takingPicture = false;
     }
   }
 

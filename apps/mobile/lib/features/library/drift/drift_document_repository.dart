@@ -226,12 +226,24 @@ class DriftDocumentRepository implements DocumentRepository {
     }
     try {
       final bytes = await _pdfBuilder.build(pages);
-      final rel = _fileStore.pdfRelativeFor(documentId);
-      await _fileStore.writeRelative(rel, bytes);
-      return _fileStore.absoluteFor(rel);
+      final dir = await Directory.systemTemp.createTemp('pdf_export');
+      final safeName = await _pdfFileNameFor(documentId);
+      final file = File('${dir.path}/$safeName');
+      await file.writeAsBytes(bytes);
+      return file;
     } catch (e) {
       throw DocumentExportException('export failed: $e');
     }
+  }
+
+  Future<String> _pdfFileNameFor(int documentId) async {
+    final doc = await (_db.select(_db.documents)
+          ..where((d) => d.id.equals(documentId)))
+        .getSingleOrNull();
+    final base = (doc?.name ?? 'document')
+        .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
+        .trim();
+    return '${base.isEmpty ? 'document' : base}.pdf';
   }
 
   @override
