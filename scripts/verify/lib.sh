@@ -16,9 +16,11 @@ VERIFY_FAIL=0
 
 _grn() { printf '\033[32m%s\033[0m\n' "$*"; }
 _red() { printf '\033[31m%s\033[0m\n' "$*"; }
+_yel() { printf '\033[33m%s\033[0m\n' "$*"; }
 
 pass() { VERIFY_PASS=$((VERIFY_PASS + 1)); _grn "PASS: $*"; }
 fail() { VERIFY_FAIL=$((VERIFY_FAIL + 1)); _red "FAIL: $*"; }
+warn() { _yel "WARN: $*"; }
 
 # require_tool <cmd> : a missing tool is a FAIL, never a skip (rule 4)
 require_tool() {
