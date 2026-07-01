@@ -1,3 +1,4 @@
+import 'dart:convert'; // latin1
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:drift/native.dart';
@@ -300,6 +301,22 @@ void main() {
       repo().exportPdf(id),
       throwsA(isA<DocumentExportException>()),
     );
+  });
+
+  test('exportPdf writes one PDF page per document page (3-page doc)', () async {
+    final r = repo();
+    final doc = await r.createFromCapture(capture); // page 1
+    Uint8List fixture() =>
+        File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+    CapturedImage cap(String name) => CapturedImage(
+        (File('${base.path}/$name.jpg')..writeAsBytesSync(fixture())).path);
+    await r.addPageToDocument(doc.id, cap('c2')); // page 2
+    await r.addPageToDocument(doc.id, cap('c3')); // page 3
+
+    final file = await r.exportPdf(doc.id);
+    final s = latin1.decode(file.readAsBytesSync(), allowInvalid: true);
+    expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 3,
+        reason: 'exportPdf passes ALL pages, not just the first');
   });
 
   test('rename updates the name and bumps modifiedAt; createdAt unchanged',

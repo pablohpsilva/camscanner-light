@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/pdf/pdf_text_layer.dart';
@@ -43,6 +44,46 @@ void main() {
     expect(s.startsWith('%PDF-'), isTrue);
     // robust page count: /Type /Page NOT followed by 's' (avoid /Pages)
     expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 1);
+  });
+
+  test('multi-page: one PDF page per input page, in order, at each image aspect',
+      () async {
+    // Three JPEGs with DISTINCT dimensions so each embedded image XObject's
+    // /Width + /Height uniquely identify its page and encode order.
+    // Return List<int> (writeAsBytesSync accepts it) so this is robust to
+    // encodeJpg's return type across image package versions.
+    List<int> makeJpeg(int w, int h) =>
+        img.encodeJpg(img.Image(width: w, height: h));
+    final tmp = Directory.systemTemp.createTempSync('h5builder');
+    addTearDown(() => tmp.deleteSync(recursive: true));
+    final f1 = File('${tmp.path}/p1.jpg')..writeAsBytesSync(makeJpeg(120, 60));
+    final f2 = File('${tmp.path}/p2.jpg')..writeAsBytesSync(makeJpeg(80, 160));
+    final f3 = File('${tmp.path}/p3.jpg')..writeAsBytesSync(makeJpeg(200, 100));
+    final pages = [
+      PageImage(position: 1, imagePath: f1.path),
+      PageImage(position: 2, imagePath: f2.path),
+      PageImage(position: 3, imagePath: f3.path),
+    ];
+
+    final pdf = await const PdfBuilder().build(pages, compress: false);
+    final s = dec(pdf);
+
+    // Count: exactly three page objects (/Page not followed by 's' -> not /Pages).
+    expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 3,
+        reason: 'one PDF page per document page');
+
+    // Order + aspect: the three embedded image XObjects (one per page) carry
+    // /Width and /Height in page order. Image-only PDF => no other /Width.
+    final widths = RegExp(r'/Width\s+(\d+)')
+        .allMatches(s)
+        .map((m) => int.parse(m.group(1)!))
+        .toList();
+    final heights = RegExp(r'/Height\s+(\d+)')
+        .allMatches(s)
+        .map((m) => int.parse(m.group(1)!))
+        .toList();
+    expect(widths, [120, 80, 200], reason: 'image widths follow page order');
+    expect(heights, [60, 160, 100], reason: 'heights follow page order (aspect)');
   });
 
   test('embeds the JPEG losslessly (DCTDecode + verbatim bytes)', () async {
