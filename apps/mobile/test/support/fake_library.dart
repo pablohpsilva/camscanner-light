@@ -29,9 +29,11 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnExport;
   final bool throwOnRename;
   final bool throwOnUpdate;
+  final bool throwOnAddPage;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
+  final Completer<void>? addPageGate;
   final List<Document> documents;
   final List<PageImage>? pages; // null => synthesize one non-loadable page
   int createCalls = 0;
@@ -40,6 +42,7 @@ class FakeDocumentRepository implements DocumentRepository {
   ImageEnhancer? lastSavedEnhancer;
   int? lastUpdatedPosition;
   CropCorners? lastUpdatedCorners;
+  int addPageCalls = 0;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -52,9 +55,11 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnExport = false,
     this.throwOnRename = false,
     this.throwOnUpdate = false,
+    this.throwOnAddPage = false,
     this.gate,
     this.exportGate,
     this.listGate,
+    this.addPageGate,
     List<Document>? documents,
     this.pages,
   }) : documents = documents ?? <Document>[];
@@ -157,6 +162,21 @@ class FakeDocumentRepository implements DocumentRepository {
     }
     lastUpdatedPosition = position;
     lastUpdatedCorners = corners;
+  }
+
+  @override
+  Future<int> addPageToDocument(
+    int documentId,
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  }) async {
+    addPageCalls++;
+    if (addPageGate != null) await addPageGate!.future;
+    if (throwOnAddPage) {
+      throw const DocumentSaveException('fake: addPage failed');
+    }
+    return addPageCalls + 1; // 2 on first call (position 1 already taken)
   }
 }
 

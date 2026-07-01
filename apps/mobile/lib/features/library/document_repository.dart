@@ -48,6 +48,17 @@ abstract interface class DocumentRepository {
   /// [WarpException] or IO errors on warp/write failure (DB unchanged).
   Future<void> updatePageCorners(
       int documentId, int position, CropCorners corners);
+
+  /// Appends a new page to [documentId] at position MAX(current)+1.
+  /// Returns the 1-based position of the newly created page.
+  /// Throws [DocumentSaveException] when [documentId] has no existing pages
+  /// (a document without pages is an inconsistent state).
+  Future<int> addPageToDocument(
+    int documentId,
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  });
 }
 
 class DocumentSaveException implements Exception {

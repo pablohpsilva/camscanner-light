@@ -270,6 +270,79 @@ class DriftDocumentRepository implements DocumentRepository {
             flatRelativePath: Value(flatRel)));
   }
 
+  @override
+  Future<int> addPageToDocument(
+    int documentId,
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  }) async {
+    try {
+      final position = await _db.transaction(() async {
+        final maxRow = await (_db.select(_db.pages)
+              ..where((p) => p.documentId.equals(documentId))
+              ..orderBy([(p) => OrderingTerm.desc(p.position)])
+              ..limit(1))
+            .getSingleOrNull();
+        if (maxRow == null) {
+          throw DocumentSaveException('document $documentId has no pages');
+        }
+        final newPosition = maxRow.position + 1;
+        final rel = _fileStore.relativeFor(documentId, newPosition);
+        late final Uint8List scrubbed;
+        try {
+          final raw = await File(capture.path).readAsBytes();
+          scrubbed = _scrubber.scrub(Uint8List.fromList(raw));
+          final isFullFrame =
+              corners == null || corners == CropCorners.fullFrame;
+          Uint8List bytesToStore = scrubbed;
+          if (enhancer != null && isFullFrame) {
+            try {
+              bytesToStore = await enhancer.enhance(scrubbed);
+            } catch (_) {}
+          }
+          await _fileStore.writeRelative(rel, bytesToStore);
+        } catch (e) {
+          rethrow;
+        }
+        String? flatRel;
+        if (corners != null && corners != CropCorners.fullFrame) {
+          try {
+            Uint8List? flat = await _warper.warp(scrubbed, corners);
+            if (flat != null) {
+              Uint8List flatBytes = flat;
+              if (enhancer != null) {
+                try {
+                  flatBytes = await enhancer.enhance(flat);
+                } catch (_) {}
+              }
+              flatRel = _fileStore.flatRelativeFor(documentId, newPosition);
+              await _fileStore.writeRelative(flatRel, flatBytes);
+            }
+          } catch (_) {}
+        }
+        await _db.into(_db.pages).insert(
+              PagesCompanion.insert(
+                documentId: documentId,
+                position: newPosition,
+                relativeImagePath: rel,
+                corners: Value(corners?.toStorage()),
+                flatRelativePath: Value(flatRel),
+              ),
+            );
+        await (_db.update(_db.documents)
+              ..where((d) => d.id.equals(documentId)))
+            .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+        return newPosition;
+      });
+      await _deleteTempSource(capture.path);
+      return position;
+    } catch (e) {
+      if (e is DocumentSaveException) rethrow;
+      throw DocumentSaveException('addPage failed: $e');
+    }
+  }
+
   String _defaultName(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return 'Scan ${t.year}-${two(t.month)}-${two(t.day)} '

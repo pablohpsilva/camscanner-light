@@ -43,6 +43,30 @@ class SaveController extends ChangeNotifier {
     }
   }
 
+  /// Appends a captured page to [documentId]. Returns the page position
+  /// (1-based) on success, or null on failure.
+  Future<int?> addPage(
+    CapturedImage image,
+    int documentId, {
+    CropCorners corners = CropCorners.fullFrame,
+    ImageEnhancer enhancer = const NoneEnhancer(),
+  }) async {
+    if (_disposed || _status == SaveStatus.saving) return null;
+    _set(SaveStatus.saving);
+    try {
+      final position = await _repository.addPageToDocument(
+          documentId, image,
+          corners: corners, enhancer: enhancer);
+      if (_disposed) return null;
+      _set(SaveStatus.idle);
+      return position;
+    } catch (_) {
+      if (_disposed) return null;
+      _set(SaveStatus.error);
+      return null;
+    }
+  }
+
   void _set(SaveStatus status) {
     if (_disposed) return;
     _status = status;
