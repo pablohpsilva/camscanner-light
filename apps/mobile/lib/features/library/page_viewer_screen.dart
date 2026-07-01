@@ -10,6 +10,7 @@ import 'document_repository.dart';
 import 'edit_crop_screen.dart';
 import 'page_image.dart';
 import 'pdf_preview_screen.dart';
+import 'recognized_text_screen.dart';
 import 'widgets/page_thumbnail_strip.dart';
 import 'widgets/rename_dialog.dart';
 
@@ -215,6 +216,23 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  void _viewText() {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty) return;
+    final page = pages[_current];
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => RecognizedTextScreen(
+          documentId: widget.documentId,
+          position: page.position,
+          name: _name,
+          initialText: page.ocrText,
+          repository: widget.repository,
+        ),
+      ),
+    );
+  }
+
   Future<void> _retakePage() async {
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
@@ -328,11 +346,17 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             key: const Key('page-viewer-page-menu'),
             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
             onSelected: (v) {
+              if (v == 'view-text') _viewText();
               if (v == 'retake') unawaited(_retakePage());
               if (v == 'delete') unawaited(_confirmAndDeletePage());
               if (v == 'export-image') unawaited(_exportPageAsImage());
             },
             itemBuilder: (_) => const [
+              PopupMenuItem<String>(
+                value: 'view-text',
+                key: Key('page-viewer-view-text'),
+                child: Text('View text'),
+              ),
               PopupMenuItem<String>(
                 value: 'retake',
                 key: Key('page-viewer-retake'),
