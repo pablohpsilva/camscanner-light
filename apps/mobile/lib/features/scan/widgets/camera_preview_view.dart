@@ -43,7 +43,10 @@ class CameraPreviewView extends StatelessWidget {
               ),
             ),
           Positioned(
-            bottom: 32,
+            // Lift the shutter above the system navigation bar: the preview is
+            // full-bleed (no SafeArea), so a fixed 32px would sit BEHIND an
+            // on-screen nav bar on devices that have one, hiding the button.
+            bottom: 32 + MediaQuery.of(context).viewPadding.bottom,
             child: SizedBox(
               width: 72,
               height: 72,
