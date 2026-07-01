@@ -52,7 +52,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('loaded: full-res FileImage (NOT ResizeImage) + indicator',
+  testWidgets(
+      'loaded: full-res FileImage (NOT ResizeImage); strip replaces indicator',
       (tester) async {
     await pushViewer(tester, FakeDocumentRepository());
 
@@ -60,14 +61,22 @@ void main() {
     expect(find.byType(InteractiveViewer), findsOneWidget);
     expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
 
-    final img = tester.widget<Image>(find.byType(Image));
-    expect(img.image, isA<FileImage>(),
-        reason: 'viewer decodes full-res; NOT a ResizeImage like the thumbnail');
-    expect((img.image as FileImage).file.path, '/nonexistent/page-1-1.jpg');
-    expect(img.errorBuilder, isNotNull);
+    // The full-res image is the one inside the InteractiveViewer (NOT the strip thumbnail).
+    final fullRes = tester.widget<Image>(
+      find.descendant(
+        of: find.byKey(const Key('page-viewer-page-1')),
+        matching: find.byType(Image),
+      ),
+    );
+    expect(fullRes.image, isA<FileImage>(),
+        reason: 'viewer decodes full-res; NOT a ResizeImage like strip thumbnails');
+    expect((fullRes.image as FileImage).file.path, '/nonexistent/page-1-1.jpg');
+    expect(fullRes.errorBuilder, isNotNull);
 
-    expect(find.byKey(const Key('page-viewer-indicator')), findsOneWidget);
-    expect(find.text('1 / 1'), findsOneWidget);
+    // Strip replaces old text indicator.
+    expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
+    expect(find.byKey(const Key('page-viewer-indicator')), findsNothing);
+    expect(find.text('1 / 1'), findsNothing);
   });
 
   testWidgets('empty: zero pages renders the empty placeholder', (tester) async {
@@ -343,5 +352,23 @@ void main() {
     final btn = tester.widget<IconButton>(
         find.byKey(const Key('page-viewer-edit')));
     expect(btn.onPressed, isNull);
+  });
+
+  // ── H2 — Page thumbnail strip ──────────────────────────────────────────
+
+  testWidgets('H2: strip is present; tapping thumb 0 fires animateToPage',
+      (tester) async {
+    // Two-page repo so the strip has two tiles.
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(position: 1, imagePath: '/nonexistent/h2a.jpg'),
+        const PageImage(position: 2, imagePath: '/nonexistent/h2b.jpg'),
+      ],
+    );
+    await pushViewer(tester, repo);
+
+    expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
+    expect(find.byKey(const Key('page-thumb-0')), findsOneWidget);
+    expect(find.byKey(const Key('page-thumb-1')), findsOneWidget);
   });
 }

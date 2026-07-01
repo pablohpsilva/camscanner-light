@@ -7,6 +7,7 @@ import 'document_repository.dart';
 import 'edit_crop_screen.dart';
 import 'page_image.dart';
 import 'pdf_preview_screen.dart';
+import 'widgets/page_thumbnail_strip.dart';
 import 'widgets/rename_dialog.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
@@ -242,35 +243,35 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       );
 
   Widget _buildPages(List<PageImage> pages) {
-    return Stack(
+    return Column(
       children: [
-        PageView.builder(
-          controller: _controller,
-          itemCount: pages.length,
-          onPageChanged: (i) => setState(() => _current = i),
-          itemBuilder: (context, i) {
-            final pg = pages[i];
-            return InteractiveViewer(
-              key: Key('page-viewer-page-${pg.position}'),
-              child: Image.file(
-                File(pg.displayPath),
-                fit: BoxFit.contain,
-                errorBuilder: (c, e, s) => const Center(
-                  child: Icon(Icons.broken_image_outlined, size: 64),
+        Expanded(
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: pages.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (context, i) {
+              final pg = pages[i];
+              return InteractiveViewer(
+                key: Key('page-viewer-page-${pg.position}'),
+                child: Image.file(
+                  File(pg.displayPath),
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => const Center(
+                    child: Icon(Icons.broken_image_outlined, size: 64),
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-        Positioned(
-          bottom: 16,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Text(
-              '${_current + 1} / ${pages.length}',
-              key: const Key('page-viewer-indicator'),
-            ),
+        PageThumbnailStrip(
+          pages: pages,
+          currentIndex: _current,
+          onTap: (i) => _controller.animateToPage(
+            i,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
           ),
         ),
       ],
