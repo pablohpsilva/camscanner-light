@@ -583,4 +583,37 @@ void main() {
       reason: 'enhancement failure must not abort the save',
     );
   });
+
+  group('reorderPages', () {
+    test('swaps page positions for a 2-page document', () async {
+      final r = repo();
+      final doc = await r.createFromCapture(capture);
+      // Add a second page using the same fixture file.
+      final src2 = File('${base.path}/cap2.jpg')
+        ..writeAsBytesSync(
+            File('test/fixtures/exif_sample.jpg').readAsBytesSync());
+      await r.addPageToDocument(doc.id, CapturedImage(src2.path));
+
+      final before = await r.getDocumentPages(doc.id);
+      expect(before.map((p) => p.position), [1, 2]);
+      final path1 = before[0].imagePath;
+      final path2 = before[1].imagePath;
+
+      // Swap: position 2 goes first, position 1 goes second.
+      await r.reorderPages(doc.id, [2, 1]);
+
+      final after = await r.getDocumentPages(doc.id);
+      expect(after[0].imagePath, path2,
+          reason: 'former page 2 is now at index 0');
+      expect(after[1].imagePath, path1,
+          reason: 'former page 1 is now at index 1');
+    });
+
+    test('throws DocumentSaveException when documentId has no pages', () async {
+      await expectLater(
+        repo().reorderPages(9999, [1]),
+        throwsA(isA<DocumentSaveException>()),
+      );
+    });
+  });
 }

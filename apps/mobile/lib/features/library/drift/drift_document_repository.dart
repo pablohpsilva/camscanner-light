@@ -340,7 +340,34 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<void> reorderPages(int documentId, List<int> orderedPositions) async {
-    throw UnimplementedError('reorderPages: implemented in Task 2');
+    // Pre-fetch rows before the transaction to build a position→rowId map.
+    // Updates inside the transaction use the primary key (id) to avoid
+    // position-value conflicts when two pages swap positions.
+    final rows = await (_db.select(_db.pages)
+          ..where((t) => t.documentId.equals(documentId))
+          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+        .get();
+    if (rows.isEmpty) {
+      throw DocumentSaveException(
+          'reorderPages: no pages for $documentId');
+    }
+    final posToId = {for (final r in rows) r.position: r.id};
+
+    await _db.transaction(() async {
+      for (var i = 0; i < orderedPositions.length; i++) {
+        final oldPosition = orderedPositions[i];
+        final rowId = posToId[oldPosition];
+        if (rowId == null) continue; // unknown position — skip
+        final newPosition = i + 1;
+        if (oldPosition == newPosition) continue; // no change needed
+        await (_db.update(_db.pages)
+              ..where((t) => t.id.equals(rowId)))
+            .write(PagesCompanion(position: Value(newPosition)));
+      }
+      await (_db.update(_db.documents)
+            ..where((d) => d.id.equals(documentId)))
+          .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+    });
   }
 
   String _defaultName(DateTime t) {
