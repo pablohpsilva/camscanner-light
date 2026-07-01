@@ -6,11 +6,16 @@ import 'package:flutter/painting.dart';
 /// E2 perspective-flattens from these; E3 re-edits. Pure — no widgets.
 class CropCorners {
   final Offset topLeft, topRight, bottomRight, bottomLeft;
+  final Offset topMidDev, rightMidDev, bottomMidDev, leftMidDev;
   const CropCorners({
     required this.topLeft,
     required this.topRight,
     required this.bottomRight,
     required this.bottomLeft,
+    this.topMidDev = Offset.zero,
+    this.rightMidDev = Offset.zero,
+    this.bottomMidDev = Offset.zero,
+    this.leftMidDev = Offset.zero,
   });
 
   /// The whole image, uncropped — the default and the meaning of a null/legacy
@@ -22,13 +27,65 @@ class CropCorners {
     bottomLeft: Offset(0, 1),
   );
 
-  /// Each corner pulled into `[0,1]x[0,1]`.
-  CropCorners clamp() => CropCorners(
-        topLeft: _clamp(topLeft),
-        topRight: _clamp(topRight),
-        bottomRight: _clamp(bottomRight),
-        bottomLeft: _clamp(bottomLeft),
+  static Offset _mid(Offset a, Offset b) =>
+      Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
+
+  Offset get topCenter => _mid(topLeft, topRight);
+  Offset get rightCenter => _mid(topRight, bottomRight);
+  Offset get bottomCenter => _mid(bottomRight, bottomLeft);
+  Offset get leftCenter => _mid(bottomLeft, topLeft);
+
+  Offset get topMid => topCenter + topMidDev;
+  Offset get rightMid => rightCenter + rightMidDev;
+  Offset get bottomMid => bottomCenter + bottomMidDev;
+  Offset get leftMid => leftCenter + leftMidDev;
+
+  static const double _straightEps = 1e-9;
+  bool get isStraight =>
+      topMidDev.distanceSquared < _straightEps &&
+      rightMidDev.distanceSquared < _straightEps &&
+      bottomMidDev.distanceSquared < _straightEps &&
+      leftMidDev.distanceSquared < _straightEps;
+
+  CropCorners copyWith({
+    Offset? topLeft,
+    Offset? topRight,
+    Offset? bottomRight,
+    Offset? bottomLeft,
+    Offset? topMidDev,
+    Offset? rightMidDev,
+    Offset? bottomMidDev,
+    Offset? leftMidDev,
+  }) =>
+      CropCorners(
+        topLeft: topLeft ?? this.topLeft,
+        topRight: topRight ?? this.topRight,
+        bottomRight: bottomRight ?? this.bottomRight,
+        bottomLeft: bottomLeft ?? this.bottomLeft,
+        topMidDev: topMidDev ?? this.topMidDev,
+        rightMidDev: rightMidDev ?? this.rightMidDev,
+        bottomMidDev: bottomMidDev ?? this.bottomMidDev,
+        leftMidDev: leftMidDev ?? this.leftMidDev,
       );
+
+  /// Clamps corners to `[0,1]`, then pulls each resolved midpoint into `[0,1]`
+  /// by adjusting its deviation.
+  CropCorners clamp() {
+    final tl = _clamp(topLeft), tr = _clamp(topRight);
+    final br = _clamp(bottomRight), bl = _clamp(bottomLeft);
+    Offset dev(Offset a, Offset b, Offset d) =>
+        _clamp(_mid(a, b) + d) - _mid(a, b);
+    return CropCorners(
+      topLeft: tl,
+      topRight: tr,
+      bottomRight: br,
+      bottomLeft: bl,
+      topMidDev: dev(tl, tr, topMidDev),
+      rightMidDev: dev(tr, br, rightMidDev),
+      bottomMidDev: dev(br, bl, bottomMidDev),
+      leftMidDev: dev(bl, tl, leftMidDev),
+    );
+  }
 
   /// `"x0,y0,x1,y1,x2,y2,x3,y3"` in role order TL,TR,BR,BL, fixed precision.
   String toStorage() => [
@@ -68,11 +125,18 @@ class CropCorners {
       other.topLeft == topLeft &&
       other.topRight == topRight &&
       other.bottomRight == bottomRight &&
-      other.bottomLeft == bottomLeft;
+      other.bottomLeft == bottomLeft &&
+      other.topMidDev == topMidDev &&
+      other.rightMidDev == rightMidDev &&
+      other.bottomMidDev == bottomMidDev &&
+      other.leftMidDev == leftMidDev;
 
   @override
-  int get hashCode => Object.hash(topLeft, topRight, bottomRight, bottomLeft);
+  int get hashCode => Object.hash(topLeft, topRight, bottomRight, bottomLeft,
+      topMidDev, rightMidDev, bottomMidDev, leftMidDev);
 
   @override
-  String toString() => 'CropCorners($topLeft, $topRight, $bottomRight, $bottomLeft)';
+  String toString() =>
+      'CropCorners($topLeft, $topRight, $bottomRight, $bottomLeft; '
+      'devs $topMidDev,$rightMidDev,$bottomMidDev,$leftMidDev)';
 }

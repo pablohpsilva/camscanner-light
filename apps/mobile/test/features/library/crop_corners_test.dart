@@ -50,4 +50,55 @@ void main() {
       isNot(CropCorners.fullFrame),
     );
   });
+
+  group('deviation model', () {
+    const bent = CropCorners(
+      topLeft: Offset(0, 0), topRight: Offset(1, 0),
+      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
+      topMidDev: Offset(0, 0.1));
+
+    test('defaults: no deviations → isStraight, midpoints at edge centers', () {
+      const c = CropCorners(
+        topLeft: Offset(0, 0), topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1));
+      expect(c.isStraight, isTrue);
+      expect(c.topMid, const Offset(0.5, 0));
+      expect(c.leftMid, const Offset(0, 0.5));
+    });
+
+    test('a non-zero deviation offsets the midpoint from center and is not straight', () {
+      expect(bent.isStraight, isFalse);
+      expect(bent.topMid, const Offset(0.5, 0.1)); // center (0.5,0) + dev (0,0.1)
+    });
+
+    test('midpoint follows a moved corner (deviation is relative)', () {
+      final moved = bent.copyWith(topRight: const Offset(0.8, 0));
+      // topCenter = (0,0)+(0.8,0) /2 = (0.4,0); + dev (0,0.1) = (0.4,0.1)
+      expect(moved.topMid, const Offset(0.4, 0.1));
+    });
+
+    test('copyWith preserves untouched fields (corner drag keeps a bend)', () {
+      final moved = bent.copyWith(topLeft: const Offset(0.05, 0.05));
+      expect(moved.topMidDev, const Offset(0, 0.1));
+      expect(moved.topLeft, const Offset(0.05, 0.05));
+    });
+
+    test('== and hashCode include deviations', () {
+      const same = CropCorners(
+        topLeft: Offset(0, 0), topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
+        topMidDev: Offset(0, 0.1));
+      expect(bent, same);
+      expect(bent.hashCode, same.hashCode);
+      expect(bent, isNot(CropCorners.fullFrame));
+    });
+
+    test('clamp pulls resolved midpoints into [0,1]', () {
+      const c = CropCorners(
+        topLeft: Offset(0, 0), topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
+        topMidDev: Offset(0, -0.5)); // topMid = (0.5,-0.5) → clamp to (0.5,0)
+      expect(c.clamp().topMid.dy, 0.0);
+    });
+  });
 }
