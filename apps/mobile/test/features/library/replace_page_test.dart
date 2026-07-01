@@ -87,4 +87,29 @@ void main() {
       throwsA(isA<DocumentSaveException>()),
     );
   });
+
+  test('replacePage reuses the existing flat path (no orphaned derivative)',
+      () async {
+    const cornersB = CropCorners(
+      topLeft: Offset(0.2, 0.2), topRight: Offset(0.8, 0.2),
+      bottomRight: Offset(0.8, 0.8), bottomLeft: Offset(0.2, 0.8));
+
+    final r = repo();
+    // Page 1 starts non-full-frame: a flat derivative is written.
+    final doc = await r.createFromCapture(freshCapture('c1.jpg'),
+        corners: corners);
+
+    final beforePath = (await db.select(db.pages).get()).single.flatRelativePath;
+    expect(beforePath, isNotNull, reason: 'flat must exist before replace');
+
+    // Replace with DIFFERENT non-full-frame corners — flat must be overwritten
+    // at the SAME relative path, not written to a new derivative path.
+    await r.replacePage(doc.id, 1, freshCapture('c1c.jpg'), corners: cornersB);
+
+    final afterPath = (await db.select(db.pages).get()).single.flatRelativePath;
+    expect(afterPath, equals(beforePath),
+        reason: 'flat path must be reused; no orphaned derivative allowed');
+    expect(File('${base.path}/$afterPath').existsSync(), isTrue,
+        reason: 'flat file must exist at the reused path');
+  });
 }
