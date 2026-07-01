@@ -15,6 +15,7 @@ void main() {
     List<PageImage>? p,
     int current = 0,
     void Function(int)? onTap,
+    void Function(int, int)? onReorder,
   }) =>
       tester.pumpWidget(MaterialApp(
         home: Scaffold(
@@ -22,6 +23,7 @@ void main() {
             pages: p ?? pages,
             currentIndex: current,
             onTap: onTap ?? (_) {},
+            onReorder: onReorder,
           ),
         ),
       ));
@@ -85,5 +87,19 @@ void main() {
     expect(imgs.first.image, isA<ResizeImage>(),
         reason: 'cacheWidth set → ResizeImage wraps FileImage');
     expect(imgs.first.errorBuilder, isNotNull);
+  });
+
+  testWidgets('onReorder provided → ReorderableListView is rendered', (tester) async {
+    await pump(tester, onReorder: (_, __) {});
+    await tester.pump();
+    expect(find.byType(ReorderableListView), findsOneWidget);
+    expect(find.byType(ListView), findsNothing);
+  });
+
+  testWidgets('onReorder null → ListView is rendered (default)', (tester) async {
+    await pump(tester);
+    await tester.pump();
+    expect(find.byType(ListView), findsOneWidget);
+    expect(find.byType(ReorderableListView), findsNothing);
   });
 }
