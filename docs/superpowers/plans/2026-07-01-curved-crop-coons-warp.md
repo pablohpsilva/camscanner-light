@@ -421,8 +421,10 @@ void main() {
   });
 
   test('corrupt bytes → WarpException', () async {
-    expect(
-      () => warper.warp(Uint8List.fromList([0xFF, 0xD8, 0x00]),
+    // Async error propagates through the compute() Future — assert with
+    // expectLater on the future, matching perspective_warper_test.
+    await expectLater(
+      warper.warp(Uint8List.fromList([0xFF, 0xD8, 0x00]),
           const CropCorners(
               topLeft: Offset(0, 0), topRight: Offset(1, 0),
               bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
@@ -837,73 +839,84 @@ git commit -m "feat(crop): CropOverlay renders 8 handles; midpoint drag bends ed
 ### Task 6: `CropOverlay` — curved edge + mask rendering
 
 **Files:**
-- Modify: `apps/mobile/lib/features/scan/widgets/crop_overlay.dart` (`_QuadPainter`)
+- Modify: `apps/mobile/lib/features/scan/widgets/crop_overlay.dart` (extract `cropQuadPath`, use it in `_QuadPainter`)
 - Test: `apps/mobile/test/features/scan/widgets/crop_overlay_test.dart`
 
 **Interfaces:**
-- Consumes: `CropCorners.topMid/…` (resolved midpoints for control points).
+- Consumes: `CropCorners.topMidDev/…`.
+- Produces: top-level `Path cropQuadPath(Rect rect, CropCorners corners)` — the closed crop boundary with quadratic-Bézier edges; used by `_QuadPainter` and testable via `Path.contains`.
 
-- [ ] **Step 1: Write the failing test** — append (a golden-free structural check that the painter repaints on deviation change):
+- [ ] **Step 1: Write the failing test** — a real RED via `Path.contains`: a point just above a straight top edge is OUTSIDE; when that edge bows up toward the point, it becomes INSIDE. Append to `crop_overlay_test.dart` (add `import 'dart:ui' show PathMetric;` is NOT needed — `Path`/`Rect`/`Offset` come from `package:flutter/material.dart` already imported):
 
 ```dart
-group('curved painter', () {
-  testWidgets('painter repaints when a deviation changes', (tester) async {
-    const straight = CropCorners(
-      topLeft: Offset(0, 0), topRight: Offset(1, 0),
-      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1));
-    const bent = CropCorners(
-      topLeft: Offset(0, 0), topRight: Offset(1, 0),
-      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
-      topMidDev: Offset(0, 0.1));
-    Widget h(CropCorners c) => MaterialApp(
-        home: Scaffold(
-            body: SizedBox(
-                width: 200, height: 200,
-                child: CropOverlay(
-                    imageSize: const Size(200, 200),
-                    image: const SizedBox.expand(),
-                    corners: c,
-                    onCornersChanged: (_) {}))));
-    await tester.pumpWidget(h(straight));
-    await tester.pumpWidget(h(bent)); // must not throw; painter picks up new shape
-    expect(tester.takeException(), isNull);
-    expect(find.byKey(const Key('crop-overlay')), findsOneWidget);
+group('cropQuadPath (curved boundary)', () {
+  final rect = const Rect.fromLTWH(0, 0, 200, 200);
+  // Top edge at y=0.3 (=60px) across the full width; region is below it.
+  const straight = CropCorners(
+    topLeft: Offset(0, 0.3), topRight: Offset(1, 0.3),
+    bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1));
+  // Top edge bows UP (negative dy): midpoint rises toward the point at y=45px.
+  const bentUp = CropCorners(
+    topLeft: Offset(0, 0.3), topRight: Offset(1, 0.3),
+    bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
+    topMidDev: Offset(0, -0.1));
+  const probe = Offset(100, 45); // above straight edge (60px), below bulge
+
+  test('straight edge: point above the top edge is OUTSIDE', () {
+    expect(cropQuadPath(rect, straight).contains(probe), isFalse);
+  });
+
+  test('upward-bowed top edge: same point is now INSIDE', () {
+    expect(cropQuadPath(rect, bentUp).contains(probe), isTrue);
   });
 });
 ```
 
-- [ ] **Step 2: Run to verify failure or baseline**
+- [ ] **Step 2: Run to verify failure**
 
-Run: `flutter test test/features/scan/widgets/crop_overlay_test.dart -n "curved painter"`
-Expected: PASS structurally IF the painter still uses straight lines (this test guards against a repaint/throw regression). Proceed to make edges curved; keep this green.
+Run: `flutter test test/features/scan/widgets/crop_overlay_test.dart -n "cropQuadPath"`
+Expected: FAIL — `cropQuadPath` undefined; and even once stubbed with straight lines, the second test fails (point stays outside) until Béziers are used.
 
-- [ ] **Step 3: Implement** — replace `_QuadPainter`'s `paint` method and `shouldRepaint` so edges are quadratic Béziers through the resolved midpoints:
+- [ ] **Step 3: Implement** — in `crop_overlay.dart`, add the top-level function (above the `_QuadPainter` class) and make `_QuadPainter.paint` use it.
+
+Add at top level:
 
 ```dart
-  Offset _ctrl(Offset a, Offset b, Offset devNorm) {
+/// The closed crop boundary in display pixels, with each edge a quadratic
+/// Bézier that passes through its resolved midpoint (`center + dev`). Shared by
+/// the painter and unit-tested directly.
+Path cropQuadPath(Rect rect, CropCorners corners) {
+  Offset p(Offset n) =>
+      rect.topLeft + Offset(n.dx * rect.width, n.dy * rect.height);
+  Offset ctrl(Offset a, Offset b, Offset devNorm) {
     final center = Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
-    return _p(center + devNorm * 2.0); // C = center + 2·dev, in pixels
+    return p(center + devNorm * 2.0); // C = center + 2·dev
   }
 
+  final tl = p(corners.topLeft), tr = p(corners.topRight);
+  final br = p(corners.bottomRight), bl = p(corners.bottomLeft);
+  final cTop = ctrl(corners.topLeft, corners.topRight, corners.topMidDev);
+  final cRight = ctrl(corners.topRight, corners.bottomRight, corners.rightMidDev);
+  final cBottom =
+      ctrl(corners.bottomRight, corners.bottomLeft, corners.bottomMidDev);
+  final cLeft = ctrl(corners.bottomLeft, corners.topLeft, corners.leftMidDev);
+
+  return Path()
+    ..moveTo(tl.dx, tl.dy)
+    ..quadraticBezierTo(cTop.dx, cTop.dy, tr.dx, tr.dy)
+    ..quadraticBezierTo(cRight.dx, cRight.dy, br.dx, br.dy)
+    ..quadraticBezierTo(cBottom.dx, cBottom.dy, bl.dx, bl.dy)
+    ..quadraticBezierTo(cLeft.dx, cLeft.dy, tl.dx, tl.dy)
+    ..close();
+}
+```
+
+Replace `_QuadPainter.paint` and `shouldRepaint`:
+
+```dart
   @override
   void paint(Canvas canvas, Size size) {
-    final tl = _p(corners.topLeft), tr = _p(corners.topRight);
-    final br = _p(corners.bottomRight), bl = _p(corners.bottomLeft);
-    final cTop = _ctrl(corners.topLeft, corners.topRight, corners.topMidDev);
-    final cRight =
-        _ctrl(corners.topRight, corners.bottomRight, corners.rightMidDev);
-    final cBottom =
-        _ctrl(corners.bottomRight, corners.bottomLeft, corners.bottomMidDev);
-    final cLeft = _ctrl(corners.bottomLeft, corners.topLeft, corners.leftMidDev);
-
-    final quad = Path()
-      ..moveTo(tl.dx, tl.dy)
-      ..quadraticBezierTo(cTop.dx, cTop.dy, tr.dx, tr.dy)
-      ..quadraticBezierTo(cRight.dx, cRight.dy, br.dx, br.dy)
-      ..quadraticBezierTo(cBottom.dx, cBottom.dy, bl.dx, bl.dy)
-      ..quadraticBezierTo(cLeft.dx, cLeft.dy, tl.dx, tl.dy)
-      ..close();
-
+    final quad = cropQuadPath(rect, corners);
     final outside = Path.combine(
         PathOperation.difference, Path()..addRect(Offset.zero & size), quad);
     canvas.drawPath(outside, Paint()..color = Colors.black54);
@@ -922,10 +935,12 @@ Expected: PASS structurally IF the painter still uses straight lines (this test 
       old.highlightColor != highlightColor;
 ```
 
+(The `_QuadPainter`'s existing `_p` helper may now be unused — delete it if the analyzer flags it.)
+
 - [ ] **Step 4: Run to verify pass**
 
 Run: `flutter test test/features/scan/widgets/crop_overlay_test.dart`
-Expected: PASS (curved painter test + all prior overlay tests).
+Expected: PASS (both `cropQuadPath` tests + all prior overlay tests).
 
 - [ ] **Step 5: Commit**
 
@@ -1033,3 +1048,9 @@ git commit -m "test(crop): on-device curved-warp integration; index the plan"
 **Type consistency:** `copyWith`, `topMidDev/rightMidDev/bottomMidDev/leftMidDev`, `topCenter/…`, `topMid/…`, `isStraight`, `HybridWarper({perspective, coons})`, `CoonsWarper({maxDimension})` are defined in Task 1/3/4 and used consistently in Tasks 5–7. The overlay's `emitNew` role strings match the handle keys (`top/right/bottom/left`).
 
 **Open risk carried from spec:** Coons interior only corrects boundary/mild curl (not strong interior page curl) — a documented non-goal, validated for "decodable, sane size, within budget," not for perfect interior flattening.
+
+**Plan-verification pass (findings fixed inline):**
+- Verified no existing test pins the crop-handle count at 4 (`crop_overlay_test` line 32 only asserts the 4 corner keys *exist*), so Task 5's extra midpoints don't break current overlay/review tests.
+- `WarpException` lives in `lib/features/library/image_warper.dart` — imported by the Task 3/4 tests.
+- Fixed Task 3's corrupt-bytes test to `await expectLater(future, throwsA(...))` (the async form; `expect(() => future, throwsA)` would not catch the `compute()` error).
+- Rewrote Task 6 to a true RED: extracted `cropQuadPath(rect, corners)` and test it via `Path.contains` (a point above a straight edge is outside; bowing the edge toward it makes it inside) — fails on straight lines, passes on Béziers. The earlier "no-throw repaint" test was not a real failing test.
