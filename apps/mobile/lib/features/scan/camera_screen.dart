@@ -23,10 +23,18 @@ class CameraScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentRepository repository;
 
+  /// When non-null, the screen is in single-capture (retake) mode: after the
+  /// user accepts a capture in review, [onCapture] is invoked with the image,
+  /// crop corners, and enhancer. If it returns true the camera screen pops back
+  /// to its caller (one page only — no accumulation, no "Done"). When null
+  /// (default) the screen keeps its create/append behavior.
+  final Future<bool> Function(CapturedImage, CropCorners, ImageEnhancer)? onCapture;
+
   const CameraScreen({
     super.key,
     this.dependencies = const ScanDependencies(),
     required this.repository,
+    this.onCapture,
   });
 
   @override
@@ -133,6 +141,21 @@ class _CameraScreenState extends State<CameraScreen> {
       CapturedImage image, CropCorners corners, ImageEnhancer enhancer) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+
+    if (widget.onCapture != null) {
+      final ok = await widget.onCapture!(image, corners, enhancer);
+      if (!mounted) return;
+      if (!ok) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't replace page. Try again.")),
+        );
+        navigator.pop(); // dismiss review, stay in camera to retry
+        return;
+      }
+      navigator.pop(); // dismiss review
+      navigator.pop(); // leave camera, back to viewer
+      return;
+    }
 
     if (_activeDocId == null) {
       // First page: create new document.
