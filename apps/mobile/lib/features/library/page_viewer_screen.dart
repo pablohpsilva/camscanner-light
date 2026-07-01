@@ -8,6 +8,7 @@ import '../scan/scan_dependencies.dart';
 import 'crop_corners.dart';
 import 'document_repository.dart';
 import 'edit_crop_screen.dart';
+import 'merge_picker_dialog.dart';
 import 'page_image.dart';
 import 'pdf_preview_screen.dart';
 import 'recognized_text_screen.dart';
@@ -342,6 +343,22 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _mergeAnother() async {
+    final sourceId =
+        await showMergePicker(context, widget.repository, widget.documentId);
+    if (sourceId == null || !mounted) return;
+    try {
+      await widget.repository.mergeInto(widget.documentId, sourceId);
+      if (!mounted) return;
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't merge")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -385,6 +402,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             onSelected: (v) {
               if (v == 'view-text') _viewText();
               if (v == 'rotate') unawaited(_rotatePage());
+              if (v == 'merge') unawaited(_mergeAnother());
               if (v == 'retake') unawaited(_retakePage());
               if (v == 'delete') unawaited(_confirmAndDeletePage());
               if (v == 'export-image') unawaited(_exportPageAsImage());
@@ -400,6 +418,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'rotate',
                 key: Key('page-viewer-rotate'),
                 child: Text('Rotate'),
+              ),
+              PopupMenuItem<String>(
+                value: 'merge',
+                key: Key('page-viewer-merge'),
+                child: Text('Merge another document…'),
               ),
               PopupMenuItem<String>(
                 value: 'retake',
