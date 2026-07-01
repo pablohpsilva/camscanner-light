@@ -1,7 +1,10 @@
+import 'dart:async'; // unawaited
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../scan/camera_screen.dart';
+import '../scan/scan_dependencies.dart';
 import 'crop_corners.dart';
 import 'document_repository.dart';
 import 'edit_crop_screen.dart';
@@ -24,11 +27,13 @@ class PageViewerScreen extends StatefulWidget {
   final int documentId;
   final String name;
   final DocumentRepository repository;
+  final ScanDependencies dependencies;
   const PageViewerScreen({
     super.key,
     required this.documentId,
     required this.name,
     required this.repository,
+    this.dependencies = const ScanDependencies(),
   });
 
   @override
@@ -147,6 +152,77 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _confirmAndDeletePage() async {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty) return;
+    final page = pages[_current];
+    final isLast = pages.length == 1;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Text(isLast
+            ? 'This is the only page. Deleting it removes the whole document.'
+            : "Delete this page? This can't be undone."),
+        actions: [
+          TextButton(
+            key: const Key('page-viewer-delete-page-cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('page-viewer-delete-page-confirm'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final remaining =
+          await widget.repository.deletePage(widget.documentId, page.position);
+      if (!mounted) return;
+      if (remaining == 0) {
+        Navigator.of(context).pop(); // document gone → back to Home
+        return;
+      }
+      if (_current >= remaining) _current = remaining - 1; // clamp
+      await _load();
+      if (mounted && _controller.hasClients) _controller.jumpToPage(_current);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't delete page")),
+      );
+    }
+  }
+
+  Future<void> _retakePage() async {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty) return;
+    final page = pages[_current];
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CameraScreen(
+          dependencies: widget.dependencies,
+          repository: widget.repository,
+          onCapture: (image, corners, enhancer) async {
+            try {
+              await widget.repository.replacePage(
+                  widget.documentId, page.position, image,
+                  corners: corners, enhancer: enhancer);
+              return true;
+            } catch (_) {
+              return false;
+            }
+          },
+        ),
+      ),
+    );
+    if (!mounted) return;
+    await _load();
+  }
+
   void _reorderPages(int oldIndex, int newIndex) {
     // onReorderItem (used in PageThumbnailStrip) provides newIndex as the
     // correct insertion index already — no adjustment needed.
@@ -229,6 +305,26 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             tooltip: 'Delete',
             icon: const Icon(Icons.delete_outline),
             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+          ),
+          PopupMenuButton<String>(
+            key: const Key('page-viewer-page-menu'),
+            enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+            onSelected: (v) {
+              if (v == 'retake') unawaited(_retakePage());
+              if (v == 'delete') unawaited(_confirmAndDeletePage());
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem<String>(
+                value: 'retake',
+                key: Key('page-viewer-retake'),
+                child: Text('Retake page'),
+              ),
+              PopupMenuItem<String>(
+                value: 'delete',
+                key: Key('page-viewer-delete-page'),
+                child: Text('Delete page'),
+              ),
+            ],
           ),
         ],
       ),

@@ -107,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
           documentId: s.document.id,
           name: s.document.name,
           repository: repo,
+          dependencies: widget.dependencies,
         ),
       ),
     );
