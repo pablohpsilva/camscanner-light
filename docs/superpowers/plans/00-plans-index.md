@@ -69,7 +69,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | H3 | Reorder pages | 06 | `2026-07-01-h3-reorder-pages.md` | ✅ **built & gated** |
 | E4 | Curved warp (Coons patch) | 03 | `2026-07-01-curved-crop-coons-warp.md` | ✅ **built & gated** |
 | H4 | Delete / retake page | 06 | `2026-07-01-h4-delete-retake-pages.md` | ✅ **built & gated** |
-| H5 | Multi-page PDF export | 07 | `…-h5-multipage-pdf.md` | ⏳ |
+| H5 | Multi-page PDF export | 07 | `2026-07-01-h5-multipage-pdf.md` | ✅ **built & gated** |
 | I1 | Export page as image | 10 | `…-i1-export-image.md` | ⏳ |
 | I2 | Gallery import | 01 | `…-i2-gallery-import.md` | ⏳ |
 
