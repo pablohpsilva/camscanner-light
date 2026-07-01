@@ -87,12 +87,17 @@ class CropCorners {
     );
   }
 
-  /// `"x0,y0,x1,y1,x2,y2,x3,y3"` in role order TL,TR,BR,BL, fixed precision.
+  /// `"x0,y0,x1,y1,x2,y2,x3,y3,devX0,devY0,devX1,devY1,devX2,devY2,devX3,devY3"`
+  /// in role order TL,TR,BR,BL,topDev,rightDev,bottomDev,leftDev, fixed precision.
   String toStorage() => [
         topLeft.dx, topLeft.dy,
         topRight.dx, topRight.dy,
         bottomRight.dx, bottomRight.dy,
         bottomLeft.dx, bottomLeft.dy,
+        topMidDev.dx, topMidDev.dy,
+        rightMidDev.dx, rightMidDev.dy,
+        bottomMidDev.dx, bottomMidDev.dy,
+        leftMidDev.dx, leftMidDev.dy,
       ].map((d) => d.toStringAsFixed(6)).join(',');
 
   /// Fail-soft: returns null on null / empty / wrong count / non-numeric /
@@ -101,18 +106,25 @@ class CropCorners {
   static CropCorners? tryParse(String? s) {
     if (s == null || s.isEmpty) return null;
     final parts = s.split(',');
-    if (parts.length != 8) return null;
+    if (parts.length != 8 && parts.length != 16) return null;
     final v = <double>[];
     for (final p in parts) {
       final d = double.tryParse(p);
       if (d == null || !d.isFinite) return null;
       v.add(d);
     }
-    return CropCorners(
+    final corners = CropCorners(
       topLeft: Offset(v[0], v[1]),
       topRight: Offset(v[2], v[3]),
       bottomRight: Offset(v[4], v[5]),
       bottomLeft: Offset(v[6], v[7]),
+    );
+    if (parts.length == 8) return corners;
+    return corners.copyWith(
+      topMidDev: Offset(v[8], v[9]),
+      rightMidDev: Offset(v[10], v[11]),
+      bottomMidDev: Offset(v[12], v[13]),
+      leftMidDev: Offset(v[14], v[15]),
     );
   }
 

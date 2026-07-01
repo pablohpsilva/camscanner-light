@@ -101,4 +101,32 @@ void main() {
       expect(c.clamp().topMid.dy, 0.0);
     });
   });
+
+  group('16-number persistence', () {
+    const bent = CropCorners(
+      topLeft: Offset(0.1, 0.2), topRight: Offset(0.9, 0.15),
+      bottomRight: Offset(0.85, 0.95), bottomLeft: Offset(0.05, 0.9),
+      topMidDev: Offset(0.0, 0.07), rightMidDev: Offset(-0.03, 0.0));
+
+    test('toStorage emits 16 numbers and round-trips deviations', () {
+      expect(bent.toStorage().split(',').length, 16);
+      expect(CropCorners.tryParse(bent.toStorage()), bent);
+    });
+
+    test('legacy 8-number string parses as zero-deviation (straight)', () {
+      final parsed = CropCorners.tryParse('0.1,0.2,0.9,0.15,0.85,0.95,0.05,0.9');
+      expect(parsed, isNotNull);
+      expect(parsed!.isStraight, isTrue);
+      expect(parsed.topLeft, const Offset(0.1, 0.2));
+    });
+
+    test('rejects a 12-number string (neither 8 nor 16)', () {
+      expect(CropCorners.tryParse(List.filled(12, '0').join(',')), isNull);
+    });
+
+    test('rejects a 16-number string with a non-finite token', () {
+      final t = List.filled(16, '0.1')..[15] = 'NaN';
+      expect(CropCorners.tryParse(t.join(',')), isNull);
+    });
+  });
 }
