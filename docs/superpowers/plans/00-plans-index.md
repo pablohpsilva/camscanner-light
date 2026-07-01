@@ -77,6 +77,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
 | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
 | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
+| J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
 
 ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
 
