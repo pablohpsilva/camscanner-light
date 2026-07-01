@@ -72,6 +72,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | H5 | Multi-page PDF export | 07 | `2026-07-01-h5-multipage-pdf.md` | ✅ **built & gated** |
 | I1 | Export page as image | 10 | `2026-07-01-i1-export-image.md` | ✅ **built & gated** |
 | I2 | Gallery import | 01 | `2026-07-01-i2-gallery-import.md` | ✅ **built & gated** |
+| O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
 
 Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
 own ordered plan files once Sub-project 1 is complete and gated.
