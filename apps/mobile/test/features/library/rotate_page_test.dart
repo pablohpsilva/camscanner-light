@@ -78,4 +78,23 @@ void main() {
   test('throws when the page row is missing', () async {
     expect(() => repo.rotatePage(999, 1), throwsA(isA<DocumentSaveException>()));
   });
+
+  test('throws when the image bytes are undecodable', () async {
+    final now = DateTime.now();
+    final id = await db.into(db.documents).insert(
+        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final rel = 'documents/$id/page_1.jpg';
+    // Write non-image bytes — img.decodeImage will return null.
+    await store.writeRelative(rel, Uint8List.fromList([0, 0, 0, 0]));
+    await db.into(db.pages).insert(PagesCompanion.insert(
+          documentId: id,
+          position: 1,
+          relativeImagePath: rel,
+        ));
+
+    expect(
+      () => repo.rotatePage(id, 1),
+      throwsA(isA<DocumentSaveException>()),
+    );
+  });
 }

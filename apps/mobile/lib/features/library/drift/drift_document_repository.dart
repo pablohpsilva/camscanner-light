@@ -420,12 +420,17 @@ class DriftDocumentRepository implements DocumentRepository {
     // Rotate the DISPLAY image (flat if present, else original) 90° CW.
     final displayRel = row.flatRelativePath ?? row.relativeImagePath;
     final bytes = await _fileStore.absoluteFor(displayRel).readAsBytes();
-    final decoded = img.decodeImage(bytes);
+    img.Image? decoded;
+    try {
+      decoded = img.decodeImage(bytes);
+    } catch (_) {
+      decoded = null;
+    }
     if (decoded == null) {
       throw const DocumentSaveException('rotatePage: undecodable image');
     }
     final rotated = img.copyRotate(decoded, angle: 90); // 90° clockwise
-    final out = Uint8List.fromList(img.encodeJpg(rotated, quality: 95));
+    final out = img.encodeJpg(rotated, quality: 95);
     // Bake into the flat derivative (create it if this page had none).
     final flatRel =
         row.flatRelativePath ?? _fileStore.flatForImage(row.relativeImagePath);
