@@ -37,6 +37,8 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnReplacePage;
   final bool throwOnExportImage;
   final bool throwOnExportText;
+  final String? recognizesText;
+  bool ranOcr = false;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -73,6 +75,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnReplacePage = false,
     this.throwOnExportImage = false,
     this.throwOnExportText = false,
+    this.recognizesText,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -283,7 +286,25 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<void> runOcr(int documentId, int position) async {}
+  Future<void> runOcr(int documentId, int position) async {
+    ranOcr = true;
+    final w = _working;
+    final t = recognizesText;
+    if (w != null && t != null) {
+      for (var i = 0; i < w.length; i++) {
+        if (w[i].position == position) {
+          w[i] = PageImage(
+            position: w[i].position,
+            imagePath: w[i].imagePath,
+            corners: w[i].corners,
+            flatImagePath: w[i].flatImagePath,
+            ocrText: t,
+            ocrWords: w[i].ocrWords,
+          );
+        }
+      }
+    }
+  }
 }
 
 /// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
