@@ -49,6 +49,7 @@ Other members:
 - **Edge → curve mapping (role order):** `topMidDev` bends TL↔TR, `rightMidDev` bends TR↔BR, `bottomMidDev` bends BR↔BL, `leftMidDev` bends BL↔TL.
 - `clamp()`: clamps the 4 corners to `[0,1]`; clamp resolved midpoints too (guard extreme deviations).
 - `==`/`hashCode`/`toString`: include the 4 deviations.
+- **`copyWith(...)`** (NEW, required): returns a copy with any subset of the 8 fields replaced. Essential so the overlay can change one point without resetting the others — see the overlay trap below.
 
 ### Persistence (backward compatible)
 
@@ -82,7 +83,7 @@ Pure-Dart (`image` package), same isolate/dispose discipline as `PerspectiveWarp
 7. Encode JPEG (quality 92, matching `PerspectiveWarper`).
 8. Validity: reject degenerate/self-folding patches (e.g. non-finite or out-of-image samples beyond a tolerance) → `WarpException`; the repository already treats a thrown warp as "flat stays null, save proceeds."
 
-**Perf:** ~O(1) per output pixel (a handful of Bézier + blend flops), same order as homography; budget stays within the existing <2s device target for large images.
+**Perf:** ~O(1) per output pixel, but ~4× the homography's per-pixel work (4 Bézier evals + bilinear blend vs one matrix multiply). A large curved image can breach the homography path's <2s budget. Mitigation: run the **curved** path at a capped working resolution (downscale source before sampling, or cap `outW·outH`), keeping the straight/homography path untouched. The device test asserts a realistic budget for the curved path — it does NOT reuse the homography's <2s figure blindly.
 
 ## Overlay UI — `CropOverlay`
 
@@ -90,8 +91,8 @@ Pure-Dart (`image` package), same isolate/dispose discipline as `PerspectiveWarp
 
 - Render **8 handles**: 4 corner (as today) + 4 midpoint. Midpoints visually distinct (e.g. smaller / hollow) so they read as "edge" vs "corner." Keyed `crop-handle-{tl,tr,br,bl,top,right,bottom,left}`, each `Semantics`-labeled.
 - **Hit-testing:** with 8 handles the ~44px touch targets can overlap on small crops. Corners take priority (hit-test corners before midpoints); optionally suppress a midpoint handle when it would overlap a corner.
-- **Corner drag:** unchanged — moves that corner. Because midpoints are stored as *deviations from the edge center*, a straight edge stays straight and a bent edge keeps its bend automatically as the corner moves (the getter re-centers). No special tracking code.
-- **Midpoint drag:** updates only that edge's deviation → bends its edge. Clamp the resolved midpoint to `[0,1]`.
+- **Corner drag:** moves that corner. **Trap:** today's `emitNew` rebuilds `CropCorners` via the 4-arg constructor — with deviations defaulting to zero, that would silently reset every bent edge to straight on any corner drag. Corner drag MUST use `corners.copyWith(topLeft: newNorm)` (preserving the other corners *and all four deviations*). Because deviations are relative to the edge center, the bent edge then keeps its bend as the corner moves — no special tracking code.
+- **Midpoint drag:** the handle emits an absolute normalized position `M`; convert to a deviation `dev = M − center(cornerA, cornerB)` and `copyWith(topMidDev: dev)`. Only that edge changes. Clamp the resolved midpoint to `[0,1]`.
 - **Edge rendering:** `_QuadPainter` draws each edge via `Path.quadraticBezierTo(control, endCorner)` using the derived control point; the dim-outside mask uses the same curved path so the darkened region hugs the curve.
 - `highlightColor`, `enabled`, scaling/letterbox math: unchanged.
 
@@ -101,15 +102,16 @@ Pure-Dart (`image` package), same isolate/dispose discipline as `PerspectiveWarp
 - `CropCorners`: centered-midpoint defaults; `isStraight`; `toStorage`/`tryParse` round-trip for **both** 8- and 16-number forms; legacy 8→straight; fail-soft cases.
 - `CoonsWarper` (pure Dart, runs on host): on an **axis-aligned** rect with zero deviations it is the identity (note: Coons-with-straight-edges is *bilinear*, which equals homography only without perspective — so do **not** assert equivalence to the homography warp under skew); a known **bowed** fixture unwarps so a curved boundary maps to a straight-edged rectangle (assert output edge straightness / corner mapping); output-size cap respected; degenerate/folded patch → `WarpException`.
 - Hybrid dispatch (the routing, not the math): `fullFrame`→null, `isStraight`→perspective/homography path, any deviation→coons path (inject fakes to assert which runs).
-- `CropOverlay` widget: 8 handles present by key; dragging a midpoint emits a `CropCorners` with the bent midpoint; corner drag unchanged; disabled state.
+- `CropOverlay` widget: 8 handles present by key; dragging a midpoint emits a `CropCorners` with the bent edge's deviation set; **dragging a corner on an already-bent shape preserves the other edges' deviations** (regression test for the copyWith trap); corner-drag on a straight shape still matches today; disabled state.
 
 **Device (`flutter test integration_test -d <device>`):**
 - Extend edge-detection/warp integration: capture→bend an edge→flatten produces non-null flat bytes; large curved fixture completes < 2s.
 
-## Backward compatibility summary
+## Backward compatibility summary (verified against current tests)
 
-- Existing saved docs (8-number corners) parse as straight → identical rendering + flatten.
-- Existing call sites constructing `CropCorners(topLeft:…, bottomLeft:…)` compile via centered-midpoint defaults.
+- Existing saved docs (8-number corners) parse as zero-deviation → straight → identical rendering + flatten.
+- Existing call sites constructing `const CropCorners(topLeft:…, bottomLeft:…)` compile unchanged (deviations default `Offset.zero`, a valid `const` default) — confirmed against `crop_corners_test`'s `const` round-trip, which would have broken under an absolute-midpoint model.
+- `crop_corners_test` fail-soft cases (8-token non-numeric/NaN/Infinity → null) still hold under the 8-or-16 parser; migration/repo tests read corners back via `==` (zero deviations) and still pass.
 - Straight-edge flatten still uses the proven homography — no perspective regression.
 
 ## Phased implementation
