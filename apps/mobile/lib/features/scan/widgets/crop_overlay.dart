@@ -164,6 +164,8 @@ class _DragHandleState extends State<_DragHandle> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      // Opaque so the whole 44px target is draggable, not just the 18px dot.
+      behavior: HitTestBehavior.opaque,
       onPanStart: widget.enabled ? _onPanStart : null,
       onPanUpdate: widget.enabled ? _onPanUpdate : null,
       onPanEnd: widget.enabled ? _onPanEnd : null,

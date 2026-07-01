@@ -29,6 +29,43 @@ void main() {
     return last;
   }
 
+  testWidgets(
+      'handle is draggable across its full touch target, not only the visible dot',
+      (tester) async {
+    CropCorners? emitted;
+    // Inset corners so the tl handle sits well inside the box, with its whole
+    // 44px touch target on-screen.
+    const inset = CropCorners(
+      topLeft: Offset(0.3, 0.3), topRight: Offset(0.7, 0.3),
+      bottomRight: Offset(0.7, 0.7), bottomLeft: Offset(0.3, 0.7),
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 400, height: 300,
+            child: CropOverlay(
+              imageSize: const Size(1000, 750),
+              image: const ColoredBox(color: Colors.black),
+              corners: inset,
+              onCornersChanged: (c) => emitted = c,
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final center = tester.getCenter(find.byKey(const Key('crop-handle-tl')));
+    // A point inside the 44px touch box (half-extent 22) but outside the 18px
+    // visible dot (radius 9): 15px off-center lands on the transparent wrapper.
+    final offDot = center + const Offset(15, 0);
+    await tester.dragFrom(offDot, const Offset(20, 20));
+    await tester.pump();
+    expect(emitted, isNotNull,
+        reason: 'a drag starting on the touch target but off the visible dot '
+            'must still move the handle');
+  });
+
   testWidgets('renders the overlay and four handles by key', (tester) async {
     await pump(tester);
     expect(find.byKey(const Key('crop-overlay')), findsOneWidget);
