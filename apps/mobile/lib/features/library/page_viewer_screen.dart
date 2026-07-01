@@ -343,6 +343,32 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _splitAfter() async {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty) return;
+    if (_current >= pages.length - 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('This is the last page — nothing to split after.')),
+      );
+      return;
+    }
+    final page = pages[_current];
+    try {
+      await widget.repository.splitAfter(widget.documentId, page.position);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Split into a new document')),
+      );
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't split")),
+      );
+    }
+  }
+
   Future<void> _mergeAnother() async {
     final sourceId =
         await showMergePicker(context, widget.repository, widget.documentId);
@@ -403,6 +429,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               if (v == 'view-text') _viewText();
               if (v == 'rotate') unawaited(_rotatePage());
               if (v == 'merge') unawaited(_mergeAnother());
+              if (v == 'split') unawaited(_splitAfter());
               if (v == 'retake') unawaited(_retakePage());
               if (v == 'delete') unawaited(_confirmAndDeletePage());
               if (v == 'export-image') unawaited(_exportPageAsImage());
@@ -423,6 +450,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'merge',
                 key: Key('page-viewer-merge'),
                 child: Text('Merge another document…'),
+              ),
+              PopupMenuItem<String>(
+                value: 'split',
+                key: Key('page-viewer-split'),
+                child: Text('Split after this page'),
               ),
               PopupMenuItem<String>(
                 value: 'retake',
