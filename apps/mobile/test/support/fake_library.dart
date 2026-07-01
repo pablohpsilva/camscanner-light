@@ -313,6 +313,18 @@ class FakeDocumentRepository implements DocumentRepository {
     lastReplacedPagePosition = position;
   }
 
+  int rotateCalls = 0;
+  int? lastRotatedPosition;
+
+  @override
+  Future<void> rotatePage(int documentId, int position) async {
+    if (throwOnUpdate) {
+      throw const DocumentSaveException('fake: rotate failed');
+    }
+    rotateCalls++;
+    lastRotatedPosition = position;
+  }
+
   @override
   Future<void> runOcr(int documentId, int position) async {
     ranOcr = true;

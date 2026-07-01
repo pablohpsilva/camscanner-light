@@ -111,6 +111,13 @@ abstract interface class DocumentRepository {
     ImageEnhancer? enhancer,
   });
 
+  /// Rotates the page at [position] of [documentId] 90° CLOCKWISE: rotates the
+  /// display derivative (flat) image and the cached OCR word boxes to match, and
+  /// bumps the document's modifiedAt. Idempotent per call (each rotates one more
+  /// quarter-turn). Nothing leaves the device. Throws [DocumentSaveException]
+  /// when the page row is missing or its image cannot be decoded.
+  Future<void> rotatePage(int documentId, int position);
+
   /// Recognizes the page at [position] of [documentId] via the OCR engine and
   /// caches the recognized text + word boxes on the page (reads the flat
   /// derivative if present, else the original). Throws [DocumentSaveException]

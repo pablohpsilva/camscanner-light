@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:image/image.dart' as img;
 
 import '../../scan/captured_image.dart';
 import '../crop_corners.dart';
@@ -405,6 +406,45 @@ class DriftDocumentRepository implements DocumentRepository {
         .write(PagesCompanion(
             corners: Value(corners.toStorage()),
             flatRelativePath: Value(flatRel)));
+  }
+
+  @override
+  Future<void> rotatePage(int documentId, int position) async {
+    final row = await (_db.select(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .getSingleOrNull();
+    if (row == null) {
+      throw DocumentSaveException('rotatePage: no page ($documentId, $position)');
+    }
+    // Rotate the DISPLAY image (flat if present, else original) 90° CW.
+    final displayRel = row.flatRelativePath ?? row.relativeImagePath;
+    final bytes = await _fileStore.absoluteFor(displayRel).readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      throw const DocumentSaveException('rotatePage: undecodable image');
+    }
+    final rotated = img.copyRotate(decoded, angle: 90); // 90° clockwise
+    final out = Uint8List.fromList(img.encodeJpg(rotated, quality: 95));
+    // Bake into the flat derivative (create it if this page had none).
+    final flatRel =
+        row.flatRelativePath ?? _fileStore.flatForImage(row.relativeImagePath);
+    await _fileStore.writeRelative(flatRel, out);
+
+    // Rotate the cached OCR boxes CW to stay aligned; text is unchanged.
+    final boxes = OcrResult.decodeBoxes(row.ocrBoxes);
+    final String? newBoxes = boxes.isEmpty
+        ? row.ocrBoxes
+        : OcrResult(text: '', words: [for (final b in boxes) b.rotate90Cw()])
+            .encodeBoxes();
+
+    await (_db.update(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .write(PagesCompanion(
+            flatRelativePath: Value(flatRel), ocrBoxes: Value(newBoxes)));
+    await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
+        .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
   }
 
   @override
