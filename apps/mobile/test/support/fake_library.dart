@@ -17,6 +17,8 @@ import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/library/page_image.dart';
+import 'package:mobile/features/library/ocr/ocr_engine.dart';
+import 'package:mobile/features/library/ocr/ocr_result.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 /// In-memory fake repository for host tests. Optionally throws, or blocks on a
@@ -310,6 +312,19 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
 /// Library deps whose repository always fails — for the save-failure scenario.
 LibraryDependencies failingLibraryDependencies() =>
     fakeLibraryDependencies(FakeDocumentRepository(throwOnCreate: true));
+
+/// Returns a fixed OCR result so tests can assert caching + retrieval.
+class FakeOcrEngine implements OcrEngine {
+  final OcrResult result;
+  const FakeOcrEngine([
+    this.result = const OcrResult(text: 'HELLO WORLD', words: [
+      OcrWordBox(text: 'HELLO', left: .1, top: .1, right: .4, bottom: .2),
+      OcrWordBox(text: 'WORLD', left: .5, top: .1, right: .9, bottom: .2),
+    ]),
+  ]);
+  @override
+  Future<OcrResult> recognize(Uint8List imageBytes) async => result;
+}
 
 /// A persistent (file-backed) LibraryDependencies that reuses the SAME db file
 /// and documents baseDir on every createRepository() call — so data written
