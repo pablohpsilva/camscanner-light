@@ -192,15 +192,24 @@ files metadata-scrubbed, nothing leaves the device.*
 
 **Unit — `DriftDocumentRepository`** (`export_page_image_test.dart`, real
 `NativeDatabase.memory()`):
-- Exports a page → a JPG file exists at `documents/<id>/page_1_export.jpg`, valid
-  JPEG header (`FFD8`).
-- **Metadata-scrubbed:** seed a page whose on-disk image is the EXIF-laden fixture
-  (`test/fixtures/exif_sample.jpg`, written directly), export it, and assert the
-  exported bytes contain **no** EXIF APP1 marker (`Exif\0\0` absent) — proving the
-  export passes through the scrubber. (Mirror the existing `JpegExifScrubber` test's
-  marker assertion.)
-- Uses the **flat** image when `flatRelativePath` is set (export a page with a flat
-  → exported bytes equal `scrub(flat file)`), else the original.
+> **Test-seeding note:** seed page rows and their image files **directly** (insert
+> a `documents`/`pages` row + write a real JPEG fixture to the file store), NOT via
+> `createFromCapture`/the warper. The drift test's `FakeImageWarper` emits a
+> 4-byte non-JPEG "flat" that the scrubber would reject — irrelevant to export,
+> which just reads the stored display file. Direct seeding keeps these tests about
+> export behavior only. Two distinct valid fixtures exist: `exif_sample.jpg` and
+> `landscape_exif6.jpg` (both EXIF-laden).
+
+- Exports a page → a JPG file exists at `documents/<id>/page_1_export.jpg` with a
+  valid JPEG header (`FFD8`).
+- **Metadata-scrubbed:** seed a page whose on-disk image is `exif_sample.jpg`
+  (EXIF-laden), export it, and assert `(await readExifFromBytes(exportedBytes))` is
+  **empty** — proving the export passed through the scrubber. (Uses the `exif`
+  package, `^3.3.0`, exactly like the existing `JpegExifScrubber` test.)
+- Uses the **flat** image when `flatRelativePath` is set: seed a page with a
+  `relativeImagePath` → `exif_sample.jpg` AND a `flatRelativePath` →
+  `landscape_exif6.jpg`; export and assert the exported bytes equal
+  `scrub(landscape_exif6.jpg)` (flat used), not `scrub(exif_sample.jpg)`.
 - Missing page (`position` absent) → throws `DocumentExportException`.
 - No network: pure local IO by construction (documented; no network client exists
   in the path).
