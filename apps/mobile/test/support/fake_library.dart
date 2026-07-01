@@ -433,6 +433,7 @@ LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
         pdfBuilder: const PdfBuilder(),
         warper: const PerspectiveWarper(),
       ),
+      printer: FakeDocumentPrinter(),
     );
 
 /// Library deps whose repository always fails — for the save-failure scenario.
