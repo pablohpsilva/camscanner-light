@@ -101,29 +101,25 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
   Future<void> _maybeGenerate(Uint8List? bytes) async {
     // Skip trivially short payloads — no valid image format fits in < 20 bytes.
     if (_generating || bytes == null || bytes.length < 20) return;
+    // Bare set (this may be called from initState, where setState is illegal).
+    // The first build reflects it; the `finally` below always clears it VIA
+    // setState so the tiles never stay on a spinner forever.
     _generating = true;
 
-    // Step 1: downsample in a compute isolate (avoids blocking UI thread).
-    final small = await compute(_thumbFn, bytes);
-    if (!mounted || small == null) {
-      _generating = false;
-      return;
-    }
+    try {
+      // Step 1: downsample in a compute isolate (avoids blocking UI thread).
+      final small = await compute(_thumbFn, bytes);
+      if (!mounted || small == null) return; // finally clears _generating
 
-    // Step 2: apply all 5 enhancers concurrently on the downsampled bytes.
-    final results = await Future.wait([
-      const AutoEnhancer().enhance(small),
-      const NoneEnhancer().enhance(small),
-      const ColorEnhancer().enhance(small),
-      const GrayscaleEnhancer().enhance(small),
-      const BwEnhancer().enhance(small),
-    ]);
-
-    if (!mounted) {
-      _generating = false;
-      return;
-    }
-    setState(() {
+      // Step 2: apply all 5 enhancers concurrently on the downsampled bytes.
+      final results = await Future.wait([
+        const AutoEnhancer().enhance(small),
+        const NoneEnhancer().enhance(small),
+        const ColorEnhancer().enhance(small),
+        const GrayscaleEnhancer().enhance(small),
+        const BwEnhancer().enhance(small),
+      ]);
+      if (!mounted) return;
       _thumbs = {
         EnhancerMode.auto: results[0],
         EnhancerMode.none: results[1],
@@ -131,8 +127,17 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
         EnhancerMode.grayscale: results[3],
         EnhancerMode.bw: results[4],
       };
-    });
-    _generating = false;
+    } catch (_) {
+      // Thumbnail generation failed (e.g. an enhancer threw on a degenerate
+      // image). Leave [_thumbs] empty so the tiles fall back to their filter
+      // icons — never an infinite spinner. Selecting a filter still works: the
+      // accept path applies the enhancer to the full capture with its own
+      // failure fallback.
+    } finally {
+      // Always settle: rebuild so tiles show either the generated thumbnails
+      // (success) or their fallback icons (failure) instead of spinning.
+      if (mounted) setState(() => _generating = false);
+    }
   }
 
   @override
