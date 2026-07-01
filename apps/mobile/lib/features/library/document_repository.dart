@@ -59,6 +59,14 @@ abstract interface class DocumentRepository {
     CropCorners? corners,
     ImageEnhancer? enhancer,
   });
+
+  /// Reassigns page positions for [documentId] according to [orderedPositions].
+  ///
+  /// [orderedPositions]: the original 1-based position values in their desired
+  /// new order. Example: [2, 1] = swap two pages (former page 2 becomes first).
+  ///
+  /// Throws [DocumentSaveException] when [documentId] has no pages.
+  Future<void> reorderPages(int documentId, List<int> orderedPositions);
 }
 
 class DocumentSaveException implements Exception {

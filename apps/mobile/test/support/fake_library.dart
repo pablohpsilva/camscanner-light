@@ -30,6 +30,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnRename;
   final bool throwOnUpdate;
   final bool throwOnAddPage;
+  final bool throwOnReorder;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -43,6 +44,7 @@ class FakeDocumentRepository implements DocumentRepository {
   int? lastUpdatedPosition;
   CropCorners? lastUpdatedCorners;
   int addPageCalls = 0;
+  List<int> lastReorderedPositions = <int>[];
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -56,6 +58,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnRename = false,
     this.throwOnUpdate = false,
     this.throwOnAddPage = false,
+    this.throwOnReorder = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -177,6 +180,14 @@ class FakeDocumentRepository implements DocumentRepository {
       throw const DocumentSaveException('fake: addPage failed');
     }
     return addPageCalls + 1; // 2 on first call (position 1 already taken)
+  }
+
+  @override
+  Future<void> reorderPages(int documentId, List<int> orderedPositions) async {
+    if (throwOnReorder) {
+      throw const DocumentSaveException('fake: reorder failed');
+    }
+    lastReorderedPositions = List<int>.unmodifiable(orderedPositions);
   }
 }
 

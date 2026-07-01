@@ -338,6 +338,11 @@ class DriftDocumentRepository implements DocumentRepository {
     }
   }
 
+  @override
+  Future<void> reorderPages(int documentId, List<int> orderedPositions) async {
+    throw UnimplementedError('reorderPages: implemented in Task 2');
+  }
+
   String _defaultName(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return 'Scan ${t.year}-${two(t.month)}-${two(t.day)} '
