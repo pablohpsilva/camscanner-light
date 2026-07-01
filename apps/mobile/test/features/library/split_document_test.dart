@@ -102,11 +102,13 @@ void main() {
 
   test('splitting after the last page throws', () async {
     final id = await seedDoc(2);
-    expect(() => repo.splitAfter(id, 2), throwsA(isA<DocumentSaveException>()));
+    await expectLater(
+        repo.splitAfter(id, 2), throwsA(isA<DocumentSaveException>()));
   });
 
   test('splitting after position 0 throws', () async {
     final id = await seedDoc(2);
-    expect(() => repo.splitAfter(id, 0), throwsA(isA<DocumentSaveException>()));
+    await expectLater(
+        repo.splitAfter(id, 0), throwsA(isA<DocumentSaveException>()));
   });
 }
