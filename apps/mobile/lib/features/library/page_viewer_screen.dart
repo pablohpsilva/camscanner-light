@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
 import 'crop_corners.dart';
+import 'document_printer.dart';
 import 'document_repository.dart';
 import 'edit_crop_screen.dart';
 import 'merge_picker_dialog.dart';
@@ -30,12 +31,14 @@ class PageViewerScreen extends StatefulWidget {
   final String name;
   final DocumentRepository repository;
   final ScanDependencies dependencies;
+  final DocumentPrinter printer;
   const PageViewerScreen({
     super.key,
     required this.documentId,
     required this.name,
     required this.repository,
     this.dependencies = const ScanDependencies(),
+    this.printer = const SystemDocumentPrinter(),
   });
 
   @override
@@ -230,6 +233,22 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't export images")),
+      );
+    }
+  }
+
+  Future<void> _print() async {
+    try {
+      final file = await widget.repository.exportPdf(widget.documentId);
+      await widget.printer.printPdf(file, name: _name);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sent to printer')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't print")),
       );
     }
   }
@@ -434,6 +453,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               if (v == 'delete') unawaited(_confirmAndDeletePage());
               if (v == 'export-image') unawaited(_exportPageAsImage());
               if (v == 'export-all-images') unawaited(_exportAllImages());
+              if (v == 'print') unawaited(_print());
             },
             itemBuilder: (_) => const [
               PopupMenuItem<String>(
@@ -475,6 +495,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'export-all-images',
                 key: Key('page-viewer-export-all-images'),
                 child: Text('Export all as images'),
+              ),
+              PopupMenuItem<String>(
+                value: 'print',
+                key: Key('page-viewer-print'),
+                child: Text('Print'),
               ),
             ],
           ),

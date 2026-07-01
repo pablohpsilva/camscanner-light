@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'document_file_store.dart';
+import 'document_printer.dart';
 import 'document_repository.dart';
 import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
@@ -19,7 +20,11 @@ typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
 /// Production builds a Drift-backed repository; tests inject a fake factory.
 class LibraryDependencies {
   final DocumentRepositoryFactory createRepository;
-  const LibraryDependencies({this.createRepository = _defaultCreateRepository});
+  final DocumentPrinter printer;
+  const LibraryDependencies({
+    this.createRepository = _defaultCreateRepository,
+    this.printer = const SystemDocumentPrinter(),
+  });
 }
 
 Future<DocumentRepository> _defaultCreateRepository() async {

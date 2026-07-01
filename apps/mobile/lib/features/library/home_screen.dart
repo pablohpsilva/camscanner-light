@@ -118,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
           name: s.document.name,
           repository: repo,
           dependencies: widget.dependencies,
+          printer: widget.libraryDependencies.printer,
         ),
       ),
     );

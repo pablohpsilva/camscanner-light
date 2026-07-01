@@ -15,6 +15,7 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
+import 'package:mobile/features/library/document_printer.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/ocr/ocr_engine.dart';
@@ -374,6 +375,22 @@ class FakeDocumentRepository implements DocumentRepository {
         }
       }
     }
+  }
+}
+
+/// No-op printer for tests: records the last file/name, never touches the
+/// native print plugin.
+class FakeDocumentPrinter implements DocumentPrinter {
+  File? lastFile;
+  String? lastName;
+  final bool throwOnPrint;
+  FakeDocumentPrinter({this.throwOnPrint = false});
+
+  @override
+  Future<void> printPdf(File pdf, {required String name}) async {
+    if (throwOnPrint) throw Exception('fake: print failed');
+    lastFile = pdf;
+    lastName = name;
   }
 }
 
