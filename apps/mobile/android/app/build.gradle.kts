@@ -30,6 +30,13 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Disable R8/minification: the ML Kit text plugin references optional
+            // CJK/Devanagari recognizer classes that aren't bundled (Latin-only),
+            // which fails R8; enabling aggressive keep rules risks stripping other
+            // plugins (camera, pdfx, drift) at runtime. Not shipping to Play yet,
+            // so ship the un-shrunk APK for reliability.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
