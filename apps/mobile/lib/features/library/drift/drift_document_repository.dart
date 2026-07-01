@@ -175,6 +175,11 @@ class DriftDocumentRepository implements DocumentRepository {
         .toList();
   }
 
+  // Intentionally does NOT bump documents.modifiedAt: OCR is a derived,
+  // re-runnable cache, not user content, and a background run must not reorder
+  // the library by recency. Each run OVERWRITES the page's cached OCR (so a
+  // NoOp/failed pass clears it) — when O2 adds a real engine + auto-run, guard
+  // the trigger so a no-text pass can't wipe previously recognized text.
   @override
   Future<void> runOcr(int documentId, int position) async {
     final row = await (_db.select(_db.pages)
