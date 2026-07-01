@@ -740,6 +740,89 @@ class DriftDocumentRepository implements DocumentRepository {
     await deleteDocument(sourceDocumentId);
   }
 
+  @override
+  Future<Document> splitAfter(int documentId, int position) async {
+    try {
+      final pages = await (_db.select(_db.pages)
+            ..where((p) => p.documentId.equals(documentId))
+            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
+          .get();
+      if (pages.isEmpty) {
+        throw DocumentSaveException('splitAfter: no pages ($documentId)');
+      }
+      final maxPos = pages.last.position;
+      if (position < 1 || position >= maxPos) {
+        throw DocumentSaveException(
+            'splitAfter: nothing after position $position');
+      }
+      final doc = await (_db.select(_db.documents)
+            ..where((d) => d.id.equals(documentId)))
+          .getSingleOrNull();
+      if (doc == null) {
+        throw DocumentSaveException('splitAfter: no document $documentId');
+      }
+      final now = _clock().toUtc();
+      final newName = '${doc.name} (split)';
+      final newId = await _db.into(_db.documents).insert(
+          DocumentsCompanion.insert(
+              name: newName, createdAt: now, modifiedAt: now));
+
+      final moved = pages.where((p) => p.position > position).toList();
+      var k = 0;
+      for (final src in moved) {
+        k++;
+        final imageRel = 'documents/$newId/page_$k.jpg';
+        final bytes =
+            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
+        await _fileStore.writeRelative(imageRel, bytes);
+        String? flatRel;
+        if (src.flatRelativePath != null) {
+          final flatBytes =
+              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
+          flatRel = _fileStore.flatForImage(imageRel);
+          await _fileStore.writeRelative(flatRel, flatBytes);
+        }
+        await _db.into(_db.pages).insert(PagesCompanion.insert(
+          documentId: newId,
+          position: k,
+          relativeImagePath: imageRel,
+          corners: Value(src.corners),
+          flatRelativePath: Value(flatRel),
+          ocrText: Value(src.ocrText),
+          ocrBoxes: Value(src.ocrBoxes),
+        ));
+      }
+
+      await _db.transaction(() async {
+        for (final src in moved) {
+          await (_db.delete(_db.pages)..where((t) => t.id.equals(src.id))).go();
+        }
+        await (_db.update(_db.documents)
+              ..where((d) => d.id.equals(documentId)))
+            .write(DocumentsCompanion(modifiedAt: Value(now)));
+      });
+
+      // Best-effort cleanup of the moved pages' source files (after commit).
+      for (final src in moved) {
+        try {
+          await _fileStore.absoluteFor(src.relativeImagePath).delete();
+        } on FileSystemException {/* already gone */}
+        final f = src.flatRelativePath;
+        if (f != null) {
+          try {
+            await _fileStore.absoluteFor(f).delete();
+          } on FileSystemException {/* already gone */}
+        }
+      }
+
+      return Document(
+          id: newId, name: newName, createdAt: now, modifiedAt: now);
+    } catch (e) {
+      if (e is DocumentSaveException) rethrow;
+      throw DocumentSaveException('splitAfter failed: $e');
+    }
+  }
+
   /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
   /// save — and does not run for the NoOp engine (skips wasted work in tests).
   void _triggerOcr(int documentId, int position) {

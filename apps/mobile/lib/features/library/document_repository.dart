@@ -132,6 +132,14 @@ abstract interface class DocumentRepository {
   /// [DocumentSaveException] when target == source or on any IO/DB failure.
   Future<void> mergeInto(int targetDocumentId, int sourceDocumentId);
 
+  /// Splits [documentId] after [position]: the pages after [position] are moved
+  /// (image, flat, corners, OCR copied verbatim) into a NEW document named
+  /// "`<name>` (split)", and removed from the source (which keeps pages
+  /// 1..[position]). Returns the new document. Nothing leaves the device. Throws
+  /// [DocumentSaveException] when [position] is < 1, is the last page (nothing to
+  /// split off), or on any IO/DB failure.
+  Future<Document> splitAfter(int documentId, int position);
+
   /// Materializes the page at [position] of [documentId]'s cached recognized
   /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
   /// named `<sanitized-document-name>_page_<position>.txt` under the system temp

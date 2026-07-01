@@ -325,6 +325,24 @@ class FakeDocumentRepository implements DocumentRepository {
     lastMergeSource = sourceDocumentId;
   }
 
+  int? lastSplitDoc;
+  int? lastSplitPosition;
+
+  @override
+  Future<Document> splitAfter(int documentId, int position) async {
+    if (throwOnUpdate) {
+      throw const DocumentSaveException('fake: split failed');
+    }
+    lastSplitDoc = documentId;
+    lastSplitPosition = position;
+    return Document(
+      id: 999,
+      name: 'Split',
+      createdAt: DateTime.utc(2026, 7, 1),
+      modifiedAt: DateTime.utc(2026, 7, 1),
+    );
+  }
+
   int rotateCalls = 0;
   int? lastRotatedPosition;
 
