@@ -186,6 +186,34 @@ class _DragHandleState extends State<_DragHandle> {
   }
 }
 
+/// The closed crop boundary in display pixels, with each edge a quadratic
+/// Bézier that passes through its resolved midpoint (`center + dev`). Shared by
+/// the painter and unit-tested directly.
+Path cropQuadPath(Rect rect, CropCorners corners) {
+  Offset p(Offset n) =>
+      rect.topLeft + Offset(n.dx * rect.width, n.dy * rect.height);
+  Offset ctrl(Offset a, Offset b, Offset devNorm) {
+    final center = Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
+    return p(center + devNorm * 2.0); // C = center + 2·dev
+  }
+
+  final tl = p(corners.topLeft), tr = p(corners.topRight);
+  final br = p(corners.bottomRight), bl = p(corners.bottomLeft);
+  final cTop = ctrl(corners.topLeft, corners.topRight, corners.topMidDev);
+  final cRight = ctrl(corners.topRight, corners.bottomRight, corners.rightMidDev);
+  final cBottom =
+      ctrl(corners.bottomRight, corners.bottomLeft, corners.bottomMidDev);
+  final cLeft = ctrl(corners.bottomLeft, corners.topLeft, corners.leftMidDev);
+
+  return Path()
+    ..moveTo(tl.dx, tl.dy)
+    ..quadraticBezierTo(cTop.dx, cTop.dy, tr.dx, tr.dy)
+    ..quadraticBezierTo(cRight.dx, cRight.dy, br.dx, br.dy)
+    ..quadraticBezierTo(cBottom.dx, cBottom.dy, bl.dx, bl.dy)
+    ..quadraticBezierTo(cLeft.dx, cLeft.dy, tl.dx, tl.dy)
+    ..close();
+}
+
 class _QuadPainter extends CustomPainter {
   final Rect rect;
   final CropCorners corners;
@@ -196,17 +224,9 @@ class _QuadPainter extends CustomPainter {
     required this.highlightColor,   // NEW
   });
 
-  Offset _p(Offset n) =>
-      rect.topLeft + Offset(n.dx * rect.width, n.dy * rect.height);
-
   @override
   void paint(Canvas canvas, Size size) {
-    final quad = Path()
-      ..moveTo(_p(corners.topLeft).dx, _p(corners.topLeft).dy)
-      ..lineTo(_p(corners.topRight).dx, _p(corners.topRight).dy)
-      ..lineTo(_p(corners.bottomRight).dx, _p(corners.bottomRight).dy)
-      ..lineTo(_p(corners.bottomLeft).dx, _p(corners.bottomLeft).dy)
-      ..close();
+    final quad = cropQuadPath(rect, corners);
     final outside = Path.combine(
         PathOperation.difference, Path()..addRect(Offset.zero & size), quad);
     canvas.drawPath(outside, Paint()..color = Colors.black54);
@@ -215,7 +235,7 @@ class _QuadPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
-          ..color = highlightColor);   // was Colors.blue
+          ..color = highlightColor);
   }
 
   @override

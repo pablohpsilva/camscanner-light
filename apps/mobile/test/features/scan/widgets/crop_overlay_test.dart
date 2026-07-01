@@ -264,6 +264,28 @@ void main() {
       expect(emitted!.topMidDev, const Offset(0, 0.1)); // bend survives
     });
   });
+
+  group('cropQuadPath (curved boundary)', () {
+    final rect = const Rect.fromLTWH(0, 0, 200, 200);
+    // Top edge at y=0.3 (=60px) across the full width; region is below it.
+    const straight = CropCorners(
+      topLeft: Offset(0, 0.3), topRight: Offset(1, 0.3),
+      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1));
+    // Top edge bows UP (negative dy): midpoint rises toward the point at y=45px.
+    const bentUp = CropCorners(
+      topLeft: Offset(0, 0.3), topRight: Offset(1, 0.3),
+      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
+      topMidDev: Offset(0, -0.1));
+    const probe = Offset(100, 45); // above straight edge (60px), below bulge
+
+    test('straight edge: point above the top edge is OUTSIDE', () {
+      expect(cropQuadPath(rect, straight).contains(probe), isFalse);
+    });
+
+    test('upward-bowed top edge: same point is now INSIDE', () {
+      expect(cropQuadPath(rect, bentUp).contains(probe), isTrue);
+    });
+  });
 }
 
 void _noop(CropCorners _) {}
