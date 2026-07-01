@@ -380,6 +380,28 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _ocrTextMeta = const VerificationMeta(
+    'ocrText',
+  );
+  @override
+  late final GeneratedColumn<String> ocrText = GeneratedColumn<String>(
+    'ocr_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ocrBoxesMeta = const VerificationMeta(
+    'ocrBoxes',
+  );
+  @override
+  late final GeneratedColumn<String> ocrBoxes = GeneratedColumn<String>(
+    'ocr_boxes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -388,6 +410,8 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     relativeImagePath,
     corners,
     flatRelativePath,
+    ocrText,
+    ocrBoxes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -446,6 +470,18 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         ),
       );
     }
+    if (data.containsKey('ocr_text')) {
+      context.handle(
+        _ocrTextMeta,
+        ocrText.isAcceptableOrUnknown(data['ocr_text']!, _ocrTextMeta),
+      );
+    }
+    if (data.containsKey('ocr_boxes')) {
+      context.handle(
+        _ocrBoxesMeta,
+        ocrBoxes.isAcceptableOrUnknown(data['ocr_boxes']!, _ocrBoxesMeta),
+      );
+    }
     return context;
   }
 
@@ -479,6 +515,14 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         DriftSqlType.string,
         data['${effectivePrefix}flat_relative_path'],
       ),
+      ocrText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ocr_text'],
+      ),
+      ocrBoxes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ocr_boxes'],
+      ),
     );
   }
 
@@ -501,6 +545,12 @@ class Page extends DataClass implements Insertable<Page> {
   /// Perspective-flattened image path (E2), relative to the app documents dir;
   /// null until the flatten step has been run for this page.
   final String? flatRelativePath;
+
+  /// Recognized OCR text for this page (O1); null until OCR has run.
+  final String? ocrText;
+
+  /// JSON-encoded OCR word boxes (OcrResult.encodeBoxes); null until OCR has run.
+  final String? ocrBoxes;
   const Page({
     required this.id,
     required this.documentId,
@@ -508,6 +558,8 @@ class Page extends DataClass implements Insertable<Page> {
     required this.relativeImagePath,
     this.corners,
     this.flatRelativePath,
+    this.ocrText,
+    this.ocrBoxes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -521,6 +573,12 @@ class Page extends DataClass implements Insertable<Page> {
     }
     if (!nullToAbsent || flatRelativePath != null) {
       map['flat_relative_path'] = Variable<String>(flatRelativePath);
+    }
+    if (!nullToAbsent || ocrText != null) {
+      map['ocr_text'] = Variable<String>(ocrText);
+    }
+    if (!nullToAbsent || ocrBoxes != null) {
+      map['ocr_boxes'] = Variable<String>(ocrBoxes);
     }
     return map;
   }
@@ -537,6 +595,12 @@ class Page extends DataClass implements Insertable<Page> {
       flatRelativePath: flatRelativePath == null && nullToAbsent
           ? const Value.absent()
           : Value(flatRelativePath),
+      ocrText: ocrText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ocrText),
+      ocrBoxes: ocrBoxes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ocrBoxes),
     );
   }
 
@@ -552,6 +616,8 @@ class Page extends DataClass implements Insertable<Page> {
       relativeImagePath: serializer.fromJson<String>(json['relativeImagePath']),
       corners: serializer.fromJson<String?>(json['corners']),
       flatRelativePath: serializer.fromJson<String?>(json['flatRelativePath']),
+      ocrText: serializer.fromJson<String?>(json['ocrText']),
+      ocrBoxes: serializer.fromJson<String?>(json['ocrBoxes']),
     );
   }
   @override
@@ -564,6 +630,8 @@ class Page extends DataClass implements Insertable<Page> {
       'relativeImagePath': serializer.toJson<String>(relativeImagePath),
       'corners': serializer.toJson<String?>(corners),
       'flatRelativePath': serializer.toJson<String?>(flatRelativePath),
+      'ocrText': serializer.toJson<String?>(ocrText),
+      'ocrBoxes': serializer.toJson<String?>(ocrBoxes),
     };
   }
 
@@ -574,6 +642,8 @@ class Page extends DataClass implements Insertable<Page> {
     String? relativeImagePath,
     Value<String?> corners = const Value.absent(),
     Value<String?> flatRelativePath = const Value.absent(),
+    Value<String?> ocrText = const Value.absent(),
+    Value<String?> ocrBoxes = const Value.absent(),
   }) => Page(
     id: id ?? this.id,
     documentId: documentId ?? this.documentId,
@@ -583,6 +653,8 @@ class Page extends DataClass implements Insertable<Page> {
     flatRelativePath: flatRelativePath.present
         ? flatRelativePath.value
         : this.flatRelativePath,
+    ocrText: ocrText.present ? ocrText.value : this.ocrText,
+    ocrBoxes: ocrBoxes.present ? ocrBoxes.value : this.ocrBoxes,
   );
   Page copyWithCompanion(PagesCompanion data) {
     return Page(
@@ -598,6 +670,8 @@ class Page extends DataClass implements Insertable<Page> {
       flatRelativePath: data.flatRelativePath.present
           ? data.flatRelativePath.value
           : this.flatRelativePath,
+      ocrText: data.ocrText.present ? data.ocrText.value : this.ocrText,
+      ocrBoxes: data.ocrBoxes.present ? data.ocrBoxes.value : this.ocrBoxes,
     );
   }
 
@@ -609,7 +683,9 @@ class Page extends DataClass implements Insertable<Page> {
           ..write('position: $position, ')
           ..write('relativeImagePath: $relativeImagePath, ')
           ..write('corners: $corners, ')
-          ..write('flatRelativePath: $flatRelativePath')
+          ..write('flatRelativePath: $flatRelativePath, ')
+          ..write('ocrText: $ocrText, ')
+          ..write('ocrBoxes: $ocrBoxes')
           ..write(')'))
         .toString();
   }
@@ -622,6 +698,8 @@ class Page extends DataClass implements Insertable<Page> {
     relativeImagePath,
     corners,
     flatRelativePath,
+    ocrText,
+    ocrBoxes,
   );
   @override
   bool operator ==(Object other) =>
@@ -632,7 +710,9 @@ class Page extends DataClass implements Insertable<Page> {
           other.position == this.position &&
           other.relativeImagePath == this.relativeImagePath &&
           other.corners == this.corners &&
-          other.flatRelativePath == this.flatRelativePath);
+          other.flatRelativePath == this.flatRelativePath &&
+          other.ocrText == this.ocrText &&
+          other.ocrBoxes == this.ocrBoxes);
 }
 
 class PagesCompanion extends UpdateCompanion<Page> {
@@ -642,6 +722,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
   final Value<String> relativeImagePath;
   final Value<String?> corners;
   final Value<String?> flatRelativePath;
+  final Value<String?> ocrText;
+  final Value<String?> ocrBoxes;
   const PagesCompanion({
     this.id = const Value.absent(),
     this.documentId = const Value.absent(),
@@ -649,6 +731,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
     this.relativeImagePath = const Value.absent(),
     this.corners = const Value.absent(),
     this.flatRelativePath = const Value.absent(),
+    this.ocrText = const Value.absent(),
+    this.ocrBoxes = const Value.absent(),
   });
   PagesCompanion.insert({
     this.id = const Value.absent(),
@@ -657,6 +741,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
     required String relativeImagePath,
     this.corners = const Value.absent(),
     this.flatRelativePath = const Value.absent(),
+    this.ocrText = const Value.absent(),
+    this.ocrBoxes = const Value.absent(),
   }) : documentId = Value(documentId),
        position = Value(position),
        relativeImagePath = Value(relativeImagePath);
@@ -667,6 +753,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Expression<String>? relativeImagePath,
     Expression<String>? corners,
     Expression<String>? flatRelativePath,
+    Expression<String>? ocrText,
+    Expression<String>? ocrBoxes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -675,6 +763,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
       if (relativeImagePath != null) 'relative_image_path': relativeImagePath,
       if (corners != null) 'corners': corners,
       if (flatRelativePath != null) 'flat_relative_path': flatRelativePath,
+      if (ocrText != null) 'ocr_text': ocrText,
+      if (ocrBoxes != null) 'ocr_boxes': ocrBoxes,
     });
   }
 
@@ -685,6 +775,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Value<String>? relativeImagePath,
     Value<String?>? corners,
     Value<String?>? flatRelativePath,
+    Value<String?>? ocrText,
+    Value<String?>? ocrBoxes,
   }) {
     return PagesCompanion(
       id: id ?? this.id,
@@ -693,6 +785,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
       relativeImagePath: relativeImagePath ?? this.relativeImagePath,
       corners: corners ?? this.corners,
       flatRelativePath: flatRelativePath ?? this.flatRelativePath,
+      ocrText: ocrText ?? this.ocrText,
+      ocrBoxes: ocrBoxes ?? this.ocrBoxes,
     );
   }
 
@@ -717,6 +811,12 @@ class PagesCompanion extends UpdateCompanion<Page> {
     if (flatRelativePath.present) {
       map['flat_relative_path'] = Variable<String>(flatRelativePath.value);
     }
+    if (ocrText.present) {
+      map['ocr_text'] = Variable<String>(ocrText.value);
+    }
+    if (ocrBoxes.present) {
+      map['ocr_boxes'] = Variable<String>(ocrBoxes.value);
+    }
     return map;
   }
 
@@ -728,7 +828,9 @@ class PagesCompanion extends UpdateCompanion<Page> {
           ..write('position: $position, ')
           ..write('relativeImagePath: $relativeImagePath, ')
           ..write('corners: $corners, ')
-          ..write('flatRelativePath: $flatRelativePath')
+          ..write('flatRelativePath: $flatRelativePath, ')
+          ..write('ocrText: $ocrText, ')
+          ..write('ocrBoxes: $ocrBoxes')
           ..write(')'))
         .toString();
   }
@@ -1038,6 +1140,8 @@ typedef $$PagesTableCreateCompanionBuilder =
       required String relativeImagePath,
       Value<String?> corners,
       Value<String?> flatRelativePath,
+      Value<String?> ocrText,
+      Value<String?> ocrBoxes,
     });
 typedef $$PagesTableUpdateCompanionBuilder =
     PagesCompanion Function({
@@ -1047,6 +1151,8 @@ typedef $$PagesTableUpdateCompanionBuilder =
       Value<String> relativeImagePath,
       Value<String?> corners,
       Value<String?> flatRelativePath,
+      Value<String?> ocrText,
+      Value<String?> ocrBoxes,
     });
 
 final class $$PagesTableReferences
@@ -1101,6 +1207,16 @@ class $$PagesTableFilterComposer extends Composer<_$AppDatabase, $PagesTable> {
 
   ColumnFilters<String> get flatRelativePath => $composableBuilder(
     column: $table.flatRelativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ocrText => $composableBuilder(
+    column: $table.ocrText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ocrBoxes => $composableBuilder(
+    column: $table.ocrBoxes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1162,6 +1278,16 @@ class $$PagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get ocrText => $composableBuilder(
+    column: $table.ocrText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ocrBoxes => $composableBuilder(
+    column: $table.ocrBoxes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DocumentsTableOrderingComposer get documentId {
     final $$DocumentsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1213,6 +1339,12 @@ class $$PagesTableAnnotationComposer
     column: $table.flatRelativePath,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get ocrText =>
+      $composableBuilder(column: $table.ocrText, builder: (column) => column);
+
+  GeneratedColumn<String> get ocrBoxes =>
+      $composableBuilder(column: $table.ocrBoxes, builder: (column) => column);
 
   $$DocumentsTableAnnotationComposer get documentId {
     final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
@@ -1272,6 +1404,8 @@ class $$PagesTableTableManager
                 Value<String> relativeImagePath = const Value.absent(),
                 Value<String?> corners = const Value.absent(),
                 Value<String?> flatRelativePath = const Value.absent(),
+                Value<String?> ocrText = const Value.absent(),
+                Value<String?> ocrBoxes = const Value.absent(),
               }) => PagesCompanion(
                 id: id,
                 documentId: documentId,
@@ -1279,6 +1413,8 @@ class $$PagesTableTableManager
                 relativeImagePath: relativeImagePath,
                 corners: corners,
                 flatRelativePath: flatRelativePath,
+                ocrText: ocrText,
+                ocrBoxes: ocrBoxes,
               ),
           createCompanionCallback:
               ({
@@ -1288,6 +1424,8 @@ class $$PagesTableTableManager
                 required String relativeImagePath,
                 Value<String?> corners = const Value.absent(),
                 Value<String?> flatRelativePath = const Value.absent(),
+                Value<String?> ocrText = const Value.absent(),
+                Value<String?> ocrBoxes = const Value.absent(),
               }) => PagesCompanion.insert(
                 id: id,
                 documentId: documentId,
@@ -1295,6 +1433,8 @@ class $$PagesTableTableManager
                 relativeImagePath: relativeImagePath,
                 corners: corners,
                 flatRelativePath: flatRelativePath,
+                ocrText: ocrText,
+                ocrBoxes: ocrBoxes,
               ),
           withReferenceMapper: (p0) => p0
               .map(

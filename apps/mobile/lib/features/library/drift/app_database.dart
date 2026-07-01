@@ -31,6 +31,12 @@ class Pages extends Table {
   /// Perspective-flattened image path (E2), relative to the app documents dir;
   /// null until the flatten step has been run for this page.
   TextColumn get flatRelativePath => text().nullable()();
+
+  /// Recognized OCR text for this page (O1); null until OCR has run.
+  TextColumn get ocrText => text().nullable()();
+
+  /// JSON-encoded OCR word boxes (OcrResult.encodeBoxes); null until OCR has run.
+  TextColumn get ocrBoxes => text().nullable()();
 }
 
 @DriftDatabase(tables: [Documents, Pages])
@@ -38,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -46,6 +52,10 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(pages, pages.corners);
           if (from < 3) await m.addColumn(pages, pages.flatRelativePath);
+          if (from < 4) {
+            await m.addColumn(pages, pages.ocrText);
+            await m.addColumn(pages, pages.ocrBoxes);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
