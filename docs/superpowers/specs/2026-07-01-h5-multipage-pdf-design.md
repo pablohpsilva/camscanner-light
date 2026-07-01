@@ -109,7 +109,8 @@ Feature: H5 Multi-page PDF export
 
   Scenario: Exporting a three-page document produces a three-page PDF
     Given the app is launched with camera permission granted and empty storage
-    When I capture and accept the first page
+    When I tap the Scan button
+    And I capture and accept the first page
     And I capture and accept the second page
     And I capture and accept the third page
     And I tap Done
@@ -119,9 +120,11 @@ Feature: H5 Multi-page PDF export
     And the exported PDF has 3 pages
 ```
 
-- **Reused steps** (already exist — do NOT recreate): the "given" launch step,
-  `iCaptureAndAcceptTheFirstPage`, `iCaptureAndAcceptTheSecondPage`, `iTapDone`,
-  `iOpenTheFirstDocument`, `iExportTheOpenDocumentToPdf`, `thePdfPreviewOpens`.
+- **Reused steps** (already exist — do NOT recreate): the "given" launch step
+  (`theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage`, real temp DB storage),
+  `iTapTheScanButton` (enters the camera from home), `iCaptureAndAcceptTheFirstPage`,
+  `iCaptureAndAcceptTheSecondPage` (both = tap `scan-shutter` → tap `review-accept`),
+  `iTapDone`, `iOpenTheFirstDocument`, `iExportTheOpenDocumentToPdf`, `thePdfPreviewOpens`.
 - **New steps:**
   - `i_capture_and_accept_the_third_page.dart` — mirrors the first/second-page step
     (tap shutter → tap accept), adding a 3rd page via the H1 add-page flow.
