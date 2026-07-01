@@ -317,6 +317,9 @@ void main() {
     final s = latin1.decode(file.readAsBytesSync(), allowInvalid: true);
     expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 3,
         reason: 'exportPdf passes ALL pages, not just the first');
+    for (final marker in ['/Author', '/Producer', '/Creator', '/CreationDate']) {
+      expect(s.contains(marker), isFalse, reason: 'metadata leak: $marker');
+    }
   });
 
   test('rename updates the name and bumps modifiedAt; createdAt unchanged',

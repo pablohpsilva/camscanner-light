@@ -84,6 +84,18 @@ void main() {
         .toList();
     expect(widths, [120, 80, 200], reason: 'image widths follow page order');
     expect(heights, [60, 160, 100], reason: 'heights follow page order (aspect)');
+
+    // Original aspect: each page's /MediaBox is sized to its own image — the
+    // sequence (in page order) proves per-page aspect, not just the embedded
+    // image dims. Exactly three MediaBoxes, no inherited root box.
+    final mediaBoxes = RegExp(
+            r'/MediaBox\s*\[\s*0(?:\.0)?\s+0(?:\.0)?\s+([\d.]+)\s+([\d.]+)')
+        .allMatches(s)
+        .map((m) =>
+            '${double.parse(m.group(1)!).round()}x${double.parse(m.group(2)!).round()}')
+        .toList();
+    expect(mediaBoxes, ['120x60', '80x160', '200x100'],
+        reason: 'each page MediaBox matches its image aspect, in page order');
   });
 
   test('embeds the JPEG losslessly (DCTDecode + verbatim bytes)', () async {

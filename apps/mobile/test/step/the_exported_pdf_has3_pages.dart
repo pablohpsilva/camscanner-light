@@ -11,6 +11,9 @@ Future<void> theExportedPdfHas3Pages(WidgetTester tester) async {
   final screen =
       tester.widget<PdfPreviewScreen>(find.byType(PdfPreviewScreen));
   final doc = await PdfDocument.openFile(screen.pdfPath);
-  expect(doc.pagesCount, 3);
-  await doc.close();
+  try {
+    expect(doc.pagesCount, 3);
+  } finally {
+    await doc.close();
+  }
 }
