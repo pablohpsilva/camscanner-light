@@ -93,8 +93,11 @@ repository→builder path end to end (host):
 3. Read the written bytes; assert `/Type /Page` count == **3**.
 
 Proves `exportPdf` passes **all** pages (not just the first) through to the PDF. (The
-default builder compresses, but `/Type /Page` object headers are not inside the
-compressed content streams, so the count regex still matches on the saved file.)
+default builder compresses, but page-dictionary objects — `/Type /Page`, `/MediaBox` —
+are NOT inside the deflated content streams; only the drawing streams are compressed.
+Evidence: the existing "builds a valid single-page PDF" test greps `/Type /Page` on
+**default-compressed** builder output and passes. So the count regex matches on the
+saved compressed file.)
 
 ## BDD — 3-page export on device
 
@@ -123,9 +126,12 @@ Feature: H5 Multi-page PDF export
   - `i_capture_and_accept_the_third_page.dart` — mirrors the first/second-page step
     (tap shutter → tap accept), adding a 3rd page via the H1 add-page flow.
   - `the_exported_pdf_has3_pages.dart` — reads the mounted `PdfPreviewScreen.pdfPath`
-    (public field), opens it via pdfx `PdfDocument.openFile(path)`, and asserts
-    `document.pagesCount == 3`, then closes it. This is a genuine on-device page-count
-    assertion against the real written PDF (no production UI change needed).
+    (public field) via `tester.widget<PdfPreviewScreen>(...)`, opens it with pdfx
+    `PdfDocument.openFile(path)` (the same opener the screen uses by default), asserts
+    `document.pagesCount == 3`, then `await document.close()` (release the native
+    handle). A second read-only open of the already-open file is safe (pdfx opens
+    read-only). This is a genuine on-device page-count assertion against the real
+    written PDF — no production UI change needed.
 
 This scenario captures three real pages, exports through the real repository + real
 `PdfBuilder`, renders via pdfx, and asserts the on-disk PDF has exactly 3 pages —
