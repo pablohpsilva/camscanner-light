@@ -36,10 +36,20 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _error = false;
   DocumentSort _sort = DocumentSort.initial;
 
+  final TextEditingController _searchController = TextEditingController();
+  bool _searching = false;
+  String _query = '';
+
   @override
   void initState() {
     super.initState();
     _init();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -95,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
             CameraScreen(dependencies: widget.dependencies, repository: repo),
       ),
     );
-    await _load(); // a save may have happened while we were away
+    await _refresh(); // a save may have happened while we were away
   }
 
   Future<void> _openDocument(DocumentSummary s) async {
@@ -111,8 +121,35 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-    await _load(); // a delete may have happened in the viewer
+    await _refresh(); // a delete may have happened in the viewer
   }
+
+  void _openSearch() => setState(() => _searching = true);
+
+  void _closeSearch() {
+    _searchController.clear();
+    setState(() {
+      _searching = false;
+      _query = '';
+    });
+    _load(); // restore the full list
+  }
+
+  Future<void> _onQueryChanged(String value) async {
+    final repo = _repository;
+    setState(() => _query = value);
+    if (repo == null) return;
+    try {
+      final results = await repo.searchDocuments(value);
+      if (!mounted || value != _query) return; // race guard: newer query wins
+      setState(() => _summaries = results);
+    } catch (_) {
+      if (mounted) setState(() => _error = true);
+    }
+  }
+
+  // After returning from a push, re-apply search if active, else reload.
+  Future<void> _refresh() => _searching ? _onQueryChanged(_query) : _load();
 
   void _onSortCriterion(SortCriterion c) =>
       setState(() => _sort = nextSort(_sort, c));
@@ -125,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     try {
       await repo.rename(s.document.id, newName);
-      await _load(); // refresh the list (no spinner; active sort re-applies)
+      await _refresh(); // refresh the list (no spinner; active sort re-applies)
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,35 +174,94 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Documents')),
+      appBar: _searching ? _buildSearchAppBar() : _buildNormalAppBar(),
       body: _loading
           ? const Center(
               key: Key('documents-loading'),
               child: CircularProgressIndicator())
           : _error
               ? _buildError()
-              : _summaries.isEmpty
-                  ? const EmptyDocumentsView()
-                  : Column(
-                      children: [
-                        SortControlBar(
-                          sort: _sort,
-                          onCriterionTapped: _onSortCriterion,
-                        ),
-                        Expanded(
-                          child: DocumentsListView(
-                            summaries: sortDocuments(_summaries, _sort),
-                            onOpen: _openDocument,
-                            onRename: _renameDocument,
-                          ),
-                        ),
-                      ],
-                    ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _repository == null ? null : _openScan,
-        icon: const Icon(Icons.document_scanner_outlined),
-        label: const Text('Scan'),
-      ),
+              : _buildBody(),
+      floatingActionButton: _searching
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _repository == null ? null : _openScan,
+              icon: const Icon(Icons.document_scanner_outlined),
+              label: const Text('Scan'),
+            ),
+    );
+  }
+
+  AppBar _buildNormalAppBar() => AppBar(
+        title: const Text('Documents'),
+        actions: [
+          IconButton(
+            key: const Key('documents-search'),
+            tooltip: 'Search',
+            icon: const Icon(Icons.search),
+            onPressed: _repository == null ? null : _openSearch,
+          ),
+        ],
+      );
+
+  AppBar _buildSearchAppBar() => AppBar(
+        leading: IconButton(
+          key: const Key('documents-search-close'),
+          tooltip: 'Close search',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _closeSearch,
+        ),
+        title: TextField(
+          key: const Key('documents-search-field'),
+          controller: _searchController,
+          autofocus: true,
+          textInputAction: TextInputAction.search,
+          decoration: const InputDecoration(
+            hintText: 'Search documents',
+            border: InputBorder.none,
+          ),
+          onChanged: _onQueryChanged,
+        ),
+        actions: [
+          IconButton(
+            key: const Key('documents-search-clear'),
+            tooltip: 'Clear',
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              _searchController.clear();
+              _onQueryChanged('');
+            },
+          ),
+        ],
+      );
+
+  Widget _buildBody() {
+    if (_searching) {
+      if (_summaries.isEmpty && _query.trim().isNotEmpty) {
+        return Center(
+          key: const Key('documents-search-empty'),
+          child: Text('No documents match "$_query".'),
+        );
+      }
+      if (_summaries.isEmpty) return const EmptyDocumentsView();
+      return DocumentsListView(
+        summaries: _summaries,
+        onOpen: _openDocument,
+        onRename: _renameDocument,
+      );
+    }
+    if (_summaries.isEmpty) return const EmptyDocumentsView();
+    return Column(
+      children: [
+        SortControlBar(sort: _sort, onCriterionTapped: _onSortCriterion),
+        Expanded(
+          child: DocumentsListView(
+            summaries: sortDocuments(_summaries, _sort),
+            onOpen: _openDocument,
+            onRename: _renameDocument,
+          ),
+        ),
+      ],
     );
   }
 
