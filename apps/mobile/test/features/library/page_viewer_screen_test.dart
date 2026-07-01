@@ -392,4 +392,44 @@ void main() {
     // PageView should have animated to index 1 → shows page at position 2.
     expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
   });
+
+  // ── H3 — Reorder pages ─────────────────────────────────────────────────
+
+  testWidgets(
+      'H3: invoking onReorderItem(1,0) calls reorderPages([2,1]) and shows page 2 first',
+      (tester) async {
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(position: 1, imagePath: '/nonexistent/r1.jpg'),
+        const PageImage(position: 2, imagePath: '/nonexistent/r2.jpg'),
+      ],
+    );
+    await pushViewer(tester, repo);
+
+    final rlv = tester.widget<ReorderableListView>(find.byType(ReorderableListView));
+    rlv.onReorderItem!(1, 0);
+    await tester.pumpAndSettle();
+
+    expect(repo.lastReorderedPositions, [2, 1]);
+    expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
+  });
+
+  testWidgets('H3: reorder failure shows SnackBar and stays on viewer',
+      (tester) async {
+    final repo = FakeDocumentRepository(
+      throwOnReorder: true,
+      pages: [
+        const PageImage(position: 1, imagePath: '/nonexistent/r1.jpg'),
+        const PageImage(position: 2, imagePath: '/nonexistent/r2.jpg'),
+      ],
+    );
+    await pushViewer(tester, repo);
+
+    final rlv = tester.widget<ReorderableListView>(find.byType(ReorderableListView));
+    rlv.onReorderItem!(1, 0);
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't reorder pages"), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
+  });
 }

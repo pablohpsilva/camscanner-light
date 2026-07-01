@@ -147,6 +147,29 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  void _reorderPages(int oldIndex, int newIndex) {
+    // onReorderItem (used in PageThumbnailStrip) provides newIndex as the
+    // correct insertion index already — no adjustment needed.
+    final ordered = List<PageImage>.from(_pages!);
+    ordered.insert(newIndex, ordered.removeAt(oldIndex));
+    setState(() => _pages = ordered);
+    // ignore: discarded_futures
+    _persistReorder(ordered);
+  }
+
+  Future<void> _persistReorder(List<PageImage> ordered) async {
+    try {
+      await widget.repository.reorderPages(
+          widget.documentId, ordered.map((p) => p.position).toList());
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't reorder pages")),
+      );
+      _load();
+    }
+  }
+
   Future<void> _editCrop(PageImage pg) async {
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
@@ -273,6 +296,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
           ),
+          onReorder: _reorderPages,
         ),
       ],
     );
