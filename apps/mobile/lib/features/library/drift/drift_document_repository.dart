@@ -289,9 +289,8 @@ class DriftDocumentRepository implements DocumentRepository {
         }
         final newPosition = maxRow.position + 1;
         final rel = _fileStore.relativeFor(documentId, newPosition);
-        late final Uint8List scrubbed;
         final raw = await File(capture.path).readAsBytes();
-        scrubbed = _scrubber.scrub(raw);
+        final Uint8List scrubbed = _scrubber.scrub(raw);
         final isFullFrame =
             corners == null || corners == CropCorners.fullFrame;
         Uint8List bytesToStore = scrubbed;

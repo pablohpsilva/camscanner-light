@@ -64,7 +64,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | G2 | Black & White filter | 05 | `2026-06-30-g2-bw.md` | ✅ **built & gated** |
 | G3 | Color / Auto-Magic filter | 05 | `2026-07-01-g3-color-auto.md` | ✅ **built & gated** |
 | G4 | Filter picker UI | 05 | `2026-07-01-g4-filter-picker.md` | ✅ **built & gated** |
-| H1 | Add multiple pages | 06 | `2026-07-01-h1-add-pages.md` | ✅ plan written |
+| H1 | Add multiple pages | 06 | `2026-07-01-h1-add-pages.md` | ✅ **built & gated** |
 | H2 | Page thumbnail strip | 06 | `…-h2-thumbnails.md` | ⏳ |
 | H3 | Reorder pages | 06 | `…-h3-reorder.md` | ⏳ |
 | H4 | Delete / retake page | 06 | `…-h4-delete-retake.md` | ⏳ |
