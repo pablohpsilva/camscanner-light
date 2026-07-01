@@ -11,6 +11,7 @@ import '../document_summary.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
+import '../ocr/ocr_engine.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import 'app_database.dart' hide Document;
@@ -25,6 +26,7 @@ class DriftDocumentRepository implements DocumentRepository {
   final DateTime Function() _clock;
   final PdfBuilder _pdfBuilder;
   final ImageWarper _warper;
+  final OcrEngine _ocrEngine;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -33,12 +35,14 @@ class DriftDocumentRepository implements DocumentRepository {
     required DateTime Function() clock,
     required PdfBuilder pdfBuilder,
     required ImageWarper warper,
+    OcrEngine ocrEngine = const NoOpOcrEngine(),
   })  : _db = db, // ignore: prefer_initializing_formals
         _scrubber = scrubber, // ignore: prefer_initializing_formals
         _fileStore = fileStore, // ignore: prefer_initializing_formals
         _clock = clock, // ignore: prefer_initializing_formals
         _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
-        _warper = warper; // ignore: prefer_initializing_formals
+        _warper = warper, // ignore: prefer_initializing_formals
+        _ocrEngine = ocrEngine; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(
@@ -166,8 +170,28 @@ class DriftDocumentRepository implements DocumentRepository {
               flatImagePath: pg.flatRelativePath == null
                   ? null
                   : _fileStore.absoluteFor(pg.flatRelativePath!).path,
+              ocrText: pg.ocrText,
             ))
         .toList();
+  }
+
+  @override
+  Future<void> runOcr(int documentId, int position) async {
+    final row = await (_db.select(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .getSingleOrNull();
+    if (row == null) {
+      throw DocumentSaveException('runOcr: no page ($documentId, $position)');
+    }
+    // Recognize the DISPLAY image (flat derivative if present, else original).
+    final srcRel = row.flatRelativePath ?? row.relativeImagePath;
+    final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
+    final result = await _ocrEngine.recognize(bytes);
+    await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
+        PagesCompanion(
+            ocrText: Value(result.text),
+            ocrBoxes: Value(result.encodeBoxes())));
   }
 
   @override

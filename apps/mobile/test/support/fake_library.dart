@@ -266,6 +266,9 @@ class FakeDocumentRepository implements DocumentRepository {
     }
     lastReplacedPagePosition = position;
   }
+
+  @override
+  Future<void> runOcr(int documentId, int position) async {}
 }
 
 /// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,

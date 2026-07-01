@@ -9,12 +9,14 @@ class PageImage {
   final String imagePath;
   final CropCorners corners;
   final String? flatImagePath;
+  final String? ocrText;
 
   const PageImage({
     required this.position,
     required this.imagePath,
     this.corners = CropCorners.fullFrame,
     this.flatImagePath,
+    this.ocrText,
   });
 
   /// Flat image when available; original otherwise.

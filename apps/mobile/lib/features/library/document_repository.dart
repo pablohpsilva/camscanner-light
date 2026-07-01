@@ -98,6 +98,12 @@ abstract interface class DocumentRepository {
     CropCorners? corners,
     ImageEnhancer? enhancer,
   });
+
+  /// Recognizes the page at [position] of [documentId] via the OCR engine and
+  /// caches the recognized text + word boxes on the page (reads the flat
+  /// derivative if present, else the original). Throws [DocumentSaveException]
+  /// when the page row is missing.
+  Future<void> runOcr(int documentId, int position);
 }
 
 class DocumentSaveException implements Exception {
