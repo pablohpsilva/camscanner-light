@@ -90,7 +90,7 @@ void main() {
   });
 
   testWidgets('onReorder provided → ReorderableListView is rendered', (tester) async {
-    await pump(tester, onReorder: (_, __) {});
+    await pump(tester, onReorder: (_, _) {});
     await tester.pump();
     expect(find.byType(ReorderableListView), findsOneWidget);
     expect(find.byType(ListView), findsNothing);

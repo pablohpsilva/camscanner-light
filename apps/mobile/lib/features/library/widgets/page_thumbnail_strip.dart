@@ -117,7 +117,7 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
               scrollDirection: Axis.horizontal,
               buildDefaultDragHandles: false,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              onReorder: widget.onReorder!,
+              onReorderItem: widget.onReorder!,
               itemCount: widget.pages.length,
               itemBuilder: (context, index) => ReorderableDragStartListener(
                 key: ValueKey('page-thumb-item-$index'),
