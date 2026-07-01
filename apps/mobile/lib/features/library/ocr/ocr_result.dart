@@ -12,6 +12,16 @@ class OcrWordBox {
     required this.bottom,
   });
 
+  /// This box after the page image is rotated 90° CLOCKWISE (normalized coords).
+  /// Matches `image.copyRotate(angle: 90)`: a top-left box moves to the top-right.
+  OcrWordBox rotate90Cw() => OcrWordBox(
+        text: text,
+        left: 1 - bottom,
+        top: left,
+        right: 1 - top,
+        bottom: right,
+      );
+
   Map<String, dynamic> toJson() =>
       {'t': text, 'l': left, 'o': top, 'r': right, 'b': bottom};
 
