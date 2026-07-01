@@ -40,6 +40,9 @@ class _CameraScreenState extends State<CameraScreen> {
   Timer? _sampleTimer;
   DetectionResult? _liveResult;
   bool _isSampling = false;
+  int? _activeDocId;
+  String? _activeDocName;
+  int _pageCount = 0;
 
   @override
   void initState() {
@@ -131,22 +134,63 @@ class _CameraScreenState extends State<CameraScreen> {
       CapturedImage image, CropCorners corners, ImageEnhancer enhancer) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final doc = await _saveController.save(image,
-        corners: corners, enhancer: enhancer);
-    if (!mounted) return;
-    if (doc == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text("Couldn't save document. Try again.")),
-      );
-      return;
+
+    if (_activeDocId == null) {
+      // First page: create new document.
+      final doc = await _saveController.save(image,
+          corners: corners, enhancer: enhancer);
+      if (!mounted) return;
+      if (doc == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't save document. Try again.")),
+        );
+        return;
+      }
+      setState(() {
+        _activeDocId = doc.id;
+        _activeDocName = doc.name;
+        _pageCount = 1;
+      });
+      navigator.pop(); // dismiss review, stay in camera
+    } else {
+      // Subsequent pages: append to active document.
+      final position = await _saveController.addPage(image, _activeDocId!,
+          corners: corners, enhancer: enhancer);
+      if (!mounted) return;
+      if (position == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't save page. Try again.")),
+        );
+        navigator.pop(); // return to camera; _activeDocId stays set
+        return;
+      }
+      setState(() => _pageCount = position);
+      navigator.pop();
     }
-    navigator.popUntil((route) => route.isFirst);
+  }
+
+  void _onDone() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan')),
+      appBar: AppBar(
+        title: _pageCount == 0
+            ? const Text('Scan')
+            : Text('$_pageCount page${_pageCount == 1 ? '' : 's'} saved'),
+        actions: _pageCount > 0
+            ? [
+                IconButton(
+                  key: const Key('camera-done'),
+                  icon: const Icon(Icons.check),
+                  tooltip: 'Done scanning',
+                  onPressed: _onDone,
+                ),
+              ]
+            : null,
+      ),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) {
