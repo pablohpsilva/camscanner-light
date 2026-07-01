@@ -41,7 +41,6 @@ class _CameraScreenState extends State<CameraScreen> {
   DetectionResult? _liveResult;
   bool _isSampling = false;
   int? _activeDocId;
-  String? _activeDocName;
   int _pageCount = 0;
 
   @override
@@ -148,7 +147,6 @@ class _CameraScreenState extends State<CameraScreen> {
       }
       setState(() {
         _activeDocId = doc.id;
-        _activeDocName = doc.name;
         _pageCount = 1;
       });
       navigator.pop(); // dismiss review, stay in camera

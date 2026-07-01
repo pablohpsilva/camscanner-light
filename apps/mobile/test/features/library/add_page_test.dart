@@ -9,7 +9,6 @@ import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/grayscale_enhancer.dart';
-import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/save_controller.dart';
@@ -21,7 +20,7 @@ void main() {
   late Directory base;
   late AppDatabase db;
   late CapturedImage capture;
-  final clock = () => DateTime.utc(2026, 7, 1, 10, 0, 0);
+  DateTime clock() => DateTime.utc(2026, 7, 1, 10, 0, 0);
 
   setUp(() {
     base = Directory.systemTemp.createTempSync('h1repo');
