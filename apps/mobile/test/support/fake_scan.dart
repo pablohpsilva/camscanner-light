@@ -7,6 +7,7 @@ import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
+import 'package:mobile/features/scan/gallery_picker.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 /// A minimal valid 1×1 JPEG (SOI … EOI). The fake writes this so the review
@@ -94,6 +95,36 @@ class FakeCameraPreviewController implements CameraPreviewController {
   }
 }
 
+/// In-memory fake of [GalleryPicker].
+/// - [cancel] true  => pick() returns null (user cancelled).
+/// - [throwOnPick]  => pick() throws (platform-error path).
+/// - [returnPath]   => pick() returns that exact path. HOST WIDGET TESTS pass a
+///   NON-LOADABLE path (e.g. '/nonexistent/import.jpg') so the review screen's
+///   FilterPickerStrip does not try to generate thumbnails (which deadlocks under
+///   FakeAsync). When null, a real temp file (kFakeJpegBytes) is written — used
+///   by the on-device BDD where a loadable file is needed.
+class FakeGalleryPicker implements GalleryPicker {
+  final bool cancel;
+  final bool throwOnPick;
+  final String? returnPath;
+  const FakeGalleryPicker({
+    this.cancel = false,
+    this.throwOnPick = false,
+    this.returnPath,
+  });
+  @override
+  Future<CapturedImage?> pick() async {
+    if (throwOnPick) throw Exception('fake: gallery pick failed');
+    if (cancel) return null;
+    final path = returnPath;
+    if (path != null) return CapturedImage(path);
+    final dir = await Directory.systemTemp.createTemp('fake_gallery');
+    final file = File('${dir.path}/import.jpg')
+      ..writeAsBytesSync(kFakeJpegBytes);
+    return CapturedImage(file.path);
+  }
+}
+
 /// Returns [ScanDependencies] wired with a [FakeCameraPermissionService] that
 /// reports [CameraPermissionStatus.granted] and an always-available
 /// [FakeCameraPreviewController].
@@ -101,6 +132,7 @@ ScanDependencies grantedScanDependencies() => ScanDependencies(
       createPermissionService: () =>
           FakeCameraPermissionService(CameraPermissionStatus.granted),
       createPreviewController: FakeCameraPreviewController.new,
+      createGalleryPicker: () => const FakeGalleryPicker(),
     );
 
 /// Returns [ScanDependencies] wired with a [FakeCameraPermissionService] that
