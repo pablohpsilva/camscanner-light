@@ -36,6 +36,14 @@ abstract interface class DocumentRepository {
   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
   Future<File> exportPdf(int documentId);
 
+  /// Exports the page at [position] of [documentId] as a standalone JPG on device.
+  /// Reads the page's display image (the flattened derivative when present, else
+  /// the original capture), passes the bytes through the metadata scrubber, writes
+  /// `documents/<id>/page_<position>_export.jpg`, and returns the file. Nothing
+  /// leaves the device. Throws [DocumentExportException] when the page row/file is
+  /// missing or the scrub fails.
+  Future<File> exportPageAsImage(int documentId, int position);
+
   /// Renames [documentId] to [newName] (trimmed) and bumps modifiedAt. Returns
   /// the updated document. Throws [DocumentRenameException] when the trimmed
   /// name is empty or no document with that id exists. The name stays on-device.

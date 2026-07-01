@@ -203,6 +203,30 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<File> exportPageAsImage(int documentId, int position) async {
+    final row = await (_db.select(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .getSingleOrNull();
+    if (row == null) {
+      throw DocumentExportException(
+          'exportImage failed: no page ($documentId, $position)');
+    }
+    try {
+      // Display image: the flattened derivative when present, else the original.
+      final srcRel = row.flatRelativePath ?? row.relativeImagePath;
+      final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
+      final scrubbed = _scrubber.scrub(bytes); // privacy: pass through scrubber
+      final rel = _fileStore.imageExportRelativeFor(documentId, position);
+      await _fileStore.writeRelative(rel, scrubbed);
+      return _fileStore.absoluteFor(rel);
+    } catch (e) {
+      if (e is DocumentExportException) rethrow;
+      throw DocumentExportException('exportImage failed: $e');
+    }
+  }
+
+  @override
   Future<Document> rename(int documentId, String newName) async {
     final trimmed = newName.trim();
     if (trimmed.isEmpty) {

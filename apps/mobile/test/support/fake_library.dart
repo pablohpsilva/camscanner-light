@@ -33,6 +33,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnReorder;
   final bool throwOnDeletePage;
   final bool throwOnReplacePage;
+  final bool throwOnExportImage;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -52,6 +53,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
+  int? lastExportedImagePosition;
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
@@ -65,6 +67,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnReorder = false,
     this.throwOnDeletePage = false,
     this.throwOnReplacePage = false,
+    this.throwOnExportImage = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -123,6 +126,16 @@ class FakeDocumentRepository implements DocumentRepository {
     // File; widget tests need the future to complete synchronously so that
     // pumpAndSettle can drive the success SnackBar before settling.
     return File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
+  }
+
+  @override
+  Future<File> exportPageAsImage(int documentId, int position) async {
+    if (throwOnExportImage) {
+      throw const DocumentExportException('fake: exportImage failed');
+    }
+    lastExportedImagePosition = position;
+    return File(
+        '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
   }
 
   @override
