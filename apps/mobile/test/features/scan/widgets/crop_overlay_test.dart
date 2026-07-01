@@ -212,6 +212,58 @@ void main() {
     // ignore: avoid_dynamic_calls
     expect((paint.painter! as dynamic).highlightColor, Colors.green);
   });
+
+  group('8 handles', () {
+    CropCorners? emitted;
+    Widget harness(CropCorners corners) => MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300, height: 400, // extra height so bl handle isn't on the SizedBox boundary
+              child: CropOverlay(
+                imageSize: const Size(300, 300),
+                image: const SizedBox.expand(),
+                corners: corners,
+                onCornersChanged: (c) => emitted = c,
+              ),
+            ),
+          ),
+        );
+
+    const straight = CropCorners(
+      topLeft: Offset(0, 0), topRight: Offset(1, 0),
+      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1));
+
+    testWidgets('renders 8 handles by key', (tester) async {
+      await tester.pumpWidget(harness(straight));
+      for (final r in ['tl', 'tr', 'br', 'bl', 'top', 'right', 'bottom', 'left']) {
+        expect(find.byKey(Key('crop-handle-$r')), findsOneWidget, reason: r);
+      }
+    });
+
+    testWidgets('dragging the top midpoint sets topMidDev, leaves corners', (tester) async {
+      emitted = null;
+      await tester.pumpWidget(harness(straight));
+      await tester.drag(find.byKey(const Key('crop-handle-top')), const Offset(0, 30));
+      await tester.pump();
+      expect(emitted, isNotNull);
+      expect(emitted!.topMidDev.dy, greaterThan(0));
+      expect(emitted!.topLeft, straight.topLeft);
+      expect(emitted!.bottomMidDev, Offset.zero);
+    });
+
+    testWidgets('dragging a corner preserves an existing bend', (tester) async {
+      emitted = null;
+      const bent = CropCorners(
+        topLeft: Offset(0, 0), topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
+        topMidDev: Offset(0, 0.1));
+      await tester.pumpWidget(harness(bent));
+      await tester.drag(find.byKey(const Key('crop-handle-bl')), const Offset(15, -15));
+      await tester.pump();
+      expect(emitted, isNotNull);
+      expect(emitted!.topMidDev, const Offset(0, 0.1)); // bend survives
+    });
+  });
 }
 
 void _noop(CropCorners _) {}

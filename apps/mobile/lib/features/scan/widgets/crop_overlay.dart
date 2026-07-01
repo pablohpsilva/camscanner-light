@@ -44,29 +44,25 @@ class CropOverlay extends StatelessWidget {
         void emitNew(String role, Offset newNorm) {
           switch (role) {
             case 'tl':
-              onCornersChanged(CropCorners(
-                  topLeft: newNorm,
-                  topRight: corners.topRight,
-                  bottomRight: corners.bottomRight,
-                  bottomLeft: corners.bottomLeft));
+              onCornersChanged(corners.copyWith(topLeft: newNorm));
             case 'tr':
-              onCornersChanged(CropCorners(
-                  topLeft: corners.topLeft,
-                  topRight: newNorm,
-                  bottomRight: corners.bottomRight,
-                  bottomLeft: corners.bottomLeft));
+              onCornersChanged(corners.copyWith(topRight: newNorm));
             case 'br':
-              onCornersChanged(CropCorners(
-                  topLeft: corners.topLeft,
-                  topRight: corners.topRight,
-                  bottomRight: newNorm,
-                  bottomLeft: corners.bottomLeft));
+              onCornersChanged(corners.copyWith(bottomRight: newNorm));
             case 'bl':
-              onCornersChanged(CropCorners(
-                  topLeft: corners.topLeft,
-                  topRight: corners.topRight,
-                  bottomRight: corners.bottomRight,
-                  bottomLeft: newNorm));
+              onCornersChanged(corners.copyWith(bottomLeft: newNorm));
+            case 'top':
+              onCornersChanged(
+                  corners.copyWith(topMidDev: newNorm - corners.topCenter));
+            case 'right':
+              onCornersChanged(
+                  corners.copyWith(rightMidDev: newNorm - corners.rightCenter));
+            case 'bottom':
+              onCornersChanged(corners.copyWith(
+                  bottomMidDev: newNorm - corners.bottomCenter));
+            case 'left':
+              onCornersChanged(
+                  corners.copyWith(leftMidDev: newNorm - corners.leftCenter));
           }
         }
 
@@ -105,6 +101,11 @@ class CropOverlay extends StatelessWidget {
                 ),
               ),
             ),
+            // Midpoints first so corners (added last) win overlapping hit-tests.
+            buildHandle('top', 'Top edge midpoint', corners.topMid),
+            buildHandle('right', 'Right edge midpoint', corners.rightMid),
+            buildHandle('bottom', 'Bottom edge midpoint', corners.bottomMid),
+            buildHandle('left', 'Left edge midpoint', corners.leftMid),
             buildHandle('tl', 'Top-left crop corner', corners.topLeft),
             buildHandle('tr', 'Top-right crop corner', corners.topRight),
             buildHandle('br', 'Bottom-right crop corner', corners.bottomRight),
