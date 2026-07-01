@@ -299,6 +299,26 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _rotatePage() async {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty) return;
+    final page = pages[_current];
+    try {
+      await widget.repository.rotatePage(widget.documentId, page.position);
+      // FileImage caches by path; the rotated bytes reuse the flat path, so
+      // clear the cache before reloading or the stale image would show.
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      if (!mounted) return;
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't rotate")),
+      );
+    }
+  }
+
   Future<void> _editCrop(PageImage pg) async {
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
@@ -364,6 +384,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
             onSelected: (v) {
               if (v == 'view-text') _viewText();
+              if (v == 'rotate') unawaited(_rotatePage());
               if (v == 'retake') unawaited(_retakePage());
               if (v == 'delete') unawaited(_confirmAndDeletePage());
               if (v == 'export-image') unawaited(_exportPageAsImage());
@@ -374,6 +395,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'view-text',
                 key: Key('page-viewer-view-text'),
                 child: Text('View text'),
+              ),
+              PopupMenuItem<String>(
+                value: 'rotate',
+                key: Key('page-viewer-rotate'),
+                child: Text('Rotate'),
               ),
               PopupMenuItem<String>(
                 value: 'retake',
