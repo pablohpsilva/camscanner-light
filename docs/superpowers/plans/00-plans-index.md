@@ -79,6 +79,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
 | J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
 | K1 | Rotate a page 90° | 09 | `2026-07-01-k1-rotate-page.md` | ✅ **built & gated** |
+| L1 | Merge documents | 09 | `2026-07-01-l1-merge-documents.md` | ✅ **built & gated** |
 
 ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
 
