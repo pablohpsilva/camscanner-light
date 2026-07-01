@@ -45,11 +45,11 @@ void main() {
     await tester.pump();
 
     final selected = tester.widget<Container>(find.byKey(const Key('page-thumb-1')));
-    final decoration = selected.decoration as BoxDecoration?;
+    final decoration = selected.foregroundDecoration as BoxDecoration?;
     expect(decoration?.border, isNotNull, reason: 'selected tile must have a border');
 
     final notSelected = tester.widget<Container>(find.byKey(const Key('page-thumb-0')));
-    expect(notSelected.decoration, isNull, reason: 'non-selected tile must have no border');
+    expect(notSelected.foregroundDecoration, isNull, reason: 'non-selected tile must have no border');
   });
 
   testWidgets('tapping tile i calls onTap(i)', (tester) async {

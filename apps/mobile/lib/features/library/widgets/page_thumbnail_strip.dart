@@ -91,7 +91,7 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
               key: Key('page-thumb-$index'),
               width: 56,
               margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: isSelected
+              foregroundDecoration: isSelected
                   ? BoxDecoration(
                       border: Border.all(color: scheme.primary, width: 2),
                       borderRadius: BorderRadius.circular(4),
