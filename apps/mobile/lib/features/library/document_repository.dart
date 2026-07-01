@@ -104,6 +104,15 @@ abstract interface class DocumentRepository {
   /// derivative if present, else the original). Throws [DocumentSaveException]
   /// when the page row is missing.
   Future<void> runOcr(int documentId, int position);
+
+  /// Materializes the page at [position] of [documentId]'s cached recognized
+  /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
+  /// named `<sanitized-document-name>_page_<position>.txt` under the system temp
+  /// dir — temporary, so the app does not accumulate exports (mirrors
+  /// [exportPdf]). A `.txt` carries no metadata, so no scrub pass is needed.
+  /// Nothing leaves the device. Throws [DocumentExportException] when the page
+  /// row is missing or has no recognized text (null/empty/whitespace).
+  Future<File> exportRecognizedText(int documentId, int position);
 }
 
 class DocumentSaveException implements Exception {

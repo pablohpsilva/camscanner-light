@@ -236,15 +236,20 @@ class DriftDocumentRepository implements DocumentRepository {
     }
   }
 
-  Future<String> _pdfFileNameFor(int documentId) async {
+  /// Sanitized base name (no extension) from the document's name; 'document'
+  /// when the name is empty/unknown. Shared by all export filename builders.
+  Future<String> _exportBaseName(int documentId) async {
     final doc = await (_db.select(_db.documents)
           ..where((d) => d.id.equals(documentId)))
         .getSingleOrNull();
     final base = (doc?.name ?? 'document')
         .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
         .trim();
-    return '${base.isEmpty ? 'document' : base}.pdf';
+    return base.isEmpty ? 'document' : base;
   }
+
+  Future<String> _pdfFileNameFor(int documentId) async =>
+      '${await _exportBaseName(documentId)}.pdf';
 
   @override
   Future<File> exportPageAsImage(int documentId, int position) async {
@@ -267,6 +272,31 @@ class DriftDocumentRepository implements DocumentRepository {
     } catch (e) {
       if (e is DocumentExportException) rethrow;
       throw DocumentExportException('exportImage failed: $e');
+    }
+  }
+
+  @override
+  Future<File> exportRecognizedText(int documentId, int position) async {
+    final row = await (_db.select(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .getSingleOrNull();
+    if (row == null) {
+      throw DocumentExportException(
+          'exportText failed: no page ($documentId, $position)');
+    }
+    final text = row.ocrText;
+    if (text == null || text.trim().isEmpty) {
+      throw const DocumentExportException('exportText failed: no recognized text');
+    }
+    try {
+      final dir = await Directory.systemTemp.createTemp('txt_export');
+      final base = await _exportBaseName(documentId);
+      final file = File('${dir.path}/${base}_page_$position.txt');
+      await file.writeAsString(text);
+      return file;
+    } catch (e) {
+      throw DocumentExportException('exportText failed: $e');
     }
   }
 

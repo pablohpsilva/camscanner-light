@@ -36,6 +36,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnDeletePage;
   final bool throwOnReplacePage;
   final bool throwOnExportImage;
+  final bool throwOnExportText;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -56,6 +57,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
   int? lastExportedImagePosition;
+  int? lastExportedTextPosition;
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
@@ -70,6 +72,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnDeletePage = false,
     this.throwOnReplacePage = false,
     this.throwOnExportImage = false,
+    this.throwOnExportText = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -138,6 +141,18 @@ class FakeDocumentRepository implements DocumentRepository {
     lastExportedImagePosition = position;
     return File(
         '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
+  }
+
+  @override
+  Future<File> exportRecognizedText(int documentId, int position) async {
+    lastExportedTextPosition = position;
+    if (throwOnExportText) {
+      throw const DocumentExportException('fake exportText failure');
+    }
+    final dir = await Directory.systemTemp.createTemp('faketxt');
+    final f = File('${dir.path}/page_$position.txt');
+    await f.writeAsString('fake recognized text');
+    return f;
   }
 
   @override
