@@ -76,6 +76,20 @@ abstract interface class DocumentRepository {
   /// Returns the number of pages remaining (0 => the document was deleted).
   /// Throws [DocumentSaveException] when no page exists at ([documentId], [position]).
   Future<int> deletePage(int documentId, int position);
+
+  /// Replaces the page at [position] of [documentId] in place with [capture]
+  /// (EXIF-scrubbed), applying [corners] (default full-frame) and [enhancer]
+  /// exactly as [addPageToDocument] does. Overwrites the page's stored image and
+  /// flat derivative, updates its corners, and bumps `modifiedAt`. The page keeps
+  /// its [position]. Throws [DocumentSaveException] when no page exists at
+  /// ([documentId], [position]).
+  Future<void> replacePage(
+    int documentId,
+    int position,
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  });
 }
 
 class DocumentSaveException implements Exception {

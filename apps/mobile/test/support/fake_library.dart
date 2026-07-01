@@ -32,6 +32,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnAddPage;
   final bool throwOnReorder;
   final bool throwOnDeletePage;
+  final bool throwOnReplacePage;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -47,6 +48,7 @@ class FakeDocumentRepository implements DocumentRepository {
   int addPageCalls = 0;
   List<int> lastReorderedPositions = <int>[];
   int? lastDeletedPagePosition;
+  int? lastReplacedPagePosition;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -62,6 +64,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnAddPage = false,
     this.throwOnReorder = false,
     this.throwOnDeletePage = false,
+    this.throwOnReplacePage = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -230,16 +233,39 @@ class FakeDocumentRepository implements DocumentRepository {
     lastDeletedPagePosition = position;
     return w.length;
   }
+
+  @override
+  Future<void> replacePage(
+    int documentId,
+    int position,
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  }) async {
+    if (throwOnReplacePage) {
+      throw const DocumentSaveException('fake: replacePage failed');
+    }
+    final w = _working;
+    if (w != null && w.indexWhere((p) => p.position == position) < 0) {
+      throw const DocumentSaveException('fake: no such page');
+    }
+    lastReplacedPagePosition = position;
+  }
 }
 
 /// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
-/// return null (no-op), or throw [WarpException].
+/// or throw [WarpException].
+///
+/// Default [returnValue] is a non-null stub so tests that pass non-full-frame
+/// corners get a flat derivative without providing explicit bytes.
 class FakeImageWarper implements ImageWarper {
   final bool throws;
-  final Uint8List? returnValue;
+  final Uint8List returnValue;
   int calls = 0;
 
-  FakeImageWarper({this.throws = false, this.returnValue});
+  FakeImageWarper({this.throws = false, Uint8List? returnValue})
+      : returnValue =
+            returnValue ?? Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xD9]);
 
   @override
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) async {

@@ -391,6 +391,79 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<void> replacePage(
+    int documentId,
+    int position,
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  }) async {
+    try {
+      final row = await (_db.select(_db.pages)
+            ..where((t) =>
+                t.documentId.equals(documentId) & t.position.equals(position)))
+          .getSingleOrNull();
+      if (row == null) {
+        throw DocumentSaveException('replacePage: no page ($documentId, $position)');
+      }
+
+      final raw = await File(capture.path).readAsBytes();
+      final Uint8List scrubbed = _scrubber.scrub(raw);
+      final isFullFrame = corners == null || corners == CropCorners.fullFrame;
+
+      Uint8List bytesToStore = scrubbed;
+      if (enhancer != null && isFullFrame) {
+        try {
+          bytesToStore = await enhancer.enhance(scrubbed);
+        } catch (_) {}
+      }
+      // Overwrite the original image in place (same stored relative path).
+      await _fileStore.writeRelative(row.relativeImagePath, bytesToStore);
+
+      String? flatRel;
+      if (!isFullFrame) {
+        try {
+          final Uint8List? flat = await _warper.warp(scrubbed, corners);
+          if (flat != null) {
+            Uint8List flatBytes = flat;
+            if (enhancer != null) {
+              try {
+                flatBytes = await enhancer.enhance(flat);
+              } catch (_) {}
+            }
+            // Reuse the existing flat path when present → overwrite in place,
+            // never orphan a stale derivative (positions can drift after reorders).
+            flatRel = row.flatRelativePath ??
+                _fileStore.flatRelativeFor(documentId, position);
+            await _fileStore.writeRelative(flatRel, flatBytes);
+          }
+        } catch (_) {}
+      }
+
+      // Corners now full-frame (or warp produced nothing) → drop the old flat.
+      if (flatRel == null && row.flatRelativePath != null) {
+        try {
+          await _fileStore.absoluteFor(row.flatRelativePath!).delete();
+        } on FileSystemException {/* already gone — fine */}
+      }
+
+      await _db.transaction(() async {
+        await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
+            PagesCompanion(
+                corners: Value(corners?.toStorage()),
+                flatRelativePath: Value(flatRel)));
+        await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
+            .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+      });
+
+      await _deleteTempSource(capture.path);
+    } catch (e) {
+      if (e is DocumentSaveException) rethrow;
+      throw DocumentSaveException('replacePage failed: $e');
+    }
+  }
+
+  @override
   Future<void> reorderPages(int documentId, List<int> orderedPositions) async {
     // Pre-fetch rows before the transaction to build a position→rowId map.
     // Updates inside the transaction use the primary key (id) to avoid
