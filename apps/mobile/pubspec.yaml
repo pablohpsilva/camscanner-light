@@ -45,6 +45,7 @@ dependencies:
   pdf: ^3.11.1
   pdfx: ^2.9.0
   image_picker: ^1.2.3
+  google_mlkit_text_recognition: ^0.15.1
 
 dev_dependencies:
   flutter_test:
