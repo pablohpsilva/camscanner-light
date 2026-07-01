@@ -339,6 +339,58 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<int> deletePage(int documentId, int position) async {
+    final row = await (_db.select(_db.pages)
+          ..where((t) =>
+              t.documentId.equals(documentId) & t.position.equals(position)))
+        .getSingleOrNull();
+    if (row == null) {
+      throw DocumentSaveException('deletePage: no page ($documentId, $position)');
+    }
+    final rows = await (_db.select(_db.pages)
+          ..where((t) => t.documentId.equals(documentId))
+          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+        .get();
+    final remaining = rows.length - 1;
+
+    await _db.transaction(() async {
+      await (_db.delete(_db.pages)..where((t) => t.id.equals(row.id))).go();
+      if (remaining > 0) {
+        // Renumber survivors whose position was above the deleted one: -1.
+        for (final r in rows) {
+          if (r.id == row.id) continue;
+          if (r.position > position) {
+            await (_db.update(_db.pages)..where((t) => t.id.equals(r.id)))
+                .write(PagesCompanion(position: Value(r.position - 1)));
+          }
+        }
+        await (_db.update(_db.documents)
+              ..where((d) => d.id.equals(documentId)))
+            .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+      } else {
+        await (_db.delete(_db.documents)..where((d) => d.id.equals(documentId)))
+            .go();
+      }
+    });
+
+    // Best-effort file cleanup AFTER commit (DB is authoritative).
+    if (remaining == 0) {
+      await _fileStore.deleteDocumentDir(documentId);
+    } else {
+      try {
+        await _fileStore.absoluteFor(row.relativeImagePath).delete();
+      } on FileSystemException {/* already gone — fine */}
+      final flat = row.flatRelativePath;
+      if (flat != null) {
+        try {
+          await _fileStore.absoluteFor(flat).delete();
+        } on FileSystemException {/* already gone — fine */}
+      }
+    }
+    return remaining;
+  }
+
+  @override
   Future<void> reorderPages(int documentId, List<int> orderedPositions) async {
     // Pre-fetch rows before the transaction to build a position→rowId map.
     // Updates inside the transaction use the primary key (id) to avoid

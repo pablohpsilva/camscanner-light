@@ -31,6 +31,7 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnUpdate;
   final bool throwOnAddPage;
   final bool throwOnReorder;
+  final bool throwOnDeletePage;
   final Completer<void>? gate;
   final Completer<void>? exportGate;
   final Completer<void>? listGate;
@@ -45,6 +46,7 @@ class FakeDocumentRepository implements DocumentRepository {
   CropCorners? lastUpdatedCorners;
   int addPageCalls = 0;
   List<int> lastReorderedPositions = <int>[];
+  int? lastDeletedPagePosition;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
   final List<String> renamedTo = <String>[];
@@ -59,6 +61,7 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnUpdate = false,
     this.throwOnAddPage = false,
     this.throwOnReorder = false,
+    this.throwOnDeletePage = false,
     this.gate,
     this.exportGate,
     this.listGate,
@@ -66,6 +69,9 @@ class FakeDocumentRepository implements DocumentRepository {
     List<Document>? documents,
     this.pages,
   }) : documents = documents ?? <Document>[];
+
+  late final List<PageImage>? _working =
+      pages == null ? null : List<PageImage>.from(pages!);
 
   @override
   Future<Document> createFromCapture(CapturedImage capture,
@@ -90,8 +96,10 @@ class FakeDocumentRepository implements DocumentRepository {
   @override
   Future<List<PageImage>> getDocumentPages(int documentId) async {
     if (throwOnGetPages) throw StateError('fake: getDocumentPages failed');
-    return pages ??
-        [PageImage(position: 1, imagePath: '/nonexistent/page-$documentId-1.jpg')];
+    final w = _working;
+    return w == null
+        ? [PageImage(position: 1, imagePath: '/nonexistent/page-$documentId-1.jpg')]
+        : List<PageImage>.from(w);
   }
 
   @override
@@ -188,6 +196,39 @@ class FakeDocumentRepository implements DocumentRepository {
       throw const DocumentSaveException('fake: reorder failed');
     }
     lastReorderedPositions = List<int>.unmodifiable(orderedPositions);
+  }
+
+  @override
+  Future<int> deletePage(int documentId, int position) async {
+    if (throwOnDeletePage) {
+      throw const DocumentSaveException('fake: deletePage failed');
+    }
+    final w = _working;
+    if (w == null) {
+      // Synthesized single page: deleting it removes the document.
+      if (position != 1) {
+        throw const DocumentSaveException('fake: no such page');
+      }
+      lastDeletedPagePosition = position;
+      return 0;
+    }
+    final idx = w.indexWhere((p) => p.position == position);
+    if (idx < 0) {
+      throw const DocumentSaveException('fake: no such page');
+    }
+    w.removeAt(idx);
+    // Renumber survivors contiguously 1..N.
+    for (var i = 0; i < w.length; i++) {
+      final p = w[i];
+      w[i] = PageImage(
+        position: i + 1,
+        imagePath: p.imagePath,
+        corners: p.corners,
+        flatImagePath: p.flatImagePath,
+      );
+    }
+    lastDeletedPagePosition = position;
+    return w.length;
   }
 }
 

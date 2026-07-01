@@ -67,6 +67,15 @@ abstract interface class DocumentRepository {
   ///
   /// Throws [DocumentSaveException] when [documentId] has no pages.
   Future<void> reorderPages(int documentId, List<int> orderedPositions);
+
+  /// Deletes the page at [position] of [documentId]: removes its row, best-effort
+  /// deletes its image and flat files, and renumbers the remaining pages so their
+  /// positions stay contiguous (1..N-1). If it was the only page, the whole
+  /// document (row + dir) is deleted.
+  ///
+  /// Returns the number of pages remaining (0 => the document was deleted).
+  /// Throws [DocumentSaveException] when no page exists at ([documentId], [position]).
+  Future<int> deletePage(int documentId, int position);
 }
 
 class DocumentSaveException implements Exception {
