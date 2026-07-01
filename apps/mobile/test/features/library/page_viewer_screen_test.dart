@@ -371,4 +371,25 @@ void main() {
     expect(find.byKey(const Key('page-thumb-0')), findsOneWidget);
     expect(find.byKey(const Key('page-thumb-1')), findsOneWidget);
   });
+
+  testWidgets('H2: tapping page-thumb-1 navigates PageView to page 2',
+      (tester) async {
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(position: 1, imagePath: '/nonexistent/h2a.jpg'),
+        const PageImage(position: 2, imagePath: '/nonexistent/h2b.jpg'),
+      ],
+    );
+    await pushViewer(tester, repo);
+
+    // Initially on page 1 (index 0).
+    expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
+
+    // Tap the second thumbnail (0-based index 1).
+    await tester.tap(find.byKey(const Key('page-thumb-1')));
+    await tester.pumpAndSettle();
+
+    // PageView should have animated to index 1 → shows page at position 2.
+    expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
+  });
 }
