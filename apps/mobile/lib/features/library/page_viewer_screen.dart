@@ -216,6 +216,23 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _exportAllImages() async {
+    try {
+      final files =
+          await widget.repository.exportAllPagesAsImages(widget.documentId);
+      if (!mounted) return;
+      final n = files.length;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported $n ${n == 1 ? 'image' : 'images'}')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't export images")),
+      );
+    }
+  }
+
   void _viewText() {
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
@@ -350,6 +367,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               if (v == 'retake') unawaited(_retakePage());
               if (v == 'delete') unawaited(_confirmAndDeletePage());
               if (v == 'export-image') unawaited(_exportPageAsImage());
+              if (v == 'export-all-images') unawaited(_exportAllImages());
             },
             itemBuilder: (_) => const [
               PopupMenuItem<String>(
@@ -371,6 +389,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'export-image',
                 key: Key('page-viewer-export-image'),
                 child: Text('Export as image'),
+              ),
+              PopupMenuItem<String>(
+                value: 'export-all-images',
+                key: Key('page-viewer-export-all-images'),
+                child: Text('Export all as images'),
               ),
             ],
           ),
