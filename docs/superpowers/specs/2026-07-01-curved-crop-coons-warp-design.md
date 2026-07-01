@@ -63,10 +63,14 @@ Other members:
 
 Interface `ImageWarper` is unchanged: `Future<Uint8List?> warp(Uint8List bytes, CropCorners corners)`. Runs in a `compute()` isolate and inherits the existing timeout guard behavior.
 
-**Dispatch** (a thin `ImageWarper` that composes the two, or a branch inside the concrete warper):
+**Dispatch** — a thin `const HybridWarper implements ImageWarper` that composes `PerspectiveWarper` + `CoonsWarper` (keeps each single-responsibility per SOLID):
 - `corners == fullFrame` → return `null` (no-op, as today).
 - `corners.isStraight` → **`PerspectiveWarper`** (existing homography). Exact perspective; zero behavior change for the common path.
 - otherwise → **`CoonsWarper`** (new).
+
+**Wiring change (one line):** `library_dependencies.dart:34` becomes `warper: const HybridWarper()` (was `const PerspectiveWarper()`). `HybridWarper` is `const`-constructible so the const wiring is preserved. `perspective_warper_test` constructs `const PerspectiveWarper()` directly and is unaffected — it keeps testing the homography path in isolation; the facade routing gets its own new tests.
+
+**Math (verified in spec review):** control point `C = center + 2·dev` makes the quadratic pass through `center + dev` at `t=0.5`; the Coons corner terms reduce to the exact corners (`S(0,0)=TL`, etc.).
 
 ### `CoonsWarper`
 
@@ -90,7 +94,7 @@ Pure-Dart (`image` package), same isolate/dispose discipline as `PerspectiveWarp
 `lib/features/scan/widgets/crop_overlay.dart`.
 
 - Render **8 handles**: 4 corner (as today) + 4 midpoint. Midpoints visually distinct (e.g. smaller / hollow) so they read as "edge" vs "corner." Keyed `crop-handle-{tl,tr,br,bl,top,right,bottom,left}`, each `Semantics`-labeled.
-- **Hit-testing:** with 8 handles the ~44px touch targets can overlap on small crops. Corners take priority (hit-test corners before midpoints); optionally suppress a midpoint handle when it would overlap a corner.
+- **Hit-testing:** with 8 handles the ~44px touch targets can overlap on small crops. Corners take priority via **Stack order** — add the 4 midpoint handles first, then the 4 corners, so corners are hit-tested first (Flutter hits top-most/last child first). Optionally suppress a midpoint handle when it would overlap its corner.
 - **Corner drag:** moves that corner. **Trap:** today's `emitNew` rebuilds `CropCorners` via the 4-arg constructor — with deviations defaulting to zero, that would silently reset every bent edge to straight on any corner drag. Corner drag MUST use `corners.copyWith(topLeft: newNorm)` (preserving the other corners *and all four deviations*). Because deviations are relative to the edge center, the bent edge then keeps its bend as the corner moves — no special tracking code.
 - **Midpoint drag:** the handle emits an absolute normalized position `M`; convert to a deviation `dev = M − center(cornerA, cornerB)` and `copyWith(topMidDev: dev)`. Only that edge changes. Clamp the resolved midpoint to `[0,1]`.
 - **Edge rendering:** `_QuadPainter` draws each edge via `Path.quadraticBezierTo(control, endCorner)` using the derived control point; the dim-outside mask uses the same curved path so the darkened region hugs the curve.
