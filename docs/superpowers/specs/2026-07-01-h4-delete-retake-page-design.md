@@ -134,9 +134,11 @@ transaction:
     DELETE FROM documents WHERE id = documentId   // last-page rule
 
 after commit (best-effort, outside txn):
-  delete file row.relativeImagePath
-  if row.flatRelativePath != null: delete it
-  if remaining == 0: _fileStore.deleteDocumentDir(documentId)  // nuke the dir
+  if remaining == 0:
+    _fileStore.deleteDocumentDir(documentId)   // last page → nuke the whole dir
+  else:
+    delete file row.relativeImagePath
+    if row.flatRelativePath != null: delete it
 
 return remaining
 ```
@@ -158,16 +160,19 @@ isFullFrame = corners == null || corners == fullFrame
 bytesToStore = (enhancer != null && isFullFrame) ? enhance(scrubbed) : scrubbed  // silent on failure
 write bytesToStore to row.relativeImagePath        // overwrite in place
 
+// Reuse the row's EXISTING flat path when present, so we overwrite in place and
+// never orphan a stale derivative (after reorders, position-derived names can
+// differ from the stored path).
 flatRel = null
 if !isFullFrame:
   flat = _warper.warp(scrubbed, corners)
   if flat != null:
     flatBytes = enhancer != null ? enhance(flat) : flat   // silent on failure
-    flatRel = _fileStore.flatRelativeFor(documentId, position)
+    flatRel = row.flatRelativePath ?? _fileStore.flatRelativeFor(documentId, position)
     write flatBytes to flatRel
 
 if flatRel == null && row.flatRelativePath != null:
-  delete old flat file (best-effort)                // stale derivative removed
+  delete row.flatRelativePath file (best-effort)    // corners now full-frame → drop derivative
 
 transaction:
   UPDATE pages SET corners=corners?.toStorage(), flatRelativePath=flatRel
@@ -287,6 +292,9 @@ Future<void> _confirmAndDeletePage() async {
     }
     if (_current >= remaining) _current = remaining - 1;  // clamp
     await _load();
+    // The PageController may still reference the removed index — jump it into
+    // range so the PageView shows the clamped page (no-op if already valid).
+    if (mounted && _controller.hasClients) _controller.jumpToPage(_current);
   } catch (_) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -359,7 +367,13 @@ real `NativeDatabase.memory()` like existing drift tests):
 - Delete page cancel → `deletePage` not called.
 - Delete the only page → dialog shows whole-document copy; confirming pops the viewer (remaining 0).
 - `deletePage` throws → SnackBar shown, still on viewer.
-- Retake selects camera route (push occurs); `replacePage` invoked when the injected `onCapture` fires (unit-level via calling the callback / or verify navigation push).
+- Retake selects camera route: tapping "Retake page" pushes a `CameraScreen`
+  (assert `find.byType(CameraScreen)`). **The viewer under test is given a fake
+  `ScanDependencies` whose permission/preview resolve to *unavailable*** so the
+  pushed `CameraScreen` renders its unavailable view without touching platform
+  channels (host widget tests must never invoke real camera channels). The
+  `replacePage` wiring itself is proven at the drift unit level and on-device BDD;
+  the widget test only proves the route is taken.
 
 **BDD — `apps/mobile/integration_test/h4_delete_retake.feature`** → generated
 `h4_delete_retake_test.dart` (on-device), step defs in `test/step/`:
