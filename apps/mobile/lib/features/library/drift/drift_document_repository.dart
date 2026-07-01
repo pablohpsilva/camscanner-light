@@ -300,6 +300,19 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<File>> exportAllPagesAsImages(int documentId) async {
+    final pages = await getDocumentPages(documentId);
+    if (pages.isEmpty) {
+      throw const DocumentExportException('exportAll failed: no pages');
+    }
+    final files = <File>[];
+    for (final page in pages) {
+      files.add(await exportPageAsImage(documentId, page.position));
+    }
+    return files;
+  }
+
+  @override
   Future<File> exportRecognizedText(int documentId, int position) async {
     final row = await (_db.select(_db.pages)
           ..where((t) =>

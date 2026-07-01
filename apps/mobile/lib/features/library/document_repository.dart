@@ -50,6 +50,12 @@ abstract interface class DocumentRepository {
   /// missing or the scrub fails.
   Future<File> exportPageAsImage(int documentId, int position);
 
+  /// Exports EVERY page of [documentId] as a standalone scrubbed JPG (delegating
+  /// to [exportPageAsImage] per page), returning the files in page order.
+  /// Nothing leaves the device. Throws [DocumentExportException] when the
+  /// document has no pages or any page fails to export.
+  Future<List<File>> exportAllPagesAsImages(int documentId);
+
   /// Renames [documentId] to [newName] (trimmed) and bumps modifiedAt. Returns
   /// the updated document. Throws [DocumentRenameException] when the trimmed
   /// name is empty or no document with that id exists. The name stays on-device.

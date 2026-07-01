@@ -147,6 +147,18 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<File>> exportAllPagesAsImages(int documentId) async {
+    if (throwOnExportImage) {
+      throw const DocumentExportException('fake: exportAll failed');
+    }
+    final pages = await getDocumentPages(documentId);
+    return [
+      for (final p in pages)
+        File('${Directory.systemTemp.path}/fake-all-$documentId-${p.position}.jpg')
+    ];
+  }
+
+  @override
   Future<File> exportRecognizedText(int documentId, int position) async {
     lastExportedTextPosition = position;
     if (throwOnExportText) {
