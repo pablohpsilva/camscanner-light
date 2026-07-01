@@ -175,6 +175,22 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<DocumentSummary>> searchDocuments(String query) async {
+    if (throwOnList) throw StateError('fake: search failed');
+    final summaries = documents
+        .map((d) => DocumentSummary(
+            document: d,
+            pageCount: 1,
+            thumbnailPath: '/nonexistent/thumb-${d.id}.jpg'))
+        .toList();
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return summaries;
+    return summaries
+        .where((s) => s.document.name.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
   Future<Document> rename(int documentId, String newName) async {
     if (throwOnRename) {
       throw const DocumentRenameException('fake: rename failed');

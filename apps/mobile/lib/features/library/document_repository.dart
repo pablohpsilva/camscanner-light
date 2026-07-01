@@ -23,6 +23,12 @@ abstract interface class DocumentRepository {
   /// (absolute, resolved at read time; null when the document has no page).
   Future<List<DocumentSummary>> listDocumentSummaries();
 
+  /// Same shape as [listDocumentSummaries] (newest first), restricted to
+  /// documents whose name OR any page's recognized OCR text contains [query]
+  /// (case-insensitive substring). A blank/whitespace [query] returns the same
+  /// as [listDocumentSummaries]. Matches never leave the device.
+  Future<List<DocumentSummary>> searchDocuments(String query);
+
   /// Pages of [documentId], position ascending, with ABSOLUTE image paths
   /// (resolved at read time). Empty when the document has no pages.
   Future<List<PageImage>> getDocumentPages(int documentId);

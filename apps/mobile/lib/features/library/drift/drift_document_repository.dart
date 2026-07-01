@@ -122,7 +122,28 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<DocumentSummary>> listDocumentSummaries() async {
+  Future<List<DocumentSummary>> listDocumentSummaries() => _summaries();
+
+  @override
+  Future<List<DocumentSummary>> searchDocuments(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return _summaries();
+    final like = '%$q%';
+    // Step 1: ids of documents matching by name OR any page's ocrText.
+    // Grouping by document id yields each matching doc exactly once.
+    final idQuery = _db.select(_db.documents).join([
+      leftOuterJoin(_db.pages, _db.pages.documentId.equalsExp(_db.documents.id)),
+    ])
+      ..where(_db.documents.name.like(like) | _db.pages.ocrText.like(like))
+      ..groupBy([_db.documents.id]);
+    final ids =
+        (await idQuery.get()).map((r) => r.readTable(_db.documents).id).toSet();
+    if (ids.isEmpty) return const [];
+    // Step 2: build summaries for those ids (counts ALL their pages).
+    return _summaries(onlyIds: ids);
+  }
+
+  Future<List<DocumentSummary>> _summaries({Set<int>? onlyIds}) async {
     // (1) page count per document, newest doc first — one grouped query.
     final pageCount = _db.pages.id.count();
     final query = _db.select(_db.documents).join([
@@ -131,6 +152,9 @@ class DriftDocumentRepository implements DocumentRepository {
       ..addColumns([pageCount])
       ..groupBy([_db.documents.id])
       ..orderBy([OrderingTerm.desc(_db.documents.createdAt)]);
+    if (onlyIds != null) {
+      query.where(_db.documents.id.isIn(onlyIds.toList()));
+    }
     final rows = await query.get();
 
     // (2) lowest-position page path per document — one query, no N+1.
