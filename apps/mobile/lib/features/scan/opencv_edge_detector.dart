@@ -1,19 +1,50 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
 import '../library/crop_corners.dart';
 import 'edge_detector.dart';
 
+/// Runs the native detection pipeline for [bytes], returning the flat result
+/// list (see [_runPipeline]) or null. Injectable so tests can exercise the
+/// timeout guard without the native OpenCV library.
+typedef PipelineRunner = Future<List<double>?> Function(Uint8List bytes);
+
+/// Default runner: offloads the synchronous OpenCV pipeline to an isolate.
+Future<List<double>?> _computeRunner(Uint8List bytes) =>
+    compute(_runPipeline, bytes);
+
 class OpenCvEdgeDetector implements EdgeDetector {
-  const OpenCvEdgeDetector();
+  /// Upper bound on a single [detect] call. If the native pipeline wedges
+  /// (an isolate blocked in native C++ cannot be killed by Dart), the timeout
+  /// lets [detect] return null instead of hanging its caller forever.
+  final Duration timeout;
+  final PipelineRunner _runner;
+
+  const OpenCvEdgeDetector({this.timeout = const Duration(seconds: 5)})
+      : _runner = _computeRunner;
+
+  /// Test-only: inject a custom [runner] (e.g. a slow/never-completing stub) to
+  /// exercise the timeout guard without loading libdartcv.
+  @visibleForTesting
+  OpenCvEdgeDetector.withRunner(
+    PipelineRunner runner, {
+    this.timeout = const Duration(seconds: 5),
+  }) : _runner = runner;
 
   @override
   Future<DetectionResult?> detect(Uint8List bytes) async {
-    final raw = await compute(_runPipeline, bytes);
+    final List<double>? raw;
+    try {
+      raw = await _runner(bytes).timeout(timeout);
+    } on TimeoutException {
+      // Native pipeline wedged — return null rather than hang the caller.
+      return null;
+    }
     if (raw == null) return null;
     return DetectionResult(
       corners: CropCorners(
