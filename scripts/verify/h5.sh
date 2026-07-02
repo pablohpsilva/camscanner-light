@@ -51,3 +51,5 @@ else
 fi
 
 echo "== H5 verification complete =="
+
+verify_summary

@@ -75,3 +75,5 @@ else
 fi
 
 echo "== H4 verification complete =="
+
+verify_summary

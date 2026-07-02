@@ -63,3 +63,5 @@ else
 fi
 
 echo "== I1 verification complete =="
+
+verify_summary

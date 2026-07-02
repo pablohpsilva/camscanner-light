@@ -69,3 +69,5 @@ else
 fi
 
 echo "== Q1 verification complete =="
+
+verify_summary

@@ -55,3 +55,5 @@ else
 fi
 
 echo "== O1 verification complete =="
+
+verify_summary

@@ -53,3 +53,5 @@ else
 fi
 
 echo "== N1 verification complete =="
+
+verify_summary

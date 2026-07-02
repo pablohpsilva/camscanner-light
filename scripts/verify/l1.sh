@@ -57,3 +57,5 @@ else
 fi
 
 echo "== L1 verification complete =="
+
+verify_summary

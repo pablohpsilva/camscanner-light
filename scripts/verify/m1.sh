@@ -53,3 +53,5 @@ else
 fi
 
 echo "== M1 verification complete =="
+
+verify_summary

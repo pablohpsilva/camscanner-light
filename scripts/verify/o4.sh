@@ -57,3 +57,5 @@ else
 fi
 
 echo "== O4 verification complete =="
+
+verify_summary

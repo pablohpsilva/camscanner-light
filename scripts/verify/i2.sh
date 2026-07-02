@@ -67,3 +67,5 @@ else
 fi
 
 echo "== I2 verification complete =="
+
+verify_summary

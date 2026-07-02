@@ -57,3 +57,5 @@ else
 fi
 
 echo "== K1 verification complete =="
+
+verify_summary

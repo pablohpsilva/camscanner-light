@@ -71,3 +71,5 @@ else
 fi
 
 echo "== H3 verification complete =="
+
+verify_summary

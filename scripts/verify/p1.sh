@@ -57,3 +57,5 @@ else
 fi
 
 echo "== P1 verification complete =="
+
+verify_summary
