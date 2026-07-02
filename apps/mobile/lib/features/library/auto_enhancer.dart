@@ -170,6 +170,7 @@ Uint8List _autoFn(Uint8List bytes) {
     // EXIF scrubber keeps the Orientation tag; encodeJpg strips EXIF, so bake
     // orientation into pixels first. Safe no-op for already-flat bytes.
     final oriented = img.bakeOrientation(decoded);
+    final original = oriented.clone();
     final colorProxy = _downscaleProxy(oriented);
     final bgProxy = _backgroundFromProxy(colorProxy);
     final bg = img.copyResize(bgProxy,
@@ -182,6 +183,11 @@ Uint8List _autoFn(Uint8List bytes) {
         interpolation: img.Interpolation.linear);
     _divideByBackground(oriented, bg, alphaMap);
     _autoLevels(oriented); // global white-point + contrast finish
+    // Preserve detected photo regions exactly as captured: the divide skipped
+    // them (alpha 0) but _autoLevels still remapped them. Blend the processed
+    // result back toward the captured original by (1 - alpha) so paper keeps its
+    // shadow-removed/levelled result and photo pixels are restored as-shot.
+    _restorePhotoRegions(oriented, original, alphaMap);
     return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
   } catch (_) {
     return bytes;
@@ -273,6 +279,25 @@ void _divideByBackground(img.Image src, img.Image bg, img.Image alphaMap) {
       px.r = (px.r.toInt() * scale).clamp(0, 255).toInt();
       px.g = (px.g.toInt() * scale).clamp(0, 255).toInt();
       px.b = (px.b.toInt() * scale).clamp(0, 255).toInt();
+    }
+  }
+}
+
+/// Blends [processed] toward [original] by (1 - alpha) per pixel, where alpha =
+/// the [alphaMap] channel / 255. Paper (alpha 1) keeps the processed pixel; a
+/// detected photo (alpha 0) is restored to the captured original; edges blend.
+void _restorePhotoRegions(
+    img.Image processed, img.Image original, img.Image alphaMap) {
+  for (var y = 0; y < processed.height; y++) {
+    for (var x = 0; x < processed.width; x++) {
+      final a = alphaMap.getPixel(x, y).r / 255;
+      if (a >= 1) continue; // pure paper — keep the processed pixel
+      final o = original.getPixel(x, y);
+      final p = processed.getPixel(x, y);
+      p
+        ..r = (p.r * a + o.r * (1 - a)).round().clamp(0, 255)
+        ..g = (p.g * a + o.g * (1 - a)).round().clamp(0, 255)
+        ..b = (p.b * a + o.b * (1 - a)).round().clamp(0, 255);
     }
   }
 }

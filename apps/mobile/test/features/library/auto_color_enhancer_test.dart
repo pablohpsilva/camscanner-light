@@ -10,14 +10,15 @@ import 'package:mobile/features/library/image_enhancer.dart';
 void main() {
   group('AutoEnhancer', () {
     test('stretches contrast: max channel value reaches near-255 after enhancement', () async {
-      final src = img.Image(width: 4, height: 4);
-      final rVals = [80, 93, 107, 120];
-      int i = 0;
+      // Bright NEUTRAL paper with a smooth column gradient (150..230): chroma 0,
+      // luminance above the paper floor, low local texture -> classified as paper
+      // (not a photo), so auto-levels stretches it. A chromatic or dark patch
+      // would now be treated as a photo region and preserved as captured, which
+      // is the point of the region-photo-protection feature.
+      final src = img.Image(width: 8, height: 8);
       for (final px in src) {
-        px.r = rVals[i % 4];
-        px.g = rVals[i % 4] - 20;
-        px.b = rVals[i % 4] + 10;
-        i++;
+        final v = 150 + (px.x * 80 ~/ 7);
+        px..r = v..g = v..b = v;
       }
       final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
 
@@ -29,7 +30,7 @@ void main() {
         if (px.r.toInt() > maxR) maxR = px.r.toInt();
       }
       expect(maxR, greaterThan(220),
-          reason: 'Auto-levels should stretch R to near-255');
+          reason: 'Auto-levels should stretch R to near-255 on paper');
     });
 
     test('preserves color: output is not grayscale (R channel differs from G)', () async {
