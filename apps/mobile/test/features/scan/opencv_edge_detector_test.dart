@@ -352,19 +352,34 @@ Future<void> main() async {
           reason: 'a triangle fills only ~half its bounding rect');
     });
 
-    test('pentagon shape → null (5 vertices, not 4)', () async {
-      final bytes = _pentagonImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('pentagon shape → best-guess quad (minAreaRect fallback)', () async {
+      // 5 vertices isn't a clean 4-point quad, so the pipeline falls back to
+      // the min-area rectangle. Best-guess-always: non-null, but a pentagon
+      // doesn't fill its bounding rect, so confidence stays modest.
+      final result = await detector.detect(_pentagonImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.9),
+          reason: 'a pentagon is not a clean rectangle — confidence must not be high');
     });
 
-    test('concave quad (dart/arrowhead) → null (fails isContourConvex)', () async {
-      final bytes = _concaveQuadImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('concave quad (dart/arrowhead) → best-guess quad (minAreaRect fallback)',
+        () async {
+      // Fails isContourConvex, so approxPolyDP is rejected and minAreaRect is
+      // used. A concave dart fills little of its bounding rect → low confidence.
+      final result = await detector.detect(_concaveQuadImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.85),
+          reason: 'a concave dart fills little of its bounding rect');
     });
 
-    test('non-convex quad (arrow/chevron ">") → null (fails isContourConvex)', () async {
-      final bytes = _chevronImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('non-convex quad (arrow/chevron ">") → best-guess quad (minAreaRect fallback)',
+        () async {
+      // Concave, so minAreaRect is used. A thin chevron fills little of its
+      // bounding rect → low confidence.
+      final result = await detector.detect(_chevronImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.85),
+          reason: 'a chevron fills little of its bounding rect');
     });
 
     test('two rects present → largest selected', () async {
