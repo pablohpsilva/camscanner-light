@@ -2,6 +2,7 @@ import 'dart:async'; // unawaited
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
@@ -11,6 +12,7 @@ import 'document_repository.dart';
 import 'edit_crop_screen.dart';
 import 'merge_picker_dialog.dart';
 import 'page_image.dart';
+import 'password_dialog.dart';
 import 'pdf_preview_screen.dart';
 import 'recognized_text_screen.dart';
 import 'widgets/page_thumbnail_strip.dart';
@@ -253,6 +255,32 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _protect() async {
+    final password = await showPasswordDialog(context);
+    if (password == null || password.isEmpty || !mounted) return;
+    try {
+      final file =
+          await widget.repository.exportProtectedPdf(widget.documentId, password);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Protected PDF ready')),
+      );
+      unawaited(_shareQuietly(file));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't protect PDF")),
+      );
+    }
+  }
+
+  Future<void> _shareQuietly(File file) async {
+    try {
+      await SharePlus.instance
+          .share(ShareParams(files: [XFile(file.path)], subject: _name));
+    } catch (_) {/* share unavailable (e.g. host test) — ignore */}
+  }
+
   void _viewText() {
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
@@ -454,6 +482,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               if (v == 'export-image') unawaited(_exportPageAsImage());
               if (v == 'export-all-images') unawaited(_exportAllImages());
               if (v == 'print') unawaited(_print());
+              if (v == 'protect') unawaited(_protect());
             },
             itemBuilder: (_) => const [
               PopupMenuItem<String>(
@@ -500,6 +529,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 value: 'print',
                 key: Key('page-viewer-print'),
                 child: Text('Print'),
+              ),
+              PopupMenuItem<String>(
+                value: 'protect',
+                key: Key('page-viewer-protect'),
+                child: Text('Protect with password'),
               ),
             ],
           ),
