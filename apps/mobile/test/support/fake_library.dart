@@ -468,18 +468,23 @@ LibraryDependencies fakeLibraryDependencies(FakeDocumentRepository repo) =>
 /// Real DriftDocumentRepository on an in-memory DB + temp file store. Exercises
 /// the real save/scrub/list code paths deterministically with no persistent
 /// side effects — used by the BDD success scenario on-device.
-LibraryDependencies tempLibraryDependencies() => LibraryDependencies(
-      createRepository: () async => DriftDocumentRepository(
-        db: AppDatabase(NativeDatabase.memory()),
-        scrubber: const JpegExifScrubber(),
-        fileStore:
-            DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
-        clock: DateTime.now,
-        pdfBuilder: const PdfBuilder(),
-        warper: const PerspectiveWarper(),
-      ),
-      printer: FakeDocumentPrinter(),
-    );
+LibraryDependencies tempLibraryDependencies() {
+  final share = FakeShareChannel();
+  lastBddShareChannel = share;
+  return LibraryDependencies(
+    createRepository: () async => DriftDocumentRepository(
+      db: AppDatabase(NativeDatabase.memory()),
+      scrubber: const JpegExifScrubber(),
+      fileStore:
+          DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
+      clock: DateTime.now,
+      pdfBuilder: const PdfBuilder(),
+      warper: const PerspectiveWarper(),
+    ),
+    printer: FakeDocumentPrinter(),
+    share: share,
+  );
+}
 
 /// Library deps whose repository always fails — for the save-failure scenario.
 LibraryDependencies failingLibraryDependencies() =>
