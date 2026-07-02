@@ -27,7 +27,10 @@ class PluginCameraPreviewController implements CameraPreviewController {
     }
     final controller = CameraController(
       cameras.first,
-      ResolutionPreset.high,
+      // Documents need high resolution; ResolutionPreset.high is only 720p,
+      // which makes captured text soft and hard to read. ultraHigh (~2160p)
+      // is much sharper while staying below the heaviest (max) preset.
+      ResolutionPreset.ultraHigh,
       enableAudio: false,
     );
     try {

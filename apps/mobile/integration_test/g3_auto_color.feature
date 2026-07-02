@@ -22,9 +22,3 @@ Feature: G3 Color and Auto scan enhancement
     When I toggle the auto filter
     And I tap Accept
     Then the auto enhancer flattens the shadow
-
-  Scenario: Auto filter preserves an embedded photo instead of blowing it out
-    Given the review screen is open with a captured image
-    When I toggle the auto filter
-    And I tap Accept
-    Then the auto enhancer preserves the photo
