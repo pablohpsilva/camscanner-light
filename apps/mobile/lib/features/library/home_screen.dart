@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _searching = false;
   String _query = '';
+  bool _sharing = false;
 
   @override
   void initState() {
@@ -175,7 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _shareDocument(DocumentSummary s) async {
     final repo = _repository;
-    if (repo == null) return;
+    if (repo == null || _sharing) return;
+    _sharing = true;
     try {
       final file = await repo.exportPdf(s.document.id);
       await widget.libraryDependencies.share
@@ -185,6 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't share")),
       );
+    } finally {
+      _sharing = false;
     }
   }
 

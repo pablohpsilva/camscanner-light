@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
@@ -72,5 +74,33 @@ void main() {
 
     expect(share.calls, 0);
     expect(find.text("Couldn't share"), findsOneWidget);
+  });
+
+  testWidgets('double-tapping Share does not launch two exports',
+      (tester) async {
+    final gate = Completer<void>();
+    final repo = FakeDocumentRepository(documents: [doc], exportGate: gate);
+    final share = FakeShareChannel();
+    await tester.pumpWidget(MaterialApp(home: homeWith(repo, share)));
+    await tester.pumpAndSettle();
+
+    // First Share — blocks inside exportPdf on the gate.
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-share-1')));
+    await tester.pump();
+
+    // Second Share while the first is still in-flight.
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-share-1')));
+    await tester.pump();
+
+    gate.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(repo.exportedIds.length, 1);
+    expect(share.calls, 1);
   });
 }
