@@ -83,6 +83,7 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | M1 | Split a document | 09 | `2026-07-01-m1-split-document.md` | ✅ **built & gated** |
 | N1 | Print a document | 12 | `2026-07-01-n1-print-document.md` | ✅ **built & gated** |
 | P1 | PDF password protection (AES-256) | 07/09 | `2026-07-02-p1-pdf-password.md` | ✅ **built & gated** |
+| Q1 | Compress / export quality (PDF + images) | 07/10 | `2026-07-02-q1-compress-export-quality.md` | ✅ **built & gated** |
 
 ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
 
