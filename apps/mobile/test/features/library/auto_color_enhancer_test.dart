@@ -253,6 +253,47 @@ void main() {
     });
   });
 
+  group('buildCorrectionMask', () {
+    test('colorful patch on neutral paper is detected as photo (alpha ~0)', () {
+      final proxy = img.Image(width: 30, height: 30);
+      for (final px in proxy) { px..r = 235..g = 233..b = 230; } // neutral paper
+      for (var y = 8; y < 22; y++) {
+        for (var x = 8; x < 22; x++) { proxy.getPixel(x, y)..r = 200..g = 40..b = 40; } // saturated red
+      }
+      final mask = buildCorrectionMask(proxy);
+      expect(mask.getPixel(15, 15).r, lessThan(80), reason: 'colorful region → preserved');
+      expect(mask.getPixel(1, 1).r, greaterThan(200), reason: 'paper → full correction');
+    });
+
+    test('sparse thin dark strokes (text) are NOT detected as photo (bias)', () {
+      final proxy = img.Image(width: 30, height: 30);
+      for (final px in proxy) { px..r = 232..g = 232..b = 232; } // bright neutral paper
+      // isolated single-pixel dark "strokes" scattered — thin, sparse.
+      for (final p in [[5,5],[9,5],[13,5],[5,9],[9,9],[20,20],[24,20]]) {
+        proxy.getPixel(p[0], p[1])..r = 35..g = 35..b = 35;
+      }
+      final mask = buildCorrectionMask(proxy);
+      // After opening, isolated speckles are erased → paper weight everywhere.
+      expect(mask.getPixel(9, 5).r, greaterThan(180),
+          reason: 'thin text must remain paper so it still gets de-shadowed');
+      expect(mask.getPixel(1, 1).r, greaterThan(200));
+    });
+
+    test('bright patch enclosed by a dark photo body is absorbed (alpha ~0)', () {
+      final proxy = img.Image(width: 30, height: 30);
+      for (final px in proxy) { px..r = 235..g = 235..b = 235; }
+      for (var y = 6; y < 24; y++) {
+        for (var x = 6; x < 24; x++) { proxy.getPixel(x, y)..r = 40..g = 40..b = 40; } // dark body
+      }
+      for (var y = 12; y < 18; y++) {
+        for (var x = 12; x < 18; x++) { proxy.getPixel(x, y)..r = 200..g = 200..b = 200; } // bright hole
+      }
+      final mask = buildCorrectionMask(proxy);
+      expect(mask.getPixel(15, 15).r, lessThan(80),
+          reason: 'bright area enclosed by the photo must be preserved too');
+    });
+  });
+
   group('NoneEnhancer (regression)', () {
     test('returns the exact same bytes object unchanged', () async {
       final bytes = Uint8List.fromList([1, 2, 3]);

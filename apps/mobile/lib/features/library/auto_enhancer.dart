@@ -29,6 +29,22 @@ const int _kPaperFloor = 95;
 /// ramps 0 -> 1 across this band, avoiding hard seams / halos at content edges.
 const int _kGateBand = 25;
 
+/// Min chroma (0-255) for a proxy pixel to seed as photo (color cue).
+const int _kChromaThresh = 25;
+
+/// Min local luminance std-dev for a proxy pixel to seed as photo (texture cue).
+const int _kTextureThresh = 18;
+
+/// Opening radius (proxy px) that removes thin/sparse text-edge speckle from the
+/// photo seed — enforces the "favor text de-shadowing" bias.
+const int _kSpeckleRadius = 1;
+
+/// Closing radius (proxy px) that merges surviving seed into a solid region.
+const int _kConsolidateRadius = 2;
+
+/// Feather radius on the final mask — softens edges so there is no seam.
+const int _kMaskFeather = 2;
+
 /// Correction weight for a pixel whose local background luminance is
 /// [backgroundLuminance]: 0.0 for dark content (<= [_kPaperFloor]), 1.0 for
 /// paper (>= floor + [_kGateBand]), linear in between. Pure; exposed for tests.
@@ -93,6 +109,47 @@ img.Image fillHoles(img.Image mask) {
     }
   }
   return out;
+}
+
+/// Builds the per-pixel correction mask at proxy resolution from the color proxy
+/// [colorProxy]. A pixel seeds as PHOTO if it is colorful (chroma), textured
+/// (local std-dev), or dark content (low correctionWeight). The binary seed is
+/// opened (erase thin text speckle), closed + hole-filled (consolidate the
+/// region and absorb enclosed smooth areas), then inverted to a correction
+/// weight (photo -> 0, paper -> 255) and feathered. Grayscale out: channel =
+/// alpha * 255. Exposed for tests.
+@visibleForTesting
+img.Image buildCorrectionMask(img.Image colorProxy) {
+  final w = colorProxy.width, h = colorProxy.height;
+  final seed = img.Image(width: w, height: h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      final px = colorProxy.getPixel(x, y);
+      final r = px.r.toInt(), g = px.g.toInt(), b = px.b.toInt();
+      final chroma =
+          math.max(r, math.max(g, b)) - math.min(r, math.min(g, b));
+      final isPhoto = chroma > _kChromaThresh ||
+          localStdDev(colorProxy, x, y) > _kTextureThresh ||
+          correctionWeight(px.luminance.toInt()) <= 0;
+      final v = isPhoto ? 255 : 0;
+      seed.setPixelRgb(x, y, v, v, v);
+    }
+  }
+  // Opening (erode->dilate) removes thin speckle; closing (dilate->erode) +
+  // fill-holes consolidates the region and absorbs enclosed smooth sub-areas.
+  final opened = _maxFilter(_minFilter(seed, _kSpeckleRadius), _kSpeckleRadius);
+  final closed =
+      _minFilter(_maxFilter(opened, _kConsolidateRadius), _kConsolidateRadius);
+  final region = fillHoles(closed);
+  // Invert: photo (foreground) -> alpha 0; paper -> alpha 255.
+  final weight = img.Image(width: w, height: h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      final a = region.getPixel(x, y).r.toInt() > 127 ? 0 : 255;
+      weight.setPixelRgb(x, y, a, a, a);
+    }
+  }
+  return img.gaussianBlur(weight, radius: _kMaskFeather);
 }
 
 /// "Clean white paper" filter. Flattens uneven illumination (hand/phone
@@ -175,6 +232,28 @@ img.Image _maxFilter(img.Image src, int radius) {
         }
       }
       out.setPixelRgb(x, y, mx, mx, mx);
+    }
+  }
+  return out;
+}
+
+/// Grayscale morphological erosion: each pixel becomes the min luminance in a
+/// (2r+1)^2 window. Input is grayscale (r == g == b), so we read/write r.
+img.Image _minFilter(img.Image src, int radius) {
+  if (radius <= 0) return src;
+  final out = src.clone();
+  for (var y = 0; y < src.height; y++) {
+    for (var x = 0; x < src.width; x++) {
+      var mn = 255;
+      for (var dy = -radius; dy <= radius; dy++) {
+        final yy = (y + dy).clamp(0, src.height - 1);
+        for (var dx = -radius; dx <= radius; dx++) {
+          final xx = (x + dx).clamp(0, src.width - 1);
+          final v = src.getPixel(xx, yy).r.toInt();
+          if (v < mn) mn = v;
+        }
+      }
+      out.setPixelRgb(x, y, mn, mn, mn);
     }
   }
   return out;
