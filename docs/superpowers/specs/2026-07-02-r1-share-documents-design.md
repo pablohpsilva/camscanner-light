@@ -16,17 +16,26 @@ export pipeline — sharing is just a new destination for already-scrubbed bytes
 
 ## Problem being fixed
 
-Today three screens each call `SharePlus.instance.share(ShareParams(...))`
+Today three call sites invoke `SharePlus.instance.share(ShareParams(...))`
 directly and independently:
 
-- `pdf_preview_screen.dart` — shares the PDF
-- `page_viewer_screen.dart` — shares a page image and the PDF
-- `recognized_text_screen.dart` — shares the recognized-text `.txt`
+- `pdf_preview_screen.dart:77` — shares the PDF (inline, in the app-bar action).
+- `recognized_text_screen.dart:93` — shares the recognized-text `.txt` (inline).
+- `page_viewer_screen.dart` `_shareQuietly(File)` (line 291) — called only from
+  `_protect()` to share the **password-protected PDF** (P1). Its `try/catch`
+  **swallows** failures ("share unavailable e.g. host test — ignore"), a test
+  hack the injected fake channel removes: tests can then *assert* the share
+  instead of silently ignoring it.
 
 There is no shared abstraction, no seam for tests, and no extension point for the
 deferred link-share/fax channels. This step introduces the interface, routes all
-sites through it, and adds the missing library-list surface — without changing
-what any existing button does.
+three sites through it, and adds the library-list surface — without changing what
+any existing button does.
+
+**Not a share point (context):** the image-export flows
+(`_exportPageAsImage`, `_exportAllImages`) currently *save* ("Page saved as
+image" / "Exported N images") and do **not** share. Sharing a **JPG** via the
+share sheet is therefore **out of scope for R1** — see "Scope boundary" below.
 
 ## Approach & testability
 
@@ -60,16 +69,21 @@ dependency is introduced.
 - **`LibraryDependencies`** gains `final ShareChannel share` (default
   `const SystemShareChannel()`) — the composition-root seam, exactly parallel to
   `printer`.
-- **`HomeScreen`** passes `widget.libraryDependencies.share` to the
-  `PageViewerScreen`, `PdfPreviewScreen`, and `RecognizedTextScreen` it
-  constructs, and uses it directly for the library-list Share action.
+- **Threading (verified from the code):** `HomeScreen` constructs only
+  `PageViewerScreen`; `PageViewerScreen` in turn constructs `PdfPreviewScreen`
+  (line 104) and `RecognizedTextScreen` (line 304). So the channel threads
+  `HomeScreen → PageViewerScreen → {PdfPreviewScreen, RecognizedTextScreen}`.
+  `HomeScreen` also uses the channel directly for the library-list Share action.
 - Each screen gains `final ShareChannel share` (default
   `const SystemShareChannel()` for direct-construction tests) and calls
   `share.share([...], subject: ...)` where it previously called `SharePlus`
-  directly — behavior unchanged.
-- **Test support:** a `FakeShareChannel` (records `filePaths` + `subject`, no-op);
-  `tempLibraryDependencies()` injects it so the shared BDD launch never invokes
-  the real share sheet.
+  directly — behavior unchanged. In `page_viewer_screen`, `_shareQuietly` becomes
+  a thin wrapper over `share.share([file.path], subject: _name)`.
+- **Test support:** a `FakeShareChannel` (records `filePaths` + `subject`, no-op),
+  added to `test/support/fake_library.dart` alongside `FakeDocumentPrinter`;
+  `tempLibraryDependencies()` injects it (as it already injects
+  `FakeDocumentPrinter`) so the shared BDD launch never invokes the real share
+  sheet and the scenario can assert the recorded call.
 
 ## New surface — Share from the documents list
 
@@ -109,6 +123,18 @@ stays as its own seam rather than being folded under `ShareChannel`. This avoids
 re-architecting a gated feature for no functional gain and keeps each seam
 single-purpose (SRP).
 
+## Scope boundary — JPG sharing deferred (R2)
+
+Feature 12's criterion is "Share a PDF/**JPG** via the system share sheet". R1
+delivers PDF sharing (existing sites + library list) and the `ShareChannel`
+interface. **JPG sharing is deferred to a follow-up step (R2)** that will route
+`_exportPageAsImage` / `_exportAllImages` through the same channel. Consequently:
+
+- R1's gate is the R1 acceptance criteria below — **not** Feature 12 as a whole.
+- **Feature 12 is NOT marked done after R1.** Its roadmap row stays open with a
+  note that the JPG-share criterion is pending R2. The `ShareChannel` interface
+  R1 builds is exactly what R2 reuses (no rework).
+
 ## Fax / link-share (deferred, documented)
 
 `ShareChannel` (OCP) is the extension point for a future on-device-agnostic
@@ -139,9 +165,12 @@ is implemented in R1.
 - `HomeScreen` given a fake repo + `FakeShareChannel`: selecting Share on a tile
   calls `share.share` with the exported PDF path + the document name; a repo whose
   `exportPdf` throws shows "Couldn't share".
-- `PdfPreviewScreen`, `PageViewerScreen`, `RecognizedTextScreen` given a
-  `FakeShareChannel`: tapping their Share control calls `share.share` with the
-  expected file path + subject (behavior-preserved refactor).
+- `PdfPreviewScreen` (Share app-bar action → PDF) and `RecognizedTextScreen`
+  (Share action → `.txt`) given a `FakeShareChannel`: tapping Share calls
+  `share.share` with the expected file path + subject (behavior-preserved).
+- `PageViewerScreen` given a `FakeShareChannel`: the protect flow (`_protect`)
+  routes the protected-PDF share through the channel and the recorded call
+  matches (replaces the old error-swallowing `_shareQuietly`).
 
 **BDD (on-device Samsung):** the standard scan flow (with the recording
 `FakeShareChannel` injected by `tempLibraryDependencies`) —
@@ -163,11 +192,15 @@ Material menu item are pure Dart. No per-OS branching in our code.
 ## Definition of Done
 
 - `ShareChannel` + `SystemShareChannel`; `LibraryDependencies.share`;
-  `HomeScreen` threading; the three screens refactored onto the channel;
-  `DocumentsListView` "Share" item + `HomeScreen` library-list Share handler —
-  all widget-tested via `FakeShareChannel`.
+  `HomeScreen → PageViewerScreen → {PdfPreviewScreen, RecognizedTextScreen}`
+  threading; the three call sites refactored onto the channel (`_shareQuietly`
+  becomes a channel wrapper); `DocumentsListView` "Share" item + `HomeScreen`
+  library-list Share handler — all widget-tested via `FakeShareChannel`.
+- `FakeShareChannel` added to `test/support/fake_library.dart`;
+  `tempLibraryDependencies()` injects it.
 - No new dependency (reuses `share_plus`); `flutter analyze` clean; host suite
   green.
 - `.feature` BDD generated + green on-device; deterministic device test green.
 - `scripts/verify/r1.sh` passes under the independent adversarial verifier from a
-  clean state; plans index + roadmap Feature 12 row updated.
+  clean state; plans index updated (R1 row). **Feature 12's roadmap row stays
+  open** with a note that JPG-share is pending R2 — R1 does not close Feature 12.
