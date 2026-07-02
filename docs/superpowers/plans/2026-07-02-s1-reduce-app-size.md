@@ -308,16 +308,17 @@ fi
 # 5) R8 state is internally consistent (no half-applied state).
 GRADLE="apps/mobile/android/app/build.gradle.kts"
 PRO="apps/mobile/android/app/proguard-rules.pro"
-if grep -qE "isMinifyEnabled\s*=\s*true" "$GRADLE"; then
+# NOTE: BSD grep (macOS) does NOT support \s — use [[:space:]] (as lib.sh does).
+if grep -qE "isMinifyEnabled[[:space:]]*=[[:space:]]*true" "$GRADLE"; then
   # R8 enabled -> proguard rules must exist and be referenced.
-  if [ -s "$PRO" ] && grep -q "proguard-rules.pro" "$GRADLE" && grep -qE "isShrinkResources\s*=\s*true" "$GRADLE"; then
+  if [ -s "$PRO" ] && grep -q "proguard-rules.pro" "$GRADLE" && grep -qE "isShrinkResources[[:space:]]*=[[:space:]]*true" "$GRADLE"; then
     pass "R8 enabled and fully wired (minify+shrink+proguard-rules.pro)"
   else
     fail "R8 half-applied: isMinifyEnabled=true but shrink/proguard wiring incomplete"
   fi
 else
   # R8 reverted -> proguard rules must be gone and shrink off (clean revert).
-  if [ ! -e "$PRO" ] && grep -qE "isShrinkResources\s*=\s*false" "$GRADLE"; then
+  if [ ! -e "$PRO" ] && grep -qE "isShrinkResources[[:space:]]*=[[:space:]]*false" "$GRADLE"; then
     pass "R8 cleanly reverted (minify off, no proguard-rules.pro) — split win retained"
   else
     fail "R8 half-reverted: isMinifyEnabled=false but shrink/proguard remnants remain"
