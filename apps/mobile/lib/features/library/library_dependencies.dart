@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'document_file_store.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
-import 'share_channel.dart';
 import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
 import 'hybrid_warper.dart';
@@ -14,6 +13,7 @@ import 'jpeg_exif_scrubber.dart';
 import 'ocr/mlkit_ocr_engine.dart';
 import 'pdf/ocr_pdf_text_layer.dart';
 import 'pdf/pdf_builder.dart';
+import 'share_channel.dart';
 
 typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
 

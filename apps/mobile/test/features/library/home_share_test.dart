@@ -39,6 +39,23 @@ void main() {
     expect(share.calls, 1);
     expect(share.lastFilePaths!.single, endsWith('.pdf'));
     expect(share.lastSubject, 'Report');
+    expect(find.text("Couldn't share"), findsNothing);
+  });
+
+  testWidgets('a failing channel shows a share error', (tester) async {
+    final repo = FakeDocumentRepository(documents: [doc]);
+    final share = FakeShareChannel(throwOnShare: true);
+    await tester.pumpWidget(MaterialApp(home: homeWith(repo, share)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-share-1')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(share.calls, 0);
+    expect(find.text("Couldn't share"), findsOneWidget);
   });
 
   testWidgets('a failing export shows a share error', (tester) async {

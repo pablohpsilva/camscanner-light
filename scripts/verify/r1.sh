@@ -39,7 +39,7 @@ assert_file_has "BDD feature exists" \
 
 assert_file_has "generated BDD test exists" \
   "apps/mobile/integration_test/r1_share_document_test.dart" \
-  "share"
+  "iShareTheFirstDocument"
 
 # share_plus must be isolated to the seam (exactly one importer).
 COUNT="$(grep -rl "package:share_plus" apps/mobile/lib/ | wc -l | tr -d ' ')"
