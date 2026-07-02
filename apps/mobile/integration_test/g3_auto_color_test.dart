@@ -13,6 +13,7 @@ import './../test/step/i_toggle_the_color_filter.dart';
 import './../test/step/the_document_is_saved_with_color_enhancement.dart';
 import './../test/step/the_document_is_saved_without_enhancement.dart';
 import './../test/step/the_auto_enhancer_flattens_the_shadow.dart';
+import './../test/step/the_auto_enhancer_preserves_the_photo.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,14 @@ void main() {
       await iToggleTheAutoFilter(tester);
       await iTapAccept(tester);
       await theAutoEnhancerFlattensTheShadow(tester);
+    });
+    testWidgets(
+        '''Auto filter preserves an embedded photo instead of blowing it out''',
+        (tester) async {
+      await theReviewScreenIsOpenWithACapturedImage(tester);
+      await iToggleTheAutoFilter(tester);
+      await iTapAccept(tester);
+      await theAutoEnhancerPreservesThePhoto(tester);
     });
   });
 }
