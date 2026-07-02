@@ -1,6 +1,5 @@
 // apps/mobile/test/features/library/pdf/pdf_builder_quality_test.dart
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile/features/library/export/export_quality.dart';
