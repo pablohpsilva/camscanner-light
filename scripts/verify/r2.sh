@@ -15,7 +15,7 @@ require_tool pnpm
 
 assert_file_has "page viewer shares a single image via the channel" \
   "apps/mobile/lib/features/library/page_viewer_screen.dart" \
-  "Couldn't share image"
+  "page-viewer-export-image"
 
 assert_file_has "page viewer shares all images via the channel" \
   "apps/mobile/lib/features/library/page_viewer_screen.dart" \
@@ -59,3 +59,4 @@ else
 fi
 
 echo "== R2 verification complete =="
+verify_summary
