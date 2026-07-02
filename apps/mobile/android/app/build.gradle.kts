@@ -28,15 +28,17 @@ android {
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-            // Disable R8/minification: the ML Kit text plugin references optional
-            // CJK/Devanagari recognizer classes that aren't bundled (Latin-only),
-            // which fails R8; enabling aggressive keep rules risks stripping other
-            // plugins (camera, pdfx, drift) at runtime. Not shipping to Play yet,
-            // so ship the un-shrunk APK for reliability.
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8 shrinks the Java/Kotlin dex + resources. Keep rules for ML Kit
+            // (optional CJK/Devanagari recognizers are referenced but not
+            // bundled), Flutter plugins, and opencv_dart JNI live in
+            // proguard-rules.pro. Gated on an on-device OCR/export smoke.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
