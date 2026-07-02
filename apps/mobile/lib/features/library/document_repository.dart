@@ -42,6 +42,13 @@ abstract interface class DocumentRepository {
   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
   Future<File> exportPdf(int documentId);
 
+  /// Builds [documentId]'s PDF and returns it AES-256 encrypted with [password]
+  /// as a temporary file (same temp-file discipline as [exportPdf]). The
+  /// recipient needs the password to open it. Nothing leaves the device. Throws
+  /// [DocumentExportException] when the document has no pages or on build/
+  /// encrypt/IO failure.
+  Future<File> exportProtectedPdf(int documentId, String password);
+
   /// Exports the page at [position] of [documentId] as a standalone JPG on device.
   /// Reads the page's display image (the flattened derivative when present, else
   /// the original capture), passes the bytes through the metadata scrubber, writes

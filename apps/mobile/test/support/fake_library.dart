@@ -61,6 +61,8 @@ class FakeDocumentRepository implements DocumentRepository {
   final List<String> renamedTo = <String>[];
   int? lastExportedImagePosition;
   int? lastExportedTextPosition;
+  int protectCalls = 0;
+  String? lastProtectPassword;
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
@@ -135,6 +137,16 @@ class FakeDocumentRepository implements DocumentRepository {
     // File; widget tests need the future to complete synchronously so that
     // pumpAndSettle can drive the success SnackBar before settling.
     return File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
+  }
+
+  @override
+  Future<File> exportProtectedPdf(int documentId, String password) async {
+    if (throwOnExport) {
+      throw const DocumentExportException('fake: protect failed');
+    }
+    protectCalls++;
+    lastProtectPassword = password;
+    return File('${Directory.systemTemp.path}/fake-protected-$documentId.pdf');
   }
 
   @override

@@ -16,6 +16,7 @@ import '../ocr/ocr_engine.dart';
 import '../ocr/ocr_result.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
+import '../pdf/pdf_encryptor.dart';
 import 'app_database.dart' hide Document;
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
@@ -29,6 +30,7 @@ class DriftDocumentRepository implements DocumentRepository {
   final PdfBuilder _pdfBuilder;
   final ImageWarper _warper;
   final OcrEngine _ocrEngine;
+  final PdfEncryptor _encryptor;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -38,13 +40,15 @@ class DriftDocumentRepository implements DocumentRepository {
     required PdfBuilder pdfBuilder,
     required ImageWarper warper,
     OcrEngine ocrEngine = const NoOpOcrEngine(),
+    PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
   })  : _db = db, // ignore: prefer_initializing_formals
         _scrubber = scrubber, // ignore: prefer_initializing_formals
         _fileStore = fileStore, // ignore: prefer_initializing_formals
         _clock = clock, // ignore: prefer_initializing_formals
         _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
         _warper = warper, // ignore: prefer_initializing_formals
-        _ocrEngine = ocrEngine; // ignore: prefer_initializing_formals
+        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
+        _encryptor = encryptor; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(
@@ -258,6 +262,26 @@ class DriftDocumentRepository implements DocumentRepository {
       return file;
     } catch (e) {
       throw DocumentExportException('export failed: $e');
+    }
+  }
+
+  @override
+  Future<File> exportProtectedPdf(int documentId, String password) async {
+    final pages = await getDocumentPages(documentId);
+    if (pages.isEmpty) {
+      throw const DocumentExportException('protect failed: no pages');
+    }
+    try {
+      final bytes = await _pdfBuilder.build(pages);
+      final encrypted = await _encryptor.encrypt(bytes, password);
+      final dir = await Directory.systemTemp.createTemp('pdf_protect');
+      final safeName = await _pdfFileNameFor(documentId);
+      final file = File('${dir.path}/$safeName');
+      await file.writeAsBytes(encrypted);
+      return file;
+    } catch (e) {
+      if (e is DocumentExportException) rethrow;
+      throw DocumentExportException('protect failed: $e');
     }
   }
 
