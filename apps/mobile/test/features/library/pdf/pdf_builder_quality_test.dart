@@ -1,4 +1,3 @@
-// apps/mobile/test/features/library/pdf/pdf_builder_quality_test.dart
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;

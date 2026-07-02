@@ -1,4 +1,3 @@
-// apps/mobile/test/features/library/export/export_quality_dialog_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/export/export_quality.dart';

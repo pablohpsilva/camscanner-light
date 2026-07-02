@@ -1,4 +1,3 @@
-// apps/mobile/lib/features/library/export/image_compressor.dart
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;

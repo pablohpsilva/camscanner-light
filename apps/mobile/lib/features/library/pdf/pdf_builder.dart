@@ -1,4 +1,3 @@
-// apps/mobile/lib/features/library/pdf/pdf_builder.dart
 import 'dart:io';
 import 'dart:typed_data';
 

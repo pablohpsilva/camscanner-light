@@ -1,4 +1,3 @@
-// apps/mobile/test/features/library/export/image_compressor_test.dart
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
