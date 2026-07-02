@@ -51,6 +51,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('export-quality-original')));
+    await tester.pumpAndSettle();
     expect(repo.lastExportedImagePosition, 1);
     expect(find.text('Page saved as image'), findsOneWidget);
   });
@@ -61,6 +63,8 @@ void main() {
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't export image"), findsOneWidget);
   });

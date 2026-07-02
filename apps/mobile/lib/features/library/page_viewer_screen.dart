@@ -10,6 +10,7 @@ import 'crop_corners.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
 import 'edit_crop_screen.dart';
+import 'export/export_quality_dialog.dart';
 import 'merge_picker_dialog.dart';
 import 'page_image.dart';
 import 'password_dialog.dart';
@@ -91,14 +92,16 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   Future<void> _exportPdf() async {
+    final quality = await showExportQualityDialog(context);
+    if (quality == null || !mounted) return;
     setState(() => _exporting = true);
     try {
-      final file = await widget.repository.exportPdf(widget.documentId);
+      final file =
+          await widget.repository.exportPdf(widget.documentId, quality: quality);
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              PdfPreviewScreen(pdfPath: file.path, name: _name),
+          builder: (_) => PdfPreviewScreen(pdfPath: file.path, name: _name),
         ),
       );
     } catch (_) {
@@ -208,8 +211,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
     final page = pages[_current];
+    final quality = await showExportQualityDialog(context);
+    if (quality == null || !mounted) return;
+    setState(() => _exporting = true);
     try {
-      await widget.repository.exportPageAsImage(widget.documentId, page.position);
+      await widget.repository
+          .exportPageAsImage(widget.documentId, page.position, quality: quality);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Page saved as image')),
@@ -219,13 +226,18 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't export image")),
       );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
     }
   }
 
   Future<void> _exportAllImages() async {
+    final quality = await showExportQualityDialog(context);
+    if (quality == null || !mounted) return;
+    setState(() => _exporting = true);
     try {
-      final files =
-          await widget.repository.exportAllPagesAsImages(widget.documentId);
+      final files = await widget.repository
+          .exportAllPagesAsImages(widget.documentId, quality: quality);
       if (!mounted) return;
       final n = files.length;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -236,6 +248,8 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't export images")),
       );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
     }
   }
 

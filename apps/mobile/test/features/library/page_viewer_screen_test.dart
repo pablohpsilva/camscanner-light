@@ -152,6 +152,8 @@ void main() {
     await pushViewer(tester, repo, id: 4);
 
     await tester.tap(find.byKey(const Key('page-viewer-export')));
+    await tester.pumpAndSettle(); // export-quality dialog animates in
+    await tester.tap(find.byKey(const Key('export-quality-original')));
     // pump (NOT settle): the pushed preview opens the real pdfx channel in host.
     await tester.pump();
     await tester.pump();
@@ -166,6 +168,8 @@ void main() {
     await pushViewer(tester, repo);
 
     await tester.tap(find.byKey(const Key('page-viewer-export')));
+    await tester.pumpAndSettle(); // export-quality dialog animates in
+    await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pumpAndSettle();
 
     expect(find.text("Couldn't export PDF"), findsOneWidget);
@@ -195,6 +199,8 @@ void main() {
     await pushViewer(tester, repo);
 
     await tester.tap(find.byKey(const Key('page-viewer-export')));
+    await tester.pumpAndSettle(); // export-quality dialog animates in
+    await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pump(); // start the export; gate holds it open
     IconButton btn(String k) =>
         tester.widget<IconButton>(find.byKey(Key(k)));

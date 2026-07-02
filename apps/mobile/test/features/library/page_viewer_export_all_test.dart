@@ -20,6 +20,8 @@ void main() {
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pump(); // let the async export + snackbar schedule
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -39,6 +41,8 @@ void main() {
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
