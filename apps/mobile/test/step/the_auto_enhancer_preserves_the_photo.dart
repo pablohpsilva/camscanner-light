@@ -8,32 +8,29 @@ import 'the_review_screen_is_open_with_a_captured_image.dart';
 
 /// Usage: the auto enhancer preserves the photo
 ///
-/// Verifies the enhancer the UI selected (recorded in [g1Repo.lastSavedEnhancer]
-/// when Accept was tapped) does not blow out a large dark region: a synthetic
-/// page with an 80x80 dark block must keep that block dark after enhancement,
-/// while surrounding paper still brightens.
+/// Verifies the UI-selected enhancer ([g1Repo.lastSavedEnhancer]) preserves a
+/// colourful embedded photo region (not blown to white, colour kept) while the
+/// surrounding paper stays bright.
 Future<void> theAutoEnhancerPreservesThePhoto(WidgetTester tester) async {
   final enhancer = g1Repo.lastSavedEnhancer;
   expect(enhancer, isA<AutoEnhancer>(),
       reason: 'UI must have selected AutoEnhancer');
 
-  const w = 200, h = 200;
+  const w = 240, h = 240;
   final src = img.Image(width: w, height: h);
-  for (final px in src) {
-    px..r = 235..g = 235..b = 235; // bright paper
-  }
-  for (var y = 60; y < 140; y++) {
-    for (var x = 60; x < 140; x++) {
-      src.getPixel(x, y)..r = 40..g = 40..b = 40; // embedded photo
-    }
+  for (final px in src) { px..r = 235..g = 235..b = 235; } // paper
+  for (var y = 60; y < 180; y++) {
+    for (var x = 60; x < 180; x++) { src.getPixel(x, y)..r = 210..g = 60..b = 55; } // colourful photo
   }
   final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
 
-  final output = await enhancer!.enhance(input);
-  final out = img.decodeImage(output)!;
+  final out = img.decodeImage(await enhancer!.enhance(input))!;
+  final p = out.getPixel(120, 120);
 
-  expect(out.getPixel(100, 100).luminance, lessThan(100),
-      reason: 'embedded photo must be preserved, not blown out to white');
+  expect(p.luminance, lessThan(215),
+      reason: 'colourful photo must not be blown out to white');
+  expect((p.r.toInt() - p.g.toInt()).abs(), greaterThan(40),
+      reason: 'photo keeps its colour');
   expect(out.getPixel(10, 10).luminance, greaterThan(200),
       reason: 'paper around the photo must still be bright');
 }
