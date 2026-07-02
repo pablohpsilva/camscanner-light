@@ -9,6 +9,8 @@ import '../document.dart';
 import '../document_file_store.dart';
 import '../document_repository.dart';
 import '../document_summary.dart';
+import '../export/export_quality.dart';
+import '../export/image_compressor.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
@@ -31,6 +33,7 @@ class DriftDocumentRepository implements DocumentRepository {
   final ImageWarper _warper;
   final OcrEngine _ocrEngine;
   final PdfEncryptor _encryptor;
+  final ImageCompressor _compressor;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -41,6 +44,7 @@ class DriftDocumentRepository implements DocumentRepository {
     required ImageWarper warper,
     OcrEngine ocrEngine = const NoOpOcrEngine(),
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
+    ImageCompressor compressor = const ImageLibraryCompressor(),
   })  : _db = db, // ignore: prefer_initializing_formals
         _scrubber = scrubber, // ignore: prefer_initializing_formals
         _fileStore = fileStore, // ignore: prefer_initializing_formals
@@ -48,7 +52,8 @@ class DriftDocumentRepository implements DocumentRepository {
         _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
         _warper = warper, // ignore: prefer_initializing_formals
         _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
-        _encryptor = encryptor; // ignore: prefer_initializing_formals
+        _encryptor = encryptor, // ignore: prefer_initializing_formals
+        _compressor = compressor; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(
@@ -248,13 +253,14 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<File> exportPdf(int documentId) async {
+  Future<File> exportPdf(int documentId,
+      {ExportQuality quality = ExportQuality.original}) async {
     final pages = await getDocumentPages(documentId);
     if (pages.isEmpty) {
       throw const DocumentExportException('export failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages);
+      final bytes = await _pdfBuilder.build(pages, quality: quality);
       final dir = await Directory.systemTemp.createTemp('pdf_export');
       final safeName = await _pdfFileNameFor(documentId);
       final file = File('${dir.path}/$safeName');
@@ -301,7 +307,8 @@ class DriftDocumentRepository implements DocumentRepository {
       '${await _exportBaseName(documentId)}.pdf';
 
   @override
-  Future<File> exportPageAsImage(int documentId, int position) async {
+  Future<File> exportPageAsImage(int documentId, int position,
+      {ExportQuality quality = ExportQuality.original}) async {
     final row = await (_db.select(_db.pages)
           ..where((t) =>
               t.documentId.equals(documentId) & t.position.equals(position)))
@@ -314,7 +321,8 @@ class DriftDocumentRepository implements DocumentRepository {
       // Display image: the flattened derivative when present, else the original.
       final srcRel = row.flatRelativePath ?? row.relativeImagePath;
       final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
-      final scrubbed = _scrubber.scrub(bytes); // privacy: pass through scrubber
+      final compressed = await _compressor.compress(bytes, quality);
+      final scrubbed = _scrubber.scrub(compressed); // privacy: always scrub
       final rel = _fileStore.imageExportRelativeFor(documentId, position);
       await _fileStore.writeRelative(rel, scrubbed);
       return _fileStore.absoluteFor(rel);
@@ -325,14 +333,16 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<File>> exportAllPagesAsImages(int documentId) async {
+  Future<List<File>> exportAllPagesAsImages(int documentId,
+      {ExportQuality quality = ExportQuality.original}) async {
     final pages = await getDocumentPages(documentId);
     if (pages.isEmpty) {
       throw const DocumentExportException('exportAll failed: no pages');
     }
     final files = <File>[];
     for (final page in pages) {
-      files.add(await exportPageAsImage(documentId, page.position));
+      files.add(
+          await exportPageAsImage(documentId, page.position, quality: quality));
     }
     return files;
   }

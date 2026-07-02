@@ -4,6 +4,7 @@ import '../scan/captured_image.dart';
 import 'crop_corners.dart';
 import 'document.dart';
 import 'document_summary.dart';
+import 'export/export_quality.dart';
 import 'image_enhancer.dart';
 import 'page_image.dart';
 
@@ -40,7 +41,8 @@ abstract interface class DocumentRepository {
 
   /// Generates a PDF of [documentId] to on-device storage and returns the file.
   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
-  Future<File> exportPdf(int documentId);
+  Future<File> exportPdf(int documentId,
+      {ExportQuality quality = ExportQuality.original});
 
   /// Builds [documentId]'s PDF and returns it AES-256 encrypted with [password]
   /// as a temporary file (same temp-file discipline as [exportPdf]). The
@@ -55,13 +57,15 @@ abstract interface class DocumentRepository {
   /// `documents/<id>/page_<position>_export.jpg`, and returns the file. Nothing
   /// leaves the device. Throws [DocumentExportException] when the page row/file is
   /// missing or the scrub fails.
-  Future<File> exportPageAsImage(int documentId, int position);
+  Future<File> exportPageAsImage(int documentId, int position,
+      {ExportQuality quality = ExportQuality.original});
 
   /// Exports EVERY page of [documentId] as a standalone scrubbed JPG (delegating
   /// to [exportPageAsImage] per page), returning the files in page order.
   /// Nothing leaves the device. Throws [DocumentExportException] when the
   /// document has no pages or any page fails to export.
-  Future<List<File>> exportAllPagesAsImages(int documentId);
+  Future<List<File>> exportAllPagesAsImages(int documentId,
+      {ExportQuality quality = ExportQuality.original});
 
   /// Renames [documentId] to [newName] (trimmed) and bumps modifiedAt. Returns
   /// the updated document. Throws [DocumentRenameException] when the trimmed

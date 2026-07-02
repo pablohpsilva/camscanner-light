@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/export/export_quality.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/perspective_warper.dart';
@@ -58,6 +59,9 @@ class FakeDocumentRepository implements DocumentRepository {
   int? lastReplacedPagePosition;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
+  ExportQuality? lastExportQuality;
+  ExportQuality? lastImageExportQuality;
+  ExportQuality? lastAllImagesExportQuality;
   final List<String> renamedTo = <String>[];
   int? lastExportedImagePosition;
   int? lastExportedTextPosition;
@@ -127,12 +131,14 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<File> exportPdf(int documentId) async {
+  Future<File> exportPdf(int documentId,
+      {ExportQuality quality = ExportQuality.original}) async {
     if (throwOnExport) {
       throw const DocumentExportException('fake: export failed');
     }
     if (exportGate != null) await exportGate!.future;
     exportedIds.add(documentId);
+    lastExportQuality = quality;
     // Return a path without real I/O — callers (e.g. _exportPdf) discard the
     // File; widget tests need the future to complete synchronously so that
     // pumpAndSettle can drive the success SnackBar before settling.
@@ -150,20 +156,24 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<File> exportPageAsImage(int documentId, int position) async {
+  Future<File> exportPageAsImage(int documentId, int position,
+      {ExportQuality quality = ExportQuality.original}) async {
     if (throwOnExportImage) {
       throw const DocumentExportException('fake: exportImage failed');
     }
     lastExportedImagePosition = position;
+    lastImageExportQuality = quality;
     return File(
         '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
   }
 
   @override
-  Future<List<File>> exportAllPagesAsImages(int documentId) async {
+  Future<List<File>> exportAllPagesAsImages(int documentId,
+      {ExportQuality quality = ExportQuality.original}) async {
     if (throwOnExportImage) {
       throw const DocumentExportException('fake: exportAll failed');
     }
+    lastAllImagesExportQuality = quality;
     final pages = await getDocumentPages(documentId);
     return [
       for (final p in pages)
