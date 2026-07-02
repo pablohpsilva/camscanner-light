@@ -1,136 +1,159 @@
-# Auto Filter — Region-Level Photo Protection
+# Auto Filter — Region-Level Photo Protection (multi-cue detection)
 
 **Date:** 2026-07-02
 **Status:** Approved (brainstorming), pending spec review
 **Feature area:** `apps/mobile` scan/library image enhancement
 **Builds on:** `2026-07-02-auto-photo-protection-design.md` (per-pixel background-brightness gate, merged)
 
+> **Design history:** an earlier draft of this spec used a morphological
+> *opening on the brightness-derived paper-ness map*. Plan self-review found it
+> only absorbs small highlight *specks*; a photo with a large bright region
+> (sky, pale sub-area) still washes out, because brightness alone cannot
+> separate "bright paper" from "a bright area inside a photo". This spec
+> replaces that with multi-cue detection.
+
 ## Problem
 
-The merged `Auto` filter gates flat-field shadow removal on per-pixel background
-brightness: pixels whose local background estimate `B` is below `_kPaperFloor`
-(95) are left uncorrected. This protects *uniformly*-dark regions (filled
-headers, dark blocks) but NOT real photographs. Runtime verification confirmed:
-a photo's mid-tones/highlights sit *above* the floor, so they are treated as
-"shadowed paper" and pushed to white — a bright patch inside a dark block blew
-out to 255 with a soft halo. Per-pixel brightness cannot distinguish "bright
-paper" from "a bright area inside a photo"; only *where the region is* can.
+The merged `Auto` filter gates flat-field shadow removal on per-pixel
+background brightness, protecting only *uniformly-dark* regions. Real
+photographs still wash out: their mid-tones/highlights read as "bright paper"
+and get divided toward white (verified: a bright patch inside a dark block blew
+to 255 with a halo). Brightness is not a sufficient signal — a photo must be
+detected by **what it is** (color / detail / darkness), not how bright it is.
 
 ## Goal
 
-Make the gate operate at **region** level: detect the large non-paper region
-and preserve the WHOLE region — highlights included — as captured, while paper
-shadow removal stays unchanged and text documents keep zero regression.
+Detect photo regions by multiple content cues and preserve the WHOLE region —
+bright, dark, smooth, or textured — as captured, while paper shadow removal
+stays unchanged.
 
-"Preserve as captured": a detected photo region is left essentially untouched
-(natural tones, no flat-field). If a shadow also fell across the photo itself,
-that shadow stays on the photo but not on the surrounding paper.
+**Two product decisions (locked):**
+- *Preserve as captured:* a detected photo region is left essentially untouched
+  (no flat-field). A shadow across the photo itself stays on the photo.
+- *Favor text de-shadowing:* when detection is uncertain, treat the region as
+  paper and de-shadow it. Never sacrifice shadow removal on text (the primary
+  content). Only *clearly*-photo regions are preserved; thresholds are set high
+  and thin/sparse detections (text-edge speckle) are discarded.
 
 Constraints (inherited):
-- Stays inside `Auto` — no new tile, enum, or UI change.
+- Inside `Auto` only — no new tile, enum, or UI change.
 - Pure-Dart (`image` package), inside the existing `compute` isolate.
 - `ImageEnhancer.enhance` never throws — return input bytes on any failure.
 - No bare magic numbers — named, documented consts.
 
-## Key idea
+## Architecture
 
-The per-pixel paper-ness weight `correctionWeight(B)` already goes low over a
-photo — it just has *bright holes* at the photo's highlights. A morphological
-**opening** (min-filter then max-filter) on that weight map erases bright spots
-surrounded by low weight, so the whole photo becomes one solid low-weight
-region. Paper survives opening unchanged; thin dark ink never enters the map
-(the max-filter in `_estimateBackground` already erases it, so paper-ness ≈ 1
-over text). The opening runs on the cheap 48px proxy, so it is nearly free.
+All detection runs on the existing 48px background proxy (cheap). The pipeline
+produces a per-pixel correction `alphaMap` (photo→0, paper→1) that gates the
+existing flat-field divide. The background step must expose the **pre-grayscale
+color proxy** (for chroma) alongside the grayscale background.
 
-## Design
+### Stage 1 — per-pixel photo cues (on the color proxy)
 
-The structural change: instead of calling `correctionWeight(b)` per
-full-resolution pixel inside `_divideByBackground`, build a feathered per-pixel
-**alpha map** up front and thread it into the divide.
+- **Chroma** `= max(R,G,B) − min(R,G,B)`. Paper/black-text are near-neutral
+  (≈0); most photos carry color. Catches bright colorful photo areas.
+- **Local texture** `= local std-dev of luminance` over a 3×3 proxy window.
+  Continuous-tone detail is textured; flat paper isn't. Catches grayscale photos.
+- **Darkness** `= correctionWeight(B) ≈ 0` (existing paper-ness). Catches solid
+  dark blocks.
 
-Data flow (all on the proxy until the final upscale):
-1. `_estimateBackground` produces the small dilated + blurred background proxy.
-   Expose that proxy background (`bgProxy`) before it is upscaled.
-2. **Paper-ness map:** `weightProxy[i] = correctionWeight(bgProxy_luminance[i])`
-   — 1 for paper, 0 for dark content, ramp between. Encoded as a grayscale
-   proxy image with channel value `= round(weight * 255)`.
-3. **Morphological opening:** `_minFilter(map, _kOpenRadius)` then
-   `_maxFilter(map, _kOpenRadius)`. Erases bright holes (highlights) inside
-   low-weight photo regions; leaves large paper regions intact.
-4. **Feather:** `img.gaussianBlur(map, radius: _kMaskFeather)` — smooths mask
-   edges so there is no seam at photo borders.
-5. **Upscale:** `copyResize` the mask to full resolution (bilinear) → `alphaMap`
-   (grayscale; read channel / 255 as alpha).
-6. **Gated divide:** `_divideByBackground(src, bg, alphaMap)` — per pixel:
-   `alpha = alphaMap(x,y).r / 255`; keep the `b <= 0` guard; same blend
-   `scale = 1 + alpha * (255 / b - 1)`. `alpha ~ 0` inside photos → pixel
-   preserved as captured (highlights included); `alpha ~ 1` on paper → full
-   shadow removal.
+A proxy pixel is a **photo seed** iff
+`chroma > _kChromaThresh` OR `texture > _kTextureThresh` OR `correctionWeight(B) <= 0`.
+Thresholds are conservative (high) so faint paper texture/color does not trip.
 
-### New units (each testable in isolation)
-- `_minFilter(img.Image src, int radius) -> img.Image` — mirror of the existing
-  `_maxFilter` (min over a (2r+1)^2 window; reads/writes `.r` on a grayscale).
-- `@visibleForTesting img.Image buildCorrectionMask(img.Image bgProxy)` — steps
-  2-4 (weight map -> opening -> feather); returns the small mask. Upscale (step
-  5) happens at the call site, reusing `copyResize`.
-- `correctionWeight` — unchanged signature and tests; now seeds the map.
+### Stage 2 — seed → clean region mask (morphology on the proxy)
+
+1. **Opening** (`_minFilter` then `_maxFilter`, radius `_kSpeckleRadius`) on the
+   binary seed — removes thin/sparse detections (text-edge speckle) while a
+   filled photo body survives. This enforces the "favor text" bias.
+2. **Closing** (`_maxFilter` then `_minFilter`, radius `_kConsolidateRadius`)
+   then **fill-holes** (`_fillHoles`) — merges surviving seed into solid regions
+   and absorbs *enclosed* smooth/bright sub-areas into the photo region (fixes
+   the large-bright-region problem).
+3. **Feather** (`img.gaussianBlur`, radius `_kMaskFeather`) — seam-free edges.
+4. **Invert to correction weight + upscale.** Photo region → alpha 0; elsewhere
+   → alpha 1. Upscale (`copyResize`, linear) to full resolution → `alphaMap`.
+
+### Stage 3 — gated divide (unchanged formula)
+
+`_divideByBackground(src, bg, alphaMap)`: per pixel `alpha = alphaMap.r/255`;
+`b<=0` guard; `scale = 1 + alpha*(255/b − 1)`. alpha≈0 → preserved; alpha≈1 →
+full shadow removal.
+
+### New units (each isolated / testable)
+
+- `_luminanceStdDev(img.Image proxy, int x, int y) -> double` — 3×3 std-dev; or a
+  whole-image `_textureMap`.
+- `_chroma(img.Pixel) -> int` (or inline in the seed builder).
+- `_minFilter(img.Image, int) -> img.Image` — erosion (mirror of `_maxFilter`).
+- `_fillHoles(img.Image mask) -> img.Image` — flood-fill background from the
+  border; unreached background pixels are enclosed holes → set to foreground.
+- `@visibleForTesting img.Image buildCorrectionMask(img.Image proxyColor)` — the
+  whole Stage 1+2 pipeline; returns a grayscale mask (channel = alpha*255) at
+  proxy resolution. Upscale happens at the call site.
+- `_backgroundProxy` returns the grayscale background proxy; `_autoFn` also
+  keeps the color proxy to pass to `buildCorrectionMask`.
 
 ### Named constants (no magic numbers)
 
 | Constant | Purpose | Initial value |
 |---|---|---|
-| `_kOpenRadius` | Morphological opening radius on the proxy weight map — the max highlight-hole size (in proxy px) absorbed into a photo region | 2 |
-| `_kMaskFeather` | Gaussian feather radius on the mask — edge softness / anti-seam | 2 |
+| `_kChromaThresh` | Min chroma (0–255) for a pixel to seed as photo | 25 |
+| `_kTextureThresh` | Min local std-dev for a pixel to seed as photo | 18 |
+| `_kSpeckleRadius` | Opening radius that removes text-edge speckle (proxy px) | 1 |
+| `_kConsolidateRadius` | Closing radius that merges the photo region (proxy px) | 2 |
+| `_kMaskFeather` | Mask feather radius (anti-seam) | 2 |
 
-Values tuned on-device against real photos (a photo with a large bright sky may
-need a larger `_kOpenRadius`).
+Values tuned on-device. `correctionWeight`, `_kPaperFloor`/`_kGateBand`,
+`_maxFilter`, `_autoLevels`, and the public `AutoEnhancer` API are unchanged.
 
-### Unchanged
-`_estimateBackground` (aside from exposing `bgProxy`), `_autoLevels`, the
-`compute`/never-throws wrapper, the public `AutoEnhancer` API, and the two gate
-consts `_kPaperFloor` / `_kGateBand`.
+## Residual limitation (honest)
+
+A photo region that is *entirely* smooth, neutral-gray, bright, and not enclosed
+by any detected content is locally indistinguishable from paper and will still
+be flattened. This is degenerate (a blank gray card) and, given the "favor text"
+bias, is the correct failure direction.
 
 ## Files & structure
 
-Same tight surface:
-- **Modify** `apps/mobile/lib/features/library/auto_enhancer.dart` — add
-  `_minFilter`, `buildCorrectionMask`, `_kOpenRadius`, `_kMaskFeather`; expose
-  `bgProxy` from the background step; thread `alphaMap` into `_divideByBackground`.
+Same tight surface (one production file):
+- **Modify** `apps/mobile/lib/features/library/auto_enhancer.dart` — add the cue
+  helpers, `_minFilter`, `_fillHoles`, `buildCorrectionMask`, the 5 consts;
+  expose the color proxy from the background step; thread `alphaMap` into
+  `_divideByBackground`; update `_autoFn`.
 - **Modify** `apps/mobile/test/features/library/auto_color_enhancer_test.dart`.
-- **Modify** `apps/mobile/integration_test/g3_auto_color.feature` +
-  its Then step; regenerate the integration test via build_runner.
+- **Modify** `apps/mobile/integration_test/g3_auto_color.feature` (or just its
+  Then step) + regenerate `g3_auto_color_test.dart` via build_runner.
 
 ## Testing — TDD and BDD first
 
-### TDD (unit)
-- **`buildCorrectionMask` — hole erasure:** a small proxy that is dark (photo)
-  with a single bright hole in the middle → assert the hole's mask value is
-  pulled DOWN to the surrounding dark level (opening erased it).
-- **`buildCorrectionMask` — no false positives:** an all-bright (paper) proxy →
-  assert the mask stays ~255 (weight ~1) everywhere (text/paper untouched).
-- **`_minFilter`:** a bright field with one dark pixel → the dark spreads over
-  the window (min); a small dark field with one bright pixel → bright is erased.
-- **The bug, fixed (behavioral, through `enhance`):** a large dark block WITH a
-  bright mid-tone patch inside, on shadowed paper. Assert: the interior bright
-  patch stays un-blown (luminance below a content threshold), the solid-dark
-  part stays dark, AND surrounding paper still flattens to near-white. This is
-  the load-bearing proof the region gate fixes what the per-pixel gate could not.
-- **No regression:** the existing text/shadow-gradient test and the solid-dark-
-  block preservation test pass unchanged; `correctionWeight` unit tests unchanged.
+### TDD (unit — each cue/stage in isolation via @visibleForTesting seams)
+- **Chroma cue:** saturated color patch on neutral paper → patch seeds, paper not.
+- **Texture cue:** noisy grayscale patch on flat paper → patch seeds, paper not.
+- **Text rejected (bias proof):** sparse thin dark strokes on bright paper →
+  after opening the mask stays alpha≈1 everywhere → text still de-shadows.
+- **Fill-holes:** a ring of seed with an enclosed hole → hole becomes photo.
+- **`buildCorrectionMask` end-to-end:** dark body + bright interior patch +
+  colorful corner → whole region alpha≈0; surrounding paper alpha≈1.
 
-### BDD (on device)
-- Extend the photo scenario's Then step so the synthetic image includes a bright
-  patch inside the dark block, asserting it is not blown out. Regenerate via
-  build_runner. Runs on device/sim only.
+### TDD (behavioral — through `enhance`)
+- **Grayscale detailed photo** on shadowed paper → preserved (interior bright
+  areas not blown), paper still flattened.
+- **Bright colorful photo** region → preserved (chroma-caught, not whitened).
+- **No regression:** existing shadow-gradient (text) test and solid-dark-block
+  test still green (unweakened); a text-heavy shadowed region still de-shadows.
+
+### BDD (device only)
+- Extend the photo Then step to a colorful + textured block with a bright patch,
+  asserting preservation; regenerate via build_runner.
 
 ### On-device verification
-Re-run the two-image harness (text doc + a *rich* photo with highlights) plus a
-real captured photo on RZCY51D0T1K + iOS sim: confirm the photo looks natural
-(highlights preserved, no halo) and text docs still de-shadow. Tune
-`_kOpenRadius` / `_kMaskFeather` only if the device disagrees.
+Re-run the harness on RZCY51D0T1K + iOS sim with four inputs: text page (must
+de-shadow), dark photo, bright/colorful photo, and a text-dense page (must NOT
+false-positive). Tune the five thresholds only if the device disagrees.
 
 ## Out of scope (YAGNI)
 
-- Local-variance / connected-component detection (approach A covers the failure).
+- ML / learned segmentation.
 - Evening-out shadows that fall across the photo itself (preserve-as-captured).
 - Any change to `bw`, `grayscale`, `color`, `none`, the enum, or the UI.
