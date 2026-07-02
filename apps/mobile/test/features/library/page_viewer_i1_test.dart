@@ -42,6 +42,7 @@ void main() {
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('page-viewer-export-image')), findsOneWidget);
+    expect(find.text('Share as image'), findsOneWidget);
   });
 
   testWidgets('sharing the current page exports it then shares the JPG',
@@ -73,6 +74,20 @@ void main() {
     await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pumpAndSettle();
     expect(share.calls, 0);
+    expect(find.text("Couldn't share image"), findsOneWidget);
+  });
+
+  testWidgets('a share failure (not export) shows the share error',
+      (tester) async {
+    final repo = twoPageRepo();
+    final share = FakeShareChannel(throwOnShare: true);
+    await pushViewer(tester, repo, share);
+    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('page-viewer-export-image')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('export-quality-original')));
+    await tester.pumpAndSettle();
     expect(find.text("Couldn't share image"), findsOneWidget);
   });
 }
