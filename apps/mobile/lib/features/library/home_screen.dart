@@ -173,6 +173,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _shareDocument(DocumentSummary s) async {
+    final repo = _repository;
+    if (repo == null) return;
+    try {
+      final file = await repo.exportPdf(s.document.id);
+      await widget.libraryDependencies.share
+          .share([file.path], subject: s.document.name);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't share")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -250,6 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
         summaries: _summaries,
         onOpen: _openDocument,
         onRename: _renameDocument,
+        onShare: _shareDocument,
       );
     }
     if (_summaries.isEmpty) return const EmptyDocumentsView();
@@ -261,6 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
             summaries: sortDocuments(_summaries, _sort),
             onOpen: _openDocument,
             onRename: _renameDocument,
+            onShare: _shareDocument,
           ),
         ),
       ],

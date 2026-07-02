@@ -107,4 +107,34 @@ void main() {
             .tooltip,
         'Document options');
   });
+
+  testWidgets('shows a Share item when onShare is set', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(summaries: [summary(1)], onShare: (_) {}),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-share-1')), findsOneWidget);
+  });
+
+  testWidgets('selecting Share invokes onShare with that summary',
+      (tester) async {
+    DocumentSummary? shared;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(
+            summaries: [summary(2)], onShare: (s) => shared = s),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-share-2')));
+    await tester.pumpAndSettle();
+    expect(shared, isNotNull);
+    expect(shared!.document.id, 2);
+  });
 }

@@ -5,17 +5,19 @@ import 'document_thumbnail.dart';
 
 /// Rich list of saved documents: thumbnail, name, date, page count. Rendered in
 /// the order it is given — the caller (HomeScreen) applies the user's chosen
-/// sort (D3). Each row has an optional overflow menu (Rename) when [onRename]
-/// is provided.
+/// sort (D3). Each row has an optional overflow menu (Rename / Share) when
+/// [onRename] or [onShare] is provided.
 class DocumentsListView extends StatelessWidget {
   final List<DocumentSummary> summaries;
   final ValueChanged<DocumentSummary>? onOpen;
   final ValueChanged<DocumentSummary>? onRename;
+  final ValueChanged<DocumentSummary>? onShare;
   const DocumentsListView({
     super.key,
     required this.summaries,
     this.onOpen,
     this.onRename,
+    this.onShare,
   });
 
   @override
@@ -33,18 +35,28 @@ class DocumentsListView extends StatelessWidget {
           title: Text(d.name),
           subtitle: Text(
               '${_formatLocal(d.createdAt.toLocal())} · ${_pages(s.pageCount)}'),
-          trailing: onRename == null
+          trailing: (onRename == null && onShare == null)
               ? null
               : PopupMenuButton<String>(
                   key: Key('document-menu-${d.id}'),
                   tooltip: 'Document options',
-                  onSelected: (_) => onRename!(s),
+                  onSelected: (v) {
+                    if (v == 'rename') onRename?.call(s);
+                    if (v == 'share') onShare?.call(s);
+                  },
                   itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      key: Key('document-rename-${d.id}'),
-                      value: 'rename',
-                      child: const Text('Rename'),
-                    ),
+                    if (onShare != null)
+                      PopupMenuItem<String>(
+                        key: Key('document-share-${d.id}'),
+                        value: 'share',
+                        child: const Text('Share'),
+                      ),
+                    if (onRename != null)
+                      PopupMenuItem<String>(
+                        key: Key('document-rename-${d.id}'),
+                        value: 'rename',
+                        child: const Text('Rename'),
+                      ),
                   ],
                 ),
           onTap: onOpen == null ? null : () => onOpen!(s),
