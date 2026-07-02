@@ -138,6 +138,35 @@ void main() {
       expect(img.decodeImage(output), isNotNull,
           reason: 'tiny frames skip the downscale and must still produce valid JPEG');
     });
+
+    test('preserves a large dark region (embedded photo) instead of blowing it '
+        'out, while still flattening the surrounding shadowed paper', () async {
+      const w = 200, h = 200;
+      final src = img.Image(width: w, height: h);
+      // Paper with a left-to-right shadow gradient: dark-left 150 .. lit-right 245.
+      int bgVal(int x) => 150 + (x * 95 ~/ (w - 1));
+      for (final px in src) {
+        final v = bgVal(px.x);
+        px..r = v..g = v..b = v;
+      }
+      // Large solid-dark block (an embedded photo), luminance ~40, 80x80 px.
+      for (var y = 60; y < 140; y++) {
+        for (var x = 60; x < 140; x++) {
+          src.getPixel(x, y)..r = 40..g = 40..b = 40;
+        }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final output = await const AutoEnhancer().enhance(input);
+      final out = img.decodeImage(output)!;
+
+      // Block interior must stay dark — NOT blown out to white.
+      expect(out.getPixel(100, 100).luminance, lessThan(100),
+          reason: 'large dark region (photo) must be preserved, not whitened');
+      // Surrounding paper (incl. the shadowed left edge) still flattens to white.
+      expect(out.getPixel(10, 100).luminance, greaterThan(220),
+          reason: 'shadowed paper around the photo must still be flattened');
+    });
   });
 
   group('ColorEnhancer', () {
