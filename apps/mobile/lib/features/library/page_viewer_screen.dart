@@ -2,7 +2,7 @@ import 'dart:async'; // unawaited
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
+import 'share_channel.dart';
 
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
@@ -35,6 +35,7 @@ class PageViewerScreen extends StatefulWidget {
   final DocumentRepository repository;
   final ScanDependencies dependencies;
   final DocumentPrinter printer;
+  final ShareChannel share;
   const PageViewerScreen({
     super.key,
     required this.documentId,
@@ -42,6 +43,7 @@ class PageViewerScreen extends StatefulWidget {
     required this.repository,
     this.dependencies = const ScanDependencies(),
     this.printer = const SystemDocumentPrinter(),
+    this.share = const SystemShareChannel(),
   });
 
   @override
@@ -101,7 +103,8 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => PdfPreviewScreen(pdfPath: file.path, name: _name),
+          builder: (_) => PdfPreviewScreen(
+              pdfPath: file.path, name: _name, share: widget.share),
         ),
       );
     } catch (_) {
@@ -290,8 +293,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
 
   Future<void> _shareQuietly(File file) async {
     try {
-      await SharePlus.instance
-          .share(ShareParams(files: [XFile(file.path)], subject: _name));
+      await widget.share.share([file.path], subject: _name);
     } catch (_) {/* share unavailable (e.g. host test) — ignore */}
   }
 
@@ -307,6 +309,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           name: _name,
           initialText: page.ocrText,
           repository: widget.repository,
+          share: widget.share,
         ),
       ),
     );

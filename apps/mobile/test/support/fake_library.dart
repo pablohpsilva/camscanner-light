@@ -188,10 +188,10 @@ class FakeDocumentRepository implements DocumentRepository {
     if (throwOnExportText) {
       throw const DocumentExportException('fake exportText failure');
     }
-    final dir = await Directory.systemTemp.createTemp('faketxt');
-    final f = File('${dir.path}/page_$position.txt');
-    await f.writeAsString('fake recognized text');
-    return f;
+    // Return a synthetic path without real I/O — the share channel only cares
+    // about the path (ending in .txt), not the file existence or content.
+    return File(
+        '${Directory.systemTemp.path}/fake-text-$documentId-$position.txt');
   }
 
   @override

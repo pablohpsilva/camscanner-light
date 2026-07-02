@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart'; // re-exports XFile
+import 'share_channel.dart';
 
 import 'document_repository.dart';
 import 'page_image.dart';
@@ -16,6 +16,7 @@ class RecognizedTextScreen extends StatefulWidget {
   final String name;
   final String? initialText;
   final DocumentRepository repository;
+  final ShareChannel share;
 
   const RecognizedTextScreen({
     super.key,
@@ -24,6 +25,7 @@ class RecognizedTextScreen extends StatefulWidget {
     required this.name,
     required this.repository,
     this.initialText,
+    this.share = const SystemShareChannel(),
   });
 
   @override
@@ -90,9 +92,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
     try {
       final file = await widget.repository
           .exportRecognizedText(widget.documentId, widget.position);
-      await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], subject: widget.name),
-      );
+      await widget.share.share([file.path], subject: widget.name);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

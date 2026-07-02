@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
-import 'package:share_plus/share_plus.dart';
+import 'share_channel.dart';
 
 /// Opens a PDF file and returns its [PdfDocument]. Injectable so host tests can
 /// drive loading/error without the native plugin. Default = pdfx's real opener.
@@ -16,11 +16,13 @@ class PdfPreviewScreen extends StatefulWidget {
   final String pdfPath;
   final String name;
   final PdfOpener opener;
+  final ShareChannel share;
   const PdfPreviewScreen({
     super.key,
     required this.pdfPath,
     required this.name,
     this.opener = PdfDocument.openFile,
+    this.share = const SystemShareChannel(),
   });
 
   @override
@@ -74,9 +76,9 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
             key: const Key('pdf-preview-share'),
             tooltip: 'Share PDF',
             icon: const Icon(Icons.share),
-            onPressed: () => unawaited(SharePlus.instance.share(
-              ShareParams(files: [XFile(widget.pdfPath)], subject: widget.name),
-            )),
+            onPressed: () => unawaited(
+              widget.share.share([widget.pdfPath], subject: widget.name),
+            ),
           ),
         ],
       ),
