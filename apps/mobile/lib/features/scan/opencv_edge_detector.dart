@@ -63,6 +63,12 @@ class OpenCvEdgeDetector implements EdgeDetector {
 // ALL cv.* calls here are SYNCHRONOUS — never use *Async variants inside compute().
 // Every native resource allocated here MUST be disposed in the finally block.
 
+/// Longest side (px) to which a capture is downscaled before edge detection.
+/// High-res frames carry fine texture (paper grain, desk grain) that Canny
+/// turns into spurious contours; a modest working size is both more robust and
+/// much faster. Corners are normalized to [0..1], so this is coordinate-safe.
+const int _kDetectMaxSide = 1024;
+
 /// Returns [tl.dx, tl.dy, tr.dx, tr.dy, br.dx, br.dy, bl.dx, bl.dy, confidence]
 /// or null if no convex 4-point quad is found or on any error.
 List<double>? _runPipeline(Uint8List bytes) {
@@ -74,6 +80,20 @@ List<double>? _runPipeline(Uint8List bytes) {
     // Step 1: Decode. imdecode returns empty Mat (NOT an exception) for corrupt bytes.
     mat = cv.imdecode(bytes, cv.IMREAD_COLOR);
     if (mat.isEmpty) return null;
+
+    // Step 1b: Downscale large captures so fine texture doesn't spawn spurious
+    // edges. Corners are normalized below, so this does not shift the result.
+    final longest = math.max(mat.rows, mat.cols);
+    if (longest > _kDetectMaxSide) {
+      final scale = _kDetectMaxSide / longest;
+      final resized = cv.resize(
+        mat,
+        ((mat.cols * scale).round(), (mat.rows * scale).round()),
+        interpolation: cv.INTER_AREA,
+      );
+      mat.dispose();
+      mat = resized;
+    }
 
     final rows = mat.rows;
     final cols = mat.cols;
