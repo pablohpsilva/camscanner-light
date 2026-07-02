@@ -30,22 +30,22 @@ void main() {
   test('low quality yields a smaller PDF than original for a large page',
       () async {
     final dir = await Directory.systemTemp.createTemp('pdfq');
+    addTearDown(() => dir.delete(recursive: true));
     final page = await _largePage(dir);
     const builder = PdfBuilder();
     final original = await builder.build([page], quality: ExportQuality.original);
     final low = await builder.build([page], quality: ExportQuality.low);
     expect(low.length, lessThan(original.length));
-    await dir.delete(recursive: true);
   });
 
   test('searchable text survives bake+downscale at low quality', () async {
     final dir = await Directory.systemTemp.createTemp('pdfq2');
+    addTearDown(() => dir.delete(recursive: true));
     final page = await _largePage(dir);
     const builder = PdfBuilder(textLayer: OcrPdfTextLayer());
     // compress:false keeps the text stream un-deflated so it is greppable.
     final low =
         await builder.build([page], quality: ExportQuality.low, compress: false);
     expect(String.fromCharCodes(low).contains('HELLO'), isTrue);
-    await dir.delete(recursive: true);
   });
 }

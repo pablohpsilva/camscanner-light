@@ -20,6 +20,10 @@ void main() {
       (tester) async {
     final base = await Directory.systemTemp.createTemp('q1dev');
     final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(() async {
+      await db.close();
+      await base.delete(recursive: true);
+    });
     final store = DocumentFileStore(base);
     final repo = DriftDocumentRepository(
       db: db,
@@ -39,7 +43,7 @@ void main() {
         image.setPixelRgb(x, y, x % 256, y % 256, (x + y) % 256);
       }
     }
-    const rel = 'documents/1/page_1.jpg';
+    final rel = 'documents/$id/page_1.jpg';
     await store.writeRelative(
         rel, Uint8List.fromList(img.encodeJpg(image, quality: 95)));
     await db.into(db.pages).insert(PagesCompanion.insert(
@@ -49,8 +53,5 @@ void main() {
     final low = await (await repo.exportPdf(id, quality: ExportQuality.low))
         .readAsBytes();
     expect(low.length, lessThan(original.length));
-
-    await db.close();
-    await base.delete(recursive: true);
   });
 }

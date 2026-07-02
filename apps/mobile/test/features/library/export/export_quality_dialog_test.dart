@@ -30,12 +30,10 @@ void main() {
     }
   });
 
-  testWidgets('tapping an option returns that quality', (tester) async {
+  testWidgets('tapping an option dismisses the dialog', (tester) async {
     await _open(tester);
     await tester.tap(find.byKey(const Key('export-quality-medium')));
     await tester.pumpAndSettle();
-    // Re-open path: assert the label was shown; capture via a second harness.
-    // Simpler: verify the dialog is dismissed after tapping.
     expect(find.byKey(const Key('export-quality-dialog')), findsNothing);
   });
 
