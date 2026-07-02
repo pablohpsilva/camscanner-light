@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
 import '../../library/auto_enhancer.dart';
-import '../../library/bw_enhancer.dart';
 import '../../library/color_enhancer.dart';
 import '../../library/enhancer_mode.dart';
 import '../../library/grayscale_enhancer.dart';
@@ -29,7 +28,7 @@ Uint8List? _thumbFn(Uint8List bytes) {
 }
 
 // Fixed display order: Auto first (it's the default), then Original, Color,
-// Grayscale, B&W. Each entry is (mode, display label, fallback icon, tile key).
+// Grayscale. Each entry is (mode, display label, fallback icon, tile key).
 final _kFilters = [
   (
     mode: EnhancerMode.auto,
@@ -54,12 +53,6 @@ final _kFilters = [
     label: 'Grayscale',
     icon: Icons.filter_b_and_w_outlined,
     tileKey: 'filter-tile-grayscale',
-  ),
-  (
-    mode: EnhancerMode.bw,
-    label: 'B&W',
-    icon: Icons.contrast,
-    tileKey: 'filter-tile-bw',
   ),
 ];
 
@@ -111,13 +104,12 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
       final small = await compute(_thumbFn, bytes);
       if (!mounted || small == null) return; // finally clears _generating
 
-      // Step 2: apply all 5 enhancers concurrently on the downsampled bytes.
+      // Step 2: apply all enhancers concurrently on the downsampled bytes.
       final results = await Future.wait([
         const AutoEnhancer().enhance(small),
         const NoneEnhancer().enhance(small),
         const ColorEnhancer().enhance(small),
         const GrayscaleEnhancer().enhance(small),
-        const BwEnhancer().enhance(small),
       ]);
       if (!mounted) return;
       _thumbs = {
@@ -125,7 +117,6 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
         EnhancerMode.none: results[1],
         EnhancerMode.color: results[2],
         EnhancerMode.grayscale: results[3],
-        EnhancerMode.bw: results[4],
       };
     } catch (_) {
       // Thumbnail generation failed (e.g. an enhancer threw on a degenerate

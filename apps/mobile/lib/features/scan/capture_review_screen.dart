@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
 import '../library/auto_enhancer.dart';
-import '../library/bw_enhancer.dart';
 import '../library/color_enhancer.dart';
 import '../library/enhancer_mode.dart';
 import '../library/grayscale_enhancer.dart';
@@ -195,7 +194,6 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                           _corners,
                           switch (_mode) {
                             EnhancerMode.grayscale => const GrayscaleEnhancer(),
-                            EnhancerMode.bw        => const BwEnhancer(),
                             EnhancerMode.auto      => const AutoEnhancer(),
                             EnhancerMode.color     => const ColorEnhancer(),
                             EnhancerMode.none      => const NoneEnhancer(),

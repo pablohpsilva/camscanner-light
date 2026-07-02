@@ -26,14 +26,18 @@ Future<void> _pump(
 
 void main() {
   group('FilterPickerStrip', () {
-    testWidgets('shows all five filter tiles when sourceBytes is null',
+    testWidgets('shows all four filter tiles when sourceBytes is null',
         (tester) async {
       await _pump(tester);
       expect(find.byKey(const Key('filter-tile-auto')), findsOneWidget);
       expect(find.byKey(const Key('filter-tile-original')), findsOneWidget);
       expect(find.byKey(const Key('filter-tile-color')), findsOneWidget);
       expect(find.byKey(const Key('filter-tile-grayscale')), findsOneWidget);
-      expect(find.byKey(const Key('filter-tile-bw')), findsOneWidget);
+    });
+
+    testWidgets('B&W tile is absent (filter removed)', (tester) async {
+      await _pump(tester);
+      expect(find.byKey(const Key('filter-tile-bw')), findsNothing);
     });
 
     testWidgets('tapping Grayscale tile calls onModeChanged with .grayscale',
@@ -73,7 +77,7 @@ void main() {
       await _pump(tester, selectedMode: EnhancerMode.auto);
 
       final container =
-          tester.widget<Container>(find.byKey(const Key('filter-tile-bw')));
+          tester.widget<Container>(find.byKey(const Key('filter-tile-color')));
       final decoration = container.decoration as BoxDecoration?;
       expect(decoration?.border, isNull,
           reason: 'Unselected tile must not have a border');
@@ -83,9 +87,9 @@ void main() {
       final corrupt = Uint8List.fromList([0, 1, 2, 3, 99]);
       await _pump(tester, sourceBytes: corrupt);
       await tester.pumpAndSettle();
-      // All 5 tiles still present after failed generation
+      // All tiles still present after failed generation
       expect(find.byKey(const Key('filter-tile-auto')), findsOneWidget);
-      expect(find.byKey(const Key('filter-tile-bw')), findsOneWidget);
+      expect(find.byKey(const Key('filter-tile-grayscale')), findsOneWidget);
     });
 
     // Regression: c2777d7 — _maybeGenerate left _generating=true forever when
@@ -123,12 +127,11 @@ void main() {
             'never a spinner — after generation finishes.',
       );
 
-      // All five tiles are still present in the tree.
+      // All four tiles are still present in the tree.
       expect(find.byKey(const Key('filter-tile-auto')), findsOneWidget);
       expect(find.byKey(const Key('filter-tile-original')), findsOneWidget);
       expect(find.byKey(const Key('filter-tile-color')), findsOneWidget);
       expect(find.byKey(const Key('filter-tile-grayscale')), findsOneWidget);
-      expect(find.byKey(const Key('filter-tile-bw')), findsOneWidget);
     });
   });
 }

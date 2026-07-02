@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/auto_enhancer.dart';
-import 'package:mobile/features/library/bw_enhancer.dart';
 import 'package:mobile/features/library/color_enhancer.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/grayscale_enhancer.dart';
@@ -80,16 +79,9 @@ void main() {
     expect(captured, isA<GrayscaleEnhancer>());
   });
 
-  testWidgets('tapping B&W tile then Accept passes BwEnhancer',
-      (tester) async {
-    ImageEnhancer? captured;
-    await _pump(tester, onAccept: (_, e) => captured = e);
-
-    await tester.tap(find.byKey(const Key('filter-tile-bw')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('review-accept')));
-
-    expect(captured, isA<BwEnhancer>());
+  testWidgets('B&W tile is absent (filter removed)', (tester) async {
+    await _pump(tester, onAccept: (_, e) {});
+    expect(find.byKey(const Key('filter-tile-bw')), findsNothing);
   });
 
   testWidgets('tapping Color tile then Accept passes ColorEnhancer',

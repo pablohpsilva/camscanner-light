@@ -51,6 +51,35 @@ void main() {
           reason: 'lit-side text must remain dark');
     });
 
+    test('neutralises a warm shadow cast: warm-tinted paper background '
+        'comes out near-neutral white (per-channel flat-field)', () async {
+      // 120x40 page lit by a warm light: background is redder than it is blue
+      // (r = 210..250, b = 150..210 across the width) — the classic warm cast
+      // of a hand/desk shadow. A grayscale flat-field would leave it orange;
+      // the per-channel divide must pull every channel to a neutral white.
+      const w = 120, h = 40;
+      final src = img.Image(width: w, height: h);
+      for (final px in src) {
+        final t = px.x / (w - 1); // 0..1
+        px
+          ..r = (210 + 40 * t).round()
+          ..g = (185 + 40 * t).round()
+          ..b = (150 + 60 * t).round();
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final output = await const AutoEnhancer().enhance(input);
+      final out = img.decodeImage(output)!;
+
+      for (final x in [10, 60, 110]) {
+        final px = out.getPixel(x, 20);
+        expect(px.r, greaterThan(230),
+            reason: 'background must be near-white after cast removal');
+        expect((px.r.toInt() - px.b.toInt()).abs(), lessThan(25),
+            reason: 'warm cast neutralised: R and B nearly equal at x=$x');
+      }
+    });
+
     test('image smaller than the background proxy does not crash', () async {
       final src = img.Image(width: 8, height: 8);
       for (final px in src) { px..r = 200..g = 180..b = 160; }
