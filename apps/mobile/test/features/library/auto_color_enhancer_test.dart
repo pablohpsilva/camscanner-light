@@ -222,6 +222,37 @@ void main() {
     });
   });
 
+  group('localStdDev', () {
+    test('is 0 on a uniform region', () {
+      final im = img.Image(width: 5, height: 5);
+      for (final px in im) { px..r = 120..g = 120..b = 120; }
+      expect(localStdDev(im, 2, 2), lessThan(0.5));
+    });
+    test('is high on a varied region', () {
+      final im = img.Image(width: 5, height: 5);
+      var i = 0;
+      for (final px in im) { final v = (i++ % 2 == 0) ? 20 : 220; px..r = v..g = v..b = v; }
+      expect(localStdDev(im, 2, 2), greaterThan(50));
+    });
+  });
+
+  group('fillHoles', () {
+    test('fills a background hole fully enclosed by foreground', () {
+      // 7x7: foreground ring (255) with a single-pixel background hole at centre.
+      final m = img.Image(width: 7, height: 7);
+      for (final px in m) { px..r = 0..g = 0..b = 0; }
+      for (var y = 2; y <= 4; y++) {
+        for (var x = 2; x <= 4; x++) { m.getPixel(x, y)..r = 255..g = 255..b = 255; }
+      }
+      m.getPixel(3, 3)..r = 0..g = 0..b = 0; // the enclosed hole
+
+      final filled = fillHoles(m);
+
+      expect(filled.getPixel(3, 3).r, 255, reason: 'enclosed hole becomes foreground');
+      expect(filled.getPixel(0, 0).r, 0, reason: 'border background stays background');
+    });
+  });
+
   group('NoneEnhancer (regression)', () {
     test('returns the exact same bytes object unchanged', () async {
       final bytes = Uint8List.fromList([1, 2, 3]);

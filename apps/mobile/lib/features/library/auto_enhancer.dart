@@ -36,6 +36,65 @@ const int _kGateBand = 25;
 double correctionWeight(int backgroundLuminance) =>
     ((backgroundLuminance - _kPaperFloor) / _kGateBand).clamp(0.0, 1.0);
 
+/// Standard deviation of luminance over the 3x3 window around ([x], [y])
+/// (edges clamped). A texture cue: flat paper ~0, continuous-tone photo detail
+/// is high. Exposed for tests.
+@visibleForTesting
+double localStdDev(img.Image src, int x, int y) {
+  var sum = 0.0, sumSq = 0.0, n = 0.0;
+  for (var dy = -1; dy <= 1; dy++) {
+    final yy = (y + dy).clamp(0, src.height - 1);
+    for (var dx = -1; dx <= 1; dx++) {
+      final xx = (x + dx).clamp(0, src.width - 1);
+      final l = src.getPixel(xx, yy).luminance.toDouble();
+      sum += l;
+      sumSq += l * l;
+      n += 1;
+    }
+  }
+  final mean = sum / n;
+  final variance = (sumSq / n) - mean * mean;
+  return variance <= 0 ? 0 : math.sqrt(variance);
+}
+
+/// Marks enclosed background holes as foreground. Foreground = channel > 127.
+/// Flood-fills background reachable from the border; any background pixel NOT
+/// reached is enclosed (a hole) and is set to foreground (255). Absorbs a
+/// smooth/bright sub-area enclosed by detected photo content into the region.
+/// Exposed for tests.
+@visibleForTesting
+img.Image fillHoles(img.Image mask) {
+  final w = mask.width, h = mask.height;
+  final reachable = List.generate(h, (_) => List<bool>.filled(w, false));
+  final stack = <int>[]; // packed y*w + x
+  void tryPush(int x, int y) {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    if (reachable[y][x]) return;
+    if (mask.getPixel(x, y).r.toInt() > 127) return; // foreground blocks fill
+    reachable[y][x] = true;
+    stack.add(y * w + x);
+  }
+  for (var x = 0; x < w; x++) { tryPush(x, 0); tryPush(x, h - 1); }
+  for (var y = 0; y < h; y++) { tryPush(0, y); tryPush(w - 1, y); }
+  while (stack.isNotEmpty) {
+    final p = stack.removeLast();
+    final x = p % w, y = p ~/ w;
+    tryPush(x + 1, y);
+    tryPush(x - 1, y);
+    tryPush(x, y + 1);
+    tryPush(x, y - 1);
+  }
+  final out = mask.clone();
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      if (mask.getPixel(x, y).r.toInt() <= 127 && !reachable[y][x]) {
+        out.setPixelRgb(x, y, 255, 255, 255);
+      }
+    }
+  }
+  return out;
+}
+
 /// "Clean white paper" filter. Flattens uneven illumination (hand/phone
 /// shadows) via flat-field background division, then a global white-point
 /// stretch. Runs in a [compute] isolate — never blocks the UI thread.
