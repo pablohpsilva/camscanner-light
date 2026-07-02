@@ -100,7 +100,7 @@ full shadow removal.
 |---|---|---|
 | `_kChromaThresh` | Min chroma (0–255) for a pixel to seed as photo | 25 |
 | `_kTextureThresh` | Min local std-dev for a pixel to seed as photo | 18 |
-| `_kSpeckleRadius` | Opening radius that removes text-edge speckle (proxy px) | 1 |
+| `_kSpeckleRadius` | Opening radius that removes text-edge speckle (proxy px). Must be ≥2: a single dark text pixel seeds a 3×3 blob (neighbours get high local std-dev), which a radius-1 opening cannot erase. | 2 |
 | `_kConsolidateRadius` | Closing radius that merges the photo region (proxy px) | 2 |
 | `_kMaskFeather` | Mask feather radius (anti-seam) | 2 |
 

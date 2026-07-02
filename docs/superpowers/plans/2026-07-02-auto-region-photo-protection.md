@@ -251,8 +251,10 @@ const int _kChromaThresh = 25;
 const int _kTextureThresh = 18;
 
 /// Opening radius (proxy px) that removes thin/sparse text-edge speckle from the
-/// photo seed — enforces the "favor text de-shadowing" bias.
-const int _kSpeckleRadius = 1;
+/// photo seed — enforces the "favor text de-shadowing" bias. Must be >=2: a
+/// single dark text pixel seeds a 3x3 blob (neighbours get high local std-dev),
+/// which a radius-1 opening cannot erase.
+const int _kSpeckleRadius = 2;
 
 /// Closing radius (proxy px) that merges surviving seed into a solid region.
 const int _kConsolidateRadius = 2;
