@@ -440,8 +440,8 @@ void main() {
       expect(pages.single.flatImagePath, isNull);
     });
 
-    test('warper throws WarpException: save still succeeds, flatRelativePath null',
-        () async {
+    test('warper throws WarpException: save succeeds and the displayed page '
+        'still falls back to an (enhanced) full frame', () async {
       final warper = FakeImageWarper(throws: true);
       const corners = CropCorners(
         topLeft: Offset(0.1, 0.1),
@@ -454,9 +454,16 @@ void main() {
           corners: corners);
       expect(doc.id, greaterThan(0));
 
+      // A failed crop must NOT drop back to the raw capture as the displayed
+      // page: a flat is still written (full-frame fallback) so the enhancer's
+      // result — de-shadowed page — is what the user sees.
       final pages = await repo(warper: warper).getDocumentPages(doc.id);
-      expect(pages.single.flatImagePath, isNull);
-      // Original file still written.
+      expect(pages.single.flatImagePath, isNotNull);
+      expect(pages.single.displayPath, pages.single.flatImagePath);
+      final flatFile =
+          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flatFile.existsSync(), isTrue);
+      // Original (pristine, for re-crop) still written too.
       final origFile =
           File('${base.path}/documents/${doc.id}/page_1.jpg');
       expect(origFile.existsSync(), isTrue);

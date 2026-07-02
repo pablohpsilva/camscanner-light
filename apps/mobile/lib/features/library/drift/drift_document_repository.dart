@@ -90,24 +90,18 @@ class DriftDocumentRepository implements DocumentRepository {
           await _fileStore.deleteDocumentDir(docId); // best-effort cleanup
           rethrow; // rolls back the inserted document row
         }
-        // E2 + G1: perspective-flatten, then enhance the flat.
-        // Original (rel) is already on disk for the full-frame path.
+        // E2 + G1: the displayed page (flat ?? original) must ALWAYS be
+        // enhanced. Perspective-flatten the crop when possible, else fall back
+        // to the enhanced full frame so a failed crop still de-shadows.
         String? flatRel;
-        if (corners != null && corners != CropCorners.fullFrame) {
+        final flatBytes = await _enhancedFlat(scrubbed, corners, enhancer);
+        if (flatBytes != null) {
+          flatRel = _fileStore.flatRelativeFor(docId, 1);
           try {
-            Uint8List? flat = await _warper.warp(scrubbed, corners);
-            if (flat != null) {
-              // Orientation already baked by warper — enhancer gets clean bytes.
-              Uint8List flatBytes = flat;
-              if (enhancer != null) {
-                try {
-                  flatBytes = await enhancer.enhance(flat);
-                } catch (_) {} // silent: store unenhanced warp result
-              }
-              flatRel = _fileStore.flatRelativeFor(docId, 1);
-              await _fileStore.writeRelative(flatRel, flatBytes);
-            }
-          } catch (_) {/* WarpException or IO — flat stays null, save proceeds */}
+            await _fileStore.writeRelative(flatRel, flatBytes);
+          } catch (_) {
+            flatRel = null; // IO failure — save proceeds with the original only
+          }
         }
         await _db.into(_db.pages).insert(
               PagesCompanion.insert(
@@ -128,6 +122,31 @@ class DriftDocumentRepository implements DocumentRepository {
       return doc;
     } catch (e) {
       throw DocumentSaveException('save failed: $e');
+    }
+  }
+
+  /// Bytes for the flattened/displayed page, or null for the full-frame path
+  /// (where the original itself is the displayed, enhanced image).
+  ///
+  /// The displayed page is `flat ?? original`, so it must ALWAYS be enhanced:
+  /// perspective-warp the crop when possible, otherwise fall back to the full
+  /// frame — so a failed/degenerate crop still yields a de-shadowed page rather
+  /// than the raw capture. Warp and enhancement failures are both silent.
+  Future<Uint8List?> _enhancedFlat(
+      Uint8List scrubbed, CropCorners? corners, ImageEnhancer? enhancer) async {
+    if (corners == null || corners == CropCorners.fullFrame) return null;
+    Uint8List? warped;
+    try {
+      warped = await _warper.warp(scrubbed, corners);
+    } catch (_) {
+      warped = null; // WarpException/IO — fall back to the full frame.
+    }
+    final base = warped ?? scrubbed;
+    if (enhancer == null) return base;
+    try {
+      return await enhancer.enhance(base);
+    } catch (_) {
+      return base; // silent: store unenhanced
     }
   }
 
@@ -517,20 +536,14 @@ class DriftDocumentRepository implements DocumentRepository {
         }
         await _fileStore.writeRelative(rel, bytesToStore);
         String? flatRel;
-        if (corners != null && corners != CropCorners.fullFrame) {
+        final flatBytes = await _enhancedFlat(scrubbed, corners, enhancer);
+        if (flatBytes != null) {
+          flatRel = _fileStore.flatRelativeFor(documentId, newPosition);
           try {
-            Uint8List? flat = await _warper.warp(scrubbed, corners);
-            if (flat != null) {
-              Uint8List flatBytes = flat;
-              if (enhancer != null) {
-                try {
-                  flatBytes = await enhancer.enhance(flat);
-                } catch (_) {}
-              }
-              flatRel = _fileStore.flatRelativeFor(documentId, newPosition);
-              await _fileStore.writeRelative(flatRel, flatBytes);
-            }
-          } catch (_) {}
+            await _fileStore.writeRelative(flatRel, flatBytes);
+          } catch (_) {
+            flatRel = null;
+          }
         }
         await _db.into(_db.pages).insert(
               PagesCompanion.insert(
