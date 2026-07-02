@@ -167,6 +167,55 @@ void main() {
       expect(out.getPixel(10, 100).luminance, greaterThan(220),
           reason: 'shadowed paper around the photo must still be flattened');
     });
+
+    test('preserves a COLORFUL photo region (not blown to white), '
+        'paper still flattens', () async {
+      const w = 240, h = 240;
+      final src = img.Image(width: w, height: h);
+      int bgVal(int x) => 150 + (x * 95 ~/ (w - 1)); // shadow gradient paper
+      for (final px in src) { final v = bgVal(px.x); px..r = v..g = v..b = v; }
+      // bright saturated photo block (would blow out under the brightness gate).
+      for (var y = 60; y < 180; y++) {
+        for (var x = 60; x < 180; x++) { src.getPixel(x, y)..r = 210..g = 60..b = 55; }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final out = img.decodeImage(await const AutoEnhancer().enhance(input))!;
+
+      final p = out.getPixel(120, 120);
+      expect(p.luminance, lessThan(215),
+          reason: 'colorful photo must not be whitened');
+      expect((p.r.toInt() - p.g.toInt()).abs(), greaterThan(40),
+          reason: 'photo keeps its colour');
+      expect(out.getPixel(10, 120).luminance, greaterThan(220),
+          reason: 'paper around the photo still flattens');
+    });
+
+    test('preserves a TEXTURED grayscale photo (multi-tone) region', () async {
+      const w = 240, h = 240;
+      final src = img.Image(width: w, height: h);
+      for (final px in src) { px..r = 235..g = 235..b = 235; } // paper
+      // photo = grid of distinct gray tones (survives downscale as texture),
+      // with a bright smooth patch enclosed in the middle.
+      const tones = [60, 120, 90, 150, 40, 110];
+      for (var y = 60; y < 180; y++) {
+        for (var x = 60; x < 180; x++) {
+          final t = tones[(((x - 60) ~/ 20) + ((y - 60) ~/ 20)) % tones.length];
+          src.getPixel(x, y)..r = t..g = t..b = t;
+        }
+      }
+      for (var y = 108; y < 132; y++) {
+        for (var x = 108; x < 132; x++) { src.getPixel(x, y)..r = 165..g = 165..b = 165; }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final out = img.decodeImage(await const AutoEnhancer().enhance(input))!;
+
+      expect(out.getPixel(120, 120).luminance, lessThan(215),
+          reason: 'bright patch inside a textured photo must be preserved');
+      expect(out.getPixel(10, 10).luminance, greaterThan(220),
+          reason: 'paper still flattens');
+    });
   });
 
   group('ColorEnhancer', () {

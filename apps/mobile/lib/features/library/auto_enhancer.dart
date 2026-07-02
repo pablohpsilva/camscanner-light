@@ -170,8 +170,17 @@ Uint8List _autoFn(Uint8List bytes) {
     // EXIF scrubber keeps the Orientation tag; encodeJpg strips EXIF, so bake
     // orientation into pixels first. Safe no-op for already-flat bytes.
     final oriented = img.bakeOrientation(decoded);
-    final bg = _estimateBackground(oriented);
-    _divideByBackground(oriented, bg);
+    final colorProxy = _downscaleProxy(oriented);
+    final bgProxy = _backgroundFromProxy(colorProxy);
+    final bg = img.copyResize(bgProxy,
+        width: oriented.width,
+        height: oriented.height,
+        interpolation: img.Interpolation.linear);
+    final alphaMap = img.copyResize(buildCorrectionMask(colorProxy),
+        width: oriented.width,
+        height: oriented.height,
+        interpolation: img.Interpolation.linear);
+    _divideByBackground(oriented, bg, alphaMap);
     _autoLevels(oriented); // global white-point + contrast finish
     return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
   } catch (_) {
@@ -179,40 +188,28 @@ Uint8List _autoFn(Uint8List bytes) {
   }
 }
 
-/// Full-resolution per-pixel estimate of the paper-background brightness.
-/// Downscale -> grayscale max-filter (erase ink) -> blur (smooth) -> upscale.
-/// Returned image is grayscale: r == g == b == local background luminance.
-img.Image _estimateBackground(img.Image src) {
-  // 1. Downscale to a tiny proxy. Skip if the frame is already smaller than
-  //    the proxy (tiny/test images) so we never upscale-then-downscale.
+/// Downscales to the tiny COLOR proxy used for both background estimation and
+/// photo-region detection. Skips downscale for frames already <= the proxy size.
+img.Image _downscaleProxy(img.Image src) {
   final longest = math.max(src.width, src.height);
-  final img.Image proxy;
-  if (longest > _kBackgroundProxyPx) {
-    final scale = _kBackgroundProxyPx / longest;
-    proxy = img.copyResize(
-      src,
-      width: math.max(1, (src.width * scale).round()),
-      height: math.max(1, (src.height * scale).round()),
-      interpolation: img.Interpolation.average,
-    );
-  } else {
-    proxy = src.clone();
-  }
-
-  // 2. Grayscale, then max-filter to remove dark ink from the estimate.
-  img.grayscale(proxy);
-  final dilated = _maxFilter(proxy, _kDilateRadius);
-
-  // 3. Blur into a smooth illumination gradient (includes the shadow).
-  final blurred = img.gaussianBlur(dilated, radius: _kBlurRadius);
-
-  // 4. Upscale back to full resolution.
+  if (longest <= _kBackgroundProxyPx) return src.clone();
+  final scale = _kBackgroundProxyPx / longest;
   return img.copyResize(
-    blurred,
-    width: src.width,
-    height: src.height,
-    interpolation: img.Interpolation.linear,
+    src,
+    width: math.max(1, (src.width * scale).round()),
+    height: math.max(1, (src.height * scale).round()),
+    interpolation: img.Interpolation.average,
   );
+}
+
+/// Paper-background estimate at proxy resolution from the color proxy:
+/// grayscale -> max-filter (erase ink) -> blur. Clones so [colorProxy] (still
+/// needed for chroma) is not mutated. NOT upscaled — caller upscales.
+img.Image _backgroundFromProxy(img.Image colorProxy) {
+  final gray = colorProxy.clone();
+  img.grayscale(gray);
+  final dilated = _maxFilter(gray, _kDilateRadius);
+  return img.gaussianBlur(dilated, radius: _kBlurRadius);
 }
 
 /// Grayscale morphological dilation: each pixel becomes the max luminance in a
@@ -259,20 +256,18 @@ img.Image _minFilter(img.Image src, int radius) {
   return out;
 }
 
-/// Flat-field correction, gated on background brightness. Where the local
-/// background [bg] is bright (paper, even under shadow) the pixel is fully
-/// divided so shadows flatten to white; where [bg] is genuinely dark (a photo
-/// or filled block) the pixel is left untouched, so dark content is never blown
-/// out. A smooth ramp between the two (see [correctionWeight]) prevents edge
-/// seams. Channels scale proportionally, so hue is preserved. Guards bg == 0.
-void _divideByBackground(img.Image src, img.Image bg) {
+/// Flat-field correction gated by a per-pixel correction mask [alphaMap]
+/// (grayscale; channel/255 = alpha). alpha ~ 1 (paper) -> full divide by the
+/// local background [bg] (shadow removal); alpha ~ 0 (a detected photo region)
+/// -> pixel left as captured. Channels scale proportionally, so hue is
+/// preserved. Guards bg == 0.
+void _divideByBackground(img.Image src, img.Image bg, img.Image alphaMap) {
   for (var y = 0; y < src.height; y++) {
     for (var x = 0; x < src.width; x++) {
       final b = bg.getPixel(x, y).r.toInt();
       if (b <= 0) continue;
-      final alpha = correctionWeight(b);
-      if (alpha <= 0) continue; // dark content — leave the pixel untouched
-      // alpha=1 -> multiply by 255/b (full divide); alpha=0 -> unchanged.
+      final alpha = alphaMap.getPixel(x, y).r / 255;
+      if (alpha <= 0) continue; // photo region — leave the pixel untouched
       final scale = 1 + alpha * (255 / b - 1);
       final px = src.getPixel(x, y);
       px.r = (px.r.toInt() * scale).clamp(0, 255).toInt();
