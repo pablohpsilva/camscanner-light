@@ -18,6 +18,7 @@ import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/document_printer.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
+import 'package:mobile/features/library/share_channel.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/ocr/ocr_engine.dart';
 import 'package:mobile/features/library/ocr/ocr_result.dart';
@@ -415,6 +416,28 @@ class FakeDocumentPrinter implements DocumentPrinter {
     lastName = name;
   }
 }
+
+/// Recording share channel for tests: captures the last call, never touches the
+/// native share sheet. [throwOnShare] simulates a share failure.
+class FakeShareChannel implements ShareChannel {
+  List<String>? lastFilePaths;
+  String? lastSubject;
+  int calls = 0;
+  final bool throwOnShare;
+  FakeShareChannel({this.throwOnShare = false});
+
+  @override
+  Future<void> share(List<String> filePaths, {String? subject}) async {
+    if (throwOnShare) throw Exception('fake: share failed');
+    calls++;
+    lastFilePaths = filePaths;
+    lastSubject = subject;
+  }
+}
+
+/// The [FakeShareChannel] most recently installed by [tempLibraryDependencies],
+/// so a BDD step can assert what was handed to the share sheet.
+FakeShareChannel? lastBddShareChannel;
 
 /// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
 /// or throw [WarpException].

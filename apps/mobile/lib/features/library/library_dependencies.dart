@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'document_file_store.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
+import 'share_channel.dart';
 import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
 import 'hybrid_warper.dart';
@@ -21,9 +22,11 @@ typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
 class LibraryDependencies {
   final DocumentRepositoryFactory createRepository;
   final DocumentPrinter printer;
+  final ShareChannel share;
   const LibraryDependencies({
     this.createRepository = _defaultCreateRepository,
     this.printer = const SystemDocumentPrinter(),
+    this.share = const SystemShareChannel(),
   });
 }
 
