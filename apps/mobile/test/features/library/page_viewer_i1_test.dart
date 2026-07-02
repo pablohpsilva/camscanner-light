@@ -6,7 +6,8 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import '../../support/fake_library.dart';
 
 void main() {
-  Future<void> pushViewer(WidgetTester tester, FakeDocumentRepository repo) async {
+  Future<void> pushViewer(WidgetTester tester, FakeDocumentRepository repo,
+      FakeShareChannel share) async {
     await tester.pumpWidget(MaterialApp(
       home: Builder(
         builder: (context) => Center(
@@ -15,7 +16,7 @@ void main() {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => PageViewerScreen(
-                    documentId: 1, name: 'Doc', repository: repo),
+                    documentId: 1, name: 'Doc', repository: repo, share: share),
               ),
             ),
             child: const Text('open'),
@@ -36,17 +37,18 @@ void main() {
         ],
       );
 
-  testWidgets('overflow menu exposes Export as image', (tester) async {
-    await pushViewer(tester, twoPageRepo());
+  testWidgets('overflow menu exposes Share as image', (tester) async {
+    await pushViewer(tester, twoPageRepo(), FakeShareChannel());
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('page-viewer-export-image')), findsOneWidget);
   });
 
-  testWidgets('exporting the current page calls exportPageAsImage + confirms',
+  testWidgets('sharing the current page exports it then shares the JPG',
       (tester) async {
     final repo = twoPageRepo();
-    await pushViewer(tester, repo);
+    final share = FakeShareChannel();
+    await pushViewer(tester, repo, share);
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
@@ -54,18 +56,23 @@ void main() {
     await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pumpAndSettle();
     expect(repo.lastExportedImagePosition, 1);
-    expect(find.text('Page saved as image'), findsOneWidget);
+    expect(share.calls, 1);
+    expect(share.lastFilePaths!.single, endsWith('.jpg'));
+    expect(share.lastSubject, 'Doc');
   });
 
-  testWidgets('export failure shows an error SnackBar', (tester) async {
+  testWidgets('export failure shows a share error and does not share',
+      (tester) async {
     final repo = twoPageRepo(throwOnExportImage: true);
-    await pushViewer(tester, repo);
+    final share = FakeShareChannel();
+    await pushViewer(tester, repo, share);
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pumpAndSettle();
-    expect(find.text("Couldn't export image"), findsOneWidget);
+    expect(share.calls, 0);
+    expect(find.text("Couldn't share image"), findsOneWidget);
   });
 }

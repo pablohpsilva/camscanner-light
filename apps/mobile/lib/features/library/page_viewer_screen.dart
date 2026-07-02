@@ -218,16 +218,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     if (quality == null || !mounted) return;
     setState(() => _exporting = true);
     try {
-      await widget.repository
+      final file = await widget.repository
           .exportPageAsImage(widget.documentId, page.position, quality: quality);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Page saved as image')),
-      );
+      await widget.share.share([file.path], subject: _name);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't export image")),
+        const SnackBar(content: Text("Couldn't share image")),
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -241,15 +238,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     try {
       final files = await widget.repository
           .exportAllPagesAsImages(widget.documentId, quality: quality);
-      if (!mounted) return;
-      final n = files.length;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported $n ${n == 1 ? 'image' : 'images'}')),
-      );
+      await widget.share.share(
+          files.map((f) => f.path).toList(), subject: _name);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't export images")),
+        const SnackBar(content: Text("Couldn't share images")),
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -535,12 +529,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               PopupMenuItem<String>(
                 value: 'export-image',
                 key: Key('page-viewer-export-image'),
-                child: Text('Export as image'),
+                child: Text('Share as image'),
               ),
               PopupMenuItem<String>(
                 value: 'export-all-images',
                 key: Key('page-viewer-export-all-images'),
-                child: Text('Export all as images'),
+                child: Text('Share all as images'),
               ),
               PopupMenuItem<String>(
                 value: 'print',

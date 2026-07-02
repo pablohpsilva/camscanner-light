@@ -5,22 +5,25 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
 
-Future<void> _pumpViewer(WidgetTester tester, FakeDocumentRepository repo) async {
+Future<void> _pumpViewer(WidgetTester tester, FakeDocumentRepository repo,
+    FakeShareChannel share) async {
   await tester.pumpWidget(MaterialApp(
     home: PageViewerScreen(
       repository: repo,
       documentId: 4,
       name: 'Doc',
+      share: share,
     ),
   ));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('image export: choosing Medium passes quality + confirms',
+  testWidgets('image share: choosing Medium passes quality + shares',
       (tester) async {
     final repo = FakeDocumentRepository();
-    await _pumpViewer(tester, repo);
+    final share = FakeShareChannel();
+    await _pumpViewer(tester, repo, share);
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
@@ -28,12 +31,13 @@ void main() {
     await tester.tap(find.byKey(const Key('export-quality-medium')));
     await tester.pumpAndSettle();
     expect(repo.lastImageExportQuality, ExportQuality.medium);
-    expect(find.text('Page saved as image'), findsOneWidget);
+    expect(share.calls, 1);
   });
 
-  testWidgets('image export: cancelling the dialog is a no-op', (tester) async {
+  testWidgets('image share: cancelling the dialog is a no-op', (tester) async {
     final repo = FakeDocumentRepository();
-    await _pumpViewer(tester, repo);
+    final share = FakeShareChannel();
+    await _pumpViewer(tester, repo, share);
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
@@ -41,13 +45,13 @@ void main() {
     await tester.tap(find.byKey(const Key('export-quality-cancel')));
     await tester.pumpAndSettle();
     expect(repo.lastImageExportQuality, isNull);
-    expect(find.text('Page saved as image'), findsNothing);
+    expect(share.calls, 0);
   });
 
   testWidgets('PDF export: choosing Low passes quality (pump, not settle)',
       (tester) async {
     final repo = FakeDocumentRepository();
-    await _pumpViewer(tester, repo);
+    await _pumpViewer(tester, repo, FakeShareChannel());
     await tester.tap(find.byKey(const Key('page-viewer-export')));
     await tester.pumpAndSettle(); // dialog animates in
     await tester.tap(find.byKey(const Key('export-quality-low')));
