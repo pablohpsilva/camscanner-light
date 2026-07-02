@@ -177,6 +177,22 @@ void main() {
     });
   });
 
+  group('correctionWeight', () {
+    test('is 0 for dark content at or below the paper floor', () {
+      expect(correctionWeight(40), 0.0);
+      expect(correctionWeight(95), 0.0);
+    });
+    test('is 1 for paper at or above floor + band', () {
+      expect(correctionWeight(120), 1.0);
+      expect(correctionWeight(240), 1.0);
+    });
+    test('ramps linearly across the transition band', () {
+      // floor 95, band 25 → (107-95)/25 = 0.48
+      expect(correctionWeight(107), closeTo(0.48, 0.02));
+      expect(correctionWeight(95 + 25), 1.0);
+    });
+  });
+
   group('NoneEnhancer (regression)', () {
     test('returns the exact same bytes object unchanged', () async {
       final bytes = Uint8List.fromList([1, 2, 3]);

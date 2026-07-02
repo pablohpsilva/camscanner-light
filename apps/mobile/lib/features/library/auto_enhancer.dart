@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:image/image.dart' as img;
 
 import 'image_enhancer.dart';
@@ -17,6 +17,24 @@ const int _kDilateRadius = 1;
 
 /// Gaussian blur radius on the proxy — smooths the estimate into a gradient.
 const int _kBlurRadius = 3;
+
+/// Background luminance at or below which a region is treated as dark content
+/// (an embedded photo or filled block) and left uncorrected — so flat-field
+/// division never blows it out to white. "Protect photos" bias: set high enough
+/// that a genuine photo (background estimate ~40) is preserved while shadowed
+/// paper (estimate typically >= ~110) is still fully corrected.
+const int _kPaperFloor = 95;
+
+/// Width of the smooth transition above [_kPaperFloor]. The correction weight
+/// ramps 0 -> 1 across this band, avoiding hard seams / halos at content edges.
+const int _kGateBand = 25;
+
+/// Correction weight for a pixel whose local background luminance is
+/// [backgroundLuminance]: 0.0 for dark content (<= [_kPaperFloor]), 1.0 for
+/// paper (>= floor + [_kGateBand]), linear in between. Pure; exposed for tests.
+@visibleForTesting
+double correctionWeight(int backgroundLuminance) =>
+    ((backgroundLuminance - _kPaperFloor) / _kGateBand).clamp(0.0, 1.0);
 
 /// "Clean white paper" filter. Flattens uneven illumination (hand/phone
 /// shadows) via flat-field background division, then a global white-point
@@ -103,20 +121,25 @@ img.Image _maxFilter(img.Image src, int radius) {
   return out;
 }
 
-/// Flat-field correction: divide each channel by the local background so every
-/// region normalizes to the same white. [bg] is grayscale (read r as the local
-/// paper brightness). Shadowed paper (low bg) is boosted to white; ink (far
-/// below the local bg) stays dark. Channels scale proportionally, so hue is
-/// preserved. Guards bg == 0.
+/// Flat-field correction, gated on background brightness. Where the local
+/// background [bg] is bright (paper, even under shadow) the pixel is fully
+/// divided so shadows flatten to white; where [bg] is genuinely dark (a photo
+/// or filled block) the pixel is left untouched, so dark content is never blown
+/// out. A smooth ramp between the two (see [correctionWeight]) prevents edge
+/// seams. Channels scale proportionally, so hue is preserved. Guards bg == 0.
 void _divideByBackground(img.Image src, img.Image bg) {
   for (var y = 0; y < src.height; y++) {
     for (var x = 0; x < src.width; x++) {
       final b = bg.getPixel(x, y).r.toInt();
       if (b <= 0) continue;
+      final alpha = correctionWeight(b);
+      if (alpha <= 0) continue; // dark content — leave the pixel untouched
+      // alpha=1 -> multiply by 255/b (full divide); alpha=0 -> unchanged.
+      final scale = 1 + alpha * (255 / b - 1);
       final px = src.getPixel(x, y);
-      px.r = (px.r.toInt() * 255 / b).clamp(0, 255).toInt();
-      px.g = (px.g.toInt() * 255 / b).clamp(0, 255).toInt();
-      px.b = (px.b.toInt() * 255 / b).clamp(0, 255).toInt();
+      px.r = (px.r.toInt() * scale).clamp(0, 255).toInt();
+      px.g = (px.g.toInt() * scale).clamp(0, 255).toInt();
+      px.b = (px.b.toInt() * scale).clamp(0, 255).toInt();
     }
   }
 }
