@@ -85,6 +85,11 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes 
 | P1 | PDF password protection (AES-256) | 07/09 | `2026-07-02-p1-pdf-password.md` | ✅ **built & gated** |
 | Q1 | Compress / export quality (PDF + images) | 07/10 | `2026-07-02-q1-compress-export-quality.md` | ✅ **built & gated** |
 | R1 | Share a document's PDF (system share sheet) | 12 | `2026-07-02-r1-share-documents.md` | ✅ **built & gated** |
+| R2 | Share images (JPG) + close Feature 12 | 12 | `2026-07-02-r2-share-images.md` | ✅ **built & gated** |
+
+> **Feature 12 (sharing) is complete on-device:** PDF share (R1) + JPG share (R2)
+> via the system share sheet. Link-share and fax remain deferred behind the
+> `ShareChannel`/`FaxProvider` interface.
 
 ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
 
