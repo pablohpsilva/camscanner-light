@@ -16,3 +16,9 @@ Feature: G3 Color and Auto scan enhancement
     Given the review screen is open with a captured image
     When I tap Accept
     Then the document is saved without enhancement
+
+  Scenario: Auto filter removes the shadow from a shadowed capture
+    Given the review screen is open with a captured image
+    When I toggle the auto filter
+    And I tap Accept
+    Then the auto enhancer flattens the shadow

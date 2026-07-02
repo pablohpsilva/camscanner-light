@@ -82,6 +82,62 @@ void main() {
       expect(img.decodeImage(output), isNotNull,
           reason: 'Uniform image must not crash; degenerate auto-levels should be a no-op');
     });
+
+    test('flattens a shadow gradient: shadowed background becomes near-white, '
+        'text stays dark, background variance collapses', () async {
+      // 120x40 page: horizontal brightness gradient simulates a shadow
+      // (left = dark 120, right = lit 240). Two dark "text" blocks: one in the
+      // shadowed left, one in the lit right.
+      const w = 120, h = 40;
+      final src = img.Image(width: w, height: h);
+      int bgVal(int x) => 120 + (x * 120 ~/ (w - 1)); // 120..240
+      for (final px in src) {
+        final v = bgVal(px.x);
+        px..r = v..g = v..b = v;
+      }
+      // Dark text blocks (value 20) at left (x10-20) and right (x100-110), y15-25.
+      for (var y = 15; y <= 25; y++) {
+        for (var x = 10; x <= 20; x++) { src.getPixel(x, y)..r = 20..g = 20..b = 20; }
+        for (var x = 100; x <= 110; x++) { src.getPixel(x, y)..r = 20..g = 20..b = 20; }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final output = await const AutoEnhancer().enhance(input);
+      final out = img.decodeImage(output)!;
+
+      // Background samples at y=5 (no text) across the frame.
+      final bgSamples = [2, 30, 60, 90, 117]
+          .map((x) => out.getPixel(x, 5).luminance.toDouble())
+          .toList();
+      for (final s in bgSamples) {
+        expect(s, greaterThan(220),
+            reason: 'every background sample (incl. the shadowed left) must be near-white');
+      }
+      final mean = bgSamples.reduce((a, b) => a + b) / bgSamples.length;
+      final variance = bgSamples
+              .map((s) => (s - mean) * (s - mean))
+              .reduce((a, b) => a + b) /
+          bgSamples.length;
+      expect(variance, lessThan(100),
+          reason: 'shadow gradient removed → background brightness is uniform');
+
+      // Text stays dark relative to its now-white background.
+      expect(out.getPixel(15, 20).luminance, lessThan(120),
+          reason: 'shadowed-side text must remain dark');
+      expect(out.getPixel(105, 20).luminance, lessThan(120),
+          reason: 'lit-side text must remain dark');
+    });
+
+    test('image smaller than the background proxy does not crash', () async {
+      final src = img.Image(width: 8, height: 8);
+      for (final px in src) { px..r = 200..g = 180..b = 160; }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final output = await const AutoEnhancer().enhance(input);
+
+      expect(img.decodeImage(output), isNotNull,
+          reason: 'tiny frames skip the downscale and must still produce valid JPEG');
+    });
   });
 
   group('ColorEnhancer', () {
