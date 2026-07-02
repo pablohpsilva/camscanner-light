@@ -80,6 +80,25 @@ Thresholds are conservative (high) so faint paper texture/color does not trip.
 `b<=0` guard; `scale = 1 + alpha*(255/b − 1)`. alpha≈0 → preserved; alpha≈1 →
 full shadow removal.
 
+### Stage 4 — restore photo regions after auto-levels (real preservation)
+
+`_autoLevels` runs unchanged (global per-channel stretch), but it would re-map
+the preserved photo pixels — pushing them (the dark end of the histogram) toward
+black and collapsing their colour. So AFTER `_autoLevels`, restore photo pixels
+to the captured original: `_restorePhotoRegions(processed, original, alphaMap)`
+blends `processed → original` by `(1 − alpha)` per pixel. Paper (alpha 1) keeps
+the shadow-removed/levelled result; a detected photo (alpha 0) is restored
+exactly as-shot; edges blend smoothly. `original` is `oriented.clone()` taken
+right after bake-orientation. This is what makes "preserve as captured" real —
+`_autoLevels`'s internals are untouched.
+
+**Design note (discovered during implementation):** the texture and darkness
+cues can misread genuinely dark or detailed *paper* as photo. The "favor text"
+bias plus the speckle-opening leans the right way, and the five thresholds are
+tuned on-device (Task 5). Also, `_kSpeckleRadius` must be ≥2: a single dark text
+pixel seeds a 3×3 blob (its neighbours get high local std-dev) that a radius-1
+opening cannot erase.
+
 ### New units (each isolated / testable)
 
 - `_luminanceStdDev(img.Image proxy, int x, int y) -> double` — 3×3 std-dev; or a
