@@ -178,10 +178,10 @@ Uint8List _jpeg(int w, int h, {int? orientation}) {
 void main() {
   const compressor = ImageLibraryCompressor();
 
-  test('original returns the input bytes verbatim (identity)', () async {
+  test('original returns the input bytes verbatim (byte-identical)', () async {
     final input = _jpeg(400, 300);
     final out = await compressor.compress(input, ExportQuality.original);
-    expect(identical(out, input) || out == input, isTrue);
+    expect(out, equals(input)); // element-wise: same bytes, no re-encode
   });
 
   test('low yields fewer bytes and a smaller long edge for a large image',
