@@ -5,4 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> iExportTheOpenDocumentToPdf(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('page-viewer-export')));
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('export-quality-original')));
+  await tester.pumpAndSettle();
 }

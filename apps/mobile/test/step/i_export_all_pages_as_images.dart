@@ -7,4 +7,6 @@ Future<void> iExportAllPagesAsImages(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('export-quality-original')));
+  await tester.pumpAndSettle();
 }
