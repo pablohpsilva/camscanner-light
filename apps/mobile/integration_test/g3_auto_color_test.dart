@@ -49,7 +49,7 @@ void main() {
       await theAutoEnhancerFlattensTheShadow(tester);
     });
     testWidgets(
-        '''Auto filter preserves an embedded photo in a shadowed capture''',
+        '''Auto filter preserves an embedded photo instead of blowing it out''',
         (tester) async {
       await theReviewScreenIsOpenWithACapturedImage(tester);
       await iToggleTheAutoFilter(tester);
