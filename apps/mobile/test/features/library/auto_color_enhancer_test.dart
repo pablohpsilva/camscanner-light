@@ -10,14 +10,15 @@ import 'package:mobile/features/library/image_enhancer.dart';
 void main() {
   group('AutoEnhancer', () {
     test('stretches contrast: max channel value reaches near-255 after enhancement', () async {
-      final src = img.Image(width: 4, height: 4);
-      final rVals = [80, 93, 107, 120];
-      int i = 0;
+      // Bright NEUTRAL paper with a smooth column gradient (150..230): chroma 0,
+      // luminance above the paper floor, low local texture -> classified as paper
+      // (not a photo), so auto-levels stretches it. A chromatic or dark patch
+      // would now be treated as a photo region and preserved as captured, which
+      // is the point of the region-photo-protection feature.
+      final src = img.Image(width: 8, height: 8);
       for (final px in src) {
-        px.r = rVals[i % 4];
-        px.g = rVals[i % 4] - 20;
-        px.b = rVals[i % 4] + 10;
-        i++;
+        final v = 150 + (px.x * 80 ~/ 7);
+        px..r = v..g = v..b = v;
       }
       final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
 
@@ -29,7 +30,7 @@ void main() {
         if (px.r.toInt() > maxR) maxR = px.r.toInt();
       }
       expect(maxR, greaterThan(220),
-          reason: 'Auto-levels should stretch R to near-255');
+          reason: 'Auto-levels should stretch R to near-255 on paper');
     });
 
     test('preserves color: output is not grayscale (R channel differs from G)', () async {
@@ -167,6 +168,55 @@ void main() {
       expect(out.getPixel(10, 100).luminance, greaterThan(220),
           reason: 'shadowed paper around the photo must still be flattened');
     });
+
+    test('preserves a COLORFUL photo region (not blown to white), '
+        'paper still flattens', () async {
+      const w = 240, h = 240;
+      final src = img.Image(width: w, height: h);
+      int bgVal(int x) => 150 + (x * 95 ~/ (w - 1)); // shadow gradient paper
+      for (final px in src) { final v = bgVal(px.x); px..r = v..g = v..b = v; }
+      // bright saturated photo block (would blow out under the brightness gate).
+      for (var y = 60; y < 180; y++) {
+        for (var x = 60; x < 180; x++) { src.getPixel(x, y)..r = 210..g = 60..b = 55; }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final out = img.decodeImage(await const AutoEnhancer().enhance(input))!;
+
+      final p = out.getPixel(120, 120);
+      expect(p.luminance, lessThan(215),
+          reason: 'colorful photo must not be whitened');
+      expect((p.r.toInt() - p.g.toInt()).abs(), greaterThan(40),
+          reason: 'photo keeps its colour');
+      expect(out.getPixel(10, 120).luminance, greaterThan(220),
+          reason: 'paper around the photo still flattens');
+    });
+
+    test('preserves a TEXTURED grayscale photo (multi-tone) region', () async {
+      const w = 240, h = 240;
+      final src = img.Image(width: w, height: h);
+      for (final px in src) { px..r = 235..g = 235..b = 235; } // paper
+      // photo = grid of distinct gray tones (survives downscale as texture),
+      // with a bright smooth patch enclosed in the middle.
+      const tones = [60, 120, 90, 150, 40, 110];
+      for (var y = 60; y < 180; y++) {
+        for (var x = 60; x < 180; x++) {
+          final t = tones[(((x - 60) ~/ 20) + ((y - 60) ~/ 20)) % tones.length];
+          src.getPixel(x, y)..r = t..g = t..b = t;
+        }
+      }
+      for (var y = 108; y < 132; y++) {
+        for (var x = 108; x < 132; x++) { src.getPixel(x, y)..r = 165..g = 165..b = 165; }
+      }
+      final input = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      final out = img.decodeImage(await const AutoEnhancer().enhance(input))!;
+
+      expect(out.getPixel(120, 120).luminance, lessThan(215),
+          reason: 'bright patch inside a textured photo must be preserved');
+      expect(out.getPixel(10, 10).luminance, greaterThan(220),
+          reason: 'paper still flattens');
+    });
   });
 
   group('ColorEnhancer', () {
@@ -219,6 +269,78 @@ void main() {
       // floor 95, band 25 → (107-95)/25 = 0.48
       expect(correctionWeight(107), closeTo(0.48, 0.02));
       expect(correctionWeight(95 + 25), 1.0);
+    });
+  });
+
+  group('localStdDev', () {
+    test('is 0 on a uniform region', () {
+      final im = img.Image(width: 5, height: 5);
+      for (final px in im) { px..r = 120..g = 120..b = 120; }
+      expect(localStdDev(im, 2, 2), lessThan(0.5));
+    });
+    test('is high on a varied region', () {
+      final im = img.Image(width: 5, height: 5);
+      var i = 0;
+      for (final px in im) { final v = (i++ % 2 == 0) ? 20 : 220; px..r = v..g = v..b = v; }
+      expect(localStdDev(im, 2, 2), greaterThan(50));
+    });
+  });
+
+  group('fillHoles', () {
+    test('fills a background hole fully enclosed by foreground', () {
+      // 7x7: foreground ring (255) with a single-pixel background hole at centre.
+      final m = img.Image(width: 7, height: 7);
+      for (final px in m) { px..r = 0..g = 0..b = 0; }
+      for (var y = 2; y <= 4; y++) {
+        for (var x = 2; x <= 4; x++) { m.getPixel(x, y)..r = 255..g = 255..b = 255; }
+      }
+      m.getPixel(3, 3)..r = 0..g = 0..b = 0; // the enclosed hole
+
+      final filled = fillHoles(m);
+
+      expect(filled.getPixel(3, 3).r, 255, reason: 'enclosed hole becomes foreground');
+      expect(filled.getPixel(0, 0).r, 0, reason: 'border background stays background');
+    });
+  });
+
+  group('buildCorrectionMask', () {
+    test('colorful patch on neutral paper is detected as photo (alpha ~0)', () {
+      final proxy = img.Image(width: 30, height: 30);
+      for (final px in proxy) { px..r = 235..g = 233..b = 230; } // neutral paper
+      for (var y = 8; y < 22; y++) {
+        for (var x = 8; x < 22; x++) { proxy.getPixel(x, y)..r = 200..g = 40..b = 40; } // saturated red
+      }
+      final mask = buildCorrectionMask(proxy);
+      expect(mask.getPixel(15, 15).r, lessThan(80), reason: 'colorful region → preserved');
+      expect(mask.getPixel(1, 1).r, greaterThan(200), reason: 'paper → full correction');
+    });
+
+    test('sparse thin dark strokes (text) are NOT detected as photo (bias)', () {
+      final proxy = img.Image(width: 30, height: 30);
+      for (final px in proxy) { px..r = 232..g = 232..b = 232; } // bright neutral paper
+      // isolated single-pixel dark "strokes" scattered — thin, sparse.
+      for (final p in [[5,5],[9,5],[13,5],[5,9],[9,9],[20,20],[24,20]]) {
+        proxy.getPixel(p[0], p[1])..r = 35..g = 35..b = 35;
+      }
+      final mask = buildCorrectionMask(proxy);
+      // After opening, isolated speckles are erased → paper weight everywhere.
+      expect(mask.getPixel(9, 5).r, greaterThan(180),
+          reason: 'thin text must remain paper so it still gets de-shadowed');
+      expect(mask.getPixel(1, 1).r, greaterThan(200));
+    });
+
+    test('bright patch enclosed by a dark photo body is absorbed (alpha ~0)', () {
+      final proxy = img.Image(width: 30, height: 30);
+      for (final px in proxy) { px..r = 235..g = 235..b = 235; }
+      for (var y = 6; y < 24; y++) {
+        for (var x = 6; x < 24; x++) { proxy.getPixel(x, y)..r = 40..g = 40..b = 40; } // dark body
+      }
+      for (var y = 12; y < 18; y++) {
+        for (var x = 12; x < 18; x++) { proxy.getPixel(x, y)..r = 200..g = 200..b = 200; } // bright hole
+      }
+      final mask = buildCorrectionMask(proxy);
+      expect(mask.getPixel(15, 15).r, lessThan(80),
+          reason: 'bright area enclosed by the photo must be preserved too');
     });
   });
 

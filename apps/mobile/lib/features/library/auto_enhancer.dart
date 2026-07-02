@@ -29,12 +29,128 @@ const int _kPaperFloor = 95;
 /// ramps 0 -> 1 across this band, avoiding hard seams / halos at content edges.
 const int _kGateBand = 25;
 
+/// Min chroma (0-255) for a proxy pixel to seed as photo (color cue).
+const int _kChromaThresh = 25;
+
+/// Min local luminance std-dev for a proxy pixel to seed as photo (texture cue).
+const int _kTextureThresh = 18;
+
+/// Opening radius (proxy px) that removes thin/sparse text-edge speckle from the
+/// photo seed — enforces the "favor text de-shadowing" bias.
+const int _kSpeckleRadius = 2;
+
+/// Closing radius (proxy px) that merges surviving seed into a solid region.
+const int _kConsolidateRadius = 2;
+
+/// Feather radius on the final mask — softens edges so there is no seam.
+const int _kMaskFeather = 2;
+
 /// Correction weight for a pixel whose local background luminance is
 /// [backgroundLuminance]: 0.0 for dark content (<= [_kPaperFloor]), 1.0 for
 /// paper (>= floor + [_kGateBand]), linear in between. Pure; exposed for tests.
 @visibleForTesting
 double correctionWeight(int backgroundLuminance) =>
     ((backgroundLuminance - _kPaperFloor) / _kGateBand).clamp(0.0, 1.0);
+
+/// Standard deviation of luminance over the 3x3 window around ([x], [y])
+/// (edges clamped). A texture cue: flat paper ~0, continuous-tone photo detail
+/// is high. Exposed for tests.
+@visibleForTesting
+double localStdDev(img.Image src, int x, int y) {
+  var sum = 0.0, sumSq = 0.0, n = 0.0;
+  for (var dy = -1; dy <= 1; dy++) {
+    final yy = (y + dy).clamp(0, src.height - 1);
+    for (var dx = -1; dx <= 1; dx++) {
+      final xx = (x + dx).clamp(0, src.width - 1);
+      final l = src.getPixel(xx, yy).luminance.toDouble();
+      sum += l;
+      sumSq += l * l;
+      n += 1;
+    }
+  }
+  final mean = sum / n;
+  final variance = (sumSq / n) - mean * mean;
+  return variance <= 0 ? 0 : math.sqrt(variance);
+}
+
+/// Marks enclosed background holes as foreground. Foreground = channel > 127.
+/// Flood-fills background reachable from the border; any background pixel NOT
+/// reached is enclosed (a hole) and is set to foreground (255). Absorbs a
+/// smooth/bright sub-area enclosed by detected photo content into the region.
+/// Exposed for tests.
+@visibleForTesting
+img.Image fillHoles(img.Image mask) {
+  final w = mask.width, h = mask.height;
+  final reachable = List.generate(h, (_) => List<bool>.filled(w, false));
+  final stack = <int>[]; // packed y*w + x
+  void tryPush(int x, int y) {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    if (reachable[y][x]) return;
+    if (mask.getPixel(x, y).r.toInt() > 127) return; // foreground blocks fill
+    reachable[y][x] = true;
+    stack.add(y * w + x);
+  }
+  for (var x = 0; x < w; x++) { tryPush(x, 0); tryPush(x, h - 1); }
+  for (var y = 0; y < h; y++) { tryPush(0, y); tryPush(w - 1, y); }
+  while (stack.isNotEmpty) {
+    final p = stack.removeLast();
+    final x = p % w, y = p ~/ w;
+    tryPush(x + 1, y);
+    tryPush(x - 1, y);
+    tryPush(x, y + 1);
+    tryPush(x, y - 1);
+  }
+  final out = mask.clone();
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      if (mask.getPixel(x, y).r.toInt() <= 127 && !reachable[y][x]) {
+        out.setPixelRgb(x, y, 255, 255, 255);
+      }
+    }
+  }
+  return out;
+}
+
+/// Builds the per-pixel correction mask at proxy resolution from the color proxy
+/// [colorProxy]. A pixel seeds as PHOTO if it is colorful (chroma), textured
+/// (local std-dev), or dark content (low correctionWeight). The binary seed is
+/// opened (erase thin text speckle), closed + hole-filled (consolidate the
+/// region and absorb enclosed smooth areas), then inverted to a correction
+/// weight (photo -> 0, paper -> 255) and feathered. Grayscale out: channel =
+/// alpha * 255. Exposed for tests.
+@visibleForTesting
+img.Image buildCorrectionMask(img.Image colorProxy) {
+  final w = colorProxy.width, h = colorProxy.height;
+  final seed = img.Image(width: w, height: h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      final px = colorProxy.getPixel(x, y);
+      final r = px.r.toInt(), g = px.g.toInt(), b = px.b.toInt();
+      final chroma =
+          math.max(r, math.max(g, b)) - math.min(r, math.min(g, b));
+      final isPhoto = chroma > _kChromaThresh ||
+          localStdDev(colorProxy, x, y) > _kTextureThresh ||
+          correctionWeight(px.luminance.toInt()) <= 0;
+      final v = isPhoto ? 255 : 0;
+      seed.setPixelRgb(x, y, v, v, v);
+    }
+  }
+  // Opening (erode->dilate) removes thin speckle; closing (dilate->erode) +
+  // fill-holes consolidates the region and absorbs enclosed smooth sub-areas.
+  final opened = _maxFilter(_minFilter(seed, _kSpeckleRadius), _kSpeckleRadius);
+  final closed =
+      _minFilter(_maxFilter(opened, _kConsolidateRadius), _kConsolidateRadius);
+  final region = fillHoles(closed);
+  // Invert: photo (foreground) -> alpha 0; paper -> alpha 255.
+  final weight = img.Image(width: w, height: h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      final a = region.getPixel(x, y).r.toInt() > 127 ? 0 : 255;
+      weight.setPixelRgb(x, y, a, a, a);
+    }
+  }
+  return img.gaussianBlur(weight, radius: _kMaskFeather);
+}
 
 /// "Clean white paper" filter. Flattens uneven illumination (hand/phone
 /// shadows) via flat-field background division, then a global white-point
@@ -54,49 +170,52 @@ Uint8List _autoFn(Uint8List bytes) {
     // EXIF scrubber keeps the Orientation tag; encodeJpg strips EXIF, so bake
     // orientation into pixels first. Safe no-op for already-flat bytes.
     final oriented = img.bakeOrientation(decoded);
-    final bg = _estimateBackground(oriented);
-    _divideByBackground(oriented, bg);
+    final original = oriented.clone();
+    final colorProxy = _downscaleProxy(oriented);
+    final bgProxy = _backgroundFromProxy(colorProxy);
+    final bg = img.copyResize(bgProxy,
+        width: oriented.width,
+        height: oriented.height,
+        interpolation: img.Interpolation.linear);
+    final alphaMap = img.copyResize(buildCorrectionMask(colorProxy),
+        width: oriented.width,
+        height: oriented.height,
+        interpolation: img.Interpolation.linear);
+    _divideByBackground(oriented, bg, alphaMap);
     _autoLevels(oriented); // global white-point + contrast finish
+    // Preserve detected photo regions exactly as captured: the divide skipped
+    // them (alpha 0) but _autoLevels still remapped them. Blend the processed
+    // result back toward the captured original by (1 - alpha) so paper keeps its
+    // shadow-removed/levelled result and photo pixels are restored as-shot.
+    _restorePhotoRegions(oriented, original, alphaMap);
     return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
   } catch (_) {
     return bytes;
   }
 }
 
-/// Full-resolution per-pixel estimate of the paper-background brightness.
-/// Downscale -> grayscale max-filter (erase ink) -> blur (smooth) -> upscale.
-/// Returned image is grayscale: r == g == b == local background luminance.
-img.Image _estimateBackground(img.Image src) {
-  // 1. Downscale to a tiny proxy. Skip if the frame is already smaller than
-  //    the proxy (tiny/test images) so we never upscale-then-downscale.
+/// Downscales to the tiny COLOR proxy used for both background estimation and
+/// photo-region detection. Skips downscale for frames already <= the proxy size.
+img.Image _downscaleProxy(img.Image src) {
   final longest = math.max(src.width, src.height);
-  final img.Image proxy;
-  if (longest > _kBackgroundProxyPx) {
-    final scale = _kBackgroundProxyPx / longest;
-    proxy = img.copyResize(
-      src,
-      width: math.max(1, (src.width * scale).round()),
-      height: math.max(1, (src.height * scale).round()),
-      interpolation: img.Interpolation.average,
-    );
-  } else {
-    proxy = src.clone();
-  }
-
-  // 2. Grayscale, then max-filter to remove dark ink from the estimate.
-  img.grayscale(proxy);
-  final dilated = _maxFilter(proxy, _kDilateRadius);
-
-  // 3. Blur into a smooth illumination gradient (includes the shadow).
-  final blurred = img.gaussianBlur(dilated, radius: _kBlurRadius);
-
-  // 4. Upscale back to full resolution.
+  if (longest <= _kBackgroundProxyPx) return src.clone();
+  final scale = _kBackgroundProxyPx / longest;
   return img.copyResize(
-    blurred,
-    width: src.width,
-    height: src.height,
-    interpolation: img.Interpolation.linear,
+    src,
+    width: math.max(1, (src.width * scale).round()),
+    height: math.max(1, (src.height * scale).round()),
+    interpolation: img.Interpolation.average,
   );
+}
+
+/// Paper-background estimate at proxy resolution from the color proxy:
+/// grayscale -> max-filter (erase ink) -> blur. Clones so [colorProxy] (still
+/// needed for chroma) is not mutated. NOT upscaled — caller upscales.
+img.Image _backgroundFromProxy(img.Image colorProxy) {
+  final gray = colorProxy.clone();
+  img.grayscale(gray);
+  final dilated = _maxFilter(gray, _kDilateRadius);
+  return img.gaussianBlur(dilated, radius: _kBlurRadius);
 }
 
 /// Grayscale morphological dilation: each pixel becomes the max luminance in a
@@ -121,25 +240,64 @@ img.Image _maxFilter(img.Image src, int radius) {
   return out;
 }
 
-/// Flat-field correction, gated on background brightness. Where the local
-/// background [bg] is bright (paper, even under shadow) the pixel is fully
-/// divided so shadows flatten to white; where [bg] is genuinely dark (a photo
-/// or filled block) the pixel is left untouched, so dark content is never blown
-/// out. A smooth ramp between the two (see [correctionWeight]) prevents edge
-/// seams. Channels scale proportionally, so hue is preserved. Guards bg == 0.
-void _divideByBackground(img.Image src, img.Image bg) {
+/// Grayscale morphological erosion: each pixel becomes the min luminance in a
+/// (2r+1)^2 window. Input is grayscale (r == g == b), so we read/write r.
+img.Image _minFilter(img.Image src, int radius) {
+  if (radius <= 0) return src;
+  final out = src.clone();
+  for (var y = 0; y < src.height; y++) {
+    for (var x = 0; x < src.width; x++) {
+      var mn = 255;
+      for (var dy = -radius; dy <= radius; dy++) {
+        final yy = (y + dy).clamp(0, src.height - 1);
+        for (var dx = -radius; dx <= radius; dx++) {
+          final xx = (x + dx).clamp(0, src.width - 1);
+          final v = src.getPixel(xx, yy).r.toInt();
+          if (v < mn) mn = v;
+        }
+      }
+      out.setPixelRgb(x, y, mn, mn, mn);
+    }
+  }
+  return out;
+}
+
+/// Flat-field correction gated by a per-pixel correction mask [alphaMap]
+/// (grayscale; channel/255 = alpha). alpha ~ 1 (paper) -> full divide by the
+/// local background [bg] (shadow removal); alpha ~ 0 (a detected photo region)
+/// -> pixel left as captured. Channels scale proportionally, so hue is
+/// preserved. Guards bg == 0.
+void _divideByBackground(img.Image src, img.Image bg, img.Image alphaMap) {
   for (var y = 0; y < src.height; y++) {
     for (var x = 0; x < src.width; x++) {
       final b = bg.getPixel(x, y).r.toInt();
       if (b <= 0) continue;
-      final alpha = correctionWeight(b);
-      if (alpha <= 0) continue; // dark content — leave the pixel untouched
-      // alpha=1 -> multiply by 255/b (full divide); alpha=0 -> unchanged.
+      final alpha = alphaMap.getPixel(x, y).r / 255;
+      if (alpha <= 0) continue; // photo region — leave the pixel untouched
       final scale = 1 + alpha * (255 / b - 1);
       final px = src.getPixel(x, y);
       px.r = (px.r.toInt() * scale).clamp(0, 255).toInt();
       px.g = (px.g.toInt() * scale).clamp(0, 255).toInt();
       px.b = (px.b.toInt() * scale).clamp(0, 255).toInt();
+    }
+  }
+}
+
+/// Blends [processed] toward [original] by (1 - alpha) per pixel, where alpha =
+/// the [alphaMap] channel / 255. Paper (alpha 1) keeps the processed pixel; a
+/// detected photo (alpha 0) is restored to the captured original; edges blend.
+void _restorePhotoRegions(
+    img.Image processed, img.Image original, img.Image alphaMap) {
+  for (var y = 0; y < processed.height; y++) {
+    for (var x = 0; x < processed.width; x++) {
+      final a = alphaMap.getPixel(x, y).r / 255;
+      if (a >= 1) continue; // pure paper — keep the processed pixel
+      final o = original.getPixel(x, y);
+      final p = processed.getPixel(x, y);
+      p
+        ..r = (p.r * a + o.r * (1 - a)).round().clamp(0, 255)
+        ..g = (p.g * a + o.g * (1 - a)).round().clamp(0, 255)
+        ..b = (p.b * a + o.b * (1 - a)).round().clamp(0, 255);
     }
   }
 }
