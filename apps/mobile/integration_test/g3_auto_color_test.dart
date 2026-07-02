@@ -12,6 +12,7 @@ import './../test/step/the_document_is_saved_with_auto_enhancement.dart';
 import './../test/step/i_toggle_the_color_filter.dart';
 import './../test/step/the_document_is_saved_with_color_enhancement.dart';
 import './../test/step/the_document_is_saved_without_enhancement.dart';
+import './../test/step/the_auto_enhancer_flattens_the_shadow.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,13 @@ void main() {
       await theReviewScreenIsOpenWithACapturedImage(tester);
       await iTapAccept(tester);
       await theDocumentIsSavedWithoutEnhancement(tester);
+    });
+    testWidgets('''Auto filter removes the shadow from a shadowed capture''',
+        (tester) async {
+      await theReviewScreenIsOpenWithACapturedImage(tester);
+      await iToggleTheAutoFilter(tester);
+      await iTapAccept(tester);
+      await theAutoEnhancerFlattensTheShadow(tester);
     });
   });
 }
