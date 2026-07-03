@@ -11,33 +11,33 @@ import 'image_enhancer.dart';
 /// faithfully while keeping the expensive max-filter cheap. 512 is small
 /// enough to be fast yet large enough that a text block does NOT average into
 /// a single gray blob (the failure of the old 48 px proxy).
-const int _kProxyLongSide = 512;
+const int kAutoProxyLongSide = 512;
 
 /// Max-filter (grayscale/colour dilation) radius on the proxy. Must exceed the
 /// half-thickness of the darkest ink stroke at proxy scale so that, under any
 /// text, the estimate is replaced by the surrounding paper brightness. Too
 /// small and text bleeds into the illumination map (over-brightening near
 /// letters); too large and the map stops following real shadow detail.
-const int _kDilateRadius = 7;
+const int kAutoDilateRadius = 7;
 
 /// Gaussian blur radius on the proxy that smooths the dilated estimate into a
 /// soft illumination gradient before it is divided out.
-const int _kBlurRadius = 12;
+const int kAutoBlurRadius = 12;
 
 /// Top fraction of pixels ignored when picking the per-channel white point in
 /// the finishing stretch, so a few specular outliers don't set the reference.
-const double _kWhiteClip = 0.01;
+const double kAutoWhiteClip = 0.01;
 
 /// Fraction of the white point below which finishing leaves pixels untouched —
 /// only the top of the range is pulled to 255, so text/ink are never lifted
 /// (which would grey them out).
-const double _kBlackAnchor = 0.55;
+const double kAutoBlackAnchor = 0.55;
 
 /// Upper bound on the per-channel flat-field gain (255/bg). Real hand/phone
 /// shadows on paper only dim it to ~15-40% brightness (gain 2.5-6), so this
 /// still fully whitens them; but it stops near-black off-paper regions (bg→0)
 /// from exploding sensor noise into colour speckle.
-const double _kMaxGain = 6.0;
+const double kAutoMaxGain = 6.0;
 
 /// "Scanned document" filter. Flattens uneven illumination (hand/phone
 /// shadows) with a PER-CHANNEL flat-field division — estimate the local paper
@@ -109,8 +109,8 @@ img.Image autoEnhanceOriented(img.Image oriented) {
 (Uint8List, int, int) _estimateBackground(img.Image src) {
   final longest = math.max(src.width, src.height);
   final img.Image proxy;
-  if (longest > _kProxyLongSide) {
-    final scale = _kProxyLongSide / longest;
+  if (longest > kAutoProxyLongSide) {
+    final scale = kAutoProxyLongSide / longest;
     proxy = img.copyResize(
       src,
       width: math.max(1, (src.width * scale).round()),
@@ -123,7 +123,7 @@ img.Image autoEnhanceOriented(img.Image oriented) {
   final pw = proxy.width, ph = proxy.height;
 
   final dilated = _maxFilter(
-      proxy.getBytes(order: img.ChannelOrder.rgb), pw, ph, _kDilateRadius);
+      proxy.getBytes(order: img.ChannelOrder.rgb), pw, ph, kAutoDilateRadius);
   final blurred = img.gaussianBlur(
     img.Image.fromBytes(
         width: pw,
@@ -131,7 +131,7 @@ img.Image autoEnhanceOriented(img.Image oriented) {
         bytes: dilated.buffer,
         numChannels: 3,
         order: img.ChannelOrder.rgb),
-    radius: _kBlurRadius,
+    radius: kAutoBlurRadius,
   );
   return (blurred.getBytes(order: img.ChannelOrder.rgb), pw, ph);
 }
@@ -223,7 +223,7 @@ void _flatten(
         final bot = p01 + (p11 - p01) * wx;
         final b = top + (bot - top) * wy;
         if (b > 0) {
-          final gain = math.min(255 / b, _kMaxGain);
+          final gain = math.min(255 / b, kAutoMaxGain);
           final nv = (px[oi + ch] * gain).toInt();
           px[oi + ch] = nv > 255 ? 255 : nv;
         }
@@ -234,7 +234,7 @@ void _flatten(
 
 /// Gentle finishing: per channel, pull the near-white top of the range up to a
 /// true 255 (removing residual haze) while leaving everything below
-/// [_kBlackAnchor]·whitePoint untouched, so ink and colour are never lifted.
+/// [kAutoBlackAnchor]·whitePoint untouched, so ink and colour are never lifted.
 /// The white point is a high percentile, not the max, so specular outliers do
 /// not set the reference.
 ///
@@ -244,7 +244,7 @@ void _flatten(
 void _whitePointStretch(Uint8List px, int w, int h) {
   final n = w * h;
   if (n == 0) return;
-  final clip = ((n * _kWhiteClip).ceil()).clamp(1, n);
+  final clip = ((n * kAutoWhiteClip).ceil()).clamp(1, n);
 
   final hist = [
     List<int>.filled(256, 0),
@@ -270,7 +270,7 @@ void _whitePointStretch(Uint8List px, int w, int h) {
       cum += hc[hi--];
     }
     if (hi <= 0) continue;
-    final anchor = (hi * _kBlackAnchor).round();
+    final anchor = (hi * kAutoBlackAnchor).round();
     if (hi <= anchor) continue;
     final span = hi - anchor;
     for (var v = anchor + 1; v < 256; v++) {
