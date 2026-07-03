@@ -64,6 +64,11 @@ def detect(img):
         fill = min(carea / qarea, 1.0)
         if not (MIN_AREA_FRAC <= area_frac <= MAX_AREA_FRAC and fill >= MIN_FILL):
             continue
+        # NOTE: the Dart pipeline computes the angle term via angleScore(); here
+        # it is approximated as 1.0 (rects/near-rects → ~1.0), so the reported
+        # confidence for non-rect shapes is a slight over-estimate. This probe
+        # validates polarity selection, the guards, and null/non-null outcomes
+        # — not the exact angle contribution.
         conf = 0.5 * min(area_frac, 1.0) + 0.3 * 1.0 + 0.2 * fill
         if best is None or conf > best[0]:
             best = (conf, area_frac, fill, name)

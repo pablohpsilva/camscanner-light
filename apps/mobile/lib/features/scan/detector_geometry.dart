@@ -74,7 +74,8 @@ double detectionConfidence({
 /// low-fill (non-rectangular) clutter blob. A legitimate page can fill most of
 /// the frame and touch all borders, so border-touching is deliberately NOT a
 /// criterion — the area cap and fill floor already exclude the background/blank
-/// blobs.
+/// blobs. (Note: a full-bleed page filling >92% of the frame is still rejected
+/// by the area cap — edge-to-edge capture is out of scope.)
 bool isPlausiblePage({
   required double areaFrac,
   required double fill,

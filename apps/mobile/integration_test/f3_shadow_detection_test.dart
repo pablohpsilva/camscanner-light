@@ -9,8 +9,8 @@ import 'package:mobile/features/scan/opencv_edge_detector.dart';
 /// brightness ramps from fully lit (left) to shadowed (right). The shadowed
 /// side is dimmer but STILL clearly brighter than the desk — a realistic soft
 /// shadow, not camouflage (a real white page never dims to a dark desk's
-/// level). The flat-field pass must normalize the gradient so all four edges,
-/// including the dimmed right edge, stay detectable.
+/// level). Segmentation must keep the whole page — including the shadowed,
+/// dimmer right side — brighter than the desk so it reads as one bright blob.
 ///
 /// (Verified on-device: the pipeline localizes this and much harder synthetic
 /// shadows. The genuinely hard real case — a page whose edge blends into a
@@ -52,7 +52,7 @@ void main() {
       final c = result!.corners;
       // Expected normalized rect bounds: x in [140/800, 660/800] = [0.175, 0.825],
       // y in [110/600, 490/600] = [0.183, 0.817]. Allow 8% tolerance for
-      // downscale + Canny + morphology drift.
+      // downscale + Otsu + morphology drift.
       const tol = 0.08;
       expect(c.topLeft.dx, closeTo(0.175, tol));
       expect(c.topLeft.dy, closeTo(0.183, tol));
