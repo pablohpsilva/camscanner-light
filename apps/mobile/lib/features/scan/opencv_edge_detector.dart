@@ -166,8 +166,36 @@ cv.Mat _bgrFromBgra(CameraFrame frame) {
   return bgr;
 }
 
-// ignore: unused_element
-cv.Mat? _bgrFromYuv420(CameraFrame frame) => null; // TODO Task 3
+cv.Mat? _bgrFromYuv420(CameraFrame frame) {
+  if (frame.planes.length < 3) return null;
+  final w = frame.width, h = frame.height;
+  final cw = w ~/ 2, ch = h ~/ 2;
+
+  // Pack Y tightly.
+  final out = Uint8List(w * h + 2 * cw * ch);
+  final yP = frame.planes[0];
+  for (var row = 0; row < h; row++) {
+    final src = row * yP.bytesPerRow;
+    out.setRange(row * w, row * w + w, yP.bytes, src);
+  }
+  // Pack U then V tightly (I420), honoring pixel stride.
+  var o = w * h;
+  for (final plane in [frame.planes[1], frame.planes[2]]) {
+    final ps = plane.bytesPerPixel ?? 1;
+    for (var row = 0; row < ch; row++) {
+      var src = row * plane.bytesPerRow;
+      for (var col = 0; col < cw; col++) {
+        out[o++] = plane.bytes[src];
+        src += ps;
+      }
+    }
+  }
+
+  final yuv = cv.Mat.fromList(h + ch, w, cv.MatType.CV_8UC1, out);
+  final bgr = cv.cvtColor(yuv, cv.COLOR_YUV2BGR_I420);
+  yuv.dispose();
+  return bgr;
+}
 
 /// Steps 2–7 of the detection pipeline: downscale → grayscale → blur →
 /// dual-Otsu → contour → quad → score.
