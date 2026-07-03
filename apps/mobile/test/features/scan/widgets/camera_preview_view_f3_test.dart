@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/scan/scan_flash_mode.dart';
 import 'package:mobile/features/scan/widgets/camera_preview_view.dart';
 import 'package:mobile/features/scan/widgets/live_quad_overlay.dart';
 
@@ -56,5 +57,35 @@ void main() {
     )));
     await tester.pumpAndSettle();
     expect(find.byType(LiveQuadOverlay), findsNothing);
+  });
+
+  testWidgets('flash toggle cycles off -> torch on tap', (tester) async {
+    ScanFlashMode? changed;
+    await tester.pumpWidget(MaterialApp(
+      home: CameraPreviewView(
+        controller: FakeCameraPreviewController(),
+        onShutter: () {},
+        flashMode: ScanFlashMode.off,
+        onFlashModeChanged: (m) => changed = m,
+      ),
+    ));
+    await tester.tap(find.byKey(const Key('scan-flash-toggle')));
+    await tester.pump();
+    expect(changed, ScanFlashMode.torch);
+  });
+
+  testWidgets('flash toggle cycles flash -> off on tap', (tester) async {
+    ScanFlashMode? changed;
+    await tester.pumpWidget(MaterialApp(
+      home: CameraPreviewView(
+        controller: FakeCameraPreviewController(),
+        onShutter: () {},
+        flashMode: ScanFlashMode.flash,
+        onFlashModeChanged: (m) => changed = m,
+      ),
+    ));
+    await tester.tap(find.byKey(const Key('scan-flash-toggle')));
+    await tester.pump();
+    expect(changed, ScanFlashMode.off);
   });
 }
