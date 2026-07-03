@@ -216,7 +216,7 @@ void main() {
     expect(accepted, detectedCorners);
   });
 
-  testWidgets('confidence ≥ 0.5 → green overlay', (tester) async {
+  testWidgets('high confidence (0.8) → green overlay', (tester) async {
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: highResult),
     )));
@@ -227,7 +227,8 @@ void main() {
     );
   });
 
-  testWidgets('confidence < 0.5 → blue overlay', (tester) async {
+  testWidgets('mid confidence (0.3) → amber overlay (best-guess, please check)',
+      (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: lowResult),
@@ -236,7 +237,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
-      Colors.blue,
+      Colors.amber,
     );
     // Corners are still pre-filled from the detection result, even at low confidence.
     await tester.tap(find.byKey(const Key('review-accept')));
@@ -358,7 +359,8 @@ void main() {
     );
   });
 
-  testWidgets('confidence exactly 0.5 → green overlay', (tester) async {
+  testWidgets('confidence 0.5 (below the 0.6 green threshold) → amber overlay',
+      (tester) async {
     const exactResult = DetectionResult(corners: detectedCorners, confidence: 0.5);
     await tester.pumpWidget(MaterialApp(home: subjectWithDetector(
       edgeDetector: FakeEdgeDetector(result: exactResult),
@@ -366,7 +368,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.widget<CropOverlay>(find.byType(CropOverlay)).highlightColor,
-      Colors.green,
+      Colors.amber,
     );
   });
 
