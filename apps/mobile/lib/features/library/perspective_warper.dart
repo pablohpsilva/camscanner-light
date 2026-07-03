@@ -7,13 +7,21 @@ import 'package:image/image.dart' as img;
 import 'crop_corners.dart';
 import 'image_warper.dart';
 
+/// Default cap on the rectified page's long side (px). A document scan is crisp
+/// and fully legible well below the raw sensor resolution, so capping the flat
+/// output makes warp+enhance+encode cost scale with a bounded size instead of
+/// the ~19 MP capture. The full-res original is kept separately for re-cropping.
+const int kDefaultFlatMaxDimension = 3500;
+
 class PerspectiveWarper implements ImageWarper {
-  const PerspectiveWarper();
+  final int maxDimension;
+  const PerspectiveWarper({this.maxDimension = kDefaultFlatMaxDimension});
 
   @override
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) {
     if (corners == CropCorners.fullFrame) return Future.value(null);
-    return compute(_warpFn, _WarpArgs(bytes: bytes, corners: corners));
+    return compute(_warpFn,
+        _WarpArgs(bytes: bytes, corners: corners, maxDim: maxDimension));
   }
 }
 
@@ -25,8 +33,8 @@ Uint8List? _warpFn(_WarpArgs args) {
   // bakeOrientation rotates pixels into the EXIF-applied display frame.
   // Corners are normalized against THIS frame; skipping bake misaligns them.
   final src = img.bakeOrientation(decoded);
-  return Uint8List.fromList(
-      img.encodeJpg(warpPerspectiveToImage(src, args.corners), quality: 92));
+  return Uint8List.fromList(img.encodeJpg(
+      warpPerspectiveToImage(src, args.corners, args.maxDim), quality: 92));
 }
 
 /// Perspective-flattens [corners] out of an already-oriented image and returns
@@ -37,7 +45,8 @@ Uint8List? _warpFn(_WarpArgs args) {
 /// The inverse-mapped sampling runs on the raw interleaved-RGB byte buffer with
 /// hand-rolled bilinear interpolation instead of `getPixelInterpolate` per
 /// pixel — the same interpolation, ~5-10x faster on a multi-megapixel warp.
-img.Image warpPerspectiveToImage(img.Image src, CropCorners corners) {
+img.Image warpPerspectiveToImage(
+    img.Image src, CropCorners corners, int maxDim) {
   final w = src.width, h = src.height;
   final tl = Offset(corners.topLeft.dx * w, corners.topLeft.dy * h);
   final tr = Offset(corners.topRight.dx * w, corners.topRight.dy * h);
@@ -48,9 +57,21 @@ img.Image warpPerspectiveToImage(img.Image src, CropCorners corners) {
     throw WarpException('self-crossing or degenerate quad');
   }
 
-  final outW = _maxEdge(tl, tr, bl, br).round();
-  final outH = _maxEdge(tl, bl, tr, br).round();
+  var outW = _maxEdge(tl, tr, bl, br).round();
+  var outH = _maxEdge(tl, bl, tr, br).round();
   if (outW < 2 || outH < 2) throw WarpException('degenerate quad: output too small');
+
+  // Cap the long side: solving the homography to the reduced rectangle makes
+  // the warp sample fewer points (and enhance/encode run smaller) with no loss
+  // of geometric accuracy — every output pixel still maps across the full quad.
+  final longest = outW > outH ? outW : outH;
+  if (maxDim > 0 && longest > maxDim) {
+    final s = maxDim / longest;
+    outW = (outW * s).round();
+    if (outW < 2) outW = 2;
+    outH = (outH * s).round();
+    if (outH < 2) outH = 2;
+  }
 
   // Src → dst homography; invert for inverse mapping (dst pixel → src pixel).
   final hMat = _solveHomography(
@@ -180,5 +201,7 @@ Offset _applyH(List<double> h, double x, double y) {
 class _WarpArgs {
   final Uint8List bytes;
   final CropCorners corners;
-  const _WarpArgs({required this.bytes, required this.corners});
+  final int maxDim;
+  const _WarpArgs(
+      {required this.bytes, required this.corners, required this.maxDim});
 }

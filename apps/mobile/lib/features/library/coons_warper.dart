@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 
 import 'crop_corners.dart';
 import 'image_warper.dart';
+import 'perspective_warper.dart' show kDefaultFlatMaxDimension;
 
 /// Unwarps a curved 8-point crop (4 corners + 4 edge-midpoint deviations) to a
 /// flat rectangle via a bilinearly-blended Coons patch. Pure Dart, runs in a
@@ -14,7 +15,7 @@ import 'image_warper.dart';
 /// this class assumes at least one bent edge.
 class CoonsWarper implements ImageWarper {
   final int maxDimension;
-  const CoonsWarper({this.maxDimension = 2000});
+  const CoonsWarper({this.maxDimension = kDefaultFlatMaxDimension});
 
   @override
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) {

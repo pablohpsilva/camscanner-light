@@ -52,7 +52,8 @@ Uint8List? _warpEnhanceFn(_WarpEnhanceArgs a) {
     // here; both the warp and the enhancement then operate on baked pixels.
     final src = img.bakeOrientation(decoded);
     final warped = a.corners.isStraight
-        ? warpPerspectiveToImage(src, a.corners)
+        ? warpPerspectiveToImage(
+            src, a.corners, const PerspectiveWarper().maxDimension)
         : warpCoonsToImage(src, a.corners, const CoonsWarper().maxDimension);
 
     // Auto finishes at q95 (matches AutoEnhancer); the others at q92.

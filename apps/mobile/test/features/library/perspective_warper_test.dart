@@ -82,6 +82,18 @@ void main() {
     );
   });
 
+  // 4b. Output long side capped by maxDimension.
+  //     Source 400×300, _kRect → 320×240 quad; cap 50 → both ≤ 50.
+  test('output long side is capped by maxDimension', () async {
+    const warperSmall = PerspectiveWarper(maxDimension: 50);
+    final result = await warperSmall.warp(_jpeg(400, 300), _kRect);
+    expect(result, isNotNull);
+    final out = img.decodeImage(result!)!;
+    expect(out.width, lessThanOrEqualTo(50));
+    expect(out.height, lessThanOrEqualTo(50));
+    expect(out.width, greaterThan(2));
+  });
+
   // 5. EXIF orientation alignment.
   //    Source: 40×80 sensor with Orientation=6 (90° CW) → display is 80×40.
   //    _kRect in display frame: TL(8,4) TR(72,4) BR(72,36) BL(8,36).
