@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
 import '../library/crop_corners.dart';
+import 'camera_frame.dart';
 import 'detector_geometry.dart';
 import 'edge_detector.dart';
 
@@ -18,6 +19,10 @@ typedef PipelineRunner = Future<List<double>?> Function(Uint8List bytes);
 /// Default runner: offloads the synchronous OpenCV pipeline to an isolate.
 Future<List<double>?> _computeRunner(Uint8List bytes) =>
     compute(_runPipeline, bytes);
+
+/// Frame runner: offloads the synchronous frame pipeline to an isolate.
+Future<List<double>?> _computeFrameRunner(CameraFrame frame) =>
+    Future.value(_runFramePipeline(frame));
 
 class OpenCvEdgeDetector implements EdgeDetector {
   /// Upper bound on a single [detect] call. If the native pipeline wedges
@@ -47,17 +52,31 @@ class OpenCvEdgeDetector implements EdgeDetector {
       return null;
     }
     if (raw == null) return null;
-    return DetectionResult(
-      corners: CropCorners(
-        topLeft: Offset(raw[0], raw[1]),
-        topRight: Offset(raw[2], raw[3]),
-        bottomRight: Offset(raw[4], raw[5]),
-        bottomLeft: Offset(raw[6], raw[7]),
-      ),
-      confidence: raw[8],
-    );
+    return _resultFromFlat(raw);
+  }
+
+  @override
+  Future<DetectionResult?> detectFrame(CameraFrame frame) async {
+    try {
+      final flat = await compute(_computeFrameRunner, frame).timeout(timeout);
+      if (flat == null) return null;
+      return _resultFromFlat(flat);
+    } catch (_) {
+      return null;
+    }
   }
 }
+
+/// Maps a flat 9-element result list to a [DetectionResult].
+DetectionResult _resultFromFlat(List<double> flat) => DetectionResult(
+      corners: CropCorners(
+        topLeft: Offset(flat[0], flat[1]),
+        topRight: Offset(flat[2], flat[3]),
+        bottomRight: Offset(flat[4], flat[5]),
+        bottomLeft: Offset(flat[6], flat[7]),
+      ),
+      confidence: flat[8],
+    );
 
 // ── Isolate entry point ────────────────────────────────────────────────────
 // Must be top-level (not a method) — compute() requires it.
@@ -87,12 +106,77 @@ const int _kSegKernelDivisor = 30;
 /// close interior text into a solid blob, take the largest contour, fit a quad,
 /// guard against blank/clutter blobs, and keep the highest-confidence survivor.
 List<double>? _runPipeline(Uint8List bytes) {
-  cv.Mat? mat, gray, blurred, maskBright, maskDark;
+  cv.Mat? mat;
   try {
     // Step 1: Decode. imdecode returns an empty Mat for corrupt bytes.
     mat = cv.imdecode(bytes, cv.IMREAD_COLOR);
-    if (mat.isEmpty) return null;
+    if (mat.isEmpty) {
+      mat.dispose();
+      return null;
+    }
+    return _runPipelineOnMat(mat); // takes ownership: disposes `mat`
+  } catch (_) {
+    mat?.dispose();
+    return null;
+  }
+}
 
+/// Builds a BGR result from a [CameraFrame] and runs the shared pipeline.
+List<double>? _runFramePipeline(CameraFrame frame) {
+  cv.Mat? bgr;
+  try {
+    bgr = _bgrMatFromFrame(frame);
+    if (bgr == null || bgr.isEmpty) return null;
+    final out = _runPipelineOnMat(bgr); // takes ownership
+    bgr = null;
+    return out;
+  } finally {
+    bgr?.dispose();
+  }
+}
+
+/// Builds a BGR [cv.Mat] from a [frame]. Returns null for unsupported formats.
+cv.Mat? _bgrMatFromFrame(CameraFrame frame) {
+  switch (frame.format) {
+    case CameraFrameFormat.bgra8888:
+      return _bgrFromBgra(frame);
+    case CameraFrameFormat.yuv420:
+      return _bgrFromYuv420(frame); // implemented in Task 3
+  }
+}
+
+cv.Mat _bgrFromBgra(CameraFrame frame) {
+  final plane = frame.planes.first;
+  final w = frame.width, h = frame.height;
+  final rowLen = w * 4;
+  Uint8List packed;
+  if (plane.bytesPerRow == rowLen) {
+    packed = plane.bytes;
+  } else {
+    // Drop per-row padding into a tight w*4 buffer.
+    packed = Uint8List(rowLen * h);
+    for (var row = 0; row < h; row++) {
+      final src = row * plane.bytesPerRow;
+      packed.setRange(row * rowLen, row * rowLen + rowLen, plane.bytes, src);
+    }
+  }
+  final bgra = cv.Mat.fromList(h, w, cv.MatType.CV_8UC4, packed);
+  final bgr = cv.cvtColor(bgra, cv.COLOR_BGRA2BGR);
+  bgra.dispose();
+  return bgr;
+}
+
+// ignore: unused_element
+cv.Mat? _bgrFromYuv420(CameraFrame frame) => null; // TODO Task 3
+
+/// Steps 2–7 of the detection pipeline: downscale → grayscale → blur →
+/// dual-Otsu → contour → quad → score.
+///
+/// Takes ownership of [mat] and disposes it (and all intermediates) in its
+/// finally block. Callers must not use [mat] after this call.
+List<double>? _runPipelineOnMat(cv.Mat bgr) {
+  cv.Mat? mat = bgr, gray, blurred, maskBright, maskDark;
+  try {
     // Step 2: Downscale large captures (coordinate-safe: corners normalized).
     final longest = math.max(mat.rows, mat.cols);
     if (longest > _kDetectMaxSide) {
@@ -138,7 +222,7 @@ List<double>? _runPipeline(Uint8List bytes) {
 
     // Step 6: For each polarity, close → largest contour → quad → guard → score.
     // Iterate the non-null locals `mb`/`md` (maskBright/maskDark hold the same
-    // handles for disposal in `finally`).
+    // handles for disposal in `finally`.
     for (final mask in [mb, md]) {
       cv.Mat? kernel, closed;
       cv.VecVec4i? hierarchy;

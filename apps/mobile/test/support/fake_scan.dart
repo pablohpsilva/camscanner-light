@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/features/scan/camera_frame.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/captured_image.dart';
@@ -163,11 +164,18 @@ ScanDependencies unavailableScanDependencies() => ScanDependencies(
 class FakeEdgeDetector implements EdgeDetector {
   final DetectionResult? result;
   int calls = 0;
+  int frameCalls = 0;
   FakeEdgeDetector({this.result});
 
   @override
   Future<DetectionResult?> detect(Uint8List bytes) async {
     calls++;
+    return result;
+  }
+
+  @override
+  Future<DetectionResult?> detectFrame(CameraFrame frame) async {
+    frameCalls++;
     return result;
   }
 }

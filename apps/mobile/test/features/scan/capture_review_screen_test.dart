@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
+import 'package:mobile/features/scan/camera_frame.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
@@ -18,12 +19,17 @@ class _SlowDetector implements EdgeDetector {
   final Completer<DetectionResult?> _completer;
   @override
   Future<DetectionResult?> detect(Uint8List bytes) => _completer.future;
+  @override
+  Future<DetectionResult?> detectFrame(CameraFrame frame) => _completer.future;
 }
 
 // Detector that always throws, simulating an OpenCV / file-read error.
 class _ThrowingDetector implements EdgeDetector {
   @override
   Future<DetectionResult?> detect(Uint8List bytes) async =>
+      throw Exception('boom');
+  @override
+  Future<DetectionResult?> detectFrame(CameraFrame frame) async =>
       throw Exception('boom');
 }
 
