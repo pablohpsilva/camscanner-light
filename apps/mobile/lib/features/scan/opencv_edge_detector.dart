@@ -70,29 +70,30 @@ class OpenCvEdgeDetector implements EdgeDetector {
 /// much faster. Corners are normalized to [0..1], so this is coordinate-safe.
 const int _kDetectMaxSide = 1024;
 
-/// Longest side (px) of the proxy used to estimate background illumination.
-/// A small proxy makes the heavy blur cheap enough for the live sampling loop.
-const int _kIllumProxySide = 256;
+/// Gaussian blur kernel side (odd) applied before Otsu, to suppress text and
+/// texture so the whole page reads as one region.
+const int _kSegBlur = 7;
 
-/// Gaussian sigma (in proxy pixels) for the illumination estimate. Large
-/// relative to the proxy so only the low-frequency light field survives.
-const double _kIllumSigma = 12.0;
+/// The morphological-close kernel side is `round(cols / _kSegKernelDivisor)`
+/// (odd-ized). Large enough to bridge interior text into a solid page blob,
+/// proportional to the working-image width.
+const int _kSegKernelDivisor = 30;
 
 /// Returns [tl.dx, tl.dy, tr.dx, tr.dy, br.dx, br.dy, bl.dx, bl.dy, confidence]
-/// or null if no candidate quad is found or on any error.
+/// or null if no plausible page quad is found or on any error.
+///
+/// Dual-polarity Otsu region segmentation: threshold the blurred grayscale into
+/// a bright mask (page brighter than background) and its inverse (page darker),
+/// close interior text into a solid blob, take the largest contour, fit a quad,
+/// guard against blank/clutter blobs, and keep the highest-confidence survivor.
 List<double>? _runPipeline(Uint8List bytes) {
-  cv.Mat? mat, gray, proxy, bgSmall, bg, normalized, blurred, otsuOut,
-      edges, kernel, closed;
-  cv.VecVec4i? hierarchy;
-  cv.VecVecPoint? contours;
+  cv.Mat? mat, gray, blurred, maskBright, maskDark;
   try {
-    // Step 1: Decode. imdecode returns an empty Mat (not an exception) for
-    // corrupt bytes.
+    // Step 1: Decode. imdecode returns an empty Mat for corrupt bytes.
     mat = cv.imdecode(bytes, cv.IMREAD_COLOR);
     if (mat.isEmpty) return null;
 
-    // Step 2: Downscale large captures so fine texture doesn't spawn spurious
-    // edges. Corners are normalized below, so this does not shift the result.
+    // Step 2: Downscale large captures (coordinate-safe: corners normalized).
     final longest = math.max(mat.rows, mat.cols);
     if (longest > _kDetectMaxSide) {
       final scale = _kDetectMaxSide / longest;
@@ -106,129 +107,113 @@ List<double>? _runPipeline(Uint8List bytes) {
     }
     final rows = mat.rows;
     final cols = mat.cols;
+    final imageArea = (rows * cols).toDouble();
 
     // Step 3: Grayscale.
     gray = cv.cvtColor(mat, cv.COLOR_BGR2GRAY);
     mat.dispose();
     mat = null;
 
-    // Step 4: Illumination normalization (flat-field). Estimate the local
-    // background light on a small proxy (downscale → heavy blur → upscale),
-    // then divide it out. This flattens a soft-shadow gradient so a
-    // shadow-dimmed paper edge regains local contrast.
-    final proxyLongest = math.max(rows, cols);
-    final pScale =
-        proxyLongest > _kIllumProxySide ? _kIllumProxySide / proxyLongest : 1.0;
-    final pw = math.max(1, (cols * pScale).round());
-    final ph = math.max(1, (rows * pScale).round());
-    proxy = cv.resize(gray, (pw, ph), interpolation: cv.INTER_AREA);
-    bgSmall = cv.gaussianBlur(proxy, (0, 0), _kIllumSigma);
-    proxy.dispose();
-    proxy = null;
-    bg = cv.resize(bgSmall, (cols, rows), interpolation: cv.INTER_LINEAR);
-    bgSmall.dispose();
-    bgSmall = null;
-    // normalized = saturate(gray * 255 / bg), CV_8U. divide() maps a
-    // divide-by-zero to 0, so no guard is needed.
-    normalized = cv.divide(gray, bg, scale: 255.0);
+    // Step 4: Blur so text/texture doesn't fragment the page region.
+    blurred = cv.gaussianBlur(gray, (_kSegBlur, _kSegBlur), 0);
     gray.dispose();
     gray = null;
-    bg.dispose();
-    bg = null;
 
-    // Step 5: Gaussian blur (5×5) on the normalized image.
-    blurred = cv.gaussianBlur(normalized, (5, 5), 0);
-    normalized.dispose();
-    normalized = null;
-
-    // Step 6: Adaptive Canny thresholds from Otsu's value on the blurred Mat.
-    final (otsuT, oOut) =
+    // Step 5: Otsu → bright mask (page-brighter) + the inverse dark mask
+    // (page-darker), so both polarities are considered.
+    final (otsuT, mb) =
         cv.threshold(blurred, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
-    otsuOut = oOut;
-    otsuOut.dispose();
-    otsuOut = null;
-    final hi = otsuT.clamp(40.0, 220.0);
-    final lo = 0.5 * hi;
-    edges = cv.canny(blurred, lo, hi);
+    maskBright = mb;
+    final (_, md) = cv.threshold(blurred, otsuT, 255, cv.THRESH_BINARY_INV);
+    maskDark = md;
     blurred.dispose();
     blurred = null;
 
-    // Step 7: Morphological close to bridge short gaps into loops.
-    kernel = cv.getStructuringElement(cv.MORPH_RECT, (3, 3));
-    closed = cv.morphologyEx(edges, cv.MORPH_CLOSE, kernel, iterations: 1);
-    edges.dispose();
-    edges = null;
-    kernel.dispose();
-    kernel = null;
+    // Close-kernel side proportional to width, odd.
+    var kseg = math.max(3, (cols / _kSegKernelDivisor).round());
+    if (kseg.isEven) kseg += 1;
 
-    // Step 8: Find external contours.
-    final contoursResult = cv.findContours(
-      closed,
-      cv.RETR_EXTERNAL,
-      cv.CHAIN_APPROX_SIMPLE,
-    );
-    contours = contoursResult.$1;
-    hierarchy = contoursResult.$2;
-    closed.dispose();
-    closed = null;
-    hierarchy.dispose();
-    hierarchy = null;
-
-    // Step 9: Relaxed quad extraction + scored selection. For every contour
-    // ≥5% of the image, build a 4-corner quad (approxPolyDP if it yields a
-    // convex quad, else the min-area rotated rectangle), score it, and keep
-    // the best. Always returns a best-guess when any sizeable contour exists.
-    final imageArea = (rows * cols).toDouble();
-    final minQuadArea = imageArea * 0.05;
     List<Pt>? bestQuad;
     double bestConfidence = -1;
-    for (int i = 0; i < contours.length; i++) {
-      // contours[i] returns a reference owned by contours — do NOT dispose it.
-      final contour = contours[i];
-      final cArea = cv.contourArea(contour);
-      if (cArea < minQuadArea) continue;
 
-      List<Pt> quadPts;
-      final epsilon = cv.arcLength(contour, true) * 0.02;
-      final approx = cv.approxPolyDP(contour, epsilon, true);
-      if (approx.length == 4 && cv.isContourConvex(approx)) {
-        quadPts = List.generate(
-          4,
-          (j) => (x: approx[j].x.toDouble(), y: approx[j].y.toDouble()),
+    // Step 6: For each polarity, close → largest contour → quad → guard → score.
+    // Iterate the non-null locals `mb`/`md` (maskBright/maskDark hold the same
+    // handles for disposal in `finally`).
+    for (final mask in [mb, md]) {
+      cv.Mat? kernel, closed;
+      cv.VecVec4i? hierarchy;
+      cv.VecVecPoint? contours;
+      try {
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (kseg, kseg));
+        closed = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel, iterations: 1);
+
+        final contoursResult = cv.findContours(
+          closed,
+          cv.RETR_EXTERNAL,
+          cv.CHAIN_APPROX_SIMPLE,
         );
-        approx.dispose();
-      } else {
-        approx.dispose();
-        final rect = cv.minAreaRect(contour);
-        final box = rect.points; // VecPoint2f, 4 corners
-        quadPts = List.generate(4, (j) => (x: box[j].x, y: box[j].y));
-        box.dispose();
-        rect.dispose();
-      }
+        contours = contoursResult.$1;
+        hierarchy = contoursResult.$2;
 
-      final roles = sortCornerRoles(quadPts); // [TL, TR, BR, BL]
-      final qArea = quadArea(roles);
-      if (qArea <= 0) continue;
-      final areaScore = (qArea / imageArea).clamp(0.0, 1.0);
-      final aScore = angleScore(roles);
-      final rScore = rectangularityScore(cArea, qArea);
-      final conf = detectionConfidence(
-        areaScore: areaScore,
-        angleScore: aScore,
-        rectScore: rScore,
-      );
-      if (conf > bestConfidence) {
-        bestConfidence = conf;
-        bestQuad = roles;
+        // Largest contour with area ≥ 5% of the image.
+        int bestIdx = -1;
+        double bestContourArea = 0;
+        for (int i = 0; i < contours.length; i++) {
+          final a = cv.contourArea(contours[i]);
+          if (a >= imageArea * 0.05 && a > bestContourArea) {
+            bestContourArea = a;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx < 0) continue;
+        final contour = contours[bestIdx]; // owned by contours — do not dispose
+
+        // Build a quad: approxPolyDP if 4-pt convex (perspective fit), else
+        // the min-area rotated rectangle.
+        List<Pt> quadPts;
+        final epsilon = cv.arcLength(contour, true) * 0.02;
+        final approx = cv.approxPolyDP(contour, epsilon, true);
+        if (approx.length == 4 && cv.isContourConvex(approx)) {
+          quadPts = List.generate(
+            4,
+            (j) => (x: approx[j].x.toDouble(), y: approx[j].y.toDouble()),
+          );
+          approx.dispose();
+        } else {
+          approx.dispose();
+          final rect = cv.minAreaRect(contour);
+          final box = rect.points; // VecPoint2f, 4 corners
+          quadPts = List.generate(4, (j) => (x: box[j].x, y: box[j].y));
+          box.dispose();
+          rect.dispose();
+        }
+
+        final roles = sortCornerRoles(quadPts); // [TL, TR, BR, BL]
+        final qArea = quadArea(roles);
+        if (qArea <= 0) continue;
+        final areaFrac = qArea / imageArea;
+        final fill = rectangularityScore(bestContourArea, qArea);
+        if (!isPlausiblePage(areaFrac: areaFrac, fill: fill)) continue;
+
+        final conf = detectionConfidence(
+          areaScore: areaFrac.clamp(0.0, 1.0),
+          angleScore: angleScore(roles),
+          rectScore: fill,
+        );
+        if (conf > bestConfidence) {
+          bestConfidence = conf;
+          bestQuad = roles;
+        }
+      } finally {
+        kernel?.dispose();
+        closed?.dispose();
+        hierarchy?.dispose();
+        contours?.dispose();
       }
     }
 
-    contours.dispose();
-    contours = null;
-
     if (bestQuad == null) return null;
 
-    // Step 10: Normalize to [0..1] and emit.
     final tl = bestQuad[0], tr = bestQuad[1], br = bestQuad[2], bl = bestQuad[3];
     return [
       tl.x / cols, tl.y / rows,
@@ -240,19 +225,10 @@ List<double>? _runPipeline(Uint8List bytes) {
   } catch (_) {
     return null;
   } finally {
-    // Dispose every native resource that may still be allocated.
     mat?.dispose();
     gray?.dispose();
-    proxy?.dispose();
-    bgSmall?.dispose();
-    bg?.dispose();
-    normalized?.dispose();
     blurred?.dispose();
-    otsuOut?.dispose();
-    edges?.dispose();
-    kernel?.dispose();
-    closed?.dispose();
-    hierarchy?.dispose();
-    contours?.dispose();
+    maskBright?.dispose();
+    maskDark?.dispose();
   }
 }
