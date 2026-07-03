@@ -60,9 +60,13 @@ Uint8List? _nativeFn(_NativeArgs a) {
 
     // Filter dispatch (Auto/Color/Grayscale added in later tasks).
     final quality = a.mode == EnhancerMode.auto ? 95 : 92;
-    final (ok, out) = cv.imencode('.jpg', warped,
-        params: cv.VecI32.fromList([cv.IMWRITE_JPEG_QUALITY, quality]));
-    return ok ? out : null;
+    final vecParams = cv.VecI32.fromList([cv.IMWRITE_JPEG_QUALITY, quality]);
+    try {
+      final (ok, out) = cv.imencode('.jpg', warped, params: vecParams);
+      return ok ? out : null;
+    } finally {
+      vecParams.dispose();
+    }
   } catch (_) {
     return null;
   } finally {
