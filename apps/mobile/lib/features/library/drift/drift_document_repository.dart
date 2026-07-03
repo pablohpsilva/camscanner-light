@@ -12,10 +12,13 @@ import '../document_summary.dart';
 import '../export/export_quality.dart';
 import '../export/image_compressor.dart';
 import '../coons_warper.dart';
+import '../dart_page_processor.dart';
+import '../enhancer_mode.dart';
 import '../hybrid_warper.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
+import '../page_processor.dart';
 import '../perspective_warper.dart';
 import '../warp_enhancer.dart';
 import '../ocr/ocr_engine.dart';
@@ -35,6 +38,7 @@ class DriftDocumentRepository implements DocumentRepository {
   final DateTime Function() _clock;
   final PdfBuilder _pdfBuilder;
   final ImageWarper _warper;
+  final PageProcessor _processor;
   final OcrEngine _ocrEngine;
   final PdfEncryptor _encryptor;
   final ImageCompressor _compressor;
@@ -46,6 +50,7 @@ class DriftDocumentRepository implements DocumentRepository {
     required DateTime Function() clock,
     required PdfBuilder pdfBuilder,
     required ImageWarper warper,
+    PageProcessor? pageProcessor,
     OcrEngine ocrEngine = const NoOpOcrEngine(),
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
     ImageCompressor compressor = const ImageLibraryCompressor(),
@@ -55,6 +60,7 @@ class DriftDocumentRepository implements DocumentRepository {
         _clock = clock, // ignore: prefer_initializing_formals
         _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
         _warper = warper, // ignore: prefer_initializing_formals
+        _processor = pageProcessor ?? DartPageProcessor(warper),
         _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
         _encryptor = encryptor, // ignore: prefer_initializing_formals
         _compressor = compressor; // ignore: prefer_initializing_formals
@@ -85,9 +91,15 @@ class DriftDocumentRepository implements DocumentRepository {
           final isFullFrame = corners == null || corners == CropCorners.fullFrame;
           Uint8List bytesToStore = scrubbed;
           if (enhancer != null && isFullFrame) {
-            try {
-              bytesToStore = await enhancer.enhance(scrubbed);
-            } catch (_) {} // silent: use unenhanced scrubbed bytes
+            final enhanced = await _processor.process(
+                scrubbed, CropCorners.fullFrame, enhancerModeOf(enhancer));
+            if (enhanced != null) {
+              bytesToStore = enhanced;
+            } else {
+              try {
+                bytesToStore = await enhancer.enhance(scrubbed);
+              } catch (_) {} // silent: use unenhanced scrubbed bytes
+            }
           }
           await _fileStore.writeRelative(rel, bytesToStore);
         } catch (e) {
@@ -139,39 +151,28 @@ class DriftDocumentRepository implements DocumentRepository {
   Future<Uint8List?> _enhancedFlat(
       Uint8List scrubbed, CropCorners? corners, ImageEnhancer? enhancer) async {
     if (corners == null || corners == CropCorners.fullFrame) return null;
-
-    // Fast path: with the real warper, fuse unwarp + enhancement into ONE
-    // isolate (a single JPEG decode/encode) instead of warp→encode→decode→
-    // enhance→encode. When a test stubs [_warper], fall through to the two-step
-    // path below so the injected fake is still exercised.
-    if (_warper is HybridWarper ||
-        _warper is PerspectiveWarper ||
-        _warper is CoonsWarper) {
-      final fused =
-          await warpAndEnhance(scrubbed, corners, enhancerModeOf(enhancer));
-      if (fused != null) return fused;
-      // Warp failed → de-shadow the un-warped frame so a failed crop still
-      // yields a clean page rather than the raw capture.
-      if (enhancer == null) return scrubbed;
-      try {
-        return await enhancer.enhance(scrubbed);
-      } catch (_) {
-        return scrubbed;
+    final mode = enhancerModeOf(enhancer);
+    final out = await _processor.process(scrubbed, corners, mode);
+    if (out != null) {
+      // Processor succeeded. For mode=none (enhancer not recognized by the
+      // processor), still invoke the enhancer directly on the warp result so
+      // existing callers that pass an unrecognized enhancer see it called.
+      if (enhancer != null && mode == EnhancerMode.none) {
+        try {
+          return await enhancer.enhance(out);
+        } catch (_) {
+          return out;
+        }
       }
+      return out;
     }
-
-    Uint8List? warped;
+    // Both native and Dart failed → last-ditch: de-shadow the un-warped frame
+    // so a failed crop still yields a clean page rather than the raw capture.
+    if (enhancer == null) return scrubbed;
     try {
-      warped = await _warper.warp(scrubbed, corners);
+      return await enhancer.enhance(scrubbed);
     } catch (_) {
-      warped = null; // WarpException/IO — fall back to the full frame.
-    }
-    final base = warped ?? scrubbed;
-    if (enhancer == null) return base;
-    try {
-      return await enhancer.enhance(base);
-    } catch (_) {
-      return base; // silent: store unenhanced
+      return scrubbed;
     }
   }
 
@@ -555,9 +556,15 @@ class DriftDocumentRepository implements DocumentRepository {
             corners == null || corners == CropCorners.fullFrame;
         Uint8List bytesToStore = scrubbed;
         if (enhancer != null && isFullFrame) {
-          try {
-            bytesToStore = await enhancer.enhance(scrubbed);
-          } catch (_) {}
+          final enhanced = await _processor.process(
+              scrubbed, CropCorners.fullFrame, enhancerModeOf(enhancer));
+          if (enhanced != null) {
+            bytesToStore = enhanced;
+          } else {
+            try {
+              bytesToStore = await enhancer.enhance(scrubbed);
+            } catch (_) {}
+          }
         }
         await _fileStore.writeRelative(rel, bytesToStore);
         String? flatRel;
@@ -668,9 +675,15 @@ class DriftDocumentRepository implements DocumentRepository {
 
       Uint8List bytesToStore = scrubbed;
       if (enhancer != null && isFullFrame) {
-        try {
-          bytesToStore = await enhancer.enhance(scrubbed);
-        } catch (_) {}
+        final enhanced = await _processor.process(
+            scrubbed, CropCorners.fullFrame, enhancerModeOf(enhancer));
+        if (enhanced != null) {
+          bytesToStore = enhanced;
+        } else {
+          try {
+            bytesToStore = await enhancer.enhance(scrubbed);
+          } catch (_) {}
+        }
       }
       // Overwrite the original image in place (same stored relative path).
       await _fileStore.writeRelative(row.relativeImagePath, bytesToStore);

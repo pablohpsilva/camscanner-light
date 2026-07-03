@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -12,6 +13,7 @@ import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/image_metadata_scrubber.dart';
 import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
+import 'package:mobile/features/library/page_processor.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
@@ -43,6 +45,17 @@ class _ThrowingEnhancer implements ImageEnhancer {
       throw Exception('enhance failed');
 }
 
+class _FakeProcessor implements PageProcessor {
+  _FakeProcessor(this._flat);
+  final Uint8List _flat;
+  int calls = 0;
+  @override
+  Future<Uint8List?> process(Uint8List b, CropCorners c, EnhancerMode m) async {
+    calls++;
+    return _flat;
+  }
+}
+
 void main() {
   late Directory base;
   late AppDatabase db;
@@ -66,6 +79,7 @@ void main() {
   DriftDocumentRepository repo({
     ImageMetadataScrubber? scrubber,
     ImageWarper? warper,
+    PageProcessor? pageProcessor,
   }) =>
       DriftDocumentRepository(
         db: db,
@@ -74,6 +88,7 @@ void main() {
         clock: clock,
         pdfBuilder: const PdfBuilder(),
         warper: warper ?? FakeImageWarper(),
+        pageProcessor: pageProcessor,
       );
 
   test('createFromCapture writes a scrubbed JPEG and a document+page row',
@@ -641,6 +656,22 @@ void main() {
         repo().reorderPages(9999, [1]),
         throwsA(isA<DocumentSaveException>()),
       );
+    });
+  });
+
+  group('E2b — PageProcessor routing', () {
+    test('cropped save uses the injected PageProcessor for the flat', () async {
+      final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x42]);
+      final proc = _FakeProcessor(fakeFlat);
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.9));
+      final doc = await repo(pageProcessor: proc)
+          .createFromCapture(capture, corners: corners);
+      final flat = File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(flat.existsSync(), isTrue);
+      expect(flat.readAsBytesSync(), fakeFlat);
+      expect(proc.calls, greaterThanOrEqualTo(1));
     });
   });
 }
