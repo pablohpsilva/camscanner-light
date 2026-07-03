@@ -441,6 +441,27 @@ def _page_on(bg, page):
     return img
 
 
+def _shape(kind):
+    """White shape on black — mirrors the opencv_edge_detector_test fixtures."""
+    import math
+    img = np.zeros((480, 640, 3), np.uint8)
+    if kind == "circle":
+        cv2.circle(img, (320, 240), 160, (255, 255, 255), -1)
+    elif kind == "triangle":
+        cv2.fillPoly(img, [np.array([[320, 80], [120, 400], [520, 400]])],
+                     (255, 255, 255))
+    elif kind == "pentagon":
+        c, r = (320, 240), 170
+        p = np.array([[c[0] + r * math.cos(2 * math.pi * i / 5 - math.pi / 2),
+                       c[1] + r * math.sin(2 * math.pi * i / 5 - math.pi / 2)]
+                      for i in range(5)], np.int32)
+        cv2.fillPoly(img, [p], (255, 255, 255))
+    elif kind == "concave":
+        cv2.fillPoly(img, [np.array([[320, 100], [500, 400], [320, 300],
+                                     [140, 400]], np.int32)], (255, 255, 255))
+    return img
+
+
 def _cases():
     blank = np.full((600, 800, 3), 200, np.uint8)
     noise = np.random.RandomState(1).randint(100, 130, (600, 800, 3), np.uint8)
@@ -463,6 +484,12 @@ def _cases():
         ("page-on-dark", _page_on(55, 225), "bright"),
         ("page-on-light", _page_on(235, 180), "dark"),
         ("soft-shadow-on-dark", shadow, "bright"),
+        # Shape fixtures mirror opencv_edge_detector_test: a shape whose fill is
+        # below 0.55 is rejected (triangle, concave dart); circle/pentagon pass.
+        ("shape-circle", _shape("circle"), "bright"),
+        ("shape-pentagon", _shape("pentagon"), "bright"),
+        ("shape-triangle", _shape("triangle"), None),
+        ("shape-concave", _shape("concave"), None),
     ]
 
 
@@ -607,6 +634,10 @@ Run `detect()` on the user's actual gallery captures and confirm the quad hugs t
 - Remove the temporary asset + fixture + scratch test afterward (`git checkout -- pubspec.yaml`).
 
 Record the outcome (pass/fail + annotated screenshot) in the task report. This manual eyeball on a real capture is required — synthetic on-device tests are necessary but not sufficient (they gave false confidence before).
+
+- [ ] **Step 7: Live-preview smoothness check (controller/user)**
+
+`detect()` runs off the UI thread in a `compute()` isolate on an 800 ms timer with an `_isSampling` guard (`camera_screen.dart:79-89`), so a slower pipeline degrades gracefully to a less-frequent live quad rather than janking the preview. Still confirm on-device: build/install a debug or release build, point the camera at a document, and verify (a) the live green quad appears over the page and (b) the preview stays smooth (no visible stutter) as the pipeline runs both polarities. If the preview noticeably stutters on the budget phone, note it — a mitigation (e.g. a lighter single-polarity fast-path on the live loop only) can be added, but do NOT add it speculatively (YAGNI). Record the observation in the report.
 
 ---
 
