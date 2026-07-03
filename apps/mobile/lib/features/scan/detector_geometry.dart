@@ -68,3 +68,18 @@ double detectionConfidence({
   required double rectScore,
 }) =>
     (0.5 * areaScore + 0.3 * angleScore + 0.2 * rectScore).clamp(0.0, 1.0);
+
+/// Accept predicate for a candidate page quad. Rejects the near-full-frame
+/// blob of a blank scene (or the background polarity), a too-small blob, and a
+/// low-fill (non-rectangular) clutter blob. A legitimate page can fill most of
+/// the frame and touch all borders, so border-touching is deliberately NOT a
+/// criterion — the area cap and fill floor already exclude the background/blank
+/// blobs.
+bool isPlausiblePage({
+  required double areaFrac,
+  required double fill,
+  double minAreaFrac = 0.05,
+  double maxAreaFrac = 0.92,
+  double minFill = 0.55,
+}) =>
+    areaFrac >= minAreaFrac && areaFrac <= maxAreaFrac && fill >= minFill;
