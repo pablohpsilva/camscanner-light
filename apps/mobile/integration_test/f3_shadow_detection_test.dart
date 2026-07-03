@@ -47,7 +47,7 @@ void main() {
     test('localizes a soft-shadowed page rectangle', () async {
       final result = await detector.detect(_shadowedPage());
       expect(result, isNotNull,
-          reason: 'flat-field normalization must recover the dimmed edge');
+          reason: 'segmentation must recover the shadowed page (page stays brighter than desk)');
 
       final c = result!.corners;
       // Expected normalized rect bounds: x in [140/800, 660/800] = [0.175, 0.825],
@@ -57,7 +57,7 @@ void main() {
       expect(c.topLeft.dx, closeTo(0.175, tol));
       expect(c.topLeft.dy, closeTo(0.183, tol));
       expect(c.topRight.dx, closeTo(0.825, tol),
-          reason: 'the shadow-dimmed right edge must still be found');
+          reason: 'the shadowed (dimmer) right side must still fall inside the page blob');
       expect(c.bottomRight.dy, closeTo(0.817, tol));
       expect(c.bottomLeft.dx, closeTo(0.175, tol));
     });
