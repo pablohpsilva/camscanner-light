@@ -84,4 +84,26 @@ void main() {
       expect(detectionConfidence(areaScore: 2.0, angleScore: 2.0, rectScore: 2.0), 1.0);
     });
   });
+
+  group('isPlausiblePage', () {
+    test('accepts a mid-frame, well-filled quad', () {
+      expect(isPlausiblePage(areaFrac: 0.40, fill: 0.85), isTrue);
+      expect(isPlausiblePage(areaFrac: 0.84, fill: 0.78), isTrue);
+    });
+    test('rejects a near-full-frame blob (blank scene / background)', () {
+      expect(isPlausiblePage(areaFrac: 0.97, fill: 0.99), isFalse);
+    });
+    test('rejects a too-small blob', () {
+      expect(isPlausiblePage(areaFrac: 0.03, fill: 0.99), isFalse);
+    });
+    test('rejects a low-fill blob (clutter / non-rectangular)', () {
+      expect(isPlausiblePage(areaFrac: 0.40, fill: 0.50), isFalse);
+    });
+    test('honors the boundary values (>= and <=)', () {
+      expect(isPlausiblePage(areaFrac: 0.05, fill: 0.55), isTrue);
+      expect(isPlausiblePage(areaFrac: 0.92, fill: 0.55), isTrue);
+      expect(isPlausiblePage(areaFrac: 0.049, fill: 0.99), isFalse);
+      expect(isPlausiblePage(areaFrac: 0.40, fill: 0.549), isFalse);
+    });
+  });
 }

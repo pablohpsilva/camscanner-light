@@ -313,11 +313,12 @@ Future<void> main() async {
     setUp(() => detector = const OpenCvEdgeDetector());
 
     // ── Algorithm correctness ─────────────────────────────────────────────
-    test('white rect on dark background → non-null, confidence > 0.5', () async {
+    test('white rect on dark background → non-null, confidence > 0.6', () async {
       final bytes = _rectImage();
       final result = await detector.detect(bytes);
       expect(result, isNotNull);
-      expect(result!.confidence, greaterThan(0.5));
+      expect(result!.confidence, greaterThan(0.6));
+      expect(result.confidence, lessThanOrEqualTo(1.0));
     });
 
     test('uniform white image → null', () async {
@@ -336,50 +337,43 @@ Future<void> main() async {
       if (result != null) expect(result.confidence, lessThan(0.3));
     });
 
-    test('circle-only shape → best-guess quad (minAreaRect fallback)', () async {
-      // Best-guess-always: a large blob returns its bounding quad, but low
-      // rectangularity keeps confidence modest so the UI tints it "please check".
+    test('circle-only shape → non-null best-guess (blob fill ≈ π/4 ≥ 0.55)', () async {
+      // A circle's blob fills ≈ π/4 ≈ 0.79 of its bounding quad, above the 0.55
+      // page-plausibility floor, so segmentation keeps it as a best-guess.
       final result = await detector.detect(_circleImage(640, 480));
       expect(result, isNotNull);
       expect(result!.confidence, lessThan(0.9),
           reason: 'a circle is not a clean rectangle — confidence must not be high');
     });
 
-    test('triangle shape → best-guess quad (minAreaRect fallback)', () async {
+    test('triangle shape → null (fill below the page guard)', () async {
+      // A triangle fills only ~half its bounding rect (fill ≈ 0.5), below the
+      // 0.55 page-plausibility floor, so segmentation rejects it.
       final result = await detector.detect(_triangleImage(640, 480));
-      expect(result, isNotNull);
-      expect(result!.confidence, lessThan(0.85),
-          reason: 'a triangle fills only ~half its bounding rect');
+      expect(result, isNull);
     });
 
-    test('pentagon shape → best-guess quad (minAreaRect fallback)', () async {
-      // 5 vertices isn't a clean 4-point quad, so the pipeline falls back to
-      // the min-area rectangle. Best-guess-always: non-null, but a pentagon
-      // doesn't fill its bounding rect, so confidence stays modest.
+    test('pentagon shape → non-null best-guess (regular-pentagon fill ≈ 0.69 ≥ 0.55)', () async {
+      // A regular pentagon fills ≈ 0.69 of its bounding quad, above the 0.55
+      // page-plausibility floor, so segmentation keeps it as a best-guess.
       final result = await detector.detect(_pentagonImage(640, 480));
       expect(result, isNotNull);
       expect(result!.confidence, lessThan(0.9),
           reason: 'a pentagon is not a clean rectangle — confidence must not be high');
     });
 
-    test('concave quad (dart/arrowhead) → best-guess quad (minAreaRect fallback)',
+    test('concave quad (dart/arrowhead) → null (fill below the page guard)',
         () async {
-      // Fails isContourConvex, so approxPolyDP is rejected and minAreaRect is
-      // used. A concave dart fills little of its bounding rect → low confidence.
-      final result = await detector.detect(_concaveQuadImage(640, 480));
-      expect(result, isNotNull);
-      expect(result!.confidence, lessThan(0.85),
-          reason: 'a concave dart fills little of its bounding rect');
+      // A concave dart fills little of its bounding rect (low fill), so the
+      // segmentation isPlausiblePage guard rejects it.
+      expect(await detector.detect(_concaveQuadImage(640, 480)), isNull);
     });
 
-    test('non-convex quad (arrow/chevron ">") → best-guess quad (minAreaRect fallback)',
+    test('non-convex quad (arrow/chevron ">") → null (fill below the page guard)',
         () async {
-      // Concave, so minAreaRect is used. A thin chevron fills little of its
-      // bounding rect → low confidence.
-      final result = await detector.detect(_chevronImage(640, 480));
-      expect(result, isNotNull);
-      expect(result!.confidence, lessThan(0.85),
-          reason: 'a chevron fills little of its bounding rect');
+      // A chevron fills little of its bounding rect (low fill), so the
+      // segmentation isPlausiblePage guard rejects it.
+      expect(await detector.detect(_chevronImage(640, 480)), isNull);
     });
 
     test('two rects present → largest selected', () async {
