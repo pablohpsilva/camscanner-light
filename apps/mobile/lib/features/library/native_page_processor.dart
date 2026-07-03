@@ -72,7 +72,9 @@ Uint8List? _nativeFn(_NativeArgs a) {
     try {
       filtered = switch (a.mode) {
         EnhancerMode.auto => _autoFlatField(warpedMat),
-        _ => warpedMat.clone(), // none/color/grayscale passthrough for now
+        EnhancerMode.color => _colorBoost(warpedMat),
+        EnhancerMode.grayscale => _grayscale(warpedMat),
+        EnhancerMode.none => warpedMat.clone(),
       };
       final quality = a.mode == EnhancerMode.auto ? 95 : 92;
       final vecParams = cv.VecI32.fromList([cv.IMWRITE_JPEG_QUALITY, quality]);
@@ -185,6 +187,36 @@ cv.Mat _whitePointLut3(cv.Mat flat) {
     }
   }
   return cv.Mat.fromList(1, 256, cv.MatType.CV_8UC3, lut);
+}
+
+/// Contrast 1.1 + brightness 1.05 via a 1×256 CV_8UC1 LUT applied to every
+/// channel: v' = clamp((v−128)*1.1 + 128, then *1.05, 0..255).
+/// The intermediate LUT Mat is disposed before returning.
+cv.Mat _colorBoost(cv.Mat src) {
+  final lut = List<int>.filled(256, 0);
+  for (var v = 0; v < 256; v++) {
+    final c = (v - 128) * 1.1 + 128;
+    lut[v] = (c * 1.05).round().clamp(0, 255);
+  }
+  cv.Mat? lutMat;
+  try {
+    lutMat = cv.Mat.fromList(1, 256, cv.MatType.CV_8UC1, lut);
+    return cv.LUT(src, lutMat); // 1-ch LUT applies to every channel
+  } finally {
+    lutMat?.dispose();
+  }
+}
+
+/// Luminance grayscale, re-expanded to 3 channels so the JPEG encoder sees BGR.
+/// The intermediate gray Mat is disposed before returning.
+cv.Mat _grayscale(cv.Mat src) {
+  cv.Mat? gray;
+  try {
+    gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY);
+    return cv.cvtColor(gray, cv.COLOR_GRAY2BGR);
+  } finally {
+    gray?.dispose();
+  }
 }
 
 /// Perspective-flatten a straight crop, output size = the longer of each pair
