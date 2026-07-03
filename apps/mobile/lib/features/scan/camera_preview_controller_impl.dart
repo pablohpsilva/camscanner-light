@@ -4,8 +4,10 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/widgets.dart';
 
+import 'camera_frame.dart';
 import 'camera_preview_controller.dart';
 import 'captured_image.dart';
+import 'scan_flash_mode.dart';
 
 /// Production [CameraPreviewController] backed by the `camera` plugin.
 class PluginCameraPreviewController implements CameraPreviewController {
@@ -13,6 +15,12 @@ class PluginCameraPreviewController implements CameraPreviewController {
 
   CameraController? _controller;
   bool _takingPicture = false;
+
+  void Function(CameraFrame)? _onFrame;
+  bool _streaming = false;
+  final Stopwatch _throttle = Stopwatch();
+  ScanFlashMode _flash = ScanFlashMode.off;
+  static const _kMinSampleGapMs = 700;
 
   @override
   Future<void> initialize() async {
@@ -32,6 +40,8 @@ class PluginCameraPreviewController implements CameraPreviewController {
       // is much sharper while staying below the heaviest (max) preset.
       ResolutionPreset.ultraHigh,
       enableAudio: false,
+      imageFormatGroup:
+          Platform.isIOS ? ImageFormatGroup.bgra8888 : ImageFormatGroup.yuv420,
     );
     try {
       await controller.initialize();
@@ -67,12 +77,18 @@ class PluginCameraPreviewController implements CameraPreviewController {
     }
     _takingPicture = true;
     try {
+      if (_flash == ScanFlashMode.flash) {
+        await controller.setFlashMode(FlashMode.always);
+      }
       final file = await controller.takePicture();
       return CapturedImage(file.path);
     } on CameraException catch (e) {
       throw CameraUnavailableException(e.description ?? e.code);
     } finally {
       _takingPicture = false;
+      if (_flash == ScanFlashMode.flash) {
+        await controller.setFlashMode(FlashMode.off).catchError((_) {});
+      }
     }
   }
 
@@ -91,6 +107,77 @@ class PluginCameraPreviewController implements CameraPreviewController {
       return null;
     } finally {
       _takingPicture = false;
+    }
+  }
+
+  @override
+  void startSampling(void Function(CameraFrame frame) onFrame) {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    _onFrame = onFrame;
+    if (_streaming) return;
+    _streaming = true;
+    _throttle
+      ..reset()
+      ..start();
+    var first = true;
+    controller.startImageStream((image) {
+      if (!_streaming) return;
+      if (!first && _throttle.elapsedMilliseconds < _kMinSampleGapMs) return;
+      first = false;
+      _throttle.reset();
+      final frame = _mapFrame(image);
+      if (frame != null) _onFrame?.call(frame);
+    }).catchError((_) {
+      _streaming = false;
+    });
+  }
+
+  @override
+  void stopSampling() {
+    _onFrame = null;
+    if (!_streaming) return;
+    _streaming = false;
+    _controller?.stopImageStream().catchError((_) {});
+  }
+
+  CameraFrame? _mapFrame(CameraImage image) {
+    final group = image.format.group;
+    final CameraFrameFormat fmt;
+    if (group == ImageFormatGroup.bgra8888) {
+      fmt = CameraFrameFormat.bgra8888;
+    } else if (group == ImageFormatGroup.yuv420) {
+      fmt = CameraFrameFormat.yuv420;
+    } else {
+      return null;
+    }
+    return CameraFrame(
+      width: image.width,
+      height: image.height,
+      format: fmt,
+      planes: image.planes
+          .map((p) => CameraFramePlane(
+                bytes: p.bytes,
+                bytesPerRow: p.bytesPerRow,
+                bytesPerPixel: p.bytesPerPixel,
+              ))
+          .toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> setFlashMode(ScanFlashMode mode) async {
+    _flash = mode;
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    try {
+      // Torch lights immediately; off/flash keep the LED dark during preview
+      // (flash fires only at capture, applied in capture()).
+      await controller.setFlashMode(
+        mode == ScanFlashMode.torch ? FlashMode.torch : FlashMode.off,
+      );
+    } on CameraException {
+      // never throws
     }
   }
 

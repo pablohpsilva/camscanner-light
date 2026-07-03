@@ -10,6 +10,7 @@ import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/scan/gallery_picker.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
+import 'package:mobile/features/scan/scan_flash_mode.dart';
 
 /// A minimal valid 1×1 JPEG (SOI … EOI). The fake writes this so the review
 /// screen renders a real, decodable image in tests without camera hardware.
@@ -46,6 +47,10 @@ class FakeCameraPreviewController implements CameraPreviewController {
   bool captureCalled = false;
   int sampleFrameCalls = 0;
   CameraUnavailableException? captureError;
+
+  bool sampling = false;
+  ScanFlashMode? lastFlashMode;
+  void Function(CameraFrame)? _onFrame;
 
   FakeCameraPreviewController({
     this.unavailable = false,
@@ -85,6 +90,28 @@ class FakeCameraPreviewController implements CameraPreviewController {
   Future<Uint8List?> sampleFrame() async {
     sampleFrameCalls++;
     return sampleFrameResult;
+  }
+
+  @override
+  void startSampling(void Function(CameraFrame frame) onFrame) {
+    sampling = true;
+    _onFrame = onFrame;
+  }
+
+  @override
+  void stopSampling() {
+    sampling = false;
+    _onFrame = null;
+  }
+
+  /// Test hook: simulate a streamed frame.
+  void emitFrame(CameraFrame frame) {
+    if (sampling) _onFrame?.call(frame);
+  }
+
+  @override
+  Future<void> setFlashMode(ScanFlashMode mode) async {
+    lastFlashMode = mode;
   }
 
   @override

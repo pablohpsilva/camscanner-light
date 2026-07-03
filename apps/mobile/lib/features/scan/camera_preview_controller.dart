@@ -2,7 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+import 'camera_frame.dart';
 import 'captured_image.dart';
+import 'scan_flash_mode.dart';
 
 /// Thrown when the device has no usable camera, or it fails to initialize.
 class CameraUnavailableException implements Exception {
@@ -31,6 +33,16 @@ abstract interface class CameraPreviewController {
   /// Returns JPEG bytes of a sampled still frame, or null on any error.
   /// Only valid after [initialize()] succeeds. Never throws.
   Future<Uint8List?> sampleFrame();
+
+  /// Starts delivering live preview frames to [onFrame]. No-op if already
+  /// sampling. Never throws.
+  void startSampling(void Function(CameraFrame frame) onFrame);
+
+  /// Stops live-frame delivery. Safe when not sampling. Never throws.
+  void stopSampling();
+
+  /// Sets the flash/torch behavior. Never throws.
+  Future<void> setFlashMode(ScanFlashMode mode);
 
   /// Camera native resolution in display-space coordinates — width and height
   /// are already swapped when sensor orientation is 90° or 270°. Valid after

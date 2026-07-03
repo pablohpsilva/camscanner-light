@@ -3,12 +3,14 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/scan/camera_frame.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
+import 'package:mobile/features/scan/scan_flash_mode.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
@@ -28,6 +30,12 @@ class _GatedPreview implements CameraPreviewController {
   }
   @override
   Future<Uint8List?> sampleFrame() async => null;
+  @override
+  void startSampling(void Function(CameraFrame frame) onFrame) {}
+  @override
+  void stopSampling() {}
+  @override
+  Future<void> setFlashMode(ScanFlashMode mode) async {}
   @override
   Size get previewSize => Size.zero;
   @override
