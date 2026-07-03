@@ -1,7 +1,7 @@
 # FTS5 search — trigram matching + relevance ranking (design)
 
 **Date:** 2026-07-03
-**Status:** Approved (design) — revised during planning (see Revision note)
+**Status:** Implemented (2026-07-03) — revised during planning (see Revision note)
 **Sub-project:** 2 — OCR / text extraction (Feature 08) → library search (Feature 02)
 **Depends on:** O1 (per-page `ocrText`), O2 (real OCR auto-runs after save), O5 (LIKE search + home search UI)
 **Supersedes the search engine of:** [O5](2026-07-01-o5-content-search-design.md) — which explicitly deferred "a dedicated FTS5 index" and "full-text ranking / relevance scoring" until libraries grow. This is that revisit.
