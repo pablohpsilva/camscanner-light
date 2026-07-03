@@ -1,12 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/scan/camera_frame.dart';
+import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/widgets/live_quad_overlay.dart';
-
-import 'package:mobile/features/scan/camera_permission_service.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
@@ -26,36 +28,81 @@ const _lowConfResult = DetectionResult(
   confidence: 0.3,
 );
 
+/// Minimal 2×2 BGRA frame (4 bytes per pixel, all zeros).
+CameraFrame _bgraFrame() {
+  return CameraFrame(
+    width: 2,
+    height: 2,
+    format: CameraFrameFormat.bgra8888,
+    planes: [
+      CameraFramePlane(
+        bytes: Uint8List(2 * 2 * 4),
+        bytesPerRow: 8,
+        bytesPerPixel: 4,
+      ),
+    ],
+  );
+}
+
 void main() {
-  Widget host(Widget child) => MaterialApp(home: child);
+  testWidgets('sampling starts when controller reaches ready', (tester) async {
+    final fake = FakeCameraPreviewController();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: ScanDependencies(
+          createPermissionService: () =>
+              FakeCameraPermissionService(CameraPermissionStatus.granted),
+          createPreviewController: () => fake,
+          createEdgeDetector: () => FakeEdgeDetector(result: null),
+        ),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle(); // controller reaches ScanStatus.ready
+    expect(fake.sampling, isTrue);
+  });
 
-  testWidgets('overlay appears after timer fires with confident detection',
+  testWidgets(
+      'overlay appears when a streamed frame yields confident detection',
       (tester) async {
-    await tester.pumpWidget(host(CameraScreen(
-      dependencies:
-          liveDetectionScanDependencies(detectionResult: _confidentResult),
-      repository: FakeDocumentRepository(),
-    )));
-    await tester.pumpAndSettle(); // camera reaches ScanStatus.ready
-
+    final fake = FakeCameraPreviewController();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: ScanDependencies(
+          createPermissionService: () =>
+              FakeCameraPermissionService(CameraPermissionStatus.granted),
+          createPreviewController: () => fake,
+          createEdgeDetector: () => FakeEdgeDetector(result: _confidentResult),
+        ),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle(); // reaches ScanStatus.ready, startSampling called
     expect(find.byType(LiveQuadOverlay), findsNothing);
 
-    await tester.pump(const Duration(milliseconds: 900)); // fire 800ms timer
-    await tester.pump(); // drain sampleFrame microtask
-    await tester.pump(); // drain detect microtask + setState rebuild
+    fake.emitFrame(_bgraFrame());
+    await tester.pump(); // detectFrame future
+    await tester.pump(); // setState
 
     expect(find.byType(LiveQuadOverlay), findsOneWidget);
   });
 
   testWidgets('overlay absent when detection returns null', (tester) async {
-    await tester.pumpWidget(host(CameraScreen(
-      dependencies:
-          liveDetectionScanDependencies(detectionResult: null),
-      repository: FakeDocumentRepository(),
-    )));
+    final fake = FakeCameraPreviewController();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: ScanDependencies(
+          createPermissionService: () =>
+              FakeCameraPermissionService(CameraPermissionStatus.granted),
+          createPreviewController: () => fake,
+          createEdgeDetector: () => FakeEdgeDetector(result: null),
+        ),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
     await tester.pumpAndSettle();
 
-    await tester.pump(const Duration(milliseconds: 900));
+    fake.emitFrame(_bgraFrame());
     await tester.pump();
     await tester.pump();
 
@@ -63,78 +110,25 @@ void main() {
   });
 
   testWidgets('overlay absent when confidence is below 0.5', (tester) async {
-    await tester.pumpWidget(host(CameraScreen(
-      dependencies:
-          liveDetectionScanDependencies(detectionResult: _lowConfResult),
-      repository: FakeDocumentRepository(),
-    )));
+    final fake = FakeCameraPreviewController();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: ScanDependencies(
+          createPermissionService: () =>
+              FakeCameraPermissionService(CameraPermissionStatus.granted),
+          createPreviewController: () => fake,
+          createEdgeDetector: () => FakeEdgeDetector(result: _lowConfResult),
+        ),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
     await tester.pumpAndSettle();
 
-    await tester.pump(const Duration(milliseconds: 900));
+    fake.emitFrame(_bgraFrame());
     await tester.pump();
     await tester.pump();
 
     expect(find.byType(LiveQuadOverlay), findsNothing);
-  });
-
-  testWidgets('sampleFrame is called after timer fires', (tester) async {
-    final fakeController = FakeCameraPreviewController(
-      sampleFrameResult: kFakeJpegBytes,
-    );
-    await tester.pumpWidget(host(CameraScreen(
-      dependencies: ScanDependencies(
-        createPermissionService: () =>
-            FakeCameraPermissionService(CameraPermissionStatus.granted),
-        createPreviewController: () => fakeController,
-        createEdgeDetector: () =>
-            FakeEdgeDetector(result: _confidentResult),
-      ),
-      repository: FakeDocumentRepository(),
-    )));
-    await tester.pumpAndSettle();
-
-    expect(fakeController.sampleFrameCalls, 0);
-
-    await tester.pump(const Duration(milliseconds: 900));
-    await tester.pump();
-
-    expect(fakeController.sampleFrameCalls, greaterThan(0));
-  });
-
-  testWidgets('sampleFrame stops being called after shutter tap cancels timer',
-      (tester) async {
-    final fakeController = FakeCameraPreviewController(
-      sampleFrameResult: kFakeJpegBytes,
-    );
-    await tester.pumpWidget(host(CameraScreen(
-      dependencies: ScanDependencies(
-        createPermissionService: () =>
-            FakeCameraPermissionService(CameraPermissionStatus.granted),
-        createPreviewController: () => fakeController,
-        createEdgeDetector: () =>
-            FakeEdgeDetector(result: _confidentResult),
-      ),
-      repository: FakeDocumentRepository(),
-    )));
-    await tester.pumpAndSettle();
-
-    // Let the timer fire once
-    await tester.pump(const Duration(milliseconds: 900));
-    await tester.pump();
-    await tester.pump();
-    final callsAfterFirstTick = fakeController.sampleFrameCalls;
-    expect(callsAfterFirstTick, greaterThan(0));
-
-    // Tap shutter — this cancels the timer
-    await tester.tap(find.byKey(const Key('scan-shutter')));
-    await tester.pump();
-
-    // Advance another 1600ms — if timer were still alive it would fire twice more
-    await tester.pump(const Duration(milliseconds: 1600));
-    await tester.pump();
-
-    // sampleFrameCalls should not have grown (timer is cancelled)
-    expect(fakeController.sampleFrameCalls, equals(callsAfterFirstTick));
   });
 
   testWidgets('overlay appears when confidence is exactly 0.5', (tester) async {
@@ -147,24 +141,45 @@ void main() {
       ),
       confidence: 0.5,
     );
-    await tester.pumpWidget(host(CameraScreen(
-      dependencies: liveDetectionScanDependencies(detectionResult: boundaryResult),
-      repository: FakeDocumentRepository(),
-    )));
+    final fake = FakeCameraPreviewController();
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: ScanDependencies(
+          createPermissionService: () =>
+              FakeCameraPermissionService(CameraPermissionStatus.granted),
+          createPreviewController: () => fake,
+          createEdgeDetector: () => FakeEdgeDetector(result: boundaryResult),
+        ),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
     await tester.pumpAndSettle();
 
-    await tester.pump(const Duration(milliseconds: 900));
+    fake.emitFrame(_bgraFrame());
     await tester.pump();
     await tester.pump();
 
     expect(find.byType(LiveQuadOverlay), findsOneWidget);
   });
 
-  // NOTE: Timer-resume test (_sampleTimer restart after shutter + pop) was attempted
-  // but navigator.push() in the test harness blocks indefinitely. The real on-device
-  // flow correctly restarts the timer in _onShutter's post-push block, verified by
-  // integration tests and the device behavior. The null-guard (_sampleTimer == null)
-  // added to _doSample() after detect() prevents stale setState() if the timer fires
-  // while a stale frame is being detected post-shutter. This is covered by the core
-  // tests above (timer fires, timer cancels on shutter) plus the static guard itself.
+  testWidgets('stops sampling after shutter tap', (tester) async {
+    final fake =
+        FakeCameraPreviewController(captureReturnPath: '/nonexistent/x.jpg');
+    await tester.pumpWidget(MaterialApp(
+      home: CameraScreen(
+        dependencies: ScanDependencies(
+          createPermissionService: () =>
+              FakeCameraPermissionService(CameraPermissionStatus.granted),
+          createPreviewController: () => fake,
+          createEdgeDetector: () => FakeEdgeDetector(result: _confidentResult),
+        ),
+        repository: FakeDocumentRepository(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(fake.sampling, isTrue);
+    await tester.tap(find.byKey(const Key('scan-shutter')));
+    await tester.pump();
+    expect(fake.sampling, isFalse);
+  });
 }

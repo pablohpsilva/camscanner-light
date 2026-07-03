@@ -1,17 +1,17 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
 import '../library/image_enhancer.dart';
 import '../library/save_controller.dart';
+import 'camera_frame.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'gallery_picker.dart';
 import 'scan_controller.dart';
 import 'scan_dependencies.dart';
+import 'scan_flash_mode.dart';
 import 'scan_view_state.dart';
 import 'widgets/camera_preview_view.dart';
 import 'widgets/camera_unavailable_view.dart';
@@ -19,7 +19,7 @@ import 'widgets/permission_denied_view.dart';
 
 /// The Scan screen: requests camera permission and shows the live preview, or
 /// a graceful fallback. Capture (shutter) → review screen lives here (A3/B1).
-/// F3: periodic detection loop draws a live quad outline on the preview.
+/// F3: stream-based detection loop draws a live quad outline on the preview.
 class CameraScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentRepository repository;
@@ -47,9 +47,10 @@ class _CameraScreenState extends State<CameraScreen> {
   late final SaveController _saveController;
   late final EdgeDetector _edgeDetector;
   late final GalleryPicker _galleryPicker;
-  Timer? _sampleTimer;
+  bool _sampling = false;
+  bool _isDetecting = false;
+  ScanFlashMode _flashMode = ScanFlashMode.off;
   DetectionResult? _liveResult;
-  bool _isSampling = false;
   int? _activeDocId;
   int _pageCount = 0;
 
@@ -60,45 +61,65 @@ class _CameraScreenState extends State<CameraScreen> {
       permission: widget.dependencies.createPermissionService(),
       preview: widget.dependencies.createPreviewController(),
     );
+    // Register before start() so we catch the checking→ready transition.
+    _controller.addListener(_onControllerChanged);
     _controller.start();
     _saveController = SaveController(repository: widget.repository);
     _edgeDetector = widget.dependencies.createEdgeDetector();
     _galleryPicker = widget.dependencies.createGalleryPicker();
-    _startSampleTimer();
   }
 
-  void _startSampleTimer() {
-    _sampleTimer?.cancel();
-    _sampleTimer = Timer.periodic(
-      const Duration(milliseconds: 800),
-      (_) => unawaited(_doSample()),
-    );
+  /// Fired on every [ScanController] notification. Starts sampling the moment
+  /// the camera becomes ready (and not capturing). The `_sampling` guard in
+  /// [_startSampling] makes redundant calls safe.
+  void _onControllerChanged() {
+    if (_controller.status == ScanStatus.ready &&
+        !_sampling &&
+        !_controller.capturing) {
+      _startSampling();
+    }
   }
 
-  Future<void> _doSample() async {
-    if (_isSampling ||
+  void _startSampling() {
+    if (_sampling) return;
+    _sampling = true;
+    _controller.preview.startSampling(_onFrame);
+  }
+
+  void _stopSampling() {
+    if (!_sampling) return;
+    _sampling = false;
+    _controller.preview.stopSampling();
+  }
+
+  Future<void> _onFrame(CameraFrame frame) async {
+    if (_isDetecting ||
         _controller.capturing ||
         _controller.status != ScanStatus.ready) {
       return;
     }
-    _isSampling = true;
+    _isDetecting = true;
     try {
-      final bytes = await _controller.preview.sampleFrame();
-      if (!mounted || bytes == null || _sampleTimer == null) return;
-      final result = await _edgeDetector.detect(bytes);
-      if (!mounted || _sampleTimer == null) return;
+      final result = await _edgeDetector.detectFrame(frame);
+      if (!mounted) return;
       setState(() {
         _liveResult =
             (result != null && result.confidence >= 0.5) ? result : null;
       });
     } finally {
-      _isSampling = false;
+      _isDetecting = false;
     }
+  }
+
+  void _onFlashModeChanged(ScanFlashMode mode) {
+    setState(() => _flashMode = mode);
+    _controller.preview.setFlashMode(mode);
   }
 
   @override
   void dispose() {
-    _sampleTimer?.cancel();
+    _controller.removeListener(_onControllerChanged);
+    _stopSampling();
     // _edgeDetector is not disposed — OpenCvEdgeDetector is a const stateless instance.
     _controller.dispose();
     _saveController.dispose();
@@ -124,29 +145,30 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _onShutter() async {
-    _sampleTimer?.cancel();
-    _sampleTimer = null;
+    _stopSampling();
     final messenger = ScaffoldMessenger.of(context);
     final image = await _controller.capture();
+    // Re-stop: the controller's post-capture notifyListeners() fires
+    // _onControllerChanged which may restart sampling before we resume.
+    _stopSampling();
     if (!mounted) return;
     if (image == null) {
       messenger.showSnackBar(
         const SnackBar(content: Text('Could not capture photo. Try again.')),
       );
       if (mounted && _controller.status == ScanStatus.ready) {
-        _startSampleTimer();
+        _startSampling();
       }
       return;
     }
     await _reviewAndSave(image);
     if (mounted && _controller.status == ScanStatus.ready) {
-      _startSampleTimer();
+      _startSampling();
     }
   }
 
   Future<void> _onImport() async {
-    _sampleTimer?.cancel();
-    _sampleTimer = null;
+    _stopSampling();
     final messenger = ScaffoldMessenger.of(context);
     CapturedImage? image;
     try {
@@ -156,16 +178,16 @@ class _CameraScreenState extends State<CameraScreen> {
       messenger.showSnackBar(
         const SnackBar(content: Text("Couldn't import photo")),
       );
-      if (_controller.status == ScanStatus.ready) _startSampleTimer();
+      if (_controller.status == ScanStatus.ready) _startSampling();
       return;
     }
     if (!mounted) return;
     if (image == null) {
-      if (_controller.status == ScanStatus.ready) _startSampleTimer();
+      if (_controller.status == ScanStatus.ready) _startSampling();
       return;
     }
     await _reviewAndSave(image);
-    if (mounted && _controller.status == ScanStatus.ready) _startSampleTimer();
+    if (mounted && _controller.status == ScanStatus.ready) _startSampling();
   }
 
   Future<void> _onAccept(
@@ -264,7 +286,11 @@ class _CameraScreenState extends State<CameraScreen> {
                 capturing: _controller.capturing,
                 onShutter: _onShutter,
                 liveCorners: _liveResult?.corners,
-                previewSize: _controller.preview.previewSize,
+                previewSize: _liveResult != null
+                    ? _controller.preview.previewSize
+                    : null,
+                flashMode: _flashMode,
+                onFlashModeChanged: _onFlashModeChanged,
               );
             case ScanStatus.permissionDenied:
               return PermissionDeniedView(
