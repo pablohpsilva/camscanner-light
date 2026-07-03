@@ -56,9 +56,9 @@ double angleScore(List<Pt> quad) {
 /// Score in `[0,1]`: fill ratio of the source contour vs. its enclosing quad.
 /// ~1.0 when the contour is itself quadrilateral; low when the quad was
 /// synthesized (e.g. `minAreaRect`) around a ragged/non-rectangular blob.
-double rectangularityScore(double contourArea, double quadArea) {
-  if (quadArea <= 0) return 0.0;
-  return (contourArea / quadArea).clamp(0.0, 1.0);
+double rectangularityScore(double contourArea, double enclosingArea) {
+  if (enclosingArea <= 0) return 0.0;
+  return (contourArea / enclosingArea).clamp(0.0, 1.0);
 }
 
 /// Weighted detection confidence in `[0,1]`.

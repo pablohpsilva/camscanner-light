@@ -36,7 +36,12 @@ void main() {
       expect(await detector.detect(bytes), isNull);
     });
 
-    testWidgets('circular-only shape → null', (tester) async {
+    testWidgets('circular-only shape → best-guess quad (minAreaRect fallback)',
+        (tester) async {
+      // Best-guess-always: a large circle (~26% of frame, above the 5% floor)
+      // isn't a clean 4-point quad, so the pipeline returns its min-area
+      // bounding rectangle. Non-null, but a circle fills only ~π/4 of that
+      // rect, so confidence stays modest (the UI tints it amber/"please check").
       const cx = 320, cy = 240, r = 160;
       final image = img.Image(width: 640, height: 480, numChannels: 3);
       img.fill(image, color: img.ColorRgb8(0, 0, 0));
@@ -48,7 +53,10 @@ void main() {
         }
       }
       final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
-      expect(await detector.detect(bytes), isNull);
+      final result = await detector.detect(bytes);
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.9),
+          reason: 'a circle is not a clean rectangle — confidence must not be high');
     });
 
     testWidgets('corrupt bytes → null, no throw', (tester) async {
