@@ -1,0 +1,291 @@
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index 9526c28..21c7f17 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -97,20 +97,29 @@ abstract interface class DocumentRepository {
+     CapturedImage capture, {
+     CropCorners? corners,
+     ImageEnhancer? enhancer,
+   });
+ 
+   /// Recognizes the page at [position] of [documentId] via the OCR engine and
+   /// caches the recognized text + word boxes on the page (reads the flat
+   /// derivative if present, else the original). Throws [DocumentSaveException]
+   /// when the page row is missing.
+   Future<void> runOcr(int documentId, int position);
++
++  /// Materializes the page at [position] of [documentId]'s cached recognized
++  /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
++  /// named `<sanitized-document-name>_page_<position>.txt` under the system temp
++  /// dir — temporary, so the app does not accumulate exports (mirrors
++  /// [exportPdf]). A `.txt` carries no metadata, so no scrub pass is needed.
++  /// Nothing leaves the device. Throws [DocumentExportException] when the page
++  /// row is missing or has no recognized text (null/empty/whitespace).
++  Future<File> exportRecognizedText(int documentId, int position);
+ }
+ 
+ class DocumentSaveException implements Exception {
+   final String message;
+   const DocumentSaveException(this.message);
+   @override
+   String toString() => 'DocumentSaveException: $message';
+ }
+ 
+ class DocumentExportException implements Exception {
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index dd7c713..2f4ded1 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -229,30 +229,35 @@ class DriftDocumentRepository implements DocumentRepository {
+       final dir = await Directory.systemTemp.createTemp('pdf_export');
+       final safeName = await _pdfFileNameFor(documentId);
+       final file = File('${dir.path}/$safeName');
+       await file.writeAsBytes(bytes);
+       return file;
+     } catch (e) {
+       throw DocumentExportException('export failed: $e');
+     }
+   }
+ 
+-  Future<String> _pdfFileNameFor(int documentId) async {
++  /// Sanitized base name (no extension) from the document's name; 'document'
++  /// when the name is empty/unknown. Shared by all export filename builders.
++  Future<String> _exportBaseName(int documentId) async {
+     final doc = await (_db.select(_db.documents)
+           ..where((d) => d.id.equals(documentId)))
+         .getSingleOrNull();
+     final base = (doc?.name ?? 'document')
+         .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
+         .trim();
+-    return '${base.isEmpty ? 'document' : base}.pdf';
++    return base.isEmpty ? 'document' : base;
+   }
+ 
++  Future<String> _pdfFileNameFor(int documentId) async =>
++      '${await _exportBaseName(documentId)}.pdf';
++
+   @override
+   Future<File> exportPageAsImage(int documentId, int position) async {
+     final row = await (_db.select(_db.pages)
+           ..where((t) =>
+               t.documentId.equals(documentId) & t.position.equals(position)))
+         .getSingleOrNull();
+     if (row == null) {
+       throw DocumentExportException(
+           'exportImage failed: no page ($documentId, $position)');
+     }
+@@ -263,20 +268,45 @@ class DriftDocumentRepository implements DocumentRepository {
+       final scrubbed = _scrubber.scrub(bytes); // privacy: pass through scrubber
+       final rel = _fileStore.imageExportRelativeFor(documentId, position);
+       await _fileStore.writeRelative(rel, scrubbed);
+       return _fileStore.absoluteFor(rel);
+     } catch (e) {
+       if (e is DocumentExportException) rethrow;
+       throw DocumentExportException('exportImage failed: $e');
+     }
+   }
+ 
++  @override
++  Future<File> exportRecognizedText(int documentId, int position) async {
++    final row = await (_db.select(_db.pages)
++          ..where((t) =>
++              t.documentId.equals(documentId) & t.position.equals(position)))
++        .getSingleOrNull();
++    if (row == null) {
++      throw DocumentExportException(
++          'exportText failed: no page ($documentId, $position)');
++    }
++    final text = row.ocrText;
++    if (text == null || text.trim().isEmpty) {
++      throw const DocumentExportException('exportText failed: no recognized text');
++    }
++    try {
++      final dir = await Directory.systemTemp.createTemp('txt_export');
++      final base = await _exportBaseName(documentId);
++      final file = File('${dir.path}/${base}_page_$position.txt');
++      await file.writeAsString(text);
++      return file;
++    } catch (e) {
++      throw DocumentExportException('exportText failed: $e');
++    }
++  }
++
+   @override
+   Future<Document> rename(int documentId, String newName) async {
+     final trimmed = newName.trim();
+     if (trimmed.isEmpty) {
+       throw const DocumentRenameException('rename failed: empty name');
+     }
+     final modifiedUtc = _clock().toUtc();
+     final updated = await (_db.update(_db.documents)
+           ..where((t) => t.id.equals(documentId)))
+         .write(DocumentsCompanion(
+diff --git a/apps/mobile/test/features/library/export_recognized_text_test.dart b/apps/mobile/test/features/library/export_recognized_text_test.dart
+new file mode 100644
+index 0000000..f8e2d3c
+--- /dev/null
++++ b/apps/mobile/test/features/library/export_recognized_text_test.dart
+@@ -0,0 +1,68 @@
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++import 'dart:io';
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('o4txt');
++    db = AppDatabase(NativeDatabase.memory());
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: DocumentFileStore(base),
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  Future<int> seedPage({String? ocrText}) async {
++    final now = DateTime.now();
++    final docId = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'My Report', createdAt: now, modifiedAt: now));
++    await db.into(db.pages).insert(PagesCompanion.insert(
++        documentId: docId,
++        position: 1,
++        relativeImagePath: 'documents/$docId/page_1.jpg',
++        ocrText: Value(ocrText)));
++    return docId;
++  }
++
++  test('writes a temp .txt with the cached text and a sanitized name', () async {
++    final docId = await seedPage(ocrText: 'HELLO WORLD');
++    final file = await repo.exportRecognizedText(docId, 1);
++
++    expect(await file.readAsString(), 'HELLO WORLD');
++    expect(file.path, endsWith('My Report_page_1.txt'));
++    // Temp, not under the documents dir.
++    expect(file.path.contains(base.path), isFalse);
++  });
++
++  test('throws when the page has no recognized text', () async {
++    final docId = await seedPage(ocrText: null);
++    expect(() => repo.exportRecognizedText(docId, 1),
++        throwsA(isA<DocumentExportException>()));
++  });
++
++  test('throws when the page row does not exist', () async {
++    expect(() => repo.exportRecognizedText(999, 1),
++        throwsA(isA<DocumentExportException>()));
++  });
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index c8a2eee..319f5e6 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -29,54 +29,57 @@ class FakeDocumentRepository implements DocumentRepository {
+   final bool throwOnGetPages;
+   final bool throwOnDelete;
+   final bool throwOnExport;
+   final bool throwOnRename;
+   final bool throwOnUpdate;
+   final bool throwOnAddPage;
+   final bool throwOnReorder;
+   final bool throwOnDeletePage;
+   final bool throwOnReplacePage;
+   final bool throwOnExportImage;
++  final bool throwOnExportText;
+   final Completer<void>? gate;
+   final Completer<void>? exportGate;
+   final Completer<void>? listGate;
+   final Completer<void>? addPageGate;
+   final List<Document> documents;
+   final List<PageImage>? pages; // null => synthesize one non-loadable page
+   int createCalls = 0;
+   int listCalls = 0;
+   CropCorners? lastSavedCorners;
+   ImageEnhancer? lastSavedEnhancer;
+   int? lastUpdatedPosition;
+   CropCorners? lastUpdatedCorners;
+   int addPageCalls = 0;
+   List<int> lastReorderedPositions = <int>[];
+   int? lastDeletedPagePosition;
+   int? lastReplacedPagePosition;
+   final List<int> deletedIds = <int>[];
+   final List<int> exportedIds = <int>[];
+   final List<String> renamedTo = <String>[];
+   int? lastExportedImagePosition;
++  int? lastExportedTextPosition;
+ 
+   FakeDocumentRepository({
+     this.throwOnCreate = false,
+     this.throwOnList = false,
+     this.throwOnGetPages = false,
+     this.throwOnDelete = false,
+     this.throwOnExport = false,
+     this.throwOnRename = false,
+     this.throwOnUpdate = false,
+     this.throwOnAddPage = false,
+     this.throwOnReorder = false,
+     this.throwOnDeletePage = false,
+     this.throwOnReplacePage = false,
+     this.throwOnExportImage = false,
++    this.throwOnExportText = false,
+     this.gate,
+     this.exportGate,
+     this.listGate,
+     this.addPageGate,
+     List<Document>? documents,
+     this.pages,
+   }) : documents = documents ?? <Document>[];
+ 
+   late final List<PageImage>? _working =
+       pages == null ? null : List<PageImage>.from(pages!);
+@@ -133,20 +136,32 @@ class FakeDocumentRepository implements DocumentRepository {
+   @override
+   Future<File> exportPageAsImage(int documentId, int position) async {
+     if (throwOnExportImage) {
+       throw const DocumentExportException('fake: exportImage failed');
+     }
+     lastExportedImagePosition = position;
+     return File(
+         '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
+   }
+ 
++  @override
++  Future<File> exportRecognizedText(int documentId, int position) async {
++    lastExportedTextPosition = position;
++    if (throwOnExportText) {
++      throw const DocumentExportException('fake exportText failure');
++    }
++    final dir = await Directory.systemTemp.createTemp('faketxt');
++    final f = File('${dir.path}/page_$position.txt');
++    await f.writeAsString('fake recognized text');
++    return f;
++  }
++
+   @override
+   Future<List<DocumentSummary>> listDocumentSummaries() async {
+     listCalls++;
+     if (listGate != null) await listGate!.future;
+     if (throwOnList) {
+       throw StateError('fake: list failed');
+     }
+     // Synthesize: every fake document has one page and a deliberately
+     // NON-LOADABLE thumbnail path (host tests must not load a real Image.file).
+     return List<DocumentSummary>.unmodifiable(documents.map((d) =>

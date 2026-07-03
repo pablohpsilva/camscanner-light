@@ -1,0 +1,328 @@
+diff --git a/apps/mobile/lib/features/library/recognized_text_screen.dart b/apps/mobile/lib/features/library/recognized_text_screen.dart
+new file mode 100644
+index 0000000..13a3fb6
+--- /dev/null
++++ b/apps/mobile/lib/features/library/recognized_text_screen.dart
+@@ -0,0 +1,155 @@
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'package:share_plus/share_plus.dart'; // re-exports XFile
++
++import 'document_repository.dart';
++import 'page_image.dart';
++
++/// Shows a single page's cached OCR text: selectable, copyable, exportable as a
++/// temporary `.txt` via the share sheet. Loads the text authoritatively from
++/// the repository on init (with [initialText] as an instant-render seed), so it
++/// stays correct even if the caller's cached text is stale. When the page has
++/// no text yet, offers an on-demand "Recognize text" action (`runOcr`).
++class RecognizedTextScreen extends StatefulWidget {
++  final int documentId;
++  final int position;
++  final String name;
++  final String? initialText;
++  final DocumentRepository repository;
++
++  const RecognizedTextScreen({
++    super.key,
++    required this.documentId,
++    required this.position,
++    required this.name,
++    required this.repository,
++    this.initialText,
++  });
++
++  @override
++  State<RecognizedTextScreen> createState() => _RecognizedTextScreenState();
++}
++
++class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
++  String? _text;
++  bool _busy = false;
++
++  @override
++  void initState() {
++    super.initState();
++    _text = widget.initialText;
++    _load();
++  }
++
++  Future<void> _load() async {
++    setState(() => _busy = true);
++    try {
++      final pages = await widget.repository.getDocumentPages(widget.documentId);
++      if (!mounted) return;
++      PageImage? page;
++      for (final p in pages) {
++        if (p.position == widget.position) {
++          page = p;
++          break;
++        }
++      }
++      setState(() => _text = page?.ocrText);
++    } catch (_) {
++      // Keep whatever seed we had; surface nothing catastrophic.
++    } finally {
++      if (mounted) setState(() => _busy = false);
++    }
++  }
++
++  Future<void> _recognize() async {
++    setState(() => _busy = true);
++    try {
++      await widget.repository.runOcr(widget.documentId, widget.position);
++      await _load();
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't recognize text")),
++      );
++    } finally {
++      if (mounted) setState(() => _busy = false);
++    }
++  }
++
++  Future<void> _copy() async {
++    final t = _text;
++    if (t == null || t.isEmpty) return;
++    await Clipboard.setData(ClipboardData(text: t));
++    if (!mounted) return;
++    ScaffoldMessenger.of(context).showSnackBar(
++      const SnackBar(content: Text('Copied')),
++    );
++  }
++
++  Future<void> _share() async {
++    try {
++      final file = await widget.repository
++          .exportRecognizedText(widget.documentId, widget.position);
++      await SharePlus.instance.share(
++        ShareParams(files: [XFile(file.path)], subject: widget.name),
++      );
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't export text")),
++      );
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final text = _text;
++    final hasText = text != null && text.trim().isNotEmpty;
++    return Scaffold(
++      appBar: AppBar(
++        title: const Text('Text'),
++        actions: [
++          IconButton(
++            key: const Key('recognized-text-copy'),
++            tooltip: 'Copy',
++            icon: const Icon(Icons.copy),
++            onPressed: (_busy || !hasText) ? null : _copy,
++          ),
++          IconButton(
++            key: const Key('recognized-text-share'),
++            tooltip: 'Export as .txt',
++            icon: const Icon(Icons.share),
++            onPressed: (_busy || !hasText) ? null : _share,
++          ),
++        ],
++      ),
++      body: _busy && text == null
++          ? const Center(
++              key: Key('recognized-text-loading'),
++              child: CircularProgressIndicator())
++          : hasText
++              ? SingleChildScrollView(
++                  padding: const EdgeInsets.all(16),
++                  child: SelectableText(
++                    text,
++                    key: const Key('recognized-text-body'),
++                  ),
++                )
++              : Center(
++                  key: const Key('recognized-text-empty'),
++                  child: Column(
++                    mainAxisSize: MainAxisSize.min,
++                    children: [
++                      const Text('No text recognized on this page yet.'),
++                      const SizedBox(height: 12),
++                      FilledButton(
++                        key: const Key('recognized-text-run'),
++                        onPressed: _busy ? null : _recognize,
++                        child: const Text('Recognize text'),
++                      ),
++                    ],
++                  ),
++                ),
++    );
++  }
++}
+diff --git a/apps/mobile/test/features/library/recognized_text_screen_test.dart b/apps/mobile/test/features/library/recognized_text_screen_test.dart
+new file mode 100644
+index 0000000..3be66d8
+--- /dev/null
++++ b/apps/mobile/test/features/library/recognized_text_screen_test.dart
+@@ -0,0 +1,71 @@
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/recognized_text_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  Widget host(FakeDocumentRepository repo, {String? initialText}) => MaterialApp(
++        home: RecognizedTextScreen(
++          documentId: 1,
++          position: 1,
++          name: 'My Report',
++          initialText: initialText,
++          repository: repo,
++        ),
++      );
++
++  testWidgets('renders the page text as selectable text', (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD')],
++    );
++    await tester.pumpWidget(host(repo, initialText: 'HELLO WORLD'));
++    await tester.pumpAndSettle();
++
++    expect(find.byKey(const Key('recognized-text-body')), findsOneWidget);
++    expect(find.text('HELLO WORLD'), findsWidgets);
++  });
++
++  testWidgets('Copy places the text on the clipboard', (tester) async {
++    String? copied;
++    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
++        SystemChannels.platform, (call) async {
++      if (call.method == 'Clipboard.setData') {
++        copied = (call.arguments as Map)['text'] as String;
++      }
++      return null;
++    });
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD')],
++    );
++    await tester.pumpWidget(host(repo, initialText: 'HELLO WORLD'));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('recognized-text-copy')));
++    await tester.pumpAndSettle();
++
++    expect(copied, 'HELLO WORLD');
++    expect(find.text('Copied'), findsOneWidget);
++  });
++
++  testWidgets('empty page offers Recognize text; tapping runs OCR and shows result',
++      (tester) async {
++    final repo = FakeDocumentRepository(
++      // Page starts with NO text → empty state; runOcr "recognizes" the text.
++      pages: const [PageImage(position: 1, imagePath: '/x.jpg')],
++      recognizesText: 'RECOGNIZED NOW',
++    );
++    await tester.pumpWidget(host(repo, initialText: null));
++    await tester.pumpAndSettle();
++
++    expect(find.byKey(const Key('recognized-text-empty')), findsOneWidget);
++    await tester.tap(find.byKey(const Key('recognized-text-run')));
++    await tester.pumpAndSettle();
++
++    expect(repo.ranOcr, isTrue);
++    expect(find.byKey(const Key('recognized-text-body')), findsOneWidget);
++    expect(find.text('RECOGNIZED NOW'), findsWidgets);
++  });
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index 319f5e6..c129d5a 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -30,20 +30,22 @@ class FakeDocumentRepository implements DocumentRepository {
+   final bool throwOnDelete;
+   final bool throwOnExport;
+   final bool throwOnRename;
+   final bool throwOnUpdate;
+   final bool throwOnAddPage;
+   final bool throwOnReorder;
+   final bool throwOnDeletePage;
+   final bool throwOnReplacePage;
+   final bool throwOnExportImage;
+   final bool throwOnExportText;
++  final String? recognizesText;
++  bool ranOcr = false;
+   final Completer<void>? gate;
+   final Completer<void>? exportGate;
+   final Completer<void>? listGate;
+   final Completer<void>? addPageGate;
+   final List<Document> documents;
+   final List<PageImage>? pages; // null => synthesize one non-loadable page
+   int createCalls = 0;
+   int listCalls = 0;
+   CropCorners? lastSavedCorners;
+   ImageEnhancer? lastSavedEnhancer;
+@@ -66,20 +68,21 @@ class FakeDocumentRepository implements DocumentRepository {
+     this.throwOnDelete = false,
+     this.throwOnExport = false,
+     this.throwOnRename = false,
+     this.throwOnUpdate = false,
+     this.throwOnAddPage = false,
+     this.throwOnReorder = false,
+     this.throwOnDeletePage = false,
+     this.throwOnReplacePage = false,
+     this.throwOnExportImage = false,
+     this.throwOnExportText = false,
++    this.recognizesText,
+     this.gate,
+     this.exportGate,
+     this.listGate,
+     this.addPageGate,
+     List<Document>? documents,
+     this.pages,
+   }) : documents = documents ?? <Document>[];
+ 
+   late final List<PageImage>? _working =
+       pages == null ? null : List<PageImage>.from(pages!);
+@@ -276,21 +279,39 @@ class FakeDocumentRepository implements DocumentRepository {
+       throw const DocumentSaveException('fake: replacePage failed');
+     }
+     final w = _working;
+     if (w != null && w.indexWhere((p) => p.position == position) < 0) {
+       throw const DocumentSaveException('fake: no such page');
+     }
+     lastReplacedPagePosition = position;
+   }
+ 
+   @override
+-  Future<void> runOcr(int documentId, int position) async {}
++  Future<void> runOcr(int documentId, int position) async {
++    ranOcr = true;
++    final w = _working;
++    final t = recognizesText;
++    if (w != null && t != null) {
++      for (var i = 0; i < w.length; i++) {
++        if (w[i].position == position) {
++          w[i] = PageImage(
++            position: w[i].position,
++            imagePath: w[i].imagePath,
++            corners: w[i].corners,
++            flatImagePath: w[i].flatImagePath,
++            ocrText: t,
++            ocrWords: w[i].ocrWords,
++          );
++        }
++      }
++    }
++  }
+ }
+ 
+ /// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
+ /// or throw [WarpException].
+ ///
+ /// Default [returnValue] is a non-null stub so tests that pass non-full-frame
+ /// corners get a flat derivative without providing explicit bytes.
+ class FakeImageWarper implements ImageWarper {
+   final bool throws;
+   final Uint8List returnValue;

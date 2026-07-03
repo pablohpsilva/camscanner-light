@@ -1,0 +1,115 @@
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index d39cac2..6da2c9f 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -292,20 +292,40 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+           widget.documentId, ordered.map((p) => p.position).toList());
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't reorder pages")),
+       );
+       _load();
+     }
+   }
+ 
++  Future<void> _rotatePage() async {
++    final pages = _pages;
++    if (pages == null || pages.isEmpty) return;
++    final page = pages[_current];
++    try {
++      await widget.repository.rotatePage(widget.documentId, page.position);
++      // FileImage caches by path; the rotated bytes reuse the flat path, so
++      // clear the cache before reloading or the stale image would show.
++      PaintingBinding.instance.imageCache.clear();
++      PaintingBinding.instance.imageCache.clearLiveImages();
++      if (!mounted) return;
++      await _load();
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't rotate")),
++      );
++    }
++  }
++
+   Future<void> _editCrop(PageImage pg) async {
+     final corners = await Navigator.of(context).push<CropCorners>(
+       MaterialPageRoute<CropCorners>(
+         builder: (_) => EditCropScreen(
+           imagePath: pg.imagePath,
+           initialCorners: pg.corners,
+         ),
+       ),
+     );
+     if (corners == null || !mounted) return;
+@@ -357,31 +377,37 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             key: const Key('page-viewer-delete'),
+             tooltip: 'Delete',
+             icon: const Icon(Icons.delete_outline),
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
++              if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
++              PopupMenuItem<String>(
++                value: 'rotate',
++                key: Key('page-viewer-rotate'),
++                child: Text('Rotate'),
++              ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+                 child: Text('Retake page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+diff --git a/apps/mobile/test/features/library/page_viewer_rotate_test.dart b/apps/mobile/test/features/library/page_viewer_rotate_test.dart
+new file mode 100644
+index 0000000..44d5c4b
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_rotate_test.dart
+@@ -0,0 +1,26 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('Rotate invokes rotatePage for the current page', (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-rotate')));
++    await tester.pumpAndSettle();
++
++    expect(repo.rotateCalls, 1);
++    expect(repo.lastRotatedPosition, 1);
++  });
++}

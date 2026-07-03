@@ -1,0 +1,154 @@
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 7a5eef6..7387c6f 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -336,20 +336,46 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+       if (!mounted) return;
+       await _load();
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't update crop")),
+       );
+     }
+   }
+ 
++  Future<void> _splitAfter() async {
++    final pages = _pages;
++    if (pages == null || pages.isEmpty) return;
++    if (_current >= pages.length - 1) {
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(
++            content: Text('This is the last page — nothing to split after.')),
++      );
++      return;
++    }
++    final page = pages[_current];
++    try {
++      await widget.repository.splitAfter(widget.documentId, page.position);
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text('Split into a new document')),
++      );
++      await _load();
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't split")),
++      );
++    }
++  }
++
+   Future<void> _mergeAnother() async {
+     final sourceId =
+         await showMergePicker(context, widget.repository, widget.documentId);
+     if (sourceId == null || !mounted) return;
+     try {
+       await widget.repository.mergeInto(widget.documentId, sourceId);
+       if (!mounted) return;
+       await _load();
+     } catch (_) {
+       if (!mounted) return;
+@@ -396,20 +422,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             icon: const Icon(Icons.delete_outline),
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'merge') unawaited(_mergeAnother());
++              if (v == 'split') unawaited(_splitAfter());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+@@ -417,20 +444,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+               PopupMenuItem<String>(
+                 value: 'rotate',
+                 key: Key('page-viewer-rotate'),
+                 child: Text('Rotate'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'merge',
+                 key: Key('page-viewer-merge'),
+                 child: Text('Merge another document…'),
+               ),
++              PopupMenuItem<String>(
++                value: 'split',
++                key: Key('page-viewer-split'),
++                child: Text('Split after this page'),
++              ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+                 child: Text('Retake page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+diff --git a/apps/mobile/test/features/library/page_viewer_split_test.dart b/apps/mobile/test/features/library/page_viewer_split_test.dart
+new file mode 100644
+index 0000000..3a9e32b
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_split_test.dart
+@@ -0,0 +1,49 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  Future<void> openMenuAndSplit(WidgetTester tester) async {
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-split')));
++    await tester.pumpAndSettle();
++  }
++
++  testWidgets('Split after this page splits when not on the last page',
++      (tester) async {
++    final repo = FakeDocumentRepository(pages: const [
++      PageImage(position: 1, imagePath: '/a.jpg'),
++      PageImage(position: 2, imagePath: '/b.jpg'),
++    ]);
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await openMenuAndSplit(tester);
++
++    expect(repo.lastSplitDoc, 7);
++    expect(repo.lastSplitPosition, 1);
++    expect(find.text('Split into a new document'), findsOneWidget);
++  });
++
++  testWidgets('Split on the only (last) page shows a message and does not split',
++      (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await openMenuAndSplit(tester);
++
++    expect(repo.lastSplitDoc, isNull);
++    expect(find.textContaining('last page'), findsOneWidget);
++  });
++}

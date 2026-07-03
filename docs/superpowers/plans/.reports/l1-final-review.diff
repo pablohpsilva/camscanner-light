@@ -1,0 +1,813 @@
+diff --git a/apps/mobile/integration_test/l1_merge_documents.feature b/apps/mobile/integration_test/l1_merge_documents.feature
+new file mode 100644
+index 0000000..bab19a2
+--- /dev/null
++++ b/apps/mobile/integration_test/l1_merge_documents.feature
+@@ -0,0 +1,13 @@
++Feature: Merge documents
++
++  Scenario: Merge another document into the open one
++    Given the app is launched with camera permission granted and empty storage
++    When I tap the Scan button
++    And I capture and accept the first page
++    And I tap Done
++    And I tap the Scan button
++    And I capture and accept the first page
++    And I tap Done
++    And I open the first document
++    And I merge the other document
++    Then I see two page thumbnails
+diff --git a/apps/mobile/integration_test/l1_merge_documents_device_test.dart b/apps/mobile/integration_test/l1_merge_documents_device_test.dart
+new file mode 100644
+index 0000000..c85b88b
+--- /dev/null
++++ b/apps/mobile/integration_test/l1_merge_documents_device_test.dart
+@@ -0,0 +1,57 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:integration_test/integration_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets('mergeInto appends pages and deletes source on device',
++      (tester) async {
++    final base = await Directory.systemTemp.createTemp('l1dev');
++    final db = AppDatabase(NativeDatabase.memory());
++    final store = DocumentFileStore(base);
++    final repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++
++    final jpeg = Uint8List.fromList(
++        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++    Future<int> mk(String name, int pages) async {
++      final now = DateTime.now();
++      final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++          name: name, createdAt: now, modifiedAt: now));
++      for (var p = 1; p <= pages; p++) {
++        final rel = 'documents/$id/page_$p.jpg';
++        await store.writeRelative(rel, jpeg);
++        await db.into(db.pages).insert(PagesCompanion.insert(
++            documentId: id, position: p, relativeImagePath: rel));
++      }
++      return id;
++    }
++
++    final target = await mk('T', 2);
++    final source = await mk('S', 1);
++    await repo.mergeInto(target, source);
++
++    expect((await repo.getDocumentPages(target)).length, 3);
++    expect((await repo.getDocumentPages(source)), isEmpty);
++
++    await db.close();
++    await base.delete(recursive: true);
++  });
++}
+diff --git a/apps/mobile/integration_test/l1_merge_documents_test.dart b/apps/mobile/integration_test/l1_merge_documents_test.dart
+new file mode 100644
+index 0000000..4eb9b59
+--- /dev/null
++++ b/apps/mobile/integration_test/l1_merge_documents_test.dart
+@@ -0,0 +1,33 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint, type=warning
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++
++import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
++import './../test/step/i_tap_the_scan_button.dart';
++import './../test/step/i_capture_and_accept_the_first_page.dart';
++import './../test/step/i_tap_done.dart';
++import './../test/step/i_open_the_first_document.dart';
++import './../test/step/i_merge_the_other_document.dart';
++import './../test/step/i_see_two_page_thumbnails.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  group('''Merge documents''', () {
++    testWidgets('''Merge another document into the open one''', (tester) async {
++      await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
++      await iTapTheScanButton(tester);
++      await iCaptureAndAcceptTheFirstPage(tester);
++      await iTapDone(tester);
++      await iTapTheScanButton(tester);
++      await iCaptureAndAcceptTheFirstPage(tester);
++      await iTapDone(tester);
++      await iOpenTheFirstDocument(tester);
++      await iMergeTheOtherDocument(tester);
++      await iSeeTwoPageThumbnails(tester);
++    });
++  });
++}
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index 5905f73..7d63d46 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -117,20 +117,28 @@ abstract interface class DocumentRepository {
+   /// quarter-turn). Nothing leaves the device. Throws [DocumentSaveException]
+   /// when the page row is missing or its image cannot be decoded.
+   Future<void> rotatePage(int documentId, int position);
+ 
+   /// Recognizes the page at [position] of [documentId] via the OCR engine and
+   /// caches the recognized text + word boxes on the page (reads the flat
+   /// derivative if present, else the original). Throws [DocumentSaveException]
+   /// when the page row is missing.
+   Future<void> runOcr(int documentId, int position);
+ 
++  /// Appends every page of [sourceDocumentId] (in position order) to
++  /// [targetDocumentId] — copying each page's image, flat derivative, corners,
++  /// and cached OCR text/boxes verbatim — then deletes the source document.
++  /// Merged files are named from the source id so they never collide with the
++  /// target's existing files. Nothing leaves the device. Throws
++  /// [DocumentSaveException] when target == source or on any IO/DB failure.
++  Future<void> mergeInto(int targetDocumentId, int sourceDocumentId);
++
+   /// Materializes the page at [position] of [documentId]'s cached recognized
+   /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
+   /// named `<sanitized-document-name>_page_<position>.txt` under the system temp
+   /// dir — temporary, so the app does not accumulate exports (mirrors
+   /// [exportPdf]). A `.txt` carries no metadata, so no scrub pass is needed.
+   /// Nothing leaves the device. Throws [DocumentExportException] when the page
+   /// row is missing or has no recognized text (null/empty/whitespace).
+   Future<File> exportRecognizedText(int documentId, int position);
+ }
+ 
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index e399346..1a90c8b 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -673,20 +673,80 @@ class DriftDocumentRepository implements DocumentRepository {
+         await (_db.update(_db.pages)
+               ..where((t) => t.id.equals(rowId)))
+             .write(PagesCompanion(position: Value(newPosition)));
+       }
+       await (_db.update(_db.documents)
+             ..where((d) => d.id.equals(documentId)))
+           .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+     });
+   }
+ 
++  @override
++  Future<void> mergeInto(int targetDocumentId, int sourceDocumentId) async {
++    if (targetDocumentId == sourceDocumentId) {
++      throw const DocumentSaveException('mergeInto: target == source');
++    }
++    try {
++      final maxRow = await (_db.select(_db.pages)
++            ..where((p) => p.documentId.equals(targetDocumentId))
++            ..orderBy([(p) => OrderingTerm.desc(p.position)])
++            ..limit(1))
++          .getSingleOrNull();
++      final targetMax = maxRow?.position ?? 0;
++      final sourcePages = await (_db.select(_db.pages)
++            ..where((p) => p.documentId.equals(sourceDocumentId))
++            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
++          .get();
++
++      // Copy files first (outside the DB txn), building the row inserts.
++      final inserts = <PagesCompanion>[];
++      var k = 0;
++      for (final src in sourcePages) {
++        k++;
++        final imageRel =
++            'documents/$targetDocumentId/page_m${sourceDocumentId}_${src.position}.jpg';
++        final srcBytes =
++            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
++        await _fileStore.writeRelative(imageRel, srcBytes);
++        String? flatRel;
++        if (src.flatRelativePath != null) {
++          final flatBytes =
++              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
++          flatRel = _fileStore.flatForImage(imageRel);
++          await _fileStore.writeRelative(flatRel, flatBytes);
++        }
++        inserts.add(PagesCompanion.insert(
++          documentId: targetDocumentId,
++          position: targetMax + k,
++          relativeImagePath: imageRel,
++          corners: Value(src.corners),
++          flatRelativePath: Value(flatRel),
++          ocrText: Value(src.ocrText),
++          ocrBoxes: Value(src.ocrBoxes),
++        ));
++      }
++      await _db.transaction(() async {
++        for (final c in inserts) {
++          await _db.into(_db.pages).insert(c);
++        }
++      });
++      await (_db.update(_db.documents)
++            ..where((d) => d.id.equals(targetDocumentId)))
++          .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
++    } catch (e) {
++      if (e is DocumentSaveException) rethrow;
++      throw DocumentSaveException('mergeInto failed: $e');
++    }
++    // Remove the now-copied source (rows + dir). Separate from the txn above.
++    await deleteDocument(sourceDocumentId);
++  }
++
+   /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
+   /// save — and does not run for the NoOp engine (skips wasted work in tests).
+   void _triggerOcr(int documentId, int position) {
+     if (_ocrEngine is NoOpOcrEngine) return;
+     // ignore: discarded_futures
+     runOcr(documentId, position).catchError((_) {});
+   }
+ 
+   String _defaultName(DateTime t) {
+     String two(int n) => n.toString().padLeft(2, '0');
+diff --git a/apps/mobile/lib/features/library/merge_picker_dialog.dart b/apps/mobile/lib/features/library/merge_picker_dialog.dart
+new file mode 100644
+index 0000000..5a491a5
+--- /dev/null
++++ b/apps/mobile/lib/features/library/merge_picker_dialog.dart
+@@ -0,0 +1,94 @@
++import 'package:flutter/material.dart';
++
++import 'document_repository.dart';
++import 'document_summary.dart';
++
++/// Shows a dialog listing every document EXCEPT [currentDocumentId] and resolves
++/// to the chosen document's id (or null if cancelled / none available).
++Future<int?> showMergePicker(
++    BuildContext context, DocumentRepository repository, int currentDocumentId) {
++  return showDialog<int>(
++    context: context,
++    builder: (_) => MergePickerDialog(
++        repository: repository, currentDocumentId: currentDocumentId),
++  );
++}
++
++class MergePickerDialog extends StatefulWidget {
++  final DocumentRepository repository;
++  final int currentDocumentId;
++  const MergePickerDialog({
++    super.key,
++    required this.repository,
++    required this.currentDocumentId,
++  });
++
++  @override
++  State<MergePickerDialog> createState() => _MergePickerDialogState();
++}
++
++class _MergePickerDialogState extends State<MergePickerDialog> {
++  List<DocumentSummary>? _others;
++
++  @override
++  void initState() {
++    super.initState();
++    _load();
++  }
++
++  Future<void> _load() async {
++    try {
++      final all = await widget.repository.listDocumentSummaries();
++      if (!mounted) return;
++      setState(() => _others = all
++          .where((s) => s.document.id != widget.currentDocumentId)
++          .toList());
++    } catch (_) {
++      if (mounted) setState(() => _others = const []);
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final others = _others;
++    return AlertDialog(
++      key: const Key('merge-picker-dialog'),
++      title: const Text('Merge another document'),
++      content: SizedBox(
++        width: double.maxFinite,
++        child: others == null
++            ? const SizedBox(
++                height: 64,
++                child: Center(child: CircularProgressIndicator()))
++            : others.isEmpty
++                ? const Padding(
++                    key: Key('merge-picker-empty'),
++                    padding: EdgeInsets.symmetric(vertical: 16),
++                    child: Text('No other documents to merge.'),
++                  )
++                : ListView(
++                    shrinkWrap: true,
++                    children: [
++                      for (final s in others)
++                        ListTile(
++                          key: Key('merge-picker-item-${s.document.id}'),
++                          title: Text(s.document.name),
++                          subtitle: Text(s.pageCount == 1
++                              ? '1 page'
++                              : '${s.pageCount} pages'),
++                          onTap: () =>
++                              Navigator.of(context).pop(s.document.id),
++                        ),
++                    ],
++                  ),
++      ),
++      actions: [
++        TextButton(
++          key: const Key('merge-picker-cancel'),
++          onPressed: () => Navigator.of(context).pop(),
++          child: const Text('Cancel'),
++        ),
++      ],
++    );
++  }
++}
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 6da2c9f..7a5eef6 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -1,20 +1,21 @@
+ import 'dart:async'; // unawaited
+ import 'dart:io';
+ 
+ import 'package:flutter/material.dart';
+ 
+ import '../scan/camera_screen.dart';
+ import '../scan/scan_dependencies.dart';
+ import 'crop_corners.dart';
+ import 'document_repository.dart';
+ import 'edit_crop_screen.dart';
++import 'merge_picker_dialog.dart';
+ import 'page_image.dart';
+ import 'pdf_preview_screen.dart';
+ import 'recognized_text_screen.dart';
+ import 'widgets/page_thumbnail_strip.dart';
+ import 'widgets/rename_dialog.dart';
+ 
+ /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
+ /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
+ /// loading / error+retry / empty / loaded. The delete action confirms, deletes
+ /// (row + files), and pops back to the list. The SCREEN owns the delete
+@@ -335,20 +336,36 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+       if (!mounted) return;
+       await _load();
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't update crop")),
+       );
+     }
+   }
+ 
++  Future<void> _mergeAnother() async {
++    final sourceId =
++        await showMergePicker(context, widget.repository, widget.documentId);
++    if (sourceId == null || !mounted) return;
++    try {
++      await widget.repository.mergeInto(widget.documentId, sourceId);
++      if (!mounted) return;
++      await _load();
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't merge")),
++      );
++    }
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       appBar: AppBar(
+         title: Text(_name),
+         actions: [
+           IconButton(
+             key: const Key('page-viewer-rename'),
+             tooltip: 'Rename',
+             icon: const Icon(Icons.edit_outlined),
+@@ -378,36 +395,42 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             tooltip: 'Delete',
+             icon: const Icon(Icons.delete_outline),
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'rotate') unawaited(_rotatePage());
++              if (v == 'merge') unawaited(_mergeAnother());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'rotate',
+                 key: Key('page-viewer-rotate'),
+                 child: Text('Rotate'),
+               ),
++              PopupMenuItem<String>(
++                value: 'merge',
++                key: Key('page-viewer-merge'),
++                child: Text('Merge another document…'),
++              ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+                 child: Text('Retake page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+diff --git a/apps/mobile/test/features/library/merge_documents_test.dart b/apps/mobile/test/features/library/merge_documents_test.dart
+new file mode 100644
+index 0000000..f74d22b
+--- /dev/null
++++ b/apps/mobile/test/features/library/merge_documents_test.dart
+@@ -0,0 +1,114 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/ocr/ocr_result.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('l1merge');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  Uint8List jpeg() =>
++      Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++
++  // Creates a document with [pageCount] pages; page 1 optionally gets a flat + boxes.
++  Future<int> seedDoc(String name, int pageCount,
++      {bool firstHasFlat = false, String? firstOcrText}) async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now));
++    for (var pos = 1; pos <= pageCount; pos++) {
++      final rel = 'documents/$id/page_$pos.jpg';
++      await store.writeRelative(rel, jpeg());
++      String? flatRel;
++      if (pos == 1 && firstHasFlat) {
++        flatRel = store.flatForImage(rel);
++        await store.writeRelative(flatRel, jpeg());
++      }
++      await db.into(db.pages).insert(PagesCompanion.insert(
++            documentId: id,
++            position: pos,
++            relativeImagePath: rel,
++            flatRelativePath: Value(flatRel),
++            ocrText: Value(pos == 1 ? firstOcrText : null),
++            ocrBoxes: Value(pos == 1 && firstOcrText != null
++                ? const OcrResult(text: 'x', words: [
++                    OcrWordBox(text: 'x', left: 0.1, top: 0.1, right: 0.2, bottom: 0.2)
++                  ]).encodeBoxes()
++                : null),
++          ));
++    }
++    return id;
++  }
++
++  test('appends source pages to target in order and deletes the source',
++      () async {
++    final target = await seedDoc('Target', 2);
++    final source =
++        await seedDoc('Source', 2, firstHasFlat: true, firstOcrText: 'HELLO');
++
++    await repo.mergeInto(target, source);
++
++    final pages = await repo.getDocumentPages(target);
++    expect(pages.length, 4);
++    expect(pages.map((p) => p.position), [1, 2, 3, 4]);
++    // The merged first source page (now position 3) kept its flat + OCR.
++    final merged = pages[2];
++    expect(merged.flatImagePath, isNotNull);
++    expect(File(merged.flatImagePath!).existsSync(), isTrue);
++    expect(merged.ocrText, 'HELLO');
++    expect(merged.ocrWords, isNotEmpty);
++    expect(File(merged.imagePath).existsSync(), isTrue);
++    expect(merged.imagePath, contains('page_m${source}_1.jpg'));
++
++    // Source is gone (rows + dir).
++    expect(await repo.getDocumentPages(source), isEmpty);
++    expect(Directory('${base.path}/documents/$source').existsSync(), isFalse);
++  });
++
++  test('merging a source page without a flat leaves flatImagePath null',
++      () async {
++    final target = await seedDoc('T', 1);
++    final source = await seedDoc('S', 1); // no flat
++    await repo.mergeInto(target, source);
++    final pages = await repo.getDocumentPages(target);
++    expect(pages.length, 2);
++    expect(pages[1].flatImagePath, isNull);
++  });
++
++  test('rejects merging a document into itself', () async {
++    final id = await seedDoc('Self', 1);
++    expect(() => repo.mergeInto(id, id), throwsA(isA<DocumentSaveException>()));
++  });
++}
+diff --git a/apps/mobile/test/features/library/page_viewer_merge_test.dart b/apps/mobile/test/features/library/page_viewer_merge_test.dart
+new file mode 100644
+index 0000000..28b7ded
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_merge_test.dart
+@@ -0,0 +1,76 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/document.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  Document makeDoc(int id, String name) => Document(
++      id: id,
++      name: name,
++      createdAt: DateTime.utc(2026, 7, 1),
++      modifiedAt: DateTime.utc(2026, 7, 1));
++
++  testWidgets('Merge lists other documents and merges the chosen one',
++      (tester) async {
++    final repo = FakeDocumentRepository(
++      documents: [makeDoc(1, 'Alpha'), makeDoc(2, 'Beta')],
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Alpha', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-merge')));
++    await tester.pumpAndSettle();
++
++    // Dialog shows the OTHER document, not the current one.
++    expect(find.byKey(const Key('merge-picker-dialog')), findsOneWidget);
++    // "Beta" appears inside the dialog (the other doc).
++    expect(
++      find.descendant(
++        of: find.byKey(const Key('merge-picker-dialog')),
++        matching: find.text('Beta'),
++      ),
++      findsOneWidget,
++    );
++    // "Alpha" must NOT appear inside the dialog (current doc is filtered out).
++    expect(
++      find.descendant(
++        of: find.byKey(const Key('merge-picker-dialog')),
++        matching: find.text('Alpha'),
++      ),
++      findsNothing,
++    );
++
++    await tester.tap(find.byKey(const Key('merge-picker-item-2')));
++    await tester.pumpAndSettle();
++
++    expect(repo.lastMergeTarget, 1);
++    expect(repo.lastMergeSource, 2);
++  });
++
++  testWidgets('Merge shows an empty message when there are no other documents',
++      (tester) async {
++    final repo = FakeDocumentRepository(
++      documents: [makeDoc(1, 'Only')],
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Only', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-merge')));
++    await tester.pumpAndSettle();
++
++    expect(find.byKey(const Key('merge-picker-empty')), findsOneWidget);
++  });
++}
+diff --git a/apps/mobile/test/step/i_merge_the_other_document.dart b/apps/mobile/test/step/i_merge_the_other_document.dart
+new file mode 100644
+index 0000000..68eb96f
+--- /dev/null
++++ b/apps/mobile/test/step/i_merge_the_other_document.dart
+@@ -0,0 +1,14 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I merge the other document
++Future<void> iMergeTheOtherDocument(WidgetTester tester) async {
++  await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++  await tester.pumpAndSettle();
++  await tester.tap(find.byKey(const Key('page-viewer-merge')));
++  await tester.pumpAndSettle();
++  // Pick the first document in the merge picker (the other document).
++  await tester.tap(find.byWidgetPredicate((w) =>
++      w is ListTile && w.key.toString().contains('merge-picker-item-')));
++  await tester.pumpAndSettle();
++}
+diff --git a/apps/mobile/test/step/i_see_two_page_thumbnails.dart b/apps/mobile/test/step/i_see_two_page_thumbnails.dart
+new file mode 100644
+index 0000000..dd51a9c
+--- /dev/null
++++ b/apps/mobile/test/step/i_see_two_page_thumbnails.dart
+@@ -0,0 +1,13 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I see two page thumbnails
++Future<void> iSeeTwoPageThumbnails(WidgetTester tester) async {
++  await tester.pumpAndSettle();
++  // The thumbnail strip renders one keyed thumbnail per page (index-based).
++  // Two thumbnails ⇒ the merge produced a 2-page document. (This mirrors the
++  // proven `i_see_the_page_thumbnail_strip` step's keys.)
++  expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
++  expect(find.byKey(const Key('page-thumb-0')), findsOneWidget);
++  expect(find.byKey(const Key('page-thumb-1')), findsOneWidget);
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index ae6e5d8..896b883 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -306,20 +306,32 @@ class FakeDocumentRepository implements DocumentRepository {
+     if (throwOnReplacePage) {
+       throw const DocumentSaveException('fake: replacePage failed');
+     }
+     final w = _working;
+     if (w != null && w.indexWhere((p) => p.position == position) < 0) {
+       throw const DocumentSaveException('fake: no such page');
+     }
+     lastReplacedPagePosition = position;
+   }
+ 
++  int? lastMergeTarget;
++  int? lastMergeSource;
++
++  @override
++  Future<void> mergeInto(int targetDocumentId, int sourceDocumentId) async {
++    if (throwOnUpdate) {
++      throw const DocumentSaveException('fake: merge failed');
++    }
++    lastMergeTarget = targetDocumentId;
++    lastMergeSource = sourceDocumentId;
++  }
++
+   int rotateCalls = 0;
+   int? lastRotatedPosition;
+ 
+   @override
+   Future<void> rotatePage(int documentId, int position) async {
+     if (throwOnUpdate) {
+       throw const DocumentSaveException('fake: rotate failed');
+     }
+     rotateCalls++;
+     lastRotatedPosition = position;
+diff --git a/docs/superpowers/plans/00-plans-index.md b/docs/superpowers/plans/00-plans-index.md
+index ccb3f5a..1714b36 100644
+--- a/docs/superpowers/plans/00-plans-index.md
++++ b/docs/superpowers/plans/00-plans-index.md
+@@ -72,19 +72,20 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes
+ | H5 | Multi-page PDF export | 07 | `2026-07-01-h5-multipage-pdf.md` | ✅ **built & gated** |
+ | I1 | Export page as image | 10 | `2026-07-01-i1-export-image.md` | ✅ **built & gated** |
+ | I2 | Gallery import | 01 | `2026-07-01-i2-gallery-import.md` | ✅ **built & gated** |
+ | O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
+ | O2 | OCR engine (ML Kit) + auto-run after save | 08 | `2026-07-01-o2-mlkit-engine.md`¹ | ✅ **built & merged** |
+ | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
+ | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
+ | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
+ | J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
+ | K1 | Rotate a page 90° | 09 | `2026-07-01-k1-rotate-page.md` | ✅ **built & gated** |
++| L1 | Merge documents | 09 | `2026-07-01-l1-merge-documents.md` | ✅ **built & gated** |
+ 
+ ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
+ 
+ Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
+ own ordered plan files once Sub-project 1 is complete and gated.
+ 
+ Cross-cutting concerns (metadata scrubber, searchable-PDF text-layer interface,
+ password) are introduced as shared, single-responsibility files in the first
+ plan that needs them and reused thereafter (DRY).
+diff --git a/scripts/verify/l1.sh b/scripts/verify/l1.sh
+new file mode 100755
+index 0000000..f8dc896
+--- /dev/null
++++ b/scripts/verify/l1.sh
+@@ -0,0 +1,59 @@
++#!/usr/bin/env bash
++# Verify L1 (merge documents) acceptance criteria.
++# Run from repository root: bash scripts/verify/l1.sh
++# VERIFY_SKIP_DEVICE=1 skips the on-device integration tests.
++
++DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++# shellcheck source=lib.sh
++source "$DIR/lib.sh"
++cd "$ROOT"
++
++echo "== L1 verification =="
++
++require_tool flutter
++require_tool pnpm
++
++assert_file_has "mergeInto on the interface" \
++  "apps/mobile/lib/features/library/document_repository.dart" \
++  "mergeInto"
++
++assert_file_has "mergeInto in DriftDocumentRepository" \
++  "apps/mobile/lib/features/library/drift/drift_document_repository.dart" \
++  "mergeInto"
++
++assert_file_has "merge picker dialog exists" \
++  "apps/mobile/lib/features/library/merge_picker_dialog.dart" \
++  "MergePickerDialog"
++
++assert_file_has "page viewer wires Merge" \
++  "apps/mobile/lib/features/library/page_viewer_screen.dart" \
++  "page-viewer-merge"
++
++assert_file_has "BDD feature exists" \
++  "apps/mobile/integration_test/l1_merge_documents.feature" \
++  "Merge documents"
++
++assert_file_has "generated BDD test exists" \
++  "apps/mobile/integration_test/l1_merge_documents_test.dart" \
++  "merge"
++
++bash "$ROOT/scripts/setup-cv-host-test.sh"
++export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
++export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
++
++assert_cmd "host tests pass" "All tests passed!" \
++  pnpm nx run mobile:test --skip-nx-cache
++
++assert_cmd "flutter analyze clean" "No issues found" \
++  bash -c "cd apps/mobile && flutter analyze --no-fatal-infos"
++
++if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
++  warn "VERIFY_SKIP_DEVICE=1 — on-device L1 tests skipped (must pass on a real device before gate)"
++else
++  assert_cmd "on-device merge test passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/l1_merge_documents_device_test.dart"
++  assert_cmd "on-device BDD scenario passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/l1_merge_documents_test.dart"
++fi
++
++echo "== L1 verification complete =="

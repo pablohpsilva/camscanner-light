@@ -1,0 +1,267 @@
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index bdfae89..a0a86fd 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -35,20 +35,27 @@ abstract interface class DocumentRepository {
+ 
+   /// Deletes [documentId], its pages, and its on-disk image files. Row-first:
+   /// an authoritative DB delete (pages then document, one transaction), then a
+   /// best-effort file cleanup. A non-existent id is a no-op.
+   Future<void> deleteDocument(int documentId);
+ 
+   /// Generates a PDF of [documentId] to on-device storage and returns the file.
+   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
+   Future<File> exportPdf(int documentId);
+ 
++  /// Builds [documentId]'s PDF and returns it AES-256 encrypted with [password]
++  /// as a temporary file (same temp-file discipline as [exportPdf]). The
++  /// recipient needs the password to open it. Nothing leaves the device. Throws
++  /// [DocumentExportException] when the document has no pages or on build/
++  /// encrypt/IO failure.
++  Future<File> exportProtectedPdf(int documentId, String password);
++
+   /// Exports the page at [position] of [documentId] as a standalone JPG on device.
+   /// Reads the page's display image (the flattened derivative when present, else
+   /// the original capture), passes the bytes through the metadata scrubber, writes
+   /// `documents/<id>/page_<position>_export.jpg`, and returns the file. Nothing
+   /// leaves the device. Throws [DocumentExportException] when the page row/file is
+   /// missing or the scrub fails.
+   Future<File> exportPageAsImage(int documentId, int position);
+ 
+   /// Exports EVERY page of [documentId] as a standalone scrubbed JPG (delegating
+   /// to [exportPageAsImage] per page), returning the files in page order.
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index e0c01ca..01b0463 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -9,49 +9,53 @@ import '../document.dart';
+ import '../document_file_store.dart';
+ import '../document_repository.dart';
+ import '../document_summary.dart';
+ import '../image_enhancer.dart';
+ import '../image_metadata_scrubber.dart';
+ import '../image_warper.dart';
+ import '../ocr/ocr_engine.dart';
+ import '../ocr/ocr_result.dart';
+ import '../page_image.dart';
+ import '../pdf/pdf_builder.dart';
++import '../pdf/pdf_encryptor.dart';
+ import 'app_database.dart' hide Document;
+ 
+ /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
+ /// inserts the rows inside a single transaction so the DB never holds a partial
+ /// record. Stores RELATIVE image paths.
+ class DriftDocumentRepository implements DocumentRepository {
+   final AppDatabase _db;
+   final ImageMetadataScrubber _scrubber;
+   final DocumentFileStore _fileStore;
+   final DateTime Function() _clock;
+   final PdfBuilder _pdfBuilder;
+   final ImageWarper _warper;
+   final OcrEngine _ocrEngine;
++  final PdfEncryptor _encryptor;
+ 
+   DriftDocumentRepository({
+     required AppDatabase db,
+     required ImageMetadataScrubber scrubber,
+     required DocumentFileStore fileStore,
+     required DateTime Function() clock,
+     required PdfBuilder pdfBuilder,
+     required ImageWarper warper,
+     OcrEngine ocrEngine = const NoOpOcrEngine(),
++    PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
+   })  : _db = db, // ignore: prefer_initializing_formals
+         _scrubber = scrubber, // ignore: prefer_initializing_formals
+         _fileStore = fileStore, // ignore: prefer_initializing_formals
+         _clock = clock, // ignore: prefer_initializing_formals
+         _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
+         _warper = warper, // ignore: prefer_initializing_formals
+-        _ocrEngine = ocrEngine; // ignore: prefer_initializing_formals
++        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
++        _encryptor = encryptor; // ignore: prefer_initializing_formals
+ 
+   @override
+   Future<Document> createFromCapture(
+     CapturedImage capture, {
+     CropCorners? corners,
+     ImageEnhancer? enhancer,
+   }) async {
+     final now = _clock();
+     final createdUtc = now.toUtc();
+     final name = _defaultName(now);
+@@ -254,20 +258,40 @@ class DriftDocumentRepository implements DocumentRepository {
+       final dir = await Directory.systemTemp.createTemp('pdf_export');
+       final safeName = await _pdfFileNameFor(documentId);
+       final file = File('${dir.path}/$safeName');
+       await file.writeAsBytes(bytes);
+       return file;
+     } catch (e) {
+       throw DocumentExportException('export failed: $e');
+     }
+   }
+ 
++  @override
++  Future<File> exportProtectedPdf(int documentId, String password) async {
++    final pages = await getDocumentPages(documentId);
++    if (pages.isEmpty) {
++      throw const DocumentExportException('protect failed: no pages');
++    }
++    try {
++      final bytes = await _pdfBuilder.build(pages);
++      final encrypted = await _encryptor.encrypt(bytes, password);
++      final dir = await Directory.systemTemp.createTemp('pdf_protect');
++      final safeName = await _pdfFileNameFor(documentId);
++      final file = File('${dir.path}/$safeName');
++      await file.writeAsBytes(encrypted);
++      return file;
++    } catch (e) {
++      if (e is DocumentExportException) rethrow;
++      throw DocumentExportException('protect failed: $e');
++    }
++  }
++
+   /// Sanitized base name (no extension) from the document's name; 'document'
+   /// when the name is empty/unknown. Shared by all export filename builders.
+   Future<String> _exportBaseName(int documentId) async {
+     final doc = await (_db.select(_db.documents)
+           ..where((d) => d.id.equals(documentId)))
+         .getSingleOrNull();
+     final base = (doc?.name ?? 'document')
+         .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
+         .trim();
+     return base.isEmpty ? 'document' : base;
+diff --git a/apps/mobile/test/features/library/export_protected_pdf_test.dart b/apps/mobile/test/features/library/export_protected_pdf_test.dart
+new file mode 100644
+index 0000000..616bd1c
+--- /dev/null
++++ b/apps/mobile/test/features/library/export_protected_pdf_test.dart
+@@ -0,0 +1,71 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++String _ascii(List<int> b) {
++  final s = StringBuffer();
++  for (final c in b) {
++    s.writeCharCode(c);
++  }
++  return s.toString();
++}
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('p1prot');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  test('exports an encrypted PDF for a document', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    final rel = 'documents/$id/page_1.jpg';
++    await store.writeRelative(rel,
++        Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90)));
++    await db.into(db.pages).insert(PagesCompanion.insert(
++        documentId: id, position: 1, relativeImagePath: rel));
++
++    final file = await repo.exportProtectedPdf(id, 'secret');
++    final bytes = await file.readAsBytes();
++    expect(_ascii(bytes.sublist(0, 4)), '%PDF');
++    expect(_ascii(bytes).contains('/Encrypt'), isTrue);
++  });
++
++  test('throws when the document has no pages', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Empty', createdAt: now, modifiedAt: now));
++    await expectLater(repo.exportProtectedPdf(id, 'x'),
++        throwsA(isA<DocumentExportException>()));
++  });
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index 5db4057..1b74286 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -54,20 +54,22 @@ class FakeDocumentRepository implements DocumentRepository {
+   CropCorners? lastUpdatedCorners;
+   int addPageCalls = 0;
+   List<int> lastReorderedPositions = <int>[];
+   int? lastDeletedPagePosition;
+   int? lastReplacedPagePosition;
+   final List<int> deletedIds = <int>[];
+   final List<int> exportedIds = <int>[];
+   final List<String> renamedTo = <String>[];
+   int? lastExportedImagePosition;
+   int? lastExportedTextPosition;
++  int protectCalls = 0;
++  String? lastProtectPassword;
+ 
+   FakeDocumentRepository({
+     this.throwOnCreate = false,
+     this.throwOnList = false,
+     this.throwOnGetPages = false,
+     this.throwOnDelete = false,
+     this.throwOnExport = false,
+     this.throwOnRename = false,
+     this.throwOnUpdate = false,
+     this.throwOnAddPage = false,
+@@ -130,20 +132,30 @@ class FakeDocumentRepository implements DocumentRepository {
+       throw const DocumentExportException('fake: export failed');
+     }
+     if (exportGate != null) await exportGate!.future;
+     exportedIds.add(documentId);
+     // Return a path without real I/O — callers (e.g. _exportPdf) discard the
+     // File; widget tests need the future to complete synchronously so that
+     // pumpAndSettle can drive the success SnackBar before settling.
+     return File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
+   }
+ 
++  @override
++  Future<File> exportProtectedPdf(int documentId, String password) async {
++    if (throwOnExport) {
++      throw const DocumentExportException('fake: protect failed');
++    }
++    protectCalls++;
++    lastProtectPassword = password;
++    return File('${Directory.systemTemp.path}/fake-protected-$documentId.pdf');
++  }
++
+   @override
+   Future<File> exportPageAsImage(int documentId, int position) async {
+     if (throwOnExportImage) {
+       throw const DocumentExportException('fake: exportImage failed');
+     }
+     lastExportedImagePosition = position;
+     return File(
+         '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
+   }
+ 

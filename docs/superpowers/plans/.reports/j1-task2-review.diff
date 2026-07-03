@@ -1,0 +1,209 @@
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 8cb3ebe..d39cac2 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -209,20 +209,37 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+         const SnackBar(content: Text('Page saved as image')),
+       );
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't export image")),
+       );
+     }
+   }
+ 
++  Future<void> _exportAllImages() async {
++    try {
++      final files =
++          await widget.repository.exportAllPagesAsImages(widget.documentId);
++      if (!mounted) return;
++      final n = files.length;
++      ScaffoldMessenger.of(context).showSnackBar(
++        SnackBar(content: Text('Exported $n ${n == 1 ? 'image' : 'images'}')),
++      );
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't export images")),
++      );
++    }
++  }
++
+   void _viewText() {
+     final pages = _pages;
+     if (pages == null || pages.isEmpty) return;
+     final page = pages[_current];
+     Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => RecognizedTextScreen(
+           documentId: widget.documentId,
+           position: page.position,
+           name: _name,
+@@ -343,20 +360,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
++              if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+@@ -365,20 +383,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'export-image',
+                 key: Key('page-viewer-export-image'),
+                 child: Text('Export as image'),
+               ),
++              PopupMenuItem<String>(
++                value: 'export-all-images',
++                key: Key('page-viewer-export-all-images'),
++                child: Text('Export all as images'),
++              ),
+             ],
+           ),
+         ],
+       ),
+       body: _loading
+           ? const Center(
+               key: Key('page-viewer-loading'),
+               child: CircularProgressIndicator())
+           : _error
+               ? _buildError()
+diff --git a/apps/mobile/test/features/library/page_viewer_export_all_test.dart b/apps/mobile/test/features/library/page_viewer_export_all_test.dart
+new file mode 100644
+index 0000000..69de6ce
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_export_all_test.dart
+@@ -0,0 +1,47 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('Export all as images shows a confirmation with the count',
++      (tester) async {
++    final repo = FakeDocumentRepository(pages: const [
++      PageImage(position: 1, imagePath: '/a.jpg'),
++      PageImage(position: 2, imagePath: '/b.jpg'),
++    ]);
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
++    await tester.pump(); // let the async export + snackbar schedule
++    await tester.pump(const Duration(milliseconds: 100));
++
++    expect(find.text('Exported 2 images'), findsOneWidget);
++  });
++
++  testWidgets('a failing export shows an error snackbar', (tester) async {
++    final repo = FakeDocumentRepository(
++      throwOnExportImage: true,
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
++    await tester.pump();
++    await tester.pump(const Duration(milliseconds: 100));
++
++    expect(find.text("Couldn't export images"), findsOneWidget);
++  });
++}
+diff --git a/docs/superpowers/plans/.reports/j1-task2-report.md b/docs/superpowers/plans/.reports/j1-task2-report.md
+new file mode 100644
+index 0000000..c115807
+--- /dev/null
++++ b/docs/superpowers/plans/.reports/j1-task2-report.md
+@@ -0,0 +1,60 @@
++# J1 Task 2 Report — Page-viewer "Export all as images" action
++
++## Status
++
++COMPLETE — all steps executed; commit pending below.
++
++## Steps Executed
++
++### Step 1: Failing test written
++
++Created `apps/mobile/test/features/library/page_viewer_export_all_test.dart` with two `testWidgets`:
++- `Export all as images shows a confirmation with the count`
++- `a failing export shows an error snackbar`
++
++### Step 2: Red — test failure confirmed
++
++```
++00:00 +0 -1: Export all as images shows a confirmation with the count [E]
++  The finder "Found 0 widgets with key [<'page-viewer-export-all-images'>]: []"
++  could not find any matching widgets.
++00:00 +0 -2: a failing export shows an error snackbar [E]
++  The finder "Found 0 widgets with key [<'page-viewer-export-all-images'>]: []"
++  could not find any matching widgets.
++00:00 +0 -2: Some tests failed.
++```
++
++### Step 3: `_exportAllImages()` added to `page_viewer_screen.dart`
++
++Added near `_exportPageAsImage`. Catches `DocumentExportException` and any other error; shows "Exported N image(s)" or "Couldn't export images" snackbar.
++
++### Step 4: `onSelected` handler + `PopupMenuItem` added
++
++In `onSelected`: `if (v == 'export-all-images') unawaited(_exportAllImages());`
++In `itemBuilder`: new `PopupMenuItem` with `key: Key('page-viewer-export-all-images')` after the `export-image` item.
++
++### Step 5: Green — test passes
++
++```
++00:00 +1: a failing export shows an error snackbar
++00:00 +2: All tests passed!
++```
++
++### Step 6: Full library group + analyze
++
++```
++00:10 +255: All tests passed!
++flutter analyze --no-fatal-infos → No issues found! (ran in 3.6s)
++```
++
++## Commit Hash
++
++(to be filled after commit)
++
++## One-line Test Summary
++
++2/2 new widget tests pass; 255/255 library group tests pass; `flutter analyze` clean.
++
++## Concerns
++
++None. The fake's `exportAllPagesAsImages` was already in place from Task 1 (commit a995ea4), so Task 2 wired cleanly. Singular/plural handled inline (`n == 1 ? 'image' : 'images'`).

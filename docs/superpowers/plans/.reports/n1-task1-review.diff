@@ -1,0 +1,385 @@
+diff --git a/apps/mobile/lib/features/library/document_printer.dart b/apps/mobile/lib/features/library/document_printer.dart
+new file mode 100644
+index 0000000..3b2a036
+--- /dev/null
++++ b/apps/mobile/lib/features/library/document_printer.dart
+@@ -0,0 +1,25 @@
++import 'dart:io';
++
++import 'package:printing/printing.dart';
++
++/// Sends a PDF to the OS print sheet (print / save-as-PDF / AirPrint). Injectable
++/// (DIP) so tests and the on-device BDD use a no-op fake instead of the native
++/// print UI (which cannot be driven by an automated test).
++abstract interface class DocumentPrinter {
++  Future<void> printPdf(File pdf, {required String name});
++}
++
++/// Production printer backed by the `printing` package. Reads the PDF bytes and
++/// hands them to the platform print sheet. Nothing leaves the device except via
++/// the user's chosen printer/destination.
++class SystemDocumentPrinter implements DocumentPrinter {
++  const SystemDocumentPrinter();
++
++  @override
++  Future<void> printPdf(File pdf, {required String name}) async {
++    await Printing.layoutPdf(
++      name: name,
++      onLayout: (_) async => pdf.readAsBytes(),
++    );
++  }
++}
+diff --git a/apps/mobile/lib/features/library/home_screen.dart b/apps/mobile/lib/features/library/home_screen.dart
+index 76b0073..b85452e 100644
+--- a/apps/mobile/lib/features/library/home_screen.dart
++++ b/apps/mobile/lib/features/library/home_screen.dart
+@@ -111,20 +111,21 @@ class _HomeScreenState extends State<HomeScreen> {
+   Future<void> _openDocument(DocumentSummary s) async {
+     final repo = _repository;
+     if (repo == null) return;
+     await Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => PageViewerScreen(
+           documentId: s.document.id,
+           name: s.document.name,
+           repository: repo,
+           dependencies: widget.dependencies,
++          printer: widget.libraryDependencies.printer,
+         ),
+       ),
+     );
+     await _refresh(); // a delete may have happened in the viewer
+   }
+ 
+   void _openSearch() => setState(() => _searching = true);
+ 
+   void _closeSearch() {
+     _searchController.clear();
+diff --git a/apps/mobile/lib/features/library/library_dependencies.dart b/apps/mobile/lib/features/library/library_dependencies.dart
+index 82a9f64..6217c5f 100644
+--- a/apps/mobile/lib/features/library/library_dependencies.dart
++++ b/apps/mobile/lib/features/library/library_dependencies.dart
+@@ -1,32 +1,37 @@
+ import 'dart:io';
+ 
+ import 'package:path/path.dart' as p;
+ import 'package:path_provider/path_provider.dart';
+ 
+ import 'document_file_store.dart';
++import 'document_printer.dart';
+ import 'document_repository.dart';
+ import 'drift/app_database.dart';
+ import 'drift/drift_document_repository.dart';
+ import 'hybrid_warper.dart';
+ import 'jpeg_exif_scrubber.dart';
+ import 'ocr/mlkit_ocr_engine.dart';
+ import 'pdf/ocr_pdf_text_layer.dart';
+ import 'pdf/pdf_builder.dart';
+ 
+ typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
+ 
+ /// Composition root for the Library feature (parallel to ScanDependencies).
+ /// Production builds a Drift-backed repository; tests inject a fake factory.
+ class LibraryDependencies {
+   final DocumentRepositoryFactory createRepository;
+-  const LibraryDependencies({this.createRepository = _defaultCreateRepository});
++  final DocumentPrinter printer;
++  const LibraryDependencies({
++    this.createRepository = _defaultCreateRepository,
++    this.printer = const SystemDocumentPrinter(),
++  });
+ }
+ 
+ Future<DocumentRepository> _defaultCreateRepository() async {
+   final docsDir = await getApplicationDocumentsDirectory();
+   final supportDir = await getApplicationSupportDirectory();
+   final dbFile = File(p.join(supportDir.path, 'camscanner.sqlite'));
+   final db = AppDatabase(openAppDatabase(dbFile));
+   return DriftDocumentRepository(
+     db: db,
+     scrubber: const JpegExifScrubber(),
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 7387c6f..f761950 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -1,18 +1,19 @@
+ import 'dart:async'; // unawaited
+ import 'dart:io';
+ 
+ import 'package:flutter/material.dart';
+ 
+ import '../scan/camera_screen.dart';
+ import '../scan/scan_dependencies.dart';
+ import 'crop_corners.dart';
++import 'document_printer.dart';
+ import 'document_repository.dart';
+ import 'edit_crop_screen.dart';
+ import 'merge_picker_dialog.dart';
+ import 'page_image.dart';
+ import 'pdf_preview_screen.dart';
+ import 'recognized_text_screen.dart';
+ import 'widgets/page_thumbnail_strip.dart';
+ import 'widgets/rename_dialog.dart';
+ 
+ /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
+@@ -23,26 +24,28 @@ import 'widgets/rename_dialog.dart';
+ ///
+ /// Decodes full-resolution (no cacheWidth) so zoom is usable — its Image is a
+ /// FileImage, NOT a ResizeImage. NOTE: this is not memory-safe for many pages;
+ /// when multi-page capture lands, add decode management (screen-width cacheWidth
+ /// + offscreen dispose).
+ class PageViewerScreen extends StatefulWidget {
+   final int documentId;
+   final String name;
+   final DocumentRepository repository;
+   final ScanDependencies dependencies;
++  final DocumentPrinter printer;
+   const PageViewerScreen({
+     super.key,
+     required this.documentId,
+     required this.name,
+     required this.repository,
+     this.dependencies = const ScanDependencies(),
++    this.printer = const SystemDocumentPrinter(),
+   });
+ 
+   @override
+   State<PageViewerScreen> createState() => _PageViewerScreenState();
+ }
+ 
+ class _PageViewerScreenState extends State<PageViewerScreen> {
+   final PageController _controller = PageController();
+   List<PageImage>? _pages;
+   bool _loading = true;
+@@ -227,20 +230,36 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+         SnackBar(content: Text('Exported $n ${n == 1 ? 'image' : 'images'}')),
+       );
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't export images")),
+       );
+     }
+   }
+ 
++  Future<void> _print() async {
++    try {
++      final file = await widget.repository.exportPdf(widget.documentId);
++      await widget.printer.printPdf(file, name: _name);
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text('Sent to printer')),
++      );
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't print")),
++      );
++    }
++  }
++
+   void _viewText() {
+     final pages = _pages;
+     if (pages == null || pages.isEmpty) return;
+     final page = pages[_current];
+     Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => RecognizedTextScreen(
+           documentId: widget.documentId,
+           position: page.position,
+           name: _name,
+@@ -427,20 +446,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'merge') unawaited(_mergeAnother());
+               if (v == 'split') unawaited(_splitAfter());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
++              if (v == 'print') unawaited(_print());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'rotate',
+                 key: Key('page-viewer-rotate'),
+@@ -469,20 +489,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+               PopupMenuItem<String>(
+                 value: 'export-image',
+                 key: Key('page-viewer-export-image'),
+                 child: Text('Export as image'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'export-all-images',
+                 key: Key('page-viewer-export-all-images'),
+                 child: Text('Export all as images'),
+               ),
++              PopupMenuItem<String>(
++                value: 'print',
++                key: Key('page-viewer-print'),
++                child: Text('Print'),
++              ),
+             ],
+           ),
+         ],
+       ),
+       body: _loading
+           ? const Center(
+               key: Key('page-viewer-loading'),
+               child: CircularProgressIndicator())
+           : _error
+               ? _buildError()
+diff --git a/apps/mobile/pubspec.yaml b/apps/mobile/pubspec.yaml
+index 67322c4..dce1893 100644
+--- a/apps/mobile/pubspec.yaml
++++ b/apps/mobile/pubspec.yaml
+@@ -36,20 +36,21 @@ dependencies:
+   cupertino_icons: ^1.0.8
+   camera: ^0.12.0+1
+   image: ^4.5.0
+   opencv_dart: ^1.4.5
+   permission_handler: ^12.0.3
+   drift: ^2.20.0
+   sqlite3_flutter_libs: ^0.5.24
+   path_provider: ^2.1.4
+   path: ^1.9.0
+   pdf: ^3.11.1
++  printing: ^5.13.0
+   pdfx: ^2.9.0
+   image_picker: ^1.2.3
+   google_mlkit_text_recognition: ^0.15.1
+   share_plus: ^13.2.0
+ 
+ dev_dependencies:
+   flutter_test:
+     sdk: flutter
+   integration_test:
+     sdk: flutter
+diff --git a/apps/mobile/test/features/library/page_viewer_print_test.dart b/apps/mobile/test/features/library/page_viewer_print_test.dart
+new file mode 100644
+index 0000000..811b002
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_print_test.dart
+@@ -0,0 +1,52 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  Future<void> tapPrint(WidgetTester tester) async {
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-print')));
++    await tester.pump();
++    await tester.pump(const Duration(milliseconds: 100));
++  }
++
++  testWidgets('Print sends the exported PDF to the printer', (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    final printer = FakeDocumentPrinter();
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(
++          documentId: 3, name: 'Report', repository: repo, printer: printer),
++    ));
++    await tester.pumpAndSettle();
++
++    await tapPrint(tester);
++
++    expect(printer.lastName, 'Report');
++    expect(printer.lastFile, isNotNull);
++    expect(find.text('Sent to printer'), findsOneWidget);
++  });
++
++  testWidgets('a failing export shows a print error', (tester) async {
++    final repo = FakeDocumentRepository(
++      throwOnExport: true,
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    final printer = FakeDocumentPrinter();
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(
++          documentId: 3, name: 'Report', repository: repo, printer: printer),
++    ));
++    await tester.pumpAndSettle();
++
++    await tapPrint(tester);
++
++    expect(printer.lastFile, isNull);
++    expect(find.text("Couldn't print"), findsOneWidget);
++  });
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index 0efca88..c33a4c6 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -8,20 +8,21 @@ import 'package:mobile/features/library/image_enhancer.dart';
+ import 'package:mobile/features/library/image_warper.dart';
+ import 'package:mobile/features/library/perspective_warper.dart';
+ import 'package:mobile/features/library/document.dart';
+ import 'package:mobile/features/library/document_file_store.dart';
+ import 'package:mobile/features/library/document_repository.dart';
+ import 'package:mobile/features/library/document_summary.dart';
+ import 'package:mobile/features/library/pdf/pdf_builder.dart';
+ import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
+ import 'package:mobile/features/library/drift/drift_document_repository.dart';
+ import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/document_printer.dart';
+ import 'package:mobile/features/library/library_dependencies.dart';
+ import 'package:mobile/features/library/page_image.dart';
+ import 'package:mobile/features/library/ocr/ocr_engine.dart';
+ import 'package:mobile/features/library/ocr/ocr_result.dart';
+ import 'package:mobile/features/scan/captured_image.dart';
+ 
+ /// In-memory fake repository for host tests. Optionally throws, or blocks on a
+ /// [gate] so a test can observe the transient `saving` state.
+ class FakeDocumentRepository implements DocumentRepository {
+   final bool throwOnCreate;
+@@ -370,20 +371,36 @@ class FakeDocumentRepository implements DocumentRepository {
+             flatImagePath: w[i].flatImagePath,
+             ocrText: t,
+             ocrWords: w[i].ocrWords,
+           );
+         }
+       }
+     }
+   }
+ }
+ 
++/// No-op printer for tests: records the last file/name, never touches the
++/// native print plugin.
++class FakeDocumentPrinter implements DocumentPrinter {
++  File? lastFile;
++  String? lastName;
++  final bool throwOnPrint;
++  FakeDocumentPrinter({this.throwOnPrint = false});
++
++  @override
++  Future<void> printPdf(File pdf, {required String name}) async {
++    if (throwOnPrint) throw Exception('fake: print failed');
++    lastFile = pdf;
++    lastName = name;
++  }
++}
++
+ /// Fake [ImageWarper] for host tests. Configurable to return fixed bytes,
+ /// or throw [WarpException].
+ ///
+ /// Default [returnValue] is a non-null stub so tests that pass non-full-frame
+ /// corners get a flat derivative without providing explicit bytes.
+ class FakeImageWarper implements ImageWarper {
+   final bool throws;
+   final Uint8List returnValue;
+   int calls = 0;
+ 

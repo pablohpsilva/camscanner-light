@@ -1,0 +1,665 @@
+diff --git a/apps/mobile/integration_test/k1_rotate_page.feature b/apps/mobile/integration_test/k1_rotate_page.feature
+new file mode 100644
+index 0000000..42e02e6
+--- /dev/null
++++ b/apps/mobile/integration_test/k1_rotate_page.feature
+@@ -0,0 +1,10 @@
++Feature: Rotate a page
++
++  Scenario: Rotate the open page
++    Given the app is launched with camera permission granted and empty storage
++    When I tap the Scan button
++    And I capture and accept the first page
++    And I tap Done
++    And I open the first document
++    And I rotate the page
++    Then I see the page viewer
+diff --git a/apps/mobile/integration_test/k1_rotate_page_device_test.dart b/apps/mobile/integration_test/k1_rotate_page_device_test.dart
+new file mode 100644
+index 0000000..a5d8005
+--- /dev/null
++++ b/apps/mobile/integration_test/k1_rotate_page_device_test.dart
+@@ -0,0 +1,60 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:integration_test/integration_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/ocr/ocr_result.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets('rotatePage swaps image dims and rotates boxes on device',
++      (tester) async {
++    final base = await Directory.systemTemp.createTemp('k1dev');
++    final db = AppDatabase(NativeDatabase.memory());
++    final store = DocumentFileStore(base);
++    final repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Doc', createdAt: now, modifiedAt: now));
++    final jpeg = Uint8List.fromList(
++        img.encodeJpg(img.Image(width: 40, height: 20), quality: 95));
++    final rel = 'documents/$id/page_1.jpg';
++    await store.writeRelative(rel, jpeg);
++    const box = OcrWordBox(text: 'hi', left: 0.0, top: 0.0, right: 0.2, bottom: 0.1);
++    await db.into(db.pages).insert(PagesCompanion.insert(
++          documentId: id,
++          position: 1,
++          relativeImagePath: rel,
++          ocrBoxes: Value(const OcrResult(text: 'hi', words: [box]).encodeBoxes()),
++        ));
++
++    await repo.rotatePage(id, 1);
++
++    final page = (await repo.getDocumentPages(id)).single;
++    final decoded = img.decodeImage(File(page.flatImagePath!).readAsBytesSync())!;
++    expect(decoded.width, 20);
++    expect(decoded.height, 40);
++    expect(page.ocrWords.single.left, closeTo(0.9, 1e-6));
++
++    await db.close();
++    await base.delete(recursive: true);
++  });
++}
+diff --git a/apps/mobile/integration_test/k1_rotate_page_test.dart b/apps/mobile/integration_test/k1_rotate_page_test.dart
+new file mode 100644
+index 0000000..91aa177
+--- /dev/null
++++ b/apps/mobile/integration_test/k1_rotate_page_test.dart
+@@ -0,0 +1,30 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint, type=warning
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++
++import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
++import './../test/step/i_tap_the_scan_button.dart';
++import './../test/step/i_capture_and_accept_the_first_page.dart';
++import './../test/step/i_tap_done.dart';
++import './../test/step/i_open_the_first_document.dart';
++import './../test/step/i_rotate_the_page.dart';
++import './../test/step/i_see_the_page_viewer.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  group('''Rotate a page''', () {
++    testWidgets('''Rotate the open page''', (tester) async {
++      await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
++      await iTapTheScanButton(tester);
++      await iCaptureAndAcceptTheFirstPage(tester);
++      await iTapDone(tester);
++      await iOpenTheFirstDocument(tester);
++      await iRotateThePage(tester);
++      await iSeeThePageViewer(tester);
++    });
++  });
++}
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index 379369a..5905f73 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -104,20 +104,27 @@ abstract interface class DocumentRepository {
+   /// its [position]. Throws [DocumentSaveException] when no page exists at
+   /// ([documentId], [position]).
+   Future<void> replacePage(
+     int documentId,
+     int position,
+     CapturedImage capture, {
+     CropCorners? corners,
+     ImageEnhancer? enhancer,
+   });
+ 
++  /// Rotates the page at [position] of [documentId] 90° CLOCKWISE: rotates the
++  /// display derivative (flat) image and the cached OCR word boxes to match, and
++  /// bumps the document's modifiedAt. Idempotent per call (each rotates one more
++  /// quarter-turn). Nothing leaves the device. Throws [DocumentSaveException]
++  /// when the page row is missing or its image cannot be decoded.
++  Future<void> rotatePage(int documentId, int position);
++
+   /// Recognizes the page at [position] of [documentId] via the OCR engine and
+   /// caches the recognized text + word boxes on the page (reads the flat
+   /// derivative if present, else the original). Throws [DocumentSaveException]
+   /// when the page row is missing.
+   Future<void> runOcr(int documentId, int position);
+ 
+   /// Materializes the page at [position] of [documentId]'s cached recognized
+   /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
+   /// named `<sanitized-document-name>_page_<position>.txt` under the system temp
+   /// dir — temporary, so the app does not accumulate exports (mirrors
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index 9e953c9..e399346 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -1,13 +1,14 @@
+ import 'dart:io';
+ 
+ import 'package:drift/drift.dart';
++import 'package:image/image.dart' as img;
+ 
+ import '../../scan/captured_image.dart';
+ import '../crop_corners.dart';
+ import '../document.dart';
+ import '../document_file_store.dart';
+ import '../document_repository.dart';
+ import '../document_summary.dart';
+ import '../image_enhancer.dart';
+ import '../image_metadata_scrubber.dart';
+ import '../image_warper.dart';
+@@ -400,20 +401,64 @@ class DriftDocumentRepository implements DocumentRepository {
+     final flatRel = _fileStore.flatForImage(page.relativeImagePath);
+     await _fileStore.writeRelative(flatRel, flat);
+     await (_db.update(_db.pages)
+           ..where((t) =>
+               t.documentId.equals(documentId) & t.position.equals(position)))
+         .write(PagesCompanion(
+             corners: Value(corners.toStorage()),
+             flatRelativePath: Value(flatRel)));
+   }
+ 
++  @override
++  Future<void> rotatePage(int documentId, int position) async {
++    final row = await (_db.select(_db.pages)
++          ..where((t) =>
++              t.documentId.equals(documentId) & t.position.equals(position)))
++        .getSingleOrNull();
++    if (row == null) {
++      throw DocumentSaveException('rotatePage: no page ($documentId, $position)');
++    }
++    // Rotate the DISPLAY image (flat if present, else original) 90° CW.
++    final displayRel = row.flatRelativePath ?? row.relativeImagePath;
++    final bytes = await _fileStore.absoluteFor(displayRel).readAsBytes();
++    img.Image? decoded;
++    try {
++      decoded = img.decodeImage(bytes);
++    } catch (_) {
++      decoded = null;
++    }
++    if (decoded == null) {
++      throw const DocumentSaveException('rotatePage: undecodable image');
++    }
++    final rotated = img.copyRotate(decoded, angle: 90); // 90° clockwise
++    final out = img.encodeJpg(rotated, quality: 95);
++    // Bake into the flat derivative (create it if this page had none).
++    final flatRel =
++        row.flatRelativePath ?? _fileStore.flatForImage(row.relativeImagePath);
++    await _fileStore.writeRelative(flatRel, out);
++
++    // Rotate the cached OCR boxes CW to stay aligned; text is unchanged.
++    final boxes = OcrResult.decodeBoxes(row.ocrBoxes);
++    final String? newBoxes = boxes.isEmpty
++        ? row.ocrBoxes
++        : OcrResult(text: '', words: [for (final b in boxes) b.rotate90Cw()])
++            .encodeBoxes();
++
++    await (_db.update(_db.pages)
++          ..where((t) =>
++              t.documentId.equals(documentId) & t.position.equals(position)))
++        .write(PagesCompanion(
++            flatRelativePath: Value(flatRel), ocrBoxes: Value(newBoxes)));
++    await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
++        .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
++  }
++
+   @override
+   Future<int> addPageToDocument(
+     int documentId,
+     CapturedImage capture, {
+     CropCorners? corners,
+     ImageEnhancer? enhancer,
+   }) async {
+     try {
+       final position = await _db.transaction(() async {
+         final maxRow = await (_db.select(_db.pages)
+diff --git a/apps/mobile/lib/features/library/ocr/ocr_result.dart b/apps/mobile/lib/features/library/ocr/ocr_result.dart
+index 59bf33b..bdd76e0 100644
+--- a/apps/mobile/lib/features/library/ocr/ocr_result.dart
++++ b/apps/mobile/lib/features/library/ocr/ocr_result.dart
+@@ -5,20 +5,30 @@ class OcrWordBox {
+   final String text;
+   final double left, top, right, bottom;
+   const OcrWordBox({
+     required this.text,
+     required this.left,
+     required this.top,
+     required this.right,
+     required this.bottom,
+   });
+ 
++  /// This box after the page image is rotated 90° CLOCKWISE (normalized coords).
++  /// Matches `image.copyRotate(angle: 90)`: a top-left box moves to the top-right.
++  OcrWordBox rotate90Cw() => OcrWordBox(
++        text: text,
++        left: 1 - bottom,
++        top: left,
++        right: 1 - top,
++        bottom: right,
++      );
++
+   Map<String, dynamic> toJson() =>
+       {'t': text, 'l': left, 'o': top, 'r': right, 'b': bottom};
+ 
+   factory OcrWordBox.fromJson(Map<String, dynamic> j) => OcrWordBox(
+         text: j['t'] as String,
+         left: (j['l'] as num).toDouble(),
+         top: (j['o'] as num).toDouble(),
+         right: (j['r'] as num).toDouble(),
+         bottom: (j['b'] as num).toDouble(),
+       );
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index d39cac2..6da2c9f 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -292,20 +292,40 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+           widget.documentId, ordered.map((p) => p.position).toList());
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't reorder pages")),
+       );
+       _load();
+     }
+   }
+ 
++  Future<void> _rotatePage() async {
++    final pages = _pages;
++    if (pages == null || pages.isEmpty) return;
++    final page = pages[_current];
++    try {
++      await widget.repository.rotatePage(widget.documentId, page.position);
++      // FileImage caches by path; the rotated bytes reuse the flat path, so
++      // clear the cache before reloading or the stale image would show.
++      PaintingBinding.instance.imageCache.clear();
++      PaintingBinding.instance.imageCache.clearLiveImages();
++      if (!mounted) return;
++      await _load();
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't rotate")),
++      );
++    }
++  }
++
+   Future<void> _editCrop(PageImage pg) async {
+     final corners = await Navigator.of(context).push<CropCorners>(
+       MaterialPageRoute<CropCorners>(
+         builder: (_) => EditCropScreen(
+           imagePath: pg.imagePath,
+           initialCorners: pg.corners,
+         ),
+       ),
+     );
+     if (corners == null || !mounted) return;
+@@ -357,31 +377,37 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             key: const Key('page-viewer-delete'),
+             tooltip: 'Delete',
+             icon: const Icon(Icons.delete_outline),
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
++              if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
++              PopupMenuItem<String>(
++                value: 'rotate',
++                key: Key('page-viewer-rotate'),
++                child: Text('Rotate'),
++              ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+                 child: Text('Retake page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+diff --git a/apps/mobile/test/features/library/ocr/ocr_word_box_rotate_test.dart b/apps/mobile/test/features/library/ocr/ocr_word_box_rotate_test.dart
+new file mode 100644
+index 0000000..736cf56
+--- /dev/null
++++ b/apps/mobile/test/features/library/ocr/ocr_word_box_rotate_test.dart
+@@ -0,0 +1,26 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/ocr/ocr_result.dart';
++
++void main() {
++  test('rotate90Cw moves a top-left box to the top-right', () {
++    const b = OcrWordBox(text: 'x', left: 0, top: 0, right: 0.2, bottom: 0.1);
++    final r = b.rotate90Cw();
++    expect(r.left, closeTo(0.9, 1e-9));
++    expect(r.top, closeTo(0.0, 1e-9));
++    expect(r.right, closeTo(1.0, 1e-9));
++    expect(r.bottom, closeTo(0.2, 1e-9));
++    expect(r.text, 'x');
++  });
++
++  test('four rotations return the original box', () {
++    const b = OcrWordBox(text: 'x', left: 0.1, top: 0.2, right: 0.5, bottom: 0.7);
++    var r = b;
++    for (var i = 0; i < 4; i++) {
++      r = r.rotate90Cw();
++    }
++    expect(r.left, closeTo(0.1, 1e-9));
++    expect(r.top, closeTo(0.2, 1e-9));
++    expect(r.right, closeTo(0.5, 1e-9));
++    expect(r.bottom, closeTo(0.7, 1e-9));
++  });
++}
+diff --git a/apps/mobile/test/features/library/page_viewer_rotate_test.dart b/apps/mobile/test/features/library/page_viewer_rotate_test.dart
+new file mode 100644
+index 0000000..44d5c4b
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_rotate_test.dart
+@@ -0,0 +1,26 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('Rotate invokes rotatePage for the current page', (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-rotate')));
++    await tester.pumpAndSettle();
++
++    expect(repo.rotateCalls, 1);
++    expect(repo.lastRotatedPosition, 1);
++  });
++}
+diff --git a/apps/mobile/test/features/library/rotate_page_test.dart b/apps/mobile/test/features/library/rotate_page_test.dart
+new file mode 100644
+index 0000000..ec00db1
+--- /dev/null
++++ b/apps/mobile/test/features/library/rotate_page_test.dart
+@@ -0,0 +1,100 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/ocr/ocr_result.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('k1rot');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  test('rotates the display image (dims swap) and the cached boxes', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    // 40x20 (non-square) JPEG so a dims-swap is observable.
++    final jpeg = Uint8List.fromList(
++        img.encodeJpg(img.Image(width: 40, height: 20), quality: 95));
++    final rel = 'documents/$id/page_1.jpg';
++    await store.writeRelative(rel, jpeg);
++    const box = OcrWordBox(text: 'hi', left: 0.0, top: 0.0, right: 0.2, bottom: 0.1);
++    await db.into(db.pages).insert(PagesCompanion.insert(
++          documentId: id,
++          position: 1,
++          relativeImagePath: rel,
++          ocrText: const Value('hi'),
++          ocrBoxes: Value(const OcrResult(text: 'hi', words: [box]).encodeBoxes()),
++        ));
++
++    await repo.rotatePage(id, 1);
++
++    final pages = await repo.getDocumentPages(id);
++    final page = pages.single;
++    // Flat now exists and is the rotated (dims-swapped) image.
++    expect(page.flatImagePath, isNotNull);
++    final decoded = img.decodeImage(File(page.flatImagePath!).readAsBytesSync())!;
++    expect(decoded.width, 20);
++    expect(decoded.height, 40);
++    // Box rotated CW: (0,0,0.2,0.1) -> (0.9, 0, 1.0, 0.2).
++    final r = page.ocrWords.single;
++    expect(r.left, closeTo(0.9, 1e-6));
++    expect(r.top, closeTo(0.0, 1e-6));
++    expect(r.right, closeTo(1.0, 1e-6));
++    expect(r.bottom, closeTo(0.2, 1e-6));
++    expect(page.ocrText, 'hi'); // text unchanged
++  });
++
++  test('throws when the page row is missing', () async {
++    expect(() => repo.rotatePage(999, 1), throwsA(isA<DocumentSaveException>()));
++  });
++
++  test('throws when the image bytes are undecodable', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    final rel = 'documents/$id/page_1.jpg';
++    // Write non-image bytes — img.decodeImage will return null.
++    await store.writeRelative(rel, Uint8List.fromList([0, 0, 0, 0]));
++    await db.into(db.pages).insert(PagesCompanion.insert(
++          documentId: id,
++          position: 1,
++          relativeImagePath: rel,
++        ));
++
++    expect(
++      () => repo.rotatePage(id, 1),
++      throwsA(isA<DocumentSaveException>()),
++    );
++  });
++}
+diff --git a/apps/mobile/test/step/i_rotate_the_page.dart b/apps/mobile/test/step/i_rotate_the_page.dart
+new file mode 100644
+index 0000000..8337990
+--- /dev/null
++++ b/apps/mobile/test/step/i_rotate_the_page.dart
+@@ -0,0 +1,10 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I rotate the page
++Future<void> iRotateThePage(WidgetTester tester) async {
++  await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++  await tester.pumpAndSettle();
++  await tester.tap(find.byKey(const Key('page-viewer-rotate')));
++  await tester.pumpAndSettle();
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index e151fbe..ae6e5d8 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -306,20 +306,32 @@ class FakeDocumentRepository implements DocumentRepository {
+     if (throwOnReplacePage) {
+       throw const DocumentSaveException('fake: replacePage failed');
+     }
+     final w = _working;
+     if (w != null && w.indexWhere((p) => p.position == position) < 0) {
+       throw const DocumentSaveException('fake: no such page');
+     }
+     lastReplacedPagePosition = position;
+   }
+ 
++  int rotateCalls = 0;
++  int? lastRotatedPosition;
++
++  @override
++  Future<void> rotatePage(int documentId, int position) async {
++    if (throwOnUpdate) {
++      throw const DocumentSaveException('fake: rotate failed');
++    }
++    rotateCalls++;
++    lastRotatedPosition = position;
++  }
++
+   @override
+   Future<void> runOcr(int documentId, int position) async {
+     ranOcr = true;
+     final w = _working;
+     final t = recognizesText;
+     if (w != null && t != null) {
+       for (var i = 0; i < w.length; i++) {
+         if (w[i].position == position) {
+           w[i] = PageImage(
+             position: w[i].position,
+diff --git a/docs/superpowers/plans/00-plans-index.md b/docs/superpowers/plans/00-plans-index.md
+index b38af0b..ccb3f5a 100644
+--- a/docs/superpowers/plans/00-plans-index.md
++++ b/docs/superpowers/plans/00-plans-index.md
+@@ -71,19 +71,20 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes
+ | H4 | Delete / retake page | 06 | `2026-07-01-h4-delete-retake-pages.md` | ✅ **built & gated** |
+ | H5 | Multi-page PDF export | 07 | `2026-07-01-h5-multipage-pdf.md` | ✅ **built & gated** |
+ | I1 | Export page as image | 10 | `2026-07-01-i1-export-image.md` | ✅ **built & gated** |
+ | I2 | Gallery import | 01 | `2026-07-01-i2-gallery-import.md` | ✅ **built & gated** |
+ | O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
+ | O2 | OCR engine (ML Kit) + auto-run after save | 08 | `2026-07-01-o2-mlkit-engine.md`¹ | ✅ **built & merged** |
+ | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
+ | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
+ | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
+ | J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
++| K1 | Rotate a page 90° | 09 | `2026-07-01-k1-rotate-page.md` | ✅ **built & gated** |
+ 
+ ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
+ 
+ Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
+ own ordered plan files once Sub-project 1 is complete and gated.
+ 
+ Cross-cutting concerns (metadata scrubber, searchable-PDF text-layer interface,
+ password) are introduced as shared, single-responsibility files in the first
+ plan that needs them and reused thereafter (DRY).
+diff --git a/scripts/verify/k1.sh b/scripts/verify/k1.sh
+new file mode 100755
+index 0000000..75df25c
+--- /dev/null
++++ b/scripts/verify/k1.sh
+@@ -0,0 +1,59 @@
++#!/usr/bin/env bash
++# Verify K1 (rotate a page 90°) acceptance criteria.
++# Run from repository root: bash scripts/verify/k1.sh
++# VERIFY_SKIP_DEVICE=1 skips the on-device integration tests.
++
++DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++# shellcheck source=lib.sh
++source "$DIR/lib.sh"
++cd "$ROOT"
++
++echo "== K1 verification =="
++
++require_tool flutter
++require_tool pnpm
++
++assert_file_has "rotate90Cw on OcrWordBox" \
++  "apps/mobile/lib/features/library/ocr/ocr_result.dart" \
++  "rotate90Cw"
++
++assert_file_has "rotatePage on the interface" \
++  "apps/mobile/lib/features/library/document_repository.dart" \
++  "rotatePage"
++
++assert_file_has "rotatePage in DriftDocumentRepository" \
++  "apps/mobile/lib/features/library/drift/drift_document_repository.dart" \
++  "copyRotate"
++
++assert_file_has "page viewer wires Rotate" \
++  "apps/mobile/lib/features/library/page_viewer_screen.dart" \
++  "page-viewer-rotate"
++
++assert_file_has "BDD feature exists" \
++  "apps/mobile/integration_test/k1_rotate_page.feature" \
++  "Rotate a page"
++
++assert_file_has "generated BDD test exists" \
++  "apps/mobile/integration_test/k1_rotate_page_test.dart" \
++  "rotate"
++
++bash "$ROOT/scripts/setup-cv-host-test.sh"
++export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
++export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
++
++assert_cmd "host tests pass" "All tests passed!" \
++  pnpm nx run mobile:test --skip-nx-cache
++
++assert_cmd "flutter analyze clean" "No issues found" \
++  bash -c "cd apps/mobile && flutter analyze --no-fatal-infos"
++
++if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
++  warn "VERIFY_SKIP_DEVICE=1 — on-device K1 tests skipped (must pass on a real device before gate)"
++else
++  assert_cmd "on-device rotate test passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/k1_rotate_page_device_test.dart"
++  assert_cmd "on-device BDD scenario passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/k1_rotate_page_test.dart"
++fi
++
++echo "== K1 verification complete =="

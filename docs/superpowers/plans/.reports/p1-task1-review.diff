@@ -1,0 +1,107 @@
+diff --git a/apps/mobile/lib/features/library/pdf/pdf_encryptor.dart b/apps/mobile/lib/features/library/pdf/pdf_encryptor.dart
+new file mode 100644
+index 0000000..ace568e
+--- /dev/null
++++ b/apps/mobile/lib/features/library/pdf/pdf_encryptor.dart
+@@ -0,0 +1,36 @@
++import 'dart:typed_data';
++
++import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
++
++/// Encrypts a generated PDF with a user password. Injectable (DIP) so the engine
++/// is swappable and testable. Nothing leaves the device.
++abstract interface class PdfEncryptor {
++  Future<Uint8List> encrypt(Uint8List pdfBytes, String password);
++}
++
++/// Production encryptor backed by `syncfusion_flutter_pdf` (pure Dart). Loads the
++/// generated PDF, applies AES-256 + the password (as both user and owner
++/// password), clears document info for metadata hygiene, and re-saves.
++class SyncfusionPdfEncryptor implements PdfEncryptor {
++  const SyncfusionPdfEncryptor();
++
++  @override
++  Future<Uint8List> encrypt(Uint8List pdfBytes, String password) async {
++    final doc = sf.PdfDocument(inputBytes: pdfBytes);
++    try {
++      doc.security.userPassword = password;
++      doc.security.ownerPassword = password;
++      doc.security.algorithm = sf.PdfEncryptionAlgorithm.aesx256Bit;
++      final info = doc.documentInformation;
++      info.author = '';
++      info.creator = '';
++      info.producer = '';
++      info.title = '';
++      info.subject = '';
++      info.keywords = '';
++      return Uint8List.fromList(await doc.save());
++    } finally {
++      doc.dispose();
++    }
++  }
++}
+diff --git a/apps/mobile/pubspec.yaml b/apps/mobile/pubspec.yaml
+index dce1893..64d9369 100644
+--- a/apps/mobile/pubspec.yaml
++++ b/apps/mobile/pubspec.yaml
+@@ -43,16 +43,17 @@ dependencies:
+   path_provider: ^2.1.4
+   path: ^1.9.0
+   pdf: ^3.11.1
+   printing: ^5.13.0
+   pdfx: ^2.9.0
+   image_picker: ^1.2.3
+   google_mlkit_text_recognition: ^0.15.1
+   share_plus: ^13.2.0
++  syncfusion_flutter_pdf: ^33.2.15
+ 
+ dev_dependencies:
+   flutter_test:
+     sdk: flutter
+   integration_test:
+     sdk: flutter
+ 
+   # The "flutter_lints" package below contains a set of recommended lints to
+diff --git a/apps/mobile/test/features/library/pdf/pdf_encryptor_test.dart b/apps/mobile/test/features/library/pdf/pdf_encryptor_test.dart
+new file mode 100644
+index 0000000..b01ee02
+--- /dev/null
++++ b/apps/mobile/test/features/library/pdf/pdf_encryptor_test.dart
+@@ -0,0 +1,37 @@
++import 'dart:typed_data';
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/pdf/pdf_encryptor.dart';
++import 'package:pdf/widgets.dart' as pw;
++import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
++
++String _ascii(List<int> b) {
++  final s = StringBuffer();
++  for (final c in b) {
++    s.writeCharCode(c);
++  }
++  return s.toString();
++}
++
++void main() {
++  Future<Uint8List> plainPdf() async {
++    final doc = pw.Document();
++    doc.addPage(pw.Page(build: (_) => pw.SizedBox()));
++    return Uint8List.fromList(await doc.save());
++  }
++
++  test('encrypts a PDF with AES-256 and the given password', () async {
++    final plain = await plainPdf();
++    expect(_ascii(plain).contains('/Encrypt'), isFalse,
++        reason: 'the plain PDF must not be encrypted');
++
++    final enc = await const SyncfusionPdfEncryptor().encrypt(plain, 'secret');
++
++    expect(_ascii(enc).contains('/Encrypt'), isTrue,
++        reason: 'the output must be an encrypted PDF');
++    // Reopens with the password (proves it is validly encrypted with it).
++    final doc = sf.PdfDocument(inputBytes: enc, password: 'secret');
++    expect(doc.pages.count, greaterThan(0));
++    doc.dispose();
++  });
++}

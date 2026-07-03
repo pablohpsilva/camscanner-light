@@ -1,0 +1,904 @@
+diff --git a/apps/mobile/integration_test/p1_pdf_password.feature b/apps/mobile/integration_test/p1_pdf_password.feature
+new file mode 100644
+index 0000000..9a74693
+--- /dev/null
++++ b/apps/mobile/integration_test/p1_pdf_password.feature
+@@ -0,0 +1,10 @@
++Feature: Password-protect a PDF
++
++  Scenario: Export a password-protected PDF
++    Given the app is launched with camera permission granted and empty storage
++    When I tap the Scan button
++    And I capture and accept the first page
++    And I tap Done
++    And I open the first document
++    And I protect with a password
++    Then I see the protected PDF confirmation
+diff --git a/apps/mobile/integration_test/p1_pdf_password_device_test.dart b/apps/mobile/integration_test/p1_pdf_password_device_test.dart
+new file mode 100644
+index 0000000..ba17f9d
+--- /dev/null
++++ b/apps/mobile/integration_test/p1_pdf_password_device_test.dart
+@@ -0,0 +1,57 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:integration_test/integration_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++String _ascii(List<int> b) {
++  final s = StringBuffer();
++  for (final c in b) {
++    s.writeCharCode(c);
++  }
++  return s.toString();
++}
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets('exportProtectedPdf produces an encrypted PDF on device',
++      (tester) async {
++    final base = await Directory.systemTemp.createTemp('p1dev');
++    final db = AppDatabase(NativeDatabase.memory());
++    final store = DocumentFileStore(base);
++    final repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Doc', createdAt: now, modifiedAt: now));
++    final rel = 'documents/$id/page_1.jpg';
++    await store.writeRelative(rel,
++        Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90)));
++    await db.into(db.pages).insert(PagesCompanion.insert(
++        documentId: id, position: 1, relativeImagePath: rel));
++
++    final file = await repo.exportProtectedPdf(id, 'secret');
++    final bytes = await file.readAsBytes();
++    expect(_ascii(bytes.sublist(0, 4)), '%PDF');
++    expect(_ascii(bytes).contains('/Encrypt'), isTrue);
++
++    await db.close();
++    await base.delete(recursive: true);
++  });
++}
+diff --git a/apps/mobile/integration_test/p1_pdf_password_test.dart b/apps/mobile/integration_test/p1_pdf_password_test.dart
+new file mode 100644
+index 0000000..abfcbc9
+--- /dev/null
++++ b/apps/mobile/integration_test/p1_pdf_password_test.dart
+@@ -0,0 +1,30 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint, type=warning
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++
++import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
++import './../test/step/i_tap_the_scan_button.dart';
++import './../test/step/i_capture_and_accept_the_first_page.dart';
++import './../test/step/i_tap_done.dart';
++import './../test/step/i_open_the_first_document.dart';
++import './../test/step/i_protect_with_a_password.dart';
++import './../test/step/i_see_the_protected_pdf_confirmation.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  group('''Password-protect a PDF''', () {
++    testWidgets('''Export a password-protected PDF''', (tester) async {
++      await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
++      await iTapTheScanButton(tester);
++      await iCaptureAndAcceptTheFirstPage(tester);
++      await iTapDone(tester);
++      await iOpenTheFirstDocument(tester);
++      await iProtectWithAPassword(tester);
++      await iSeeTheProtectedPdfConfirmation(tester);
++    });
++  });
++}
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index bdfae89..a0a86fd 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -35,20 +35,27 @@ abstract interface class DocumentRepository {
+ 
+   /// Deletes [documentId], its pages, and its on-disk image files. Row-first:
+   /// an authoritative DB delete (pages then document, one transaction), then a
+   /// best-effort file cleanup. A non-existent id is a no-op.
+   Future<void> deleteDocument(int documentId);
+ 
+   /// Generates a PDF of [documentId] to on-device storage and returns the file.
+   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
+   Future<File> exportPdf(int documentId);
+ 
++  /// Builds [documentId]'s PDF and returns it AES-256 encrypted with [password]
++  /// as a temporary file (same temp-file discipline as [exportPdf]). The
++  /// recipient needs the password to open it. Nothing leaves the device. Throws
++  /// [DocumentExportException] when the document has no pages or on build/
++  /// encrypt/IO failure.
++  Future<File> exportProtectedPdf(int documentId, String password);
++
+   /// Exports the page at [position] of [documentId] as a standalone JPG on device.
+   /// Reads the page's display image (the flattened derivative when present, else
+   /// the original capture), passes the bytes through the metadata scrubber, writes
+   /// `documents/<id>/page_<position>_export.jpg`, and returns the file. Nothing
+   /// leaves the device. Throws [DocumentExportException] when the page row/file is
+   /// missing or the scrub fails.
+   Future<File> exportPageAsImage(int documentId, int position);
+ 
+   /// Exports EVERY page of [documentId] as a standalone scrubbed JPG (delegating
+   /// to [exportPageAsImage] per page), returning the files in page order.
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index e0c01ca..01b0463 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -9,49 +9,53 @@ import '../document.dart';
+ import '../document_file_store.dart';
+ import '../document_repository.dart';
+ import '../document_summary.dart';
+ import '../image_enhancer.dart';
+ import '../image_metadata_scrubber.dart';
+ import '../image_warper.dart';
+ import '../ocr/ocr_engine.dart';
+ import '../ocr/ocr_result.dart';
+ import '../page_image.dart';
+ import '../pdf/pdf_builder.dart';
++import '../pdf/pdf_encryptor.dart';
+ import 'app_database.dart' hide Document;
+ 
+ /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
+ /// inserts the rows inside a single transaction so the DB never holds a partial
+ /// record. Stores RELATIVE image paths.
+ class DriftDocumentRepository implements DocumentRepository {
+   final AppDatabase _db;
+   final ImageMetadataScrubber _scrubber;
+   final DocumentFileStore _fileStore;
+   final DateTime Function() _clock;
+   final PdfBuilder _pdfBuilder;
+   final ImageWarper _warper;
+   final OcrEngine _ocrEngine;
++  final PdfEncryptor _encryptor;
+ 
+   DriftDocumentRepository({
+     required AppDatabase db,
+     required ImageMetadataScrubber scrubber,
+     required DocumentFileStore fileStore,
+     required DateTime Function() clock,
+     required PdfBuilder pdfBuilder,
+     required ImageWarper warper,
+     OcrEngine ocrEngine = const NoOpOcrEngine(),
++    PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
+   })  : _db = db, // ignore: prefer_initializing_formals
+         _scrubber = scrubber, // ignore: prefer_initializing_formals
+         _fileStore = fileStore, // ignore: prefer_initializing_formals
+         _clock = clock, // ignore: prefer_initializing_formals
+         _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
+         _warper = warper, // ignore: prefer_initializing_formals
+-        _ocrEngine = ocrEngine; // ignore: prefer_initializing_formals
++        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
++        _encryptor = encryptor; // ignore: prefer_initializing_formals
+ 
+   @override
+   Future<Document> createFromCapture(
+     CapturedImage capture, {
+     CropCorners? corners,
+     ImageEnhancer? enhancer,
+   }) async {
+     final now = _clock();
+     final createdUtc = now.toUtc();
+     final name = _defaultName(now);
+@@ -254,20 +258,40 @@ class DriftDocumentRepository implements DocumentRepository {
+       final dir = await Directory.systemTemp.createTemp('pdf_export');
+       final safeName = await _pdfFileNameFor(documentId);
+       final file = File('${dir.path}/$safeName');
+       await file.writeAsBytes(bytes);
+       return file;
+     } catch (e) {
+       throw DocumentExportException('export failed: $e');
+     }
+   }
+ 
++  @override
++  Future<File> exportProtectedPdf(int documentId, String password) async {
++    final pages = await getDocumentPages(documentId);
++    if (pages.isEmpty) {
++      throw const DocumentExportException('protect failed: no pages');
++    }
++    try {
++      final bytes = await _pdfBuilder.build(pages);
++      final encrypted = await _encryptor.encrypt(bytes, password);
++      final dir = await Directory.systemTemp.createTemp('pdf_protect');
++      final safeName = await _pdfFileNameFor(documentId);
++      final file = File('${dir.path}/$safeName');
++      await file.writeAsBytes(encrypted);
++      return file;
++    } catch (e) {
++      if (e is DocumentExportException) rethrow;
++      throw DocumentExportException('protect failed: $e');
++    }
++  }
++
+   /// Sanitized base name (no extension) from the document's name; 'document'
+   /// when the name is empty/unknown. Shared by all export filename builders.
+   Future<String> _exportBaseName(int documentId) async {
+     final doc = await (_db.select(_db.documents)
+           ..where((d) => d.id.equals(documentId)))
+         .getSingleOrNull();
+     final base = (doc?.name ?? 'document')
+         .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
+         .trim();
+     return base.isEmpty ? 'document' : base;
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index f761950..c4cdf1c 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -1,23 +1,25 @@
+ import 'dart:async'; // unawaited
+ import 'dart:io';
+ 
+ import 'package:flutter/material.dart';
++import 'package:share_plus/share_plus.dart';
+ 
+ import '../scan/camera_screen.dart';
+ import '../scan/scan_dependencies.dart';
+ import 'crop_corners.dart';
+ import 'document_printer.dart';
+ import 'document_repository.dart';
+ import 'edit_crop_screen.dart';
+ import 'merge_picker_dialog.dart';
+ import 'page_image.dart';
++import 'password_dialog.dart';
+ import 'pdf_preview_screen.dart';
+ import 'recognized_text_screen.dart';
+ import 'widgets/page_thumbnail_strip.dart';
+ import 'widgets/rename_dialog.dart';
+ 
+ /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
+ /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
+ /// loading / error+retry / empty / loaded. The delete action confirms, deletes
+ /// (row + files), and pops back to the list. The SCREEN owns the delete
+ /// sequence; the dialog only returns the user's choice.
+@@ -246,20 +248,46 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+         const SnackBar(content: Text('Sent to printer')),
+       );
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't print")),
+       );
+     }
+   }
+ 
++  Future<void> _protect() async {
++    final password = await showPasswordDialog(context);
++    if (password == null || password.isEmpty || !mounted) return;
++    try {
++      final file =
++          await widget.repository.exportProtectedPdf(widget.documentId, password);
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text('Protected PDF ready')),
++      );
++      unawaited(_shareQuietly(file));
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't protect PDF")),
++      );
++    }
++  }
++
++  Future<void> _shareQuietly(File file) async {
++    try {
++      await SharePlus.instance
++          .share(ShareParams(files: [XFile(file.path)], subject: _name));
++    } catch (_) {/* share unavailable (e.g. host test) — ignore */}
++  }
++
+   void _viewText() {
+     final pages = _pages;
+     if (pages == null || pages.isEmpty) return;
+     final page = pages[_current];
+     Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => RecognizedTextScreen(
+           documentId: widget.documentId,
+           position: page.position,
+           name: _name,
+@@ -447,20 +475,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'merge') unawaited(_mergeAnother());
+               if (v == 'split') unawaited(_splitAfter());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+               if (v == 'print') unawaited(_print());
++              if (v == 'protect') unawaited(_protect());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'rotate',
+                 key: Key('page-viewer-rotate'),
+@@ -494,20 +523,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+               PopupMenuItem<String>(
+                 value: 'export-all-images',
+                 key: Key('page-viewer-export-all-images'),
+                 child: Text('Export all as images'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'print',
+                 key: Key('page-viewer-print'),
+                 child: Text('Print'),
+               ),
++              PopupMenuItem<String>(
++                value: 'protect',
++                key: Key('page-viewer-protect'),
++                child: Text('Protect with password'),
++              ),
+             ],
+           ),
+         ],
+       ),
+       body: _loading
+           ? const Center(
+               key: Key('page-viewer-loading'),
+               child: CircularProgressIndicator())
+           : _error
+               ? _buildError()
+diff --git a/apps/mobile/lib/features/library/password_dialog.dart b/apps/mobile/lib/features/library/password_dialog.dart
+new file mode 100644
+index 0000000..e8fe31f
+--- /dev/null
++++ b/apps/mobile/lib/features/library/password_dialog.dart
+@@ -0,0 +1,56 @@
++import 'package:flutter/material.dart';
++
++/// Prompts for a password (obscured). Resolves to the entered password, or null
++/// if cancelled. Protect is disabled until a non-empty password is entered.
++Future<String?> showPasswordDialog(BuildContext context) =>
++    showDialog<String>(context: context, builder: (_) => const PasswordDialog());
++
++class PasswordDialog extends StatefulWidget {
++  const PasswordDialog({super.key});
++
++  @override
++  State<PasswordDialog> createState() => _PasswordDialogState();
++}
++
++class _PasswordDialogState extends State<PasswordDialog> {
++  final _controller = TextEditingController();
++
++  @override
++  void dispose() {
++    _controller.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final canConfirm = _controller.text.trim().isNotEmpty;
++    return AlertDialog(
++      key: const Key('password-dialog'),
++      title: const Text('Password-protect PDF'),
++      content: TextField(
++        key: const Key('password-field'),
++        controller: _controller,
++        autofocus: true,
++        obscureText: true,
++        decoration: const InputDecoration(hintText: 'Enter a password'),
++        onChanged: (_) => setState(() {}),
++        onSubmitted: (v) {
++          if (v.trim().isNotEmpty) Navigator.of(context).pop(v);
++        },
++      ),
++      actions: [
++        TextButton(
++          key: const Key('password-cancel'),
++          onPressed: () => Navigator.of(context).pop(),
++          child: const Text('Cancel'),
++        ),
++        TextButton(
++          key: const Key('password-confirm'),
++          onPressed:
++              canConfirm ? () => Navigator.of(context).pop(_controller.text) : null,
++          child: const Text('Protect'),
++        ),
++      ],
++    );
++  }
++}
+diff --git a/apps/mobile/lib/features/library/pdf/pdf_encryptor.dart b/apps/mobile/lib/features/library/pdf/pdf_encryptor.dart
+new file mode 100644
+index 0000000..ace568e
+--- /dev/null
++++ b/apps/mobile/lib/features/library/pdf/pdf_encryptor.dart
+@@ -0,0 +1,36 @@
++import 'dart:typed_data';
++
++import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
++
++/// Encrypts a generated PDF with a user password. Injectable (DIP) so the engine
++/// is swappable and testable. Nothing leaves the device.
++abstract interface class PdfEncryptor {
++  Future<Uint8List> encrypt(Uint8List pdfBytes, String password);
++}
++
++/// Production encryptor backed by `syncfusion_flutter_pdf` (pure Dart). Loads the
++/// generated PDF, applies AES-256 + the password (as both user and owner
++/// password), clears document info for metadata hygiene, and re-saves.
++class SyncfusionPdfEncryptor implements PdfEncryptor {
++  const SyncfusionPdfEncryptor();
++
++  @override
++  Future<Uint8List> encrypt(Uint8List pdfBytes, String password) async {
++    final doc = sf.PdfDocument(inputBytes: pdfBytes);
++    try {
++      doc.security.userPassword = password;
++      doc.security.ownerPassword = password;
++      doc.security.algorithm = sf.PdfEncryptionAlgorithm.aesx256Bit;
++      final info = doc.documentInformation;
++      info.author = '';
++      info.creator = '';
++      info.producer = '';
++      info.title = '';
++      info.subject = '';
++      info.keywords = '';
++      return Uint8List.fromList(await doc.save());
++    } finally {
++      doc.dispose();
++    }
++  }
++}
+diff --git a/apps/mobile/pubspec.yaml b/apps/mobile/pubspec.yaml
+index dce1893..64d9369 100644
+--- a/apps/mobile/pubspec.yaml
++++ b/apps/mobile/pubspec.yaml
+@@ -41,20 +41,21 @@ dependencies:
+   drift: ^2.20.0
+   sqlite3_flutter_libs: ^0.5.24
+   path_provider: ^2.1.4
+   path: ^1.9.0
+   pdf: ^3.11.1
+   printing: ^5.13.0
+   pdfx: ^2.9.0
+   image_picker: ^1.2.3
+   google_mlkit_text_recognition: ^0.15.1
+   share_plus: ^13.2.0
++  syncfusion_flutter_pdf: ^33.2.15
+ 
+ dev_dependencies:
+   flutter_test:
+     sdk: flutter
+   integration_test:
+     sdk: flutter
+ 
+   # The "flutter_lints" package below contains a set of recommended lints to
+   # encourage good coding practices. The lint set provided by the package is
+   # activated in the `analysis_options.yaml` file located at the root of your
+diff --git a/apps/mobile/test/features/library/export_protected_pdf_test.dart b/apps/mobile/test/features/library/export_protected_pdf_test.dart
+new file mode 100644
+index 0000000..616bd1c
+--- /dev/null
++++ b/apps/mobile/test/features/library/export_protected_pdf_test.dart
+@@ -0,0 +1,71 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++String _ascii(List<int> b) {
++  final s = StringBuffer();
++  for (final c in b) {
++    s.writeCharCode(c);
++  }
++  return s.toString();
++}
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('p1prot');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  test('exports an encrypted PDF for a document', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    final rel = 'documents/$id/page_1.jpg';
++    await store.writeRelative(rel,
++        Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90)));
++    await db.into(db.pages).insert(PagesCompanion.insert(
++        documentId: id, position: 1, relativeImagePath: rel));
++
++    final file = await repo.exportProtectedPdf(id, 'secret');
++    final bytes = await file.readAsBytes();
++    expect(_ascii(bytes.sublist(0, 4)), '%PDF');
++    expect(_ascii(bytes).contains('/Encrypt'), isTrue);
++  });
++
++  test('throws when the document has no pages', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Empty', createdAt: now, modifiedAt: now));
++    await expectLater(repo.exportProtectedPdf(id, 'x'),
++        throwsA(isA<DocumentExportException>()));
++  });
++}
+diff --git a/apps/mobile/test/features/library/page_viewer_protect_test.dart b/apps/mobile/test/features/library/page_viewer_protect_test.dart
+new file mode 100644
+index 0000000..281cdec
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_protect_test.dart
+@@ -0,0 +1,32 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('Protect with password exports a protected PDF', (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 5, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-protect')));
++    await tester.pumpAndSettle();
++
++    await tester.enterText(find.byKey(const Key('password-field')), 'secret');
++    await tester.pump();
++    await tester.tap(find.byKey(const Key('password-confirm')));
++    await tester.pump();
++    await tester.pump(const Duration(milliseconds: 100));
++
++    expect(repo.lastProtectPassword, 'secret');
++    expect(find.text('Protected PDF ready'), findsOneWidget);
++  });
++}
+diff --git a/apps/mobile/test/features/library/password_dialog_test.dart b/apps/mobile/test/features/library/password_dialog_test.dart
+new file mode 100644
+index 0000000..1b94dc5
+--- /dev/null
++++ b/apps/mobile/test/features/library/password_dialog_test.dart
+@@ -0,0 +1,57 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/password_dialog.dart';
++
++void main() {
++  testWidgets('returns the entered password on Protect', (tester) async {
++    String? result = 'unset';
++    await tester.pumpWidget(MaterialApp(
++      home: Builder(
++        builder: (context) => Scaffold(
++          body: Center(
++            child: ElevatedButton(
++              onPressed: () async => result = await showPasswordDialog(context),
++              child: const Text('open'),
++            ),
++          ),
++        ),
++      ),
++    ));
++    await tester.tap(find.text('open'));
++    await tester.pumpAndSettle();
++
++    // Protect is disabled until text is entered.
++    final btn = tester.widget<TextButton>(
++        find.byKey(const Key('password-confirm')));
++    expect(btn.onPressed, isNull);
++
++    await tester.enterText(find.byKey(const Key('password-field')), 'secret');
++    await tester.pump();
++    await tester.tap(find.byKey(const Key('password-confirm')));
++    await tester.pumpAndSettle();
++
++    expect(result, 'secret');
++  });
++
++  testWidgets('returns null on Cancel', (tester) async {
++    String? result = 'unset';
++    await tester.pumpWidget(MaterialApp(
++      home: Builder(
++        builder: (context) => Scaffold(
++          body: Center(
++            child: ElevatedButton(
++              onPressed: () async => result = await showPasswordDialog(context),
++              child: const Text('open'),
++            ),
++          ),
++        ),
++      ),
++    ));
++    await tester.tap(find.text('open'));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('password-cancel')));
++    await tester.pumpAndSettle();
++
++    expect(result, isNull);
++  });
++}
+diff --git a/apps/mobile/test/features/library/pdf/pdf_encryptor_test.dart b/apps/mobile/test/features/library/pdf/pdf_encryptor_test.dart
+new file mode 100644
+index 0000000..b01ee02
+--- /dev/null
++++ b/apps/mobile/test/features/library/pdf/pdf_encryptor_test.dart
+@@ -0,0 +1,37 @@
++import 'dart:typed_data';
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/pdf/pdf_encryptor.dart';
++import 'package:pdf/widgets.dart' as pw;
++import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
++
++String _ascii(List<int> b) {
++  final s = StringBuffer();
++  for (final c in b) {
++    s.writeCharCode(c);
++  }
++  return s.toString();
++}
++
++void main() {
++  Future<Uint8List> plainPdf() async {
++    final doc = pw.Document();
++    doc.addPage(pw.Page(build: (_) => pw.SizedBox()));
++    return Uint8List.fromList(await doc.save());
++  }
++
++  test('encrypts a PDF with AES-256 and the given password', () async {
++    final plain = await plainPdf();
++    expect(_ascii(plain).contains('/Encrypt'), isFalse,
++        reason: 'the plain PDF must not be encrypted');
++
++    final enc = await const SyncfusionPdfEncryptor().encrypt(plain, 'secret');
++
++    expect(_ascii(enc).contains('/Encrypt'), isTrue,
++        reason: 'the output must be an encrypted PDF');
++    // Reopens with the password (proves it is validly encrypted with it).
++    final doc = sf.PdfDocument(inputBytes: enc, password: 'secret');
++    expect(doc.pages.count, greaterThan(0));
++    doc.dispose();
++  });
++}
+diff --git a/apps/mobile/test/step/i_protect_with_a_password.dart b/apps/mobile/test/step/i_protect_with_a_password.dart
+new file mode 100644
+index 0000000..69d7820
+--- /dev/null
++++ b/apps/mobile/test/step/i_protect_with_a_password.dart
+@@ -0,0 +1,14 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I protect with a password
++Future<void> iProtectWithAPassword(WidgetTester tester) async {
++  await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++  await tester.pumpAndSettle();
++  await tester.tap(find.byKey(const Key('page-viewer-protect')));
++  await tester.pumpAndSettle();
++  await tester.enterText(find.byKey(const Key('password-field')), 'secret');
++  await tester.pump();
++  await tester.tap(find.byKey(const Key('password-confirm')));
++  await tester.pumpAndSettle();
++}
+diff --git a/apps/mobile/test/step/i_see_the_protected_pdf_confirmation.dart b/apps/mobile/test/step/i_see_the_protected_pdf_confirmation.dart
+new file mode 100644
+index 0000000..d5af35a
+--- /dev/null
++++ b/apps/mobile/test/step/i_see_the_protected_pdf_confirmation.dart
+@@ -0,0 +1,7 @@
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I see the protected PDF confirmation
++Future<void> iSeeTheProtectedPdfConfirmation(WidgetTester tester) async {
++  await tester.pump(const Duration(milliseconds: 100));
++  expect(find.text('Protected PDF ready'), findsOneWidget);
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index 5db4057..1b74286 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -54,20 +54,22 @@ class FakeDocumentRepository implements DocumentRepository {
+   CropCorners? lastUpdatedCorners;
+   int addPageCalls = 0;
+   List<int> lastReorderedPositions = <int>[];
+   int? lastDeletedPagePosition;
+   int? lastReplacedPagePosition;
+   final List<int> deletedIds = <int>[];
+   final List<int> exportedIds = <int>[];
+   final List<String> renamedTo = <String>[];
+   int? lastExportedImagePosition;
+   int? lastExportedTextPosition;
++  int protectCalls = 0;
++  String? lastProtectPassword;
+ 
+   FakeDocumentRepository({
+     this.throwOnCreate = false,
+     this.throwOnList = false,
+     this.throwOnGetPages = false,
+     this.throwOnDelete = false,
+     this.throwOnExport = false,
+     this.throwOnRename = false,
+     this.throwOnUpdate = false,
+     this.throwOnAddPage = false,
+@@ -130,20 +132,30 @@ class FakeDocumentRepository implements DocumentRepository {
+       throw const DocumentExportException('fake: export failed');
+     }
+     if (exportGate != null) await exportGate!.future;
+     exportedIds.add(documentId);
+     // Return a path without real I/O — callers (e.g. _exportPdf) discard the
+     // File; widget tests need the future to complete synchronously so that
+     // pumpAndSettle can drive the success SnackBar before settling.
+     return File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
+   }
+ 
++  @override
++  Future<File> exportProtectedPdf(int documentId, String password) async {
++    if (throwOnExport) {
++      throw const DocumentExportException('fake: protect failed');
++    }
++    protectCalls++;
++    lastProtectPassword = password;
++    return File('${Directory.systemTemp.path}/fake-protected-$documentId.pdf');
++  }
++
+   @override
+   Future<File> exportPageAsImage(int documentId, int position) async {
+     if (throwOnExportImage) {
+       throw const DocumentExportException('fake: exportImage failed');
+     }
+     lastExportedImagePosition = position;
+     return File(
+         '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
+   }
+ 
+diff --git a/docs/superpowers/plans/00-plans-index.md b/docs/superpowers/plans/00-plans-index.md
+index 5628f2e..5ae5953 100644
+--- a/docs/superpowers/plans/00-plans-index.md
++++ b/docs/superpowers/plans/00-plans-index.md
+@@ -75,19 +75,20 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes
+ | O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
+ | O2 | OCR engine (ML Kit) + auto-run after save | 08 | `2026-07-01-o2-mlkit-engine.md`¹ | ✅ **built & merged** |
+ | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
+ | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
+ | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
+ | J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
+ | K1 | Rotate a page 90° | 09 | `2026-07-01-k1-rotate-page.md` | ✅ **built & gated** |
+ | L1 | Merge documents | 09 | `2026-07-01-l1-merge-documents.md` | ✅ **built & gated** |
+ | M1 | Split a document | 09 | `2026-07-01-m1-split-document.md` | ✅ **built & gated** |
+ | N1 | Print a document | 12 | `2026-07-01-n1-print-document.md` | ✅ **built & gated** |
++| P1 | PDF password protection (AES-256) | 07/09 | `2026-07-02-p1-pdf-password.md` | ✅ **built & gated** |
+ 
+ ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
+ 
+ Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
+ own ordered plan files once Sub-project 1 is complete and gated.
+ 
+ Cross-cutting concerns (metadata scrubber, searchable-PDF text-layer interface,
+ password) are introduced as shared, single-responsibility files in the first
+ plan that needs them and reused thereafter (DRY).
+diff --git a/scripts/verify/p1.sh b/scripts/verify/p1.sh
+new file mode 100755
+index 0000000..7a563dd
+--- /dev/null
++++ b/scripts/verify/p1.sh
+@@ -0,0 +1,59 @@
++#!/usr/bin/env bash
++# Verify P1 (PDF password protection) acceptance criteria.
++# Run from repository root: bash scripts/verify/p1.sh
++# VERIFY_SKIP_DEVICE=1 skips the on-device integration tests.
++
++DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++# shellcheck source=lib.sh
++source "$DIR/lib.sh"
++cd "$ROOT"
++
++echo "== P1 verification =="
++
++require_tool flutter
++require_tool pnpm
++
++assert_file_has "PdfEncryptor seam exists" \
++  "apps/mobile/lib/features/library/pdf/pdf_encryptor.dart" \
++  "abstract interface class PdfEncryptor"
++
++assert_file_has "syncfusion dependency added" \
++  "apps/mobile/pubspec.yaml" \
++  "syncfusion_flutter_pdf:"
++
++assert_file_has "exportProtectedPdf in DriftDocumentRepository" \
++  "apps/mobile/lib/features/library/drift/drift_document_repository.dart" \
++  "exportProtectedPdf"
++
++assert_file_has "page viewer wires Protect" \
++  "apps/mobile/lib/features/library/page_viewer_screen.dart" \
++  "page-viewer-protect"
++
++assert_file_has "BDD feature exists" \
++  "apps/mobile/integration_test/p1_pdf_password.feature" \
++  "Password-protect a PDF"
++
++assert_file_has "generated BDD test exists" \
++  "apps/mobile/integration_test/p1_pdf_password_test.dart" \
++  "protect"
++
++bash "$ROOT/scripts/setup-cv-host-test.sh"
++export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
++export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
++
++assert_cmd "host tests pass" "All tests passed!" \
++  pnpm nx run mobile:test --skip-nx-cache
++
++assert_cmd "flutter analyze clean" "No issues found" \
++  bash -c "cd apps/mobile && flutter analyze --no-fatal-infos"
++
++if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
++  warn "VERIFY_SKIP_DEVICE=1 — on-device P1 tests skipped (must pass on a real device before gate)"
++else
++  assert_cmd "on-device protected-PDF test passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/p1_pdf_password_device_test.dart"
++  assert_cmd "on-device BDD scenario passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/p1_pdf_password_test.dart"
++fi
++
++echo "== P1 verification complete =="

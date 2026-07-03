@@ -1,0 +1,685 @@
+diff --git a/apps/mobile/integration_test/m1_split_document.feature b/apps/mobile/integration_test/m1_split_document.feature
+new file mode 100644
+index 0000000..b063779
+--- /dev/null
++++ b/apps/mobile/integration_test/m1_split_document.feature
+@@ -0,0 +1,11 @@
++Feature: Split a document
++
++  Scenario: Split after the first page
++    Given the app is launched with camera permission granted and empty storage
++    When I tap the Scan button
++    And I capture and accept the first page
++    And I capture and accept the second page
++    And I tap Done
++    And I open the first document
++    And I split after the first page
++    Then I see the split confirmation
+diff --git a/apps/mobile/integration_test/m1_split_document_device_test.dart b/apps/mobile/integration_test/m1_split_document_device_test.dart
+new file mode 100644
+index 0000000..dba8f84
+--- /dev/null
++++ b/apps/mobile/integration_test/m1_split_document_device_test.dart
+@@ -0,0 +1,51 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:integration_test/integration_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets('splitAfter moves trailing pages to a new document on device',
++      (tester) async {
++    final base = await Directory.systemTemp.createTemp('m1dev');
++    final db = AppDatabase(NativeDatabase.memory());
++    final store = DocumentFileStore(base);
++    final repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++
++    final jpeg = Uint8List.fromList(
++        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Doc', createdAt: now, modifiedAt: now));
++    for (var p = 1; p <= 3; p++) {
++      final rel = 'documents/$id/page_$p.jpg';
++      await store.writeRelative(rel, jpeg);
++      await db.into(db.pages).insert(PagesCompanion.insert(
++          documentId: id, position: p, relativeImagePath: rel));
++    }
++
++    final created = await repo.splitAfter(id, 1);
++    expect((await repo.getDocumentPages(id)).length, 1);
++    expect((await repo.getDocumentPages(created.id)).length, 2);
++
++    await db.close();
++    await base.delete(recursive: true);
++  });
++}
+diff --git a/apps/mobile/integration_test/m1_split_document_test.dart b/apps/mobile/integration_test/m1_split_document_test.dart
+new file mode 100644
+index 0000000..d04b1db
+--- /dev/null
++++ b/apps/mobile/integration_test/m1_split_document_test.dart
+@@ -0,0 +1,32 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint, type=warning
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++
++import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
++import './../test/step/i_tap_the_scan_button.dart';
++import './../test/step/i_capture_and_accept_the_first_page.dart';
++import './../test/step/i_capture_and_accept_the_second_page.dart';
++import './../test/step/i_tap_done.dart';
++import './../test/step/i_open_the_first_document.dart';
++import './../test/step/i_split_after_the_first_page.dart';
++import './../test/step/i_see_the_split_confirmation.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  group('''Split a document''', () {
++    testWidgets('''Split after the first page''', (tester) async {
++      await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
++      await iTapTheScanButton(tester);
++      await iCaptureAndAcceptTheFirstPage(tester);
++      await iCaptureAndAcceptTheSecondPage(tester);
++      await iTapDone(tester);
++      await iOpenTheFirstDocument(tester);
++      await iSplitAfterTheFirstPage(tester);
++      await iSeeTheSplitConfirmation(tester);
++    });
++  });
++}
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index 7d63d46..bdfae89 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -125,20 +125,28 @@ abstract interface class DocumentRepository {
+   Future<void> runOcr(int documentId, int position);
+ 
+   /// Appends every page of [sourceDocumentId] (in position order) to
+   /// [targetDocumentId] — copying each page's image, flat derivative, corners,
+   /// and cached OCR text/boxes verbatim — then deletes the source document.
+   /// Merged files are named from the source id so they never collide with the
+   /// target's existing files. Nothing leaves the device. Throws
+   /// [DocumentSaveException] when target == source or on any IO/DB failure.
+   Future<void> mergeInto(int targetDocumentId, int sourceDocumentId);
+ 
++  /// Splits [documentId] after [position]: the pages after [position] are moved
++  /// (image, flat, corners, OCR copied verbatim) into a NEW document named
++  /// "`<name>` (split)", and removed from the source (which keeps pages
++  /// 1..[position]). Returns the new document. Nothing leaves the device. Throws
++  /// [DocumentSaveException] when [position] is < 1, is the last page (nothing to
++  /// split off), or on any IO/DB failure.
++  Future<Document> splitAfter(int documentId, int position);
++
+   /// Materializes the page at [position] of [documentId]'s cached recognized
+   /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
+   /// named `<sanitized-document-name>_page_<position>.txt` under the system temp
+   /// dir — temporary, so the app does not accumulate exports (mirrors
+   /// [exportPdf]). A `.txt` carries no metadata, so no scrub pass is needed.
+   /// Nothing leaves the device. Throws [DocumentExportException] when the page
+   /// row is missing or has no recognized text (null/empty/whitespace).
+   Future<File> exportRecognizedText(int documentId, int position);
+ }
+ 
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index 1a90c8b..e0c01ca 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -733,20 +733,103 @@ class DriftDocumentRepository implements DocumentRepository {
+             ..where((d) => d.id.equals(targetDocumentId)))
+           .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+     } catch (e) {
+       if (e is DocumentSaveException) rethrow;
+       throw DocumentSaveException('mergeInto failed: $e');
+     }
+     // Remove the now-copied source (rows + dir). Separate from the txn above.
+     await deleteDocument(sourceDocumentId);
+   }
+ 
++  @override
++  Future<Document> splitAfter(int documentId, int position) async {
++    try {
++      final pages = await (_db.select(_db.pages)
++            ..where((p) => p.documentId.equals(documentId))
++            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
++          .get();
++      if (pages.isEmpty) {
++        throw DocumentSaveException('splitAfter: no pages ($documentId)');
++      }
++      final maxPos = pages.last.position;
++      if (position < 1 || position >= maxPos) {
++        throw DocumentSaveException(
++            'splitAfter: nothing after position $position');
++      }
++      final doc = await (_db.select(_db.documents)
++            ..where((d) => d.id.equals(documentId)))
++          .getSingleOrNull();
++      if (doc == null) {
++        throw DocumentSaveException('splitAfter: no document $documentId');
++      }
++      final now = _clock().toUtc();
++      final newName = '${doc.name} (split)';
++      final newId = await _db.into(_db.documents).insert(
++          DocumentsCompanion.insert(
++              name: newName, createdAt: now, modifiedAt: now));
++
++      final moved = pages.where((p) => p.position > position).toList();
++      var k = 0;
++      for (final src in moved) {
++        k++;
++        final imageRel = 'documents/$newId/page_$k.jpg';
++        final bytes =
++            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
++        await _fileStore.writeRelative(imageRel, bytes);
++        String? flatRel;
++        if (src.flatRelativePath != null) {
++          final flatBytes =
++              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
++          flatRel = _fileStore.flatForImage(imageRel);
++          await _fileStore.writeRelative(flatRel, flatBytes);
++        }
++        await _db.into(_db.pages).insert(PagesCompanion.insert(
++          documentId: newId,
++          position: k,
++          relativeImagePath: imageRel,
++          corners: Value(src.corners),
++          flatRelativePath: Value(flatRel),
++          ocrText: Value(src.ocrText),
++          ocrBoxes: Value(src.ocrBoxes),
++        ));
++      }
++
++      await _db.transaction(() async {
++        for (final src in moved) {
++          await (_db.delete(_db.pages)..where((t) => t.id.equals(src.id))).go();
++        }
++        await (_db.update(_db.documents)
++              ..where((d) => d.id.equals(documentId)))
++            .write(DocumentsCompanion(modifiedAt: Value(now)));
++      });
++
++      // Best-effort cleanup of the moved pages' source files (after commit).
++      for (final src in moved) {
++        try {
++          await _fileStore.absoluteFor(src.relativeImagePath).delete();
++        } on FileSystemException {/* already gone */}
++        final f = src.flatRelativePath;
++        if (f != null) {
++          try {
++            await _fileStore.absoluteFor(f).delete();
++          } on FileSystemException {/* already gone */}
++        }
++      }
++
++      return Document(
++          id: newId, name: newName, createdAt: now, modifiedAt: now);
++    } catch (e) {
++      if (e is DocumentSaveException) rethrow;
++      throw DocumentSaveException('splitAfter failed: $e');
++    }
++  }
++
+   /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
+   /// save — and does not run for the NoOp engine (skips wasted work in tests).
+   void _triggerOcr(int documentId, int position) {
+     if (_ocrEngine is NoOpOcrEngine) return;
+     // ignore: discarded_futures
+     runOcr(documentId, position).catchError((_) {});
+   }
+ 
+   String _defaultName(DateTime t) {
+     String two(int n) => n.toString().padLeft(2, '0');
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 7a5eef6..7387c6f 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -336,20 +336,46 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+       if (!mounted) return;
+       await _load();
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't update crop")),
+       );
+     }
+   }
+ 
++  Future<void> _splitAfter() async {
++    final pages = _pages;
++    if (pages == null || pages.isEmpty) return;
++    if (_current >= pages.length - 1) {
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(
++            content: Text('This is the last page — nothing to split after.')),
++      );
++      return;
++    }
++    final page = pages[_current];
++    try {
++      await widget.repository.splitAfter(widget.documentId, page.position);
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text('Split into a new document')),
++      );
++      await _load();
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't split")),
++      );
++    }
++  }
++
+   Future<void> _mergeAnother() async {
+     final sourceId =
+         await showMergePicker(context, widget.repository, widget.documentId);
+     if (sourceId == null || !mounted) return;
+     try {
+       await widget.repository.mergeInto(widget.documentId, sourceId);
+       if (!mounted) return;
+       await _load();
+     } catch (_) {
+       if (!mounted) return;
+@@ -396,20 +422,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             icon: const Icon(Icons.delete_outline),
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'merge') unawaited(_mergeAnother());
++              if (v == 'split') unawaited(_splitAfter());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+@@ -417,20 +444,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+               PopupMenuItem<String>(
+                 value: 'rotate',
+                 key: Key('page-viewer-rotate'),
+                 child: Text('Rotate'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'merge',
+                 key: Key('page-viewer-merge'),
+                 child: Text('Merge another document…'),
+               ),
++              PopupMenuItem<String>(
++                value: 'split',
++                key: Key('page-viewer-split'),
++                child: Text('Split after this page'),
++              ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+                 child: Text('Retake page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+diff --git a/apps/mobile/test/features/library/page_viewer_split_test.dart b/apps/mobile/test/features/library/page_viewer_split_test.dart
+new file mode 100644
+index 0000000..3a9e32b
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_split_test.dart
+@@ -0,0 +1,49 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  Future<void> openMenuAndSplit(WidgetTester tester) async {
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-split')));
++    await tester.pumpAndSettle();
++  }
++
++  testWidgets('Split after this page splits when not on the last page',
++      (tester) async {
++    final repo = FakeDocumentRepository(pages: const [
++      PageImage(position: 1, imagePath: '/a.jpg'),
++      PageImage(position: 2, imagePath: '/b.jpg'),
++    ]);
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await openMenuAndSplit(tester);
++
++    expect(repo.lastSplitDoc, 7);
++    expect(repo.lastSplitPosition, 1);
++    expect(find.text('Split into a new document'), findsOneWidget);
++  });
++
++  testWidgets('Split on the only (last) page shows a message and does not split',
++      (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await openMenuAndSplit(tester);
++
++    expect(repo.lastSplitDoc, isNull);
++    expect(find.textContaining('last page'), findsOneWidget);
++  });
++}
+diff --git a/apps/mobile/test/features/library/split_document_test.dart b/apps/mobile/test/features/library/split_document_test.dart
+new file mode 100644
+index 0000000..d76962f
+--- /dev/null
++++ b/apps/mobile/test/features/library/split_document_test.dart
+@@ -0,0 +1,114 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/ocr/ocr_result.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('m1split');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  Uint8List jpeg() =>
++      Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++
++  // Creates a document with [pageCount] pages; the LAST page optionally gets a
++  // flat + OCR so we can prove they are carried across a split.
++  Future<int> seedDoc(int pageCount, {bool lastHasFlatOcr = false}) async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    for (var pos = 1; pos <= pageCount; pos++) {
++      final rel = 'documents/$id/page_$pos.jpg';
++      await store.writeRelative(rel, jpeg());
++      String? flatRel;
++      String? ocrText;
++      String? ocrBoxes;
++      if (pos == pageCount && lastHasFlatOcr) {
++        flatRel = store.flatForImage(rel);
++        await store.writeRelative(flatRel, jpeg());
++        ocrText = 'TAIL';
++        ocrBoxes = const OcrResult(text: 'TAIL', words: [
++          OcrWordBox(text: 'TAIL', left: 0.1, top: 0.1, right: 0.2, bottom: 0.2)
++        ]).encodeBoxes();
++      }
++      await db.into(db.pages).insert(PagesCompanion.insert(
++            documentId: id,
++            position: pos,
++            relativeImagePath: rel,
++            flatRelativePath: Value(flatRel),
++            ocrText: Value(ocrText),
++            ocrBoxes: Value(ocrBoxes),
++          ));
++    }
++    return id;
++  }
++
++  test('moves trailing pages into a new document; source keeps the head',
++      () async {
++    final id = await seedDoc(3, lastHasFlatOcr: true);
++    final created = await repo.splitAfter(id, 1);
++
++    // Source keeps only page 1.
++    final srcPages = await repo.getDocumentPages(id);
++    expect(srcPages.length, 1);
++    expect(srcPages.single.position, 1);
++
++    // New document has the former pages 2 and 3, renumbered 1 and 2.
++    expect(created.name, endsWith('(split)'));
++    final newPages = await repo.getDocumentPages(created.id);
++    expect(newPages.length, 2);
++    expect(newPages.map((p) => p.position), [1, 2]);
++    for (final p in newPages) {
++      expect(File(p.imagePath).existsSync(), isTrue);
++    }
++    // The former last page (now position 2) kept its flat + OCR.
++    final tail = newPages[1];
++    expect(tail.flatImagePath, isNotNull);
++    expect(File(tail.flatImagePath!).existsSync(), isTrue);
++    expect(tail.ocrText, 'TAIL');
++    expect(tail.ocrWords, isNotEmpty);
++  });
++
++  test('splitting after the last page throws', () async {
++    final id = await seedDoc(2);
++    await expectLater(
++        repo.splitAfter(id, 2), throwsA(isA<DocumentSaveException>()));
++  });
++
++  test('splitting after position 0 throws', () async {
++    final id = await seedDoc(2);
++    await expectLater(
++        repo.splitAfter(id, 0), throwsA(isA<DocumentSaveException>()));
++  });
++}
+diff --git a/apps/mobile/test/step/i_see_the_split_confirmation.dart b/apps/mobile/test/step/i_see_the_split_confirmation.dart
+new file mode 100644
+index 0000000..f2ef920
+--- /dev/null
++++ b/apps/mobile/test/step/i_see_the_split_confirmation.dart
+@@ -0,0 +1,7 @@
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I see the split confirmation
++Future<void> iSeeTheSplitConfirmation(WidgetTester tester) async {
++  await tester.pump(const Duration(milliseconds: 100));
++  expect(find.text('Split into a new document'), findsOneWidget);
++}
+diff --git a/apps/mobile/test/step/i_split_after_the_first_page.dart b/apps/mobile/test/step/i_split_after_the_first_page.dart
+new file mode 100644
+index 0000000..6408904
+--- /dev/null
++++ b/apps/mobile/test/step/i_split_after_the_first_page.dart
+@@ -0,0 +1,10 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I split after the first page
++Future<void> iSplitAfterTheFirstPage(WidgetTester tester) async {
++  await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++  await tester.pumpAndSettle();
++  await tester.tap(find.byKey(const Key('page-viewer-split')));
++  await tester.pumpAndSettle();
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index 896b883..0efca88 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -318,20 +318,38 @@ class FakeDocumentRepository implements DocumentRepository {
+ 
+   @override
+   Future<void> mergeInto(int targetDocumentId, int sourceDocumentId) async {
+     if (throwOnUpdate) {
+       throw const DocumentSaveException('fake: merge failed');
+     }
+     lastMergeTarget = targetDocumentId;
+     lastMergeSource = sourceDocumentId;
+   }
+ 
++  int? lastSplitDoc;
++  int? lastSplitPosition;
++
++  @override
++  Future<Document> splitAfter(int documentId, int position) async {
++    if (throwOnUpdate) {
++      throw const DocumentSaveException('fake: split failed');
++    }
++    lastSplitDoc = documentId;
++    lastSplitPosition = position;
++    return Document(
++      id: 999,
++      name: 'Split',
++      createdAt: DateTime.utc(2026, 7, 1),
++      modifiedAt: DateTime.utc(2026, 7, 1),
++    );
++  }
++
+   int rotateCalls = 0;
+   int? lastRotatedPosition;
+ 
+   @override
+   Future<void> rotatePage(int documentId, int position) async {
+     if (throwOnUpdate) {
+       throw const DocumentSaveException('fake: rotate failed');
+     }
+     rotateCalls++;
+     lastRotatedPosition = position;
+diff --git a/docs/superpowers/plans/00-plans-index.md b/docs/superpowers/plans/00-plans-index.md
+index 1714b36..8ab27b5 100644
+--- a/docs/superpowers/plans/00-plans-index.md
++++ b/docs/superpowers/plans/00-plans-index.md
+@@ -73,19 +73,20 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes
+ | I1 | Export page as image | 10 | `2026-07-01-i1-export-image.md` | ✅ **built & gated** |
+ | I2 | Gallery import | 01 | `2026-07-01-i2-gallery-import.md` | ✅ **built & gated** |
+ | O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
+ | O2 | OCR engine (ML Kit) + auto-run after save | 08 | `2026-07-01-o2-mlkit-engine.md`¹ | ✅ **built & merged** |
+ | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
+ | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
+ | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
+ | J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
+ | K1 | Rotate a page 90° | 09 | `2026-07-01-k1-rotate-page.md` | ✅ **built & gated** |
+ | L1 | Merge documents | 09 | `2026-07-01-l1-merge-documents.md` | ✅ **built & gated** |
++| M1 | Split a document | 09 | `2026-07-01-m1-split-document.md` | ✅ **built & gated** |
+ 
+ ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
+ 
+ Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
+ own ordered plan files once Sub-project 1 is complete and gated.
+ 
+ Cross-cutting concerns (metadata scrubber, searchable-PDF text-layer interface,
+ password) are introduced as shared, single-responsibility files in the first
+ plan that needs them and reused thereafter (DRY).
+diff --git a/scripts/verify/m1.sh b/scripts/verify/m1.sh
+new file mode 100755
+index 0000000..7e6c5a3
+--- /dev/null
++++ b/scripts/verify/m1.sh
+@@ -0,0 +1,55 @@
++#!/usr/bin/env bash
++# Verify M1 (split a document) acceptance criteria.
++# Run from repository root: bash scripts/verify/m1.sh
++# VERIFY_SKIP_DEVICE=1 skips the on-device integration tests.
++
++DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++# shellcheck source=lib.sh
++source "$DIR/lib.sh"
++cd "$ROOT"
++
++echo "== M1 verification =="
++
++require_tool flutter
++require_tool pnpm
++
++assert_file_has "splitAfter on the interface" \
++  "apps/mobile/lib/features/library/document_repository.dart" \
++  "splitAfter"
++
++assert_file_has "splitAfter in DriftDocumentRepository" \
++  "apps/mobile/lib/features/library/drift/drift_document_repository.dart" \
++  "splitAfter"
++
++assert_file_has "page viewer wires Split" \
++  "apps/mobile/lib/features/library/page_viewer_screen.dart" \
++  "page-viewer-split"
++
++assert_file_has "BDD feature exists" \
++  "apps/mobile/integration_test/m1_split_document.feature" \
++  "Split a document"
++
++assert_file_has "generated BDD test exists" \
++  "apps/mobile/integration_test/m1_split_document_test.dart" \
++  "split"
++
++bash "$ROOT/scripts/setup-cv-host-test.sh"
++export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
++export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
++
++assert_cmd "host tests pass" "All tests passed!" \
++  pnpm nx run mobile:test --skip-nx-cache
++
++assert_cmd "flutter analyze clean" "No issues found" \
++  bash -c "cd apps/mobile && flutter analyze --no-fatal-infos"
++
++if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
++  warn "VERIFY_SKIP_DEVICE=1 — on-device M1 tests skipped (must pass on a real device before gate)"
++else
++  assert_cmd "on-device split test passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/m1_split_document_device_test.dart"
++  assert_cmd "on-device BDD scenario passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/m1_split_document_test.dart"
++fi
++
++echo "== M1 verification complete =="

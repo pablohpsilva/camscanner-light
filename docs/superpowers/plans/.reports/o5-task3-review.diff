@@ -1,0 +1,252 @@
+diff --git a/apps/mobile/integration_test/o5_content_search.feature b/apps/mobile/integration_test/o5_content_search.feature
+new file mode 100644
+index 0000000..396318a
+--- /dev/null
++++ b/apps/mobile/integration_test/o5_content_search.feature
+@@ -0,0 +1,9 @@
++Feature: Search the library by content
++
++  Scenario: Find a document by the text inside it
++    Given a saved document named {'Untitled'} with page text {'INVOICE 2026'}
++    When the app launches reading that same storage
++    And I search for {'invoice'}
++    Then I see {'Untitled'} text
++    When I search for {'zzz'}
++    Then I see the no matches message
+diff --git a/apps/mobile/integration_test/o5_content_search_device_test.dart b/apps/mobile/integration_test/o5_content_search_device_test.dart
+new file mode 100644
+index 0000000..09b8941
+--- /dev/null
++++ b/apps/mobile/integration_test/o5_content_search_device_test.dart
+@@ -0,0 +1,49 @@
++import 'dart:io';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets('searchDocuments matches by page OCR text on device',
++      (tester) async {
++    final base = await Directory.systemTemp.createTemp('o5dev');
++    final db = AppDatabase(NativeDatabase.memory());
++    final repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: DocumentFileStore(base),
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Untitled', createdAt: now, modifiedAt: now));
++    await db.into(db.pages).insert(PagesCompanion.insert(
++        documentId: id,
++        position: 1,
++        relativeImagePath: 'documents/$id/page_1.jpg',
++        ocrText: const Value('INVOICE 2026 TOTAL DUE')));
++    await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Recipe', createdAt: now, modifiedAt: now));
++
++    final hit = await repo.searchDocuments('invoice');
++    expect(hit.map((s) => s.document.name), ['Untitled']);
++    final miss = await repo.searchDocuments('zzz');
++    expect(miss, isEmpty);
++
++    await db.close();
++    await base.delete(recursive: true);
++  });
++}
+diff --git a/apps/mobile/integration_test/o5_content_search_test.dart b/apps/mobile/integration_test/o5_content_search_test.dart
+new file mode 100644
+index 0000000..1e68bcb
+--- /dev/null
++++ b/apps/mobile/integration_test/o5_content_search_test.dart
+@@ -0,0 +1,27 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint, type=warning
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++
++import '../test/step/a_saved_document_named_with_page_text.dart';
++import './../test/step/the_app_launches_reading_that_same_storage.dart';
++import './../test/step/i_search_for.dart';
++import './../test/step/i_see_text.dart';
++import './../test/step/i_see_the_no_matches_message.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  group('''Search the library by content''', () {
++    testWidgets('''Find a document by the text inside it''', (tester) async {
++      await aSavedDocumentNamedWithPageText(tester, 'Untitled', 'INVOICE 2026');
++      await theAppLaunchesReadingThatSameStorage(tester);
++      await iSearchFor(tester, 'invoice');
++      await iSeeText(tester, 'Untitled');
++      await iSearchFor(tester, 'zzz');
++      await iSeeTheNoMatchesMessage(tester);
++    });
++  });
++}
+diff --git a/apps/mobile/test/step/a_saved_document_named_with_page_text.dart b/apps/mobile/test/step/a_saved_document_named_with_page_text.dart
+new file mode 100644
+index 0000000..ce3c417
+--- /dev/null
++++ b/apps/mobile/test/step/a_saved_document_named_with_page_text.dart
+@@ -0,0 +1,30 @@
++import 'dart:io';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++
++import '../support/persistent_storage.dart';
++
++/// Usage: a saved document named {'Untitled'} with page text {'INVOICE 2026'}
++Future<void> aSavedDocumentNamedWithPageText(
++    WidgetTester tester, String name, String pageText) async {
++  final dir = await Directory.systemTemp.createTemp('o5persist');
++  persistentDir = dir;
++  persistentDbFile = File('${dir.path}/camscanner.sqlite');
++  addTearDown(() async {
++    if (await dir.exists()) await dir.delete(recursive: true);
++  });
++
++  final db = AppDatabase(NativeDatabase(persistentDbFile!));
++  final now = DateTime.utc(2026, 7, 1, 12);
++  final docId = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: name, createdAt: now, modifiedAt: now));
++  await db.into(db.pages).insert(PagesCompanion.insert(
++        documentId: docId,
++        position: 1,
++        relativeImagePath: 'documents/$docId/page_1.jpg',
++        ocrText: Value(pageText)));
++  await db.close();
++}
+diff --git a/apps/mobile/test/step/i_search_for.dart b/apps/mobile/test/step/i_search_for.dart
+new file mode 100644
+index 0000000..020b43b
+--- /dev/null
++++ b/apps/mobile/test/step/i_search_for.dart
+@@ -0,0 +1,15 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I search for {'invoice'}
++Future<void> iSearchFor(WidgetTester tester, String query) async {
++  // Open search if not already open.
++  final searchIcon = find.byKey(const Key('documents-search'));
++  if (searchIcon.evaluate().isNotEmpty) {
++    await tester.tap(searchIcon);
++    await tester.pumpAndSettle();
++  }
++  await tester.enterText(
++      find.byKey(const Key('documents-search-field')), query);
++  await tester.pumpAndSettle();
++}
+diff --git a/apps/mobile/test/step/i_see_the_no_matches_message.dart b/apps/mobile/test/step/i_see_the_no_matches_message.dart
+new file mode 100644
+index 0000000..dfa5ea2
+--- /dev/null
++++ b/apps/mobile/test/step/i_see_the_no_matches_message.dart
+@@ -0,0 +1,7 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I see the no matches message
++Future<void> iSeeTheNoMatchesMessage(WidgetTester tester) async {
++  expect(find.byKey(const Key('documents-search-empty')), findsOneWidget);
++}
+diff --git a/docs/superpowers/plans/00-plans-index.md b/docs/superpowers/plans/00-plans-index.md
+index 0c00c8c..4f4ce47 100644
+--- a/docs/superpowers/plans/00-plans-index.md
++++ b/docs/superpowers/plans/00-plans-index.md
+@@ -73,12 +73,13 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes
+ | I1 | Export page as image | 10 | `2026-07-01-i1-export-image.md` | ✅ **built & gated** |
+ | I2 | Gallery import | 01 | `2026-07-01-i2-gallery-import.md` | ✅ **built & gated** |
+ | O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
+ | O2 | OCR engine (ML Kit) + auto-run after save | 08 | `2026-07-01-o2-mlkit-engine.md`¹ | ✅ **built & merged** |
+ | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
+ | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
++| O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
+ 
+ ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
+ 
+ Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
+ own ordered plan files once Sub-project 1 is complete and gated.
+ 
+diff --git a/scripts/verify/o5.sh b/scripts/verify/o5.sh
+new file mode 100755
+index 0000000..092a1bf
+--- /dev/null
++++ b/scripts/verify/o5.sh
+@@ -0,0 +1,55 @@
++#!/usr/bin/env bash
++# Verify O5 (library search by name + OCR content) acceptance criteria.
++# Run from repository root: bash scripts/verify/o5.sh
++# VERIFY_SKIP_DEVICE=1 skips the on-device integration tests.
++
++DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++# shellcheck source=lib.sh
++source "$DIR/lib.sh"
++cd "$ROOT"
++
++echo "== O5 verification =="
++
++require_tool flutter
++require_tool pnpm
++
++assert_file_has "searchDocuments on the interface" \
++  "apps/mobile/lib/features/library/document_repository.dart" \
++  "searchDocuments"
++
++assert_file_has "searchDocuments in DriftDocumentRepository" \
++  "apps/mobile/lib/features/library/drift/drift_document_repository.dart" \
++  "searchDocuments"
++
++assert_file_has "home wires the search field" \
++  "apps/mobile/lib/features/library/home_screen.dart" \
++  "documents-search-field"
++
++assert_file_has "BDD feature exists" \
++  "apps/mobile/integration_test/o5_content_search.feature" \
++  "Search the library by content"
++
++assert_file_has "generated BDD test exists" \
++  "apps/mobile/integration_test/o5_content_search_test.dart" \
++  "content"
++
++bash "$ROOT/scripts/setup-cv-host-test.sh"
++export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
++export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
++
++assert_cmd "host tests pass" "All tests passed!" \
++  pnpm nx run mobile:test --skip-nx-cache
++
++assert_cmd "flutter analyze clean" "No issues found" \
++  bash -c "cd apps/mobile && flutter analyze --no-fatal-infos"
++
++if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
++  warn "VERIFY_SKIP_DEVICE=1 — on-device O5 tests skipped (must pass on a real device before gate)"
++else
++  assert_cmd "on-device search test passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/o5_content_search_device_test.dart"
++  assert_cmd "on-device BDD scenario passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/o5_content_search_test.dart"
++fi
++
++echo "== O5 verification complete =="

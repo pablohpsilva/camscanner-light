@@ -1,0 +1,130 @@
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 280cc24..8cb3ebe 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -3,20 +3,21 @@ import 'dart:io';
+ 
+ import 'package:flutter/material.dart';
+ 
+ import '../scan/camera_screen.dart';
+ import '../scan/scan_dependencies.dart';
+ import 'crop_corners.dart';
+ import 'document_repository.dart';
+ import 'edit_crop_screen.dart';
+ import 'page_image.dart';
+ import 'pdf_preview_screen.dart';
++import 'recognized_text_screen.dart';
+ import 'widgets/page_thumbnail_strip.dart';
+ import 'widgets/rename_dialog.dart';
+ 
+ /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
+ /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
+ /// loading / error+retry / empty / loaded. The delete action confirms, deletes
+ /// (row + files), and pops back to the list. The SCREEN owns the delete
+ /// sequence; the dialog only returns the user's choice.
+ ///
+ /// Decodes full-resolution (no cacheWidth) so zoom is usable — its Image is a
+@@ -208,20 +209,37 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+         const SnackBar(content: Text('Page saved as image')),
+       );
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't export image")),
+       );
+     }
+   }
+ 
++  void _viewText() {
++    final pages = _pages;
++    if (pages == null || pages.isEmpty) return;
++    final page = pages[_current];
++    Navigator.of(context).push(
++      MaterialPageRoute<void>(
++        builder: (_) => RecognizedTextScreen(
++          documentId: widget.documentId,
++          position: page.position,
++          name: _name,
++          initialText: page.ocrText,
++          repository: widget.repository,
++        ),
++      ),
++    );
++  }
++
+   Future<void> _retakePage() async {
+     final pages = _pages;
+     if (pages == null || pages.isEmpty) return;
+     final page = pages[_current];
+     await Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => CameraScreen(
+           dependencies: widget.dependencies,
+           repository: widget.repository,
+           onCapture: (image, corners, enhancer) async {
+@@ -321,25 +339,31 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+           IconButton(
+             key: const Key('page-viewer-delete'),
+             tooltip: 'Delete',
+             icon: const Icon(Icons.delete_outline),
+             onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+           ),
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
++              if (v == 'view-text') _viewText();
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+             },
+             itemBuilder: (_) => const [
++              PopupMenuItem<String>(
++                value: 'view-text',
++                key: Key('page-viewer-view-text'),
++                child: Text('View text'),
++              ),
+               PopupMenuItem<String>(
+                 value: 'retake',
+                 key: Key('page-viewer-retake'),
+                 child: Text('Retake page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'delete',
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+diff --git a/apps/mobile/test/features/library/page_viewer_view_text_test.dart b/apps/mobile/test/features/library/page_viewer_view_text_test.dart
+new file mode 100644
+index 0000000..185f778
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_view_text_test.dart
+@@ -0,0 +1,28 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('View text opens the recognized-text screen for the current page',
++      (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-view-text')));
++    await tester.pumpAndSettle();
++
++    // On the recognized-text screen now.
++    expect(find.byKey(const Key('recognized-text-body')), findsOneWidget);
++    expect(find.text('HELLO WORLD'), findsWidgets);
++  });
++}

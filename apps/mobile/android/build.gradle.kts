@@ -19,6 +19,13 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// opencv_dart ships compileSdk 33 but its AAR deps require >= 34; bump all Android library subprojects.
+gradle.afterProject {
+    if (plugins.hasPlugin("com.android.library")) {
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class)?.compileSdk = 36
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

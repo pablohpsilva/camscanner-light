@@ -1,0 +1,314 @@
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index 7d63d46..bdfae89 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -123,24 +123,32 @@ abstract interface class DocumentRepository {
+   /// derivative if present, else the original). Throws [DocumentSaveException]
+   /// when the page row is missing.
+   Future<void> runOcr(int documentId, int position);
+ 
+   /// Appends every page of [sourceDocumentId] (in position order) to
+   /// [targetDocumentId] — copying each page's image, flat derivative, corners,
+   /// and cached OCR text/boxes verbatim — then deletes the source document.
+   /// Merged files are named from the source id so they never collide with the
+   /// target's existing files. Nothing leaves the device. Throws
+   /// [DocumentSaveException] when target == source or on any IO/DB failure.
+   Future<void> mergeInto(int targetDocumentId, int sourceDocumentId);
+ 
++  /// Splits [documentId] after [position]: the pages after [position] are moved
++  /// (image, flat, corners, OCR copied verbatim) into a NEW document named
++  /// "`<name>` (split)", and removed from the source (which keeps pages
++  /// 1..[position]). Returns the new document. Nothing leaves the device. Throws
++  /// [DocumentSaveException] when [position] is < 1, is the last page (nothing to
++  /// split off), or on any IO/DB failure.
++  Future<Document> splitAfter(int documentId, int position);
++
+   /// Materializes the page at [position] of [documentId]'s cached recognized
+   /// text (`ocrText`) into a TEMPORARY `.txt` file and returns it. The file is
+   /// named `<sanitized-document-name>_page_<position>.txt` under the system temp
+   /// dir — temporary, so the app does not accumulate exports (mirrors
+   /// [exportPdf]). A `.txt` carries no metadata, so no scrub pass is needed.
+   /// Nothing leaves the device. Throws [DocumentExportException] when the page
+   /// row is missing or has no recognized text (null/empty/whitespace).
+   Future<File> exportRecognizedText(int documentId, int position);
+ }
+ 
+ class DocumentSaveException implements Exception {
+   final String message;
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index 1a90c8b..e0c01ca 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -731,24 +731,107 @@ class DriftDocumentRepository implements DocumentRepository {
+       });
+       await (_db.update(_db.documents)
+             ..where((d) => d.id.equals(targetDocumentId)))
+           .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+     } catch (e) {
+       if (e is DocumentSaveException) rethrow;
+       throw DocumentSaveException('mergeInto failed: $e');
+     }
+     // Remove the now-copied source (rows + dir). Separate from the txn above.
+     await deleteDocument(sourceDocumentId);
+   }
+ 
++  @override
++  Future<Document> splitAfter(int documentId, int position) async {
++    try {
++      final pages = await (_db.select(_db.pages)
++            ..where((p) => p.documentId.equals(documentId))
++            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
++          .get();
++      if (pages.isEmpty) {
++        throw DocumentSaveException('splitAfter: no pages ($documentId)');
++      }
++      final maxPos = pages.last.position;
++      if (position < 1 || position >= maxPos) {
++        throw DocumentSaveException(
++            'splitAfter: nothing after position $position');
++      }
++      final doc = await (_db.select(_db.documents)
++            ..where((d) => d.id.equals(documentId)))
++          .getSingleOrNull();
++      if (doc == null) {
++        throw DocumentSaveException('splitAfter: no document $documentId');
++      }
++      final now = _clock().toUtc();
++      final newName = '${doc.name} (split)';
++      final newId = await _db.into(_db.documents).insert(
++          DocumentsCompanion.insert(
++              name: newName, createdAt: now, modifiedAt: now));
++
++      final moved = pages.where((p) => p.position > position).toList();
++      var k = 0;
++      for (final src in moved) {
++        k++;
++        final imageRel = 'documents/$newId/page_$k.jpg';
++        final bytes =
++            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
++        await _fileStore.writeRelative(imageRel, bytes);
++        String? flatRel;
++        if (src.flatRelativePath != null) {
++          final flatBytes =
++              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
++          flatRel = _fileStore.flatForImage(imageRel);
++          await _fileStore.writeRelative(flatRel, flatBytes);
++        }
++        await _db.into(_db.pages).insert(PagesCompanion.insert(
++          documentId: newId,
++          position: k,
++          relativeImagePath: imageRel,
++          corners: Value(src.corners),
++          flatRelativePath: Value(flatRel),
++          ocrText: Value(src.ocrText),
++          ocrBoxes: Value(src.ocrBoxes),
++        ));
++      }
++
++      await _db.transaction(() async {
++        for (final src in moved) {
++          await (_db.delete(_db.pages)..where((t) => t.id.equals(src.id))).go();
++        }
++        await (_db.update(_db.documents)
++              ..where((d) => d.id.equals(documentId)))
++            .write(DocumentsCompanion(modifiedAt: Value(now)));
++      });
++
++      // Best-effort cleanup of the moved pages' source files (after commit).
++      for (final src in moved) {
++        try {
++          await _fileStore.absoluteFor(src.relativeImagePath).delete();
++        } on FileSystemException {/* already gone */}
++        final f = src.flatRelativePath;
++        if (f != null) {
++          try {
++            await _fileStore.absoluteFor(f).delete();
++          } on FileSystemException {/* already gone */}
++        }
++      }
++
++      return Document(
++          id: newId, name: newName, createdAt: now, modifiedAt: now);
++    } catch (e) {
++      if (e is DocumentSaveException) rethrow;
++      throw DocumentSaveException('splitAfter failed: $e');
++    }
++  }
++
+   /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
+   /// save — and does not run for the NoOp engine (skips wasted work in tests).
+   void _triggerOcr(int documentId, int position) {
+     if (_ocrEngine is NoOpOcrEngine) return;
+     // ignore: discarded_futures
+     runOcr(documentId, position).catchError((_) {});
+   }
+ 
+   String _defaultName(DateTime t) {
+     String two(int n) => n.toString().padLeft(2, '0');
+     return 'Scan ${t.year}-${two(t.month)}-${two(t.day)} '
+         '${two(t.hour)}.${two(t.minute)}.${two(t.second)}';
+diff --git a/apps/mobile/test/features/library/split_document_test.dart b/apps/mobile/test/features/library/split_document_test.dart
+new file mode 100644
+index 0000000..200b414
+--- /dev/null
++++ b/apps/mobile/test/features/library/split_document_test.dart
+@@ -0,0 +1,112 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/drift.dart' show Value;
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/ocr/ocr_result.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('m1split');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  Uint8List jpeg() =>
++      Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++
++  // Creates a document with [pageCount] pages; the LAST page optionally gets a
++  // flat + OCR so we can prove they are carried across a split.
++  Future<int> seedDoc(int pageCount, {bool lastHasFlatOcr = false}) async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    for (var pos = 1; pos <= pageCount; pos++) {
++      final rel = 'documents/$id/page_$pos.jpg';
++      await store.writeRelative(rel, jpeg());
++      String? flatRel;
++      String? ocrText;
++      String? ocrBoxes;
++      if (pos == pageCount && lastHasFlatOcr) {
++        flatRel = store.flatForImage(rel);
++        await store.writeRelative(flatRel, jpeg());
++        ocrText = 'TAIL';
++        ocrBoxes = const OcrResult(text: 'TAIL', words: [
++          OcrWordBox(text: 'TAIL', left: 0.1, top: 0.1, right: 0.2, bottom: 0.2)
++        ]).encodeBoxes();
++      }
++      await db.into(db.pages).insert(PagesCompanion.insert(
++            documentId: id,
++            position: pos,
++            relativeImagePath: rel,
++            flatRelativePath: Value(flatRel),
++            ocrText: Value(ocrText),
++            ocrBoxes: Value(ocrBoxes),
++          ));
++    }
++    return id;
++  }
++
++  test('moves trailing pages into a new document; source keeps the head',
++      () async {
++    final id = await seedDoc(3, lastHasFlatOcr: true);
++    final created = await repo.splitAfter(id, 1);
++
++    // Source keeps only page 1.
++    final srcPages = await repo.getDocumentPages(id);
++    expect(srcPages.length, 1);
++    expect(srcPages.single.position, 1);
++
++    // New document has the former pages 2 and 3, renumbered 1 and 2.
++    expect(created.name, endsWith('(split)'));
++    final newPages = await repo.getDocumentPages(created.id);
++    expect(newPages.length, 2);
++    expect(newPages.map((p) => p.position), [1, 2]);
++    for (final p in newPages) {
++      expect(File(p.imagePath).existsSync(), isTrue);
++    }
++    // The former last page (now position 2) kept its flat + OCR.
++    final tail = newPages[1];
++    expect(tail.flatImagePath, isNotNull);
++    expect(File(tail.flatImagePath!).existsSync(), isTrue);
++    expect(tail.ocrText, 'TAIL');
++    expect(tail.ocrWords, isNotEmpty);
++  });
++
++  test('splitting after the last page throws', () async {
++    final id = await seedDoc(2);
++    expect(() => repo.splitAfter(id, 2), throwsA(isA<DocumentSaveException>()));
++  });
++
++  test('splitting after position 0 throws', () async {
++    final id = await seedDoc(2);
++    expect(() => repo.splitAfter(id, 0), throwsA(isA<DocumentSaveException>()));
++  });
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index 896b883..0efca88 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -316,24 +316,42 @@ class FakeDocumentRepository implements DocumentRepository {
+   int? lastMergeTarget;
+   int? lastMergeSource;
+ 
+   @override
+   Future<void> mergeInto(int targetDocumentId, int sourceDocumentId) async {
+     if (throwOnUpdate) {
+       throw const DocumentSaveException('fake: merge failed');
+     }
+     lastMergeTarget = targetDocumentId;
+     lastMergeSource = sourceDocumentId;
+   }
+ 
++  int? lastSplitDoc;
++  int? lastSplitPosition;
++
++  @override
++  Future<Document> splitAfter(int documentId, int position) async {
++    if (throwOnUpdate) {
++      throw const DocumentSaveException('fake: split failed');
++    }
++    lastSplitDoc = documentId;
++    lastSplitPosition = position;
++    return Document(
++      id: 999,
++      name: 'Split',
++      createdAt: DateTime.utc(2026, 7, 1),
++      modifiedAt: DateTime.utc(2026, 7, 1),
++    );
++  }
++
+   int rotateCalls = 0;
+   int? lastRotatedPosition;
+ 
+   @override
+   Future<void> rotatePage(int documentId, int position) async {
+     if (throwOnUpdate) {
+       throw const DocumentSaveException('fake: rotate failed');
+     }
+     rotateCalls++;
+     lastRotatedPosition = position;
+   }
+ 

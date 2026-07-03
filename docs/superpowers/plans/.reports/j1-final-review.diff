@@ -1,0 +1,532 @@
+diff --git a/apps/mobile/integration_test/j1_export_all_images.feature b/apps/mobile/integration_test/j1_export_all_images.feature
+new file mode 100644
+index 0000000..fb2a791
+--- /dev/null
++++ b/apps/mobile/integration_test/j1_export_all_images.feature
+@@ -0,0 +1,10 @@
++Feature: Export all pages as images
++
++  Scenario: Exporting all pages of the open document saves them as images
++    Given the app is launched with camera permission granted and empty storage
++    When I tap the Scan button
++    And I capture and accept the first page
++    And I tap Done
++    And I open the first document
++    And I export all pages as images
++    Then I see the all images export confirmation
+diff --git a/apps/mobile/integration_test/j1_export_all_images_device_test.dart b/apps/mobile/integration_test/j1_export_all_images_device_test.dart
+new file mode 100644
+index 0000000..8033efd
+--- /dev/null
++++ b/apps/mobile/integration_test/j1_export_all_images_device_test.dart
+@@ -0,0 +1,54 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:integration_test/integration_test.dart';
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets('exportAllPagesAsImages writes every page as a JPG on device',
++      (tester) async {
++    final base = await Directory.systemTemp.createTemp('j1dev');
++    final db = AppDatabase(NativeDatabase.memory());
++    final store = DocumentFileStore(base);
++    final repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Doc', createdAt: now, modifiedAt: now));
++    final jpeg = Uint8List.fromList(
++        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++    for (var pos = 1; pos <= 2; pos++) {
++      final rel = 'documents/$id/page_$pos.jpg';
++      await store.writeRelative(rel, jpeg);
++      await db.into(db.pages).insert(PagesCompanion.insert(
++          documentId: id, position: pos, relativeImagePath: rel));
++    }
++
++    final files = await repo.exportAllPagesAsImages(id);
++    expect(files.length, 2);
++    for (final f in files) {
++      expect(await f.exists(), isTrue);
++      expect((await f.readAsBytes()).sublist(0, 2), [0xFF, 0xD8]);
++    }
++
++    await db.close();
++    await base.delete(recursive: true);
++  });
++}
+diff --git a/apps/mobile/integration_test/j1_export_all_images_test.dart b/apps/mobile/integration_test/j1_export_all_images_test.dart
+new file mode 100644
+index 0000000..07447b3
+--- /dev/null
++++ b/apps/mobile/integration_test/j1_export_all_images_test.dart
+@@ -0,0 +1,32 @@
++// GENERATED CODE - DO NOT MODIFY BY HAND
++// ignore_for_file: type=lint, type=warning
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++
++import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
++import './../test/step/i_tap_the_scan_button.dart';
++import './../test/step/i_capture_and_accept_the_first_page.dart';
++import './../test/step/i_tap_done.dart';
++import './../test/step/i_open_the_first_document.dart';
++import './../test/step/i_export_all_pages_as_images.dart';
++import './../test/step/i_see_the_all_images_export_confirmation.dart';
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  group('''Export all pages as images''', () {
++    testWidgets(
++        '''Exporting all pages of the open document saves them as images''',
++        (tester) async {
++      await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
++      await iTapTheScanButton(tester);
++      await iCaptureAndAcceptTheFirstPage(tester);
++      await iTapDone(tester);
++      await iOpenTheFirstDocument(tester);
++      await iExportAllPagesAsImages(tester);
++      await iSeeTheAllImagesExportConfirmation(tester);
++    });
++  });
++}
+diff --git a/apps/mobile/lib/features/library/document_repository.dart b/apps/mobile/lib/features/library/document_repository.dart
+index d122ee5..379369a 100644
+--- a/apps/mobile/lib/features/library/document_repository.dart
++++ b/apps/mobile/lib/features/library/document_repository.dart
+@@ -45,16 +45,22 @@ abstract interface class DocumentRepository {
+   /// Exports the page at [position] of [documentId] as a standalone JPG on device.
+   /// Reads the page's display image (the flattened derivative when present, else
+   /// the original capture), passes the bytes through the metadata scrubber, writes
+   /// `documents/<id>/page_<position>_export.jpg`, and returns the file. Nothing
+   /// leaves the device. Throws [DocumentExportException] when the page row/file is
+   /// missing or the scrub fails.
+   Future<File> exportPageAsImage(int documentId, int position);
+ 
++  /// Exports EVERY page of [documentId] as a standalone scrubbed JPG (delegating
++  /// to [exportPageAsImage] per page), returning the files in page order.
++  /// Nothing leaves the device. Throws [DocumentExportException] when the
++  /// document has no pages or any page fails to export.
++  Future<List<File>> exportAllPagesAsImages(int documentId);
++
+   /// Renames [documentId] to [newName] (trimmed) and bumps modifiedAt. Returns
+   /// the updated document. Throws [DocumentRenameException] when the trimmed
+   /// name is empty or no document with that id exists. The name stays on-device.
+   Future<Document> rename(int documentId, String newName);
+ 
+   /// Re-warps the page at [position] using [corners] and updates the stored
+   /// flat image. If [corners] == [CropCorners.fullFrame], deletes the flat
+   /// file (best-effort) and clears [flatRelativePath] in the DB. Throws
+diff --git a/apps/mobile/lib/features/library/drift/drift_document_repository.dart b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+index 68b8a9b..9e953c9 100644
+--- a/apps/mobile/lib/features/library/drift/drift_document_repository.dart
++++ b/apps/mobile/lib/features/library/drift/drift_document_repository.dart
+@@ -294,16 +294,29 @@ class DriftDocumentRepository implements DocumentRepository {
+       await _fileStore.writeRelative(rel, scrubbed);
+       return _fileStore.absoluteFor(rel);
+     } catch (e) {
+       if (e is DocumentExportException) rethrow;
+       throw DocumentExportException('exportImage failed: $e');
+     }
+   }
+ 
++  @override
++  Future<List<File>> exportAllPagesAsImages(int documentId) async {
++    final pages = await getDocumentPages(documentId);
++    if (pages.isEmpty) {
++      throw const DocumentExportException('exportAll failed: no pages');
++    }
++    final files = <File>[];
++    for (final page in pages) {
++      files.add(await exportPageAsImage(documentId, page.position));
++    }
++    return files;
++  }
++
+   @override
+   Future<File> exportRecognizedText(int documentId, int position) async {
+     final row = await (_db.select(_db.pages)
+           ..where((t) =>
+               t.documentId.equals(documentId) & t.position.equals(position)))
+         .getSingleOrNull();
+     if (row == null) {
+       throw DocumentExportException(
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index 8cb3ebe..d39cac2 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -211,16 +211,33 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't export image")),
+       );
+     }
+   }
+ 
++  Future<void> _exportAllImages() async {
++    try {
++      final files =
++          await widget.repository.exportAllPagesAsImages(widget.documentId);
++      if (!mounted) return;
++      final n = files.length;
++      ScaffoldMessenger.of(context).showSnackBar(
++        SnackBar(content: Text('Exported $n ${n == 1 ? 'image' : 'images'}')),
++      );
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't export images")),
++      );
++    }
++  }
++
+   void _viewText() {
+     final pages = _pages;
+     if (pages == null || pages.isEmpty) return;
+     final page = pages[_current];
+     Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => RecognizedTextScreen(
+           documentId: widget.documentId,
+@@ -345,16 +362,17 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+           PopupMenuButton<String>(
+             key: const Key('page-viewer-page-menu'),
+             enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
++              if (v == 'export-all-images') unawaited(_exportAllImages());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
+               PopupMenuItem<String>(
+@@ -367,16 +385,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+                 key: Key('page-viewer-delete-page'),
+                 child: Text('Delete page'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'export-image',
+                 key: Key('page-viewer-export-image'),
+                 child: Text('Export as image'),
+               ),
++              PopupMenuItem<String>(
++                value: 'export-all-images',
++                key: Key('page-viewer-export-all-images'),
++                child: Text('Export all as images'),
++              ),
+             ],
+           ),
+         ],
+       ),
+       body: _loading
+           ? const Center(
+               key: Key('page-viewer-loading'),
+               child: CircularProgressIndicator())
+diff --git a/apps/mobile/test/features/library/export_all_images_test.dart b/apps/mobile/test/features/library/export_all_images_test.dart
+new file mode 100644
+index 0000000..e8e232b
+--- /dev/null
++++ b/apps/mobile/test/features/library/export_all_images_test.dart
+@@ -0,0 +1,75 @@
++import 'dart:io';
++import 'dart:typed_data';
++
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:image/image.dart' as img;
++import 'package:mobile/features/library/document_file_store.dart';
++import 'package:mobile/features/library/document_repository.dart';
++import 'package:mobile/features/library/drift/app_database.dart';
++import 'package:mobile/features/library/drift/drift_document_repository.dart';
++import 'package:mobile/features/library/hybrid_warper.dart';
++import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
++import 'package:mobile/features/library/pdf/pdf_builder.dart';
++
++void main() {
++  late AppDatabase db;
++  late DriftDocumentRepository repo;
++  late DocumentFileStore store;
++  late Directory base;
++
++  setUp(() async {
++    base = await Directory.systemTemp.createTemp('j1all');
++    db = AppDatabase(NativeDatabase.memory());
++    store = DocumentFileStore(base);
++    repo = DriftDocumentRepository(
++      db: db,
++      scrubber: const JpegExifScrubber(),
++      fileStore: store,
++      clock: DateTime.now,
++      pdfBuilder: const PdfBuilder(),
++      warper: const HybridWarper(),
++    );
++  });
++
++  tearDown(() async {
++    await db.close();
++    if (await base.exists()) await base.delete(recursive: true);
++  });
++
++  Future<int> seedDoc(int pageCount) async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(
++        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
++    final jpeg = Uint8List.fromList(
++        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
++    for (var pos = 1; pos <= pageCount; pos++) {
++      final rel = 'documents/$id/page_$pos.jpg';
++      await store.writeRelative(rel, jpeg);
++      await db.into(db.pages).insert(PagesCompanion.insert(
++          documentId: id, position: pos, relativeImagePath: rel));
++    }
++    return id;
++  }
++
++  test('exports every page as a JPG, in order', () async {
++    final id = await seedDoc(2);
++    final files = await repo.exportAllPagesAsImages(id);
++
++    expect(files.length, 2);
++    expect(files[0].path, endsWith('page_1_export.jpg'));
++    expect(files[1].path, endsWith('page_2_export.jpg'));
++    for (final f in files) {
++      final bytes = await f.readAsBytes();
++      expect(bytes.sublist(0, 2), [0xFF, 0xD8]); // JPEG magic
++    }
++  });
++
++  test('throws when the document has no pages', () async {
++    final now = DateTime.now();
++    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
++        name: 'Empty', createdAt: now, modifiedAt: now));
++    expect(() => repo.exportAllPagesAsImages(id),
++        throwsA(isA<DocumentExportException>()));
++  });
++}
+diff --git a/apps/mobile/test/features/library/page_viewer_export_all_test.dart b/apps/mobile/test/features/library/page_viewer_export_all_test.dart
+new file mode 100644
+index 0000000..69de6ce
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_export_all_test.dart
+@@ -0,0 +1,47 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('Export all as images shows a confirmation with the count',
++      (tester) async {
++    final repo = FakeDocumentRepository(pages: const [
++      PageImage(position: 1, imagePath: '/a.jpg'),
++      PageImage(position: 2, imagePath: '/b.jpg'),
++    ]);
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
++    await tester.pump(); // let the async export + snackbar schedule
++    await tester.pump(const Duration(milliseconds: 100));
++
++    expect(find.text('Exported 2 images'), findsOneWidget);
++  });
++
++  testWidgets('a failing export shows an error snackbar', (tester) async {
++    final repo = FakeDocumentRepository(
++      throwOnExportImage: true,
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
++    await tester.pump();
++    await tester.pump(const Duration(milliseconds: 100));
++
++    expect(find.text("Couldn't export images"), findsOneWidget);
++  });
++}
+diff --git a/apps/mobile/test/step/i_export_all_pages_as_images.dart b/apps/mobile/test/step/i_export_all_pages_as_images.dart
+new file mode 100644
+index 0000000..573f6aa
+--- /dev/null
++++ b/apps/mobile/test/step/i_export_all_pages_as_images.dart
+@@ -0,0 +1,10 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I export all pages as images
++Future<void> iExportAllPagesAsImages(WidgetTester tester) async {
++  await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++  await tester.pumpAndSettle();
++  await tester.tap(find.byKey(const Key('page-viewer-export-all-images')));
++  await tester.pumpAndSettle();
++}
+diff --git a/apps/mobile/test/step/i_see_the_all_images_export_confirmation.dart b/apps/mobile/test/step/i_see_the_all_images_export_confirmation.dart
+new file mode 100644
+index 0000000..15a08dd
+--- /dev/null
++++ b/apps/mobile/test/step/i_see_the_all_images_export_confirmation.dart
+@@ -0,0 +1,7 @@
++import 'package:flutter_test/flutter_test.dart';
++
++/// Usage: I see the all images export confirmation
++Future<void> iSeeTheAllImagesExportConfirmation(WidgetTester tester) async {
++  await tester.pump(const Duration(milliseconds: 100));
++  expect(find.textContaining('Exported'), findsOneWidget);
++}
+diff --git a/apps/mobile/test/support/fake_library.dart b/apps/mobile/test/support/fake_library.dart
+index a488bcb..e151fbe 100644
+--- a/apps/mobile/test/support/fake_library.dart
++++ b/apps/mobile/test/support/fake_library.dart
+@@ -141,16 +141,28 @@ class FakeDocumentRepository implements DocumentRepository {
+     if (throwOnExportImage) {
+       throw const DocumentExportException('fake: exportImage failed');
+     }
+     lastExportedImagePosition = position;
+     return File(
+         '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
+   }
+ 
++  @override
++  Future<List<File>> exportAllPagesAsImages(int documentId) async {
++    if (throwOnExportImage) {
++      throw const DocumentExportException('fake: exportAll failed');
++    }
++    final pages = await getDocumentPages(documentId);
++    return [
++      for (final p in pages)
++        File('${Directory.systemTemp.path}/fake-all-$documentId-${p.position}.jpg')
++    ];
++  }
++
+   @override
+   Future<File> exportRecognizedText(int documentId, int position) async {
+     lastExportedTextPosition = position;
+     if (throwOnExportText) {
+       throw const DocumentExportException('fake exportText failure');
+     }
+     final dir = await Directory.systemTemp.createTemp('faketxt');
+     final f = File('${dir.path}/page_$position.txt');
+diff --git a/docs/superpowers/plans/00-plans-index.md b/docs/superpowers/plans/00-plans-index.md
+index 4f4ce47..b38af0b 100644
+--- a/docs/superpowers/plans/00-plans-index.md
++++ b/docs/superpowers/plans/00-plans-index.md
+@@ -72,16 +72,17 @@ Status: ✅ written & ready · ⏳ pending (written when its predecessor passes
+ | H5 | Multi-page PDF export | 07 | `2026-07-01-h5-multipage-pdf.md` | ✅ **built & gated** |
+ | I1 | Export page as image | 10 | `2026-07-01-i1-export-image.md` | ✅ **built & gated** |
+ | I2 | Gallery import | 01 | `2026-07-01-i2-gallery-import.md` | ✅ **built & gated** |
+ | O1 | OCR page-text foundation | 08 | `2026-07-01-o1-ocr-foundation.md` | ✅ **built & gated** |
+ | O2 | OCR engine (ML Kit) + auto-run after save | 08 | `2026-07-01-o2-mlkit-engine.md`¹ | ✅ **built & merged** |
+ | O3 | Searchable PDF text layer | 08 | `2026-07-01-o3-searchable-pdf.md`¹ | ✅ **built & merged** |
+ | O4 | Recognized text: view / copy / export .txt | 08 | `2026-07-01-o4-recognized-text.md` | ✅ **built & gated** |
+ | O5 | Library search by name + OCR content | 08, 02 | `2026-07-01-o5-content-search.md` | ✅ **built & gated** |
++| J1 | Export all pages as images | 10 | `2026-07-01-j1-export-all-images.md` | ✅ **built & gated** |
+ 
+ ¹ O2/O3 were built and merged directly (commits `d896f1d`, `2657c31`) ahead of a formal plan file; rows added here for an accurate index.
+ 
+ Later sub-projects (08 OCR, 09 PDF editing, 10 conversion, 12 sharing) get their
+ own ordered plan files once Sub-project 1 is complete and gated.
+ 
+ Cross-cutting concerns (metadata scrubber, searchable-PDF text-layer interface,
+ password) are introduced as shared, single-responsibility files in the first
+diff --git a/scripts/verify/j1.sh b/scripts/verify/j1.sh
+new file mode 100755
+index 0000000..e47a35f
+--- /dev/null
++++ b/scripts/verify/j1.sh
+@@ -0,0 +1,55 @@
++#!/usr/bin/env bash
++# Verify J1 (export all pages as images) acceptance criteria.
++# Run from repository root: bash scripts/verify/j1.sh
++# VERIFY_SKIP_DEVICE=1 skips the on-device integration tests.
++
++DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++# shellcheck source=lib.sh
++source "$DIR/lib.sh"
++cd "$ROOT"
++
++echo "== J1 verification =="
++
++require_tool flutter
++require_tool pnpm
++
++assert_file_has "exportAllPagesAsImages on the interface" \
++  "apps/mobile/lib/features/library/document_repository.dart" \
++  "exportAllPagesAsImages"
++
++assert_file_has "exportAllPagesAsImages in DriftDocumentRepository" \
++  "apps/mobile/lib/features/library/drift/drift_document_repository.dart" \
++  "exportAllPagesAsImages"
++
++assert_file_has "page viewer wires Export all as images" \
++  "apps/mobile/lib/features/library/page_viewer_screen.dart" \
++  "page-viewer-export-all-images"
++
++assert_file_has "BDD feature exists" \
++  "apps/mobile/integration_test/j1_export_all_images.feature" \
++  "Export all pages as images"
++
++assert_file_has "generated BDD test exists" \
++  "apps/mobile/integration_test/j1_export_all_images_test.dart" \
++  "images"
++
++bash "$ROOT/scripts/setup-cv-host-test.sh"
++export DARTCV_LIB_PATH="${DARTCV_LIB_PATH:-/tmp/dartcv_lib/lib/libdartcv.dylib}"
++export DYLD_LIBRARY_PATH="/tmp/dartcv_lib/lib:${DYLD_LIBRARY_PATH:-}"
++
++assert_cmd "host tests pass" "All tests passed!" \
++  pnpm nx run mobile:test --skip-nx-cache
++
++assert_cmd "flutter analyze clean" "No issues found" \
++  bash -c "cd apps/mobile && flutter analyze --no-fatal-infos"
++
++if [[ "${VERIFY_SKIP_DEVICE:-0}" == "1" ]]; then
++  warn "VERIFY_SKIP_DEVICE=1 — on-device J1 tests skipped (must pass on a real device before gate)"
++else
++  assert_cmd "on-device export-all test passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/j1_export_all_images_device_test.dart"
++  assert_cmd "on-device BDD scenario passes" "All tests passed" \
++    bash -c "cd apps/mobile && flutter test integration_test/j1_export_all_images_test.dart"
++fi
++
++echo "== J1 verification complete =="

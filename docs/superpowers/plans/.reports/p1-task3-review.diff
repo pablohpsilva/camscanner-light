@@ -1,0 +1,288 @@
+diff --git a/apps/mobile/lib/features/library/page_viewer_screen.dart b/apps/mobile/lib/features/library/page_viewer_screen.dart
+index f761950..c4cdf1c 100644
+--- a/apps/mobile/lib/features/library/page_viewer_screen.dart
++++ b/apps/mobile/lib/features/library/page_viewer_screen.dart
+@@ -1,23 +1,25 @@
+ import 'dart:async'; // unawaited
+ import 'dart:io';
+ 
+ import 'package:flutter/material.dart';
++import 'package:share_plus/share_plus.dart';
+ 
+ import '../scan/camera_screen.dart';
+ import '../scan/scan_dependencies.dart';
+ import 'crop_corners.dart';
+ import 'document_printer.dart';
+ import 'document_repository.dart';
+ import 'edit_crop_screen.dart';
+ import 'merge_picker_dialog.dart';
+ import 'page_image.dart';
++import 'password_dialog.dart';
+ import 'pdf_preview_screen.dart';
+ import 'recognized_text_screen.dart';
+ import 'widgets/page_thumbnail_strip.dart';
+ import 'widgets/rename_dialog.dart';
+ 
+ /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
+ /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
+ /// loading / error+retry / empty / loaded. The delete action confirms, deletes
+ /// (row + files), and pops back to the list. The SCREEN owns the delete
+ /// sequence; the dialog only returns the user's choice.
+@@ -246,20 +248,46 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+         const SnackBar(content: Text('Sent to printer')),
+       );
+     } catch (_) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("Couldn't print")),
+       );
+     }
+   }
+ 
++  Future<void> _protect() async {
++    final password = await showPasswordDialog(context);
++    if (password == null || password.isEmpty || !mounted) return;
++    try {
++      final file =
++          await widget.repository.exportProtectedPdf(widget.documentId, password);
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text('Protected PDF ready')),
++      );
++      unawaited(_shareQuietly(file));
++    } catch (_) {
++      if (!mounted) return;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text("Couldn't protect PDF")),
++      );
++    }
++  }
++
++  Future<void> _shareQuietly(File file) async {
++    try {
++      await SharePlus.instance
++          .share(ShareParams(files: [XFile(file.path)], subject: _name));
++    } catch (_) {/* share unavailable (e.g. host test) — ignore */}
++  }
++
+   void _viewText() {
+     final pages = _pages;
+     if (pages == null || pages.isEmpty) return;
+     final page = pages[_current];
+     Navigator.of(context).push(
+       MaterialPageRoute<void>(
+         builder: (_) => RecognizedTextScreen(
+           documentId: widget.documentId,
+           position: page.position,
+           name: _name,
+@@ -447,20 +475,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+             onSelected: (v) {
+               if (v == 'view-text') _viewText();
+               if (v == 'rotate') unawaited(_rotatePage());
+               if (v == 'merge') unawaited(_mergeAnother());
+               if (v == 'split') unawaited(_splitAfter());
+               if (v == 'retake') unawaited(_retakePage());
+               if (v == 'delete') unawaited(_confirmAndDeletePage());
+               if (v == 'export-image') unawaited(_exportPageAsImage());
+               if (v == 'export-all-images') unawaited(_exportAllImages());
+               if (v == 'print') unawaited(_print());
++              if (v == 'protect') unawaited(_protect());
+             },
+             itemBuilder: (_) => const [
+               PopupMenuItem<String>(
+                 value: 'view-text',
+                 key: Key('page-viewer-view-text'),
+                 child: Text('View text'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'rotate',
+                 key: Key('page-viewer-rotate'),
+@@ -494,20 +523,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
+               PopupMenuItem<String>(
+                 value: 'export-all-images',
+                 key: Key('page-viewer-export-all-images'),
+                 child: Text('Export all as images'),
+               ),
+               PopupMenuItem<String>(
+                 value: 'print',
+                 key: Key('page-viewer-print'),
+                 child: Text('Print'),
+               ),
++              PopupMenuItem<String>(
++                value: 'protect',
++                key: Key('page-viewer-protect'),
++                child: Text('Protect with password'),
++              ),
+             ],
+           ),
+         ],
+       ),
+       body: _loading
+           ? const Center(
+               key: Key('page-viewer-loading'),
+               child: CircularProgressIndicator())
+           : _error
+               ? _buildError()
+diff --git a/apps/mobile/lib/features/library/password_dialog.dart b/apps/mobile/lib/features/library/password_dialog.dart
+new file mode 100644
+index 0000000..e8fe31f
+--- /dev/null
++++ b/apps/mobile/lib/features/library/password_dialog.dart
+@@ -0,0 +1,56 @@
++import 'package:flutter/material.dart';
++
++/// Prompts for a password (obscured). Resolves to the entered password, or null
++/// if cancelled. Protect is disabled until a non-empty password is entered.
++Future<String?> showPasswordDialog(BuildContext context) =>
++    showDialog<String>(context: context, builder: (_) => const PasswordDialog());
++
++class PasswordDialog extends StatefulWidget {
++  const PasswordDialog({super.key});
++
++  @override
++  State<PasswordDialog> createState() => _PasswordDialogState();
++}
++
++class _PasswordDialogState extends State<PasswordDialog> {
++  final _controller = TextEditingController();
++
++  @override
++  void dispose() {
++    _controller.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final canConfirm = _controller.text.trim().isNotEmpty;
++    return AlertDialog(
++      key: const Key('password-dialog'),
++      title: const Text('Password-protect PDF'),
++      content: TextField(
++        key: const Key('password-field'),
++        controller: _controller,
++        autofocus: true,
++        obscureText: true,
++        decoration: const InputDecoration(hintText: 'Enter a password'),
++        onChanged: (_) => setState(() {}),
++        onSubmitted: (v) {
++          if (v.trim().isNotEmpty) Navigator.of(context).pop(v);
++        },
++      ),
++      actions: [
++        TextButton(
++          key: const Key('password-cancel'),
++          onPressed: () => Navigator.of(context).pop(),
++          child: const Text('Cancel'),
++        ),
++        TextButton(
++          key: const Key('password-confirm'),
++          onPressed:
++              canConfirm ? () => Navigator.of(context).pop(_controller.text) : null,
++          child: const Text('Protect'),
++        ),
++      ],
++    );
++  }
++}
+diff --git a/apps/mobile/test/features/library/page_viewer_protect_test.dart b/apps/mobile/test/features/library/page_viewer_protect_test.dart
+new file mode 100644
+index 0000000..281cdec
+--- /dev/null
++++ b/apps/mobile/test/features/library/page_viewer_protect_test.dart
+@@ -0,0 +1,32 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/page_image.dart';
++import 'package:mobile/features/library/page_viewer_screen.dart';
++
++import '../../support/fake_library.dart';
++
++void main() {
++  testWidgets('Protect with password exports a protected PDF', (tester) async {
++    final repo = FakeDocumentRepository(
++      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
++    );
++    await tester.pumpWidget(MaterialApp(
++      home: PageViewerScreen(documentId: 5, name: 'Doc', repository: repo),
++    ));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('page-viewer-protect')));
++    await tester.pumpAndSettle();
++
++    await tester.enterText(find.byKey(const Key('password-field')), 'secret');
++    await tester.pump();
++    await tester.tap(find.byKey(const Key('password-confirm')));
++    await tester.pump();
++    await tester.pump(const Duration(milliseconds: 100));
++
++    expect(repo.lastProtectPassword, 'secret');
++    expect(find.text('Protected PDF ready'), findsOneWidget);
++  });
++}
+diff --git a/apps/mobile/test/features/library/password_dialog_test.dart b/apps/mobile/test/features/library/password_dialog_test.dart
+new file mode 100644
+index 0000000..1b94dc5
+--- /dev/null
++++ b/apps/mobile/test/features/library/password_dialog_test.dart
+@@ -0,0 +1,57 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mobile/features/library/password_dialog.dart';
++
++void main() {
++  testWidgets('returns the entered password on Protect', (tester) async {
++    String? result = 'unset';
++    await tester.pumpWidget(MaterialApp(
++      home: Builder(
++        builder: (context) => Scaffold(
++          body: Center(
++            child: ElevatedButton(
++              onPressed: () async => result = await showPasswordDialog(context),
++              child: const Text('open'),
++            ),
++          ),
++        ),
++      ),
++    ));
++    await tester.tap(find.text('open'));
++    await tester.pumpAndSettle();
++
++    // Protect is disabled until text is entered.
++    final btn = tester.widget<TextButton>(
++        find.byKey(const Key('password-confirm')));
++    expect(btn.onPressed, isNull);
++
++    await tester.enterText(find.byKey(const Key('password-field')), 'secret');
++    await tester.pump();
++    await tester.tap(find.byKey(const Key('password-confirm')));
++    await tester.pumpAndSettle();
++
++    expect(result, 'secret');
++  });
++
++  testWidgets('returns null on Cancel', (tester) async {
++    String? result = 'unset';
++    await tester.pumpWidget(MaterialApp(
++      home: Builder(
++        builder: (context) => Scaffold(
++          body: Center(
++            child: ElevatedButton(
++              onPressed: () async => result = await showPasswordDialog(context),
++              child: const Text('open'),
++            ),
++          ),
++        ),
++      ),
++    ));
++    await tester.tap(find.text('open'));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const Key('password-cancel')));
++    await tester.pumpAndSettle();
++
++    expect(result, isNull);
++  });
++}
