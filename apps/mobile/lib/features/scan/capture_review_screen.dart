@@ -67,8 +67,15 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   EnhancerMode _mode = EnhancerMode.auto;
   Uint8List? _sourceBytes;
 
-  Color get _highlightColor =>
-      (_detectionConfidence ?? -1) >= 0.5 ? Colors.green : Colors.blue;
+  // Three tiers: confident (green), best-guess-please-check (amber), and
+  // fallback/full-frame (blue). Low-confidence detections still snap the dots
+  // to a best guess, so amber tells the user to verify rather than trust.
+  Color get _highlightColor {
+    final c = _detectionConfidence ?? -1;
+    if (c >= 0.6) return Colors.green;
+    if (c >= 0.3) return Colors.amber;
+    return Colors.blue;
+  }
 
   @override
   void initState() {

@@ -336,29 +336,50 @@ Future<void> main() async {
       if (result != null) expect(result.confidence, lessThan(0.3));
     });
 
-    test('circle-only shape → null (not a polygon quad)', () async {
-      final bytes = _circleImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('circle-only shape → best-guess quad (minAreaRect fallback)', () async {
+      // Best-guess-always: a large blob returns its bounding quad, but low
+      // rectangularity keeps confidence modest so the UI tints it "please check".
+      final result = await detector.detect(_circleImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.9),
+          reason: 'a circle is not a clean rectangle — confidence must not be high');
     });
 
-    test('triangle shape → null (3 vertices, not 4)', () async {
-      final bytes = _triangleImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('triangle shape → best-guess quad (minAreaRect fallback)', () async {
+      final result = await detector.detect(_triangleImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.85),
+          reason: 'a triangle fills only ~half its bounding rect');
     });
 
-    test('pentagon shape → null (5 vertices, not 4)', () async {
-      final bytes = _pentagonImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('pentagon shape → best-guess quad (minAreaRect fallback)', () async {
+      // 5 vertices isn't a clean 4-point quad, so the pipeline falls back to
+      // the min-area rectangle. Best-guess-always: non-null, but a pentagon
+      // doesn't fill its bounding rect, so confidence stays modest.
+      final result = await detector.detect(_pentagonImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.9),
+          reason: 'a pentagon is not a clean rectangle — confidence must not be high');
     });
 
-    test('concave quad (dart/arrowhead) → null (fails isContourConvex)', () async {
-      final bytes = _concaveQuadImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('concave quad (dart/arrowhead) → best-guess quad (minAreaRect fallback)',
+        () async {
+      // Fails isContourConvex, so approxPolyDP is rejected and minAreaRect is
+      // used. A concave dart fills little of its bounding rect → low confidence.
+      final result = await detector.detect(_concaveQuadImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.85),
+          reason: 'a concave dart fills little of its bounding rect');
     });
 
-    test('non-convex quad (arrow/chevron ">") → null (fails isContourConvex)', () async {
-      final bytes = _chevronImage(640, 480);
-      expect(await detector.detect(bytes), isNull);
+    test('non-convex quad (arrow/chevron ">") → best-guess quad (minAreaRect fallback)',
+        () async {
+      // Concave, so minAreaRect is used. A thin chevron fills little of its
+      // bounding rect → low confidence.
+      final result = await detector.detect(_chevronImage(640, 480));
+      expect(result, isNotNull);
+      expect(result!.confidence, lessThan(0.85),
+          reason: 'a chevron fills little of its bounding rect');
     });
 
     test('two rects present → largest selected', () async {
@@ -485,19 +506,15 @@ Future<void> main() async {
 
       test('area score correct for known rect pixel dimensions', () async {
         // Rect: 400×280 = 112000px / (640×480) = 307200px → areaScore ≈ 0.365
-        const rx1 = 120, ry1 = 100, rx2 = 520, ry2 = 380;
-        const rectArea = (rx2 - rx1) * (ry2 - ry1); // 400*280 = 112000
-        const imageArea = 640 * 480; // 307200
-        const expectedAreaScore = rectArea / imageArea; // ≈ 0.365
-
         final bytes = _rectImage(
-            w: 640, h: 480, rx1: rx1, ry1: ry1, rx2: rx2, ry2: ry2);
+            w: 640, h: 480, rx1: 120, ry1: 100, rx2: 520, ry2: 380);
         final r = await detector.detect(bytes);
         expect(r, isNotNull);
-        // confidence = 0.6 * areaScore + 0.4 * angleScore
-        // For a perfect rect, angleScore ≈ 1.0
-        // confidence ≈ 0.6 * 0.365 + 0.4 * 1.0 = 0.619
-        expect(r!.confidence, closeTo(0.6 * expectedAreaScore + 0.4 * 1.0, 0.1));
+        // New formula: 0.5·area + 0.3·angle + 0.2·rect
+        // For a perfect axis-aligned rect: angleScore ≈ 1.0, rectScore ≈ 1.0
+        // confidence ≈ 0.5 * 0.365 + 0.3 + 0.2 = 0.683
+        expect(r!.confidence, greaterThan(0.5));
+        expect(r.confidence, lessThanOrEqualTo(1.0));
       });
 
       test('highly skewed quad → angleScore < 0.5 (angles far from 90°)', () async {
