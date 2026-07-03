@@ -17,9 +17,16 @@ Uint8List _colorFn(Uint8List bytes) {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return bytes;
     final oriented = img.bakeOrientation(decoded);
-    img.adjustColor(oriented, contrast: 1.1, brightness: 1.05);
-    return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
+    return Uint8List.fromList(img.encodeJpg(colorEnhanceOriented(oriented), quality: 92));
   } catch (_) {
     return bytes;
   }
+}
+
+/// Applies the colour boost in place to an already-oriented image and returns
+/// it (no decode/encode — the caller owns those, enabling a fused warp+enhance
+/// pass). Input must already be in the display frame (orientation baked).
+img.Image colorEnhanceOriented(img.Image oriented) {
+  img.adjustColor(oriented, contrast: 1.1, brightness: 1.05);
+  return oriented;
 }

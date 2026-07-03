@@ -11,9 +11,13 @@ import '../document_repository.dart';
 import '../document_summary.dart';
 import '../export/export_quality.dart';
 import '../export/image_compressor.dart';
+import '../coons_warper.dart';
+import '../hybrid_warper.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
+import '../perspective_warper.dart';
+import '../warp_enhancer.dart';
 import '../ocr/ocr_engine.dart';
 import '../ocr/ocr_result.dart';
 import '../page_image.dart';
@@ -135,6 +139,27 @@ class DriftDocumentRepository implements DocumentRepository {
   Future<Uint8List?> _enhancedFlat(
       Uint8List scrubbed, CropCorners? corners, ImageEnhancer? enhancer) async {
     if (corners == null || corners == CropCorners.fullFrame) return null;
+
+    // Fast path: with the real warper, fuse unwarp + enhancement into ONE
+    // isolate (a single JPEG decode/encode) instead of warp→encode→decode→
+    // enhance→encode. When a test stubs [_warper], fall through to the two-step
+    // path below so the injected fake is still exercised.
+    if (_warper is HybridWarper ||
+        _warper is PerspectiveWarper ||
+        _warper is CoonsWarper) {
+      final fused =
+          await warpAndEnhance(scrubbed, corners, enhancerModeOf(enhancer));
+      if (fused != null) return fused;
+      // Warp failed → de-shadow the un-warped frame so a failed crop still
+      // yields a clean page rather than the raw capture.
+      if (enhancer == null) return scrubbed;
+      try {
+        return await enhancer.enhance(scrubbed);
+      } catch (_) {
+        return scrubbed;
+      }
+    }
+
     Uint8List? warped;
     try {
       warped = await _warper.warp(scrubbed, corners);

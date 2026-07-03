@@ -23,10 +23,17 @@ Uint8List _grayscaleFn(Uint8List bytes) {
     // strips EXIF, so orientation must be baked into pixels first.
     // For already-baked flat bytes (post-warp), this is a safe no-op.
     final oriented = img.bakeOrientation(decoded); // positional arg
-    img.grayscale(oriented); // positional arg, mutates in place
-    return Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
+    return Uint8List.fromList(img.encodeJpg(grayscaleEnhanceOriented(oriented), quality: 92));
   } catch (e) {
     // On any error during decoding or processing, return bytes unchanged
     return bytes;
   }
+}
+
+/// Converts an already-oriented image to grayscale in place and returns it (no
+/// decode/encode — the caller owns those, enabling a fused warp+enhance pass).
+/// Input must already be in the display frame (orientation baked).
+img.Image grayscaleEnhanceOriented(img.Image oriented) {
+  img.grayscale(oriented); // mutates in place
+  return oriented;
 }

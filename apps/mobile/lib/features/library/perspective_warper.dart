@@ -20,22 +20,29 @@ class PerspectiveWarper implements ImageWarper {
 // ── Isolate entry point ────────────────────────────────────────────────────
 
 Uint8List? _warpFn(_WarpArgs args) {
-  final corners = args.corners;
-
   final decoded = img.decodeImage(args.bytes);
   if (decoded == null) throw WarpException('failed to decode JPEG');
   // bakeOrientation rotates pixels into the EXIF-applied display frame.
   // Corners are normalized against THIS frame; skipping bake misaligns them.
   final src = img.bakeOrientation(decoded);
+  return Uint8List.fromList(
+      img.encodeJpg(warpPerspectiveToImage(src, args.corners), quality: 92));
+}
 
-  final tl = Offset(corners.topLeft.dx * src.width,
-                    corners.topLeft.dy * src.height);
-  final tr = Offset(corners.topRight.dx * src.width,
-                    corners.topRight.dy * src.height);
-  final br = Offset(corners.bottomRight.dx * src.width,
-                    corners.bottomRight.dy * src.height);
-  final bl = Offset(corners.bottomLeft.dx * src.width,
-                    corners.bottomLeft.dy * src.height);
+/// Perspective-flattens [corners] out of an already-oriented image and returns
+/// the rectified [img.Image] (no JPEG encode — the caller encodes, so a fused
+/// warp+enhance pass pays a single decode/encode). Throws [WarpException] on a
+/// self-crossing or degenerate quad.
+///
+/// The inverse-mapped sampling runs on the raw interleaved-RGB byte buffer with
+/// hand-rolled bilinear interpolation instead of `getPixelInterpolate` per
+/// pixel — the same interpolation, ~5-10x faster on a multi-megapixel warp.
+img.Image warpPerspectiveToImage(img.Image src, CropCorners corners) {
+  final w = src.width, h = src.height;
+  final tl = Offset(corners.topLeft.dx * w, corners.topLeft.dy * h);
+  final tr = Offset(corners.topRight.dx * w, corners.topRight.dy * h);
+  final br = Offset(corners.bottomRight.dx * w, corners.bottomRight.dy * h);
+  final bl = Offset(corners.bottomLeft.dx * w, corners.bottomLeft.dy * h);
 
   if (!_isConvex([tl, tr, br, bl])) {
     throw WarpException('self-crossing or degenerate quad');
@@ -46,25 +53,40 @@ Uint8List? _warpFn(_WarpArgs args) {
   if (outW < 2 || outH < 2) throw WarpException('degenerate quad: output too small');
 
   // Src → dst homography; invert for inverse mapping (dst pixel → src pixel).
-  final h = _solveHomography(
+  final hMat = _solveHomography(
     [tl, tr, br, bl],
-    [Offset(0, 0), Offset(outW.toDouble(), 0),
+    [const Offset(0, 0), Offset(outW.toDouble(), 0),
      Offset(outW.toDouble(), outH.toDouble()), Offset(0, outH.toDouble())],
   );
-  final hInv = _invertH3x3(h);
+  final hInv = _invertH3x3(hMat);
 
-  final output = img.Image(width: outW, height: outH,
-                            numChannels: src.numChannels);
-  for (int dy = 0; dy < outH; dy++) {
-    for (int dx = 0; dx < outW; dx++) {
+  final srcBuf = src.getBytes(order: img.ChannelOrder.rgb);
+  final stride = w * 3;
+  final out = Uint8List(outW * outH * 3);
+  final xMax = (w - 1).toDouble(), yMax = (h - 1).toDouble();
+  var o = 0;
+  for (var dy = 0; dy < outH; dy++) {
+    for (var dx = 0; dx < outW; dx++) {
       final sp = _applyH(hInv, dx.toDouble(), dy.toDouble());
-      final pixel = src.getPixelInterpolate(sp.dx, sp.dy,
-          interpolation: img.Interpolation.linear);
-      output.setPixel(dx, dy, pixel);
+      final fx = sp.dx < 0 ? 0.0 : (sp.dx > xMax ? xMax : sp.dx);
+      final fy = sp.dy < 0 ? 0.0 : (sp.dy > yMax ? yMax : sp.dy);
+      final x0 = fx.toInt(), y0 = fy.toInt();
+      final x1 = x0 + 1 < w ? x0 + 1 : x0;
+      final y1 = y0 + 1 < h ? y0 + 1 : y0;
+      final wx = fx - x0, wy = fy - y0;
+      final i00 = y0 * stride + x0 * 3, i10 = y0 * stride + x1 * 3;
+      final i01 = y1 * stride + x0 * 3, i11 = y1 * stride + x1 * 3;
+      for (var ch = 0; ch < 3; ch++) {
+        final top = srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
+        final bot = srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
+        out[o + ch] = (top + (bot - top) * wy).round().clamp(0, 255);
+      }
+      o += 3;
     }
   }
-
-  return Uint8List.fromList(img.encodeJpg(output, quality: 92));
+  return img.Image.fromBytes(
+      width: outW, height: outH, bytes: out.buffer,
+      numChannels: 3, order: img.ChannelOrder.rgb);
 }
 
 // ── Math helpers ───────────────────────────────────────────────────────────
