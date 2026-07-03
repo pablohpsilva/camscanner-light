@@ -77,15 +77,22 @@ void main() {
         baseDir: baseDir,
       ),
     );
-    await tester.pumpAndSettle();
+    // Bounded settle: let the DB open + home screen render without risk of
+    // hanging forever on a perpetual loading spinner (Key('documents-loading')).
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
     // --- SEARCH --------------------------------------------------------------
     await tester.tap(find.byKey(const Key('documents-search')));
-    await tester.pumpAndSettle();
+    // Bounded settle: wait for the search field to appear.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
     await tester.enterText(
         find.byKey(const Key('documents-search-field')), 'acme invoice');
-    await tester.pumpAndSettle();
+    // Bounded settle: wait for FTS query results to render.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
     // --- ASSERT --------------------------------------------------------------
     expect(find.text('Report'), findsOneWidget);
