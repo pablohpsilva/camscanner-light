@@ -176,13 +176,36 @@ class DriftDocumentRepository implements DocumentRepository {
   @override
   Future<List<DocumentSummary>> listDocumentSummaries() => _summaries();
 
+  // FTS5 operator characters stripped from every term before it reaches MATCH.
+  static final RegExp _ftsOps = RegExp(r'''["*:^()\-]''');
+  static const Set<String> _ftsKeywords = {'and', 'or', 'not', 'near'};
+
+  // Raw query → safe search terms: operator chars removed, bareword boolean
+  // keywords dropped, empties discarded. Never yields FTS syntax.
+  List<String> _searchTerms(String q) => q
+      .split(RegExp(r'\s+'))
+      .map((t) => t.replaceAll(_ftsOps, ''))
+      .where((t) => t.isNotEmpty && !_ftsKeywords.contains(t.toLowerCase()))
+      .toList();
+
   @override
   Future<List<DocumentSummary>> searchDocuments(String query) async {
     final q = query.trim();
     if (q.isEmpty) return _summaries();
+    final terms = _searchTerms(q);
+    // Trigram MATCH needs every term >= 3 chars; anything shorter (or a query
+    // that sanitizes to nothing) falls back to the unranked LIKE scan so short
+    // words still match as substrings.
+    if (terms.isEmpty || terms.any((t) => t.length < 3)) {
+      return _searchByLike(q);
+    }
+    return _searchRanked(q, terms);
+  }
+
+  // Unranked substring search (pre-FTS O5 behavior): name OR any page ocr_text
+  // LIKE %q%, newest-first. Retained for short-term / degenerate queries.
+  Future<List<DocumentSummary>> _searchByLike(String q) async {
     final like = '%$q%';
-    // Step 1: ids of documents matching by name OR any page's ocrText.
-    // Grouping by document id yields each matching doc exactly once.
     final idQuery = _db.select(_db.documents).join([
       leftOuterJoin(_db.pages, _db.pages.documentId.equalsExp(_db.documents.id)),
     ])
@@ -191,8 +214,42 @@ class DriftDocumentRepository implements DocumentRepository {
     final ids =
         (await idQuery.get()).map((r) => r.readTable(_db.documents).id).toSet();
     if (ids.isEmpty) return const [];
-    // Step 2: build summaries for those ids (counts ALL their pages).
     return _summaries(onlyIds: ids);
+  }
+
+  // Ranked trigram search over per-document rows: bm25 relevance, with document
+  // name matches ordered first. Returns summaries in relevance order.
+  Future<List<DocumentSummary>> _searchRanked(
+      String q, List<String> terms) async {
+    final matchExpr = terms.map((t) => '"$t"').join(' AND ');
+    final rows = await _db.customSelect(
+      'SELECT rowid AS did, bm25(doc_fts) AS score '
+      'FROM doc_fts WHERE doc_fts MATCH ? ORDER BY score',
+      variables: [Variable.withString(matchExpr)],
+    ).get();
+    final textIds = rows.map((r) => r.read<int>('did')).toList(); // best first
+
+    // Name matches: strong signal, and names are not in the trigram index.
+    final nameRows = await (_db.select(_db.documents)
+          ..where((t) => t.name.like('%$q%'))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+        .get();
+
+    final ordered = <int>[];
+    final seen = <int>{};
+    for (final d in nameRows) {
+      if (seen.add(d.id)) ordered.add(d.id);
+    }
+    for (final id in textIds) {
+      if (seen.add(id)) ordered.add(id);
+    }
+    if (ordered.isEmpty) return const [];
+
+    final summaries = await _summaries(onlyIds: ordered.toSet());
+    final rank = {for (var i = 0; i < ordered.length; i++) ordered[i]: i};
+    summaries.sort(
+        (a, b) => rank[a.document.id]!.compareTo(rank[b.document.id]!));
+    return summaries;
   }
 
   Future<List<DocumentSummary>> _summaries({Set<int>? onlyIds}) async {
