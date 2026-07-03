@@ -1,10 +1,16 @@
 # FTS5 search — trigram matching + relevance ranking (design)
 
 **Date:** 2026-07-03
-**Status:** Approved (design)
+**Status:** Approved (design) — revised during planning (see Revision note)
 **Sub-project:** 2 — OCR / text extraction (Feature 08) → library search (Feature 02)
 **Depends on:** O1 (per-page `ocrText`), O2 (real OCR auto-runs after save), O5 (LIKE search + home search UI)
 **Supersedes the search engine of:** [O5](2026-07-01-o5-content-search-design.md) — which explicitly deferred "a dedicated FTS5 index" and "full-text ranking / relevance scoring" until libraries grow. This is that revisit.
+
+> **Revision note (2026-07-03):** first draft indexed one FTS row **per page**. That
+> is wrong for the core goal: FTS5 `MATCH 'a AND b'` requires both terms in the **same
+> row**, so a query spanning two pages of one document would never match. Corrected to
+> one FTS row **per document** (all its pages' OCR text concatenated). This also
+> simplifies ranking (one `bm25` per document, no aggregation).
 
 ## Purpose
 
@@ -21,21 +27,23 @@ not the UI:
 3. **No index.** A leading-wildcard `LIKE` can't use an index → full-scans every
    page's text on each keystroke. Fine at 50 docs, degrades with thousands of pages.
 
-This slice replaces the engine with a SQLite **FTS5 trigram** index: multi-word AND
-matching, `bm25` relevance ranking, and indexed (fast) lookups — **without regressing**
-today's substring behavior (see Tokenizer). The **results UI is unchanged** (document
-summaries), only their order changes to relevance-first while a query is active.
+This slice replaces the engine with a SQLite **FTS5 trigram** index (one row per
+document): multi-word AND matching across a document's pages, `bm25` relevance ranking,
+and indexed (fast) lookups — **without regressing** today's substring behavior (see
+Tokenizer). The **results UI is unchanged** (document summaries), only their order
+changes to relevance-first while a query is active.
 
 ## Scope
 
 **In:**
-- An FTS5 **trigram** virtual table indexing each page's `ocr_text`, kept in sync by
-  SQLite triggers on `pages` (no repository write-path changes).
+- An FTS5 **trigram** virtual table `doc_fts`, one row **per document**, holding that
+  document's pages' `ocr_text` concatenated. Kept in sync by SQLite triggers on `pages`
+  (no repository write-path changes).
 - Schema migration `v4 → v5`: create the vtable + triggers and **backfill** existing
-  `ocr_text`.
+  documents from their pages' `ocr_text`.
 - Rewrite `searchDocuments(query)` to run a sanitized, ranked trigram `MATCH`
-  (multi-word AND), aggregate per document, merge with document-name matches, and
-  return the existing `DocumentSummary` shape ordered by relevance.
+  (multi-word AND), merge with document-name matches, and return the existing
+  `DocumentSummary` shape ordered by relevance.
 - A **short-term fallback**: queries containing any term shorter than trigram's 3-char
   floor use the existing `LIKE` path (correct, just unranked).
 
@@ -43,9 +51,9 @@ summaries), only their order changes to relevance-first while a query is active.
 - Snippets, match highlighting, jump-to-matching-page. Results stay summaries.
 - Fuzzy/typo tolerance, search history, date/type filters.
 - Indexing document names in the FTS table (names are short; matched via `LIKE` +
-  ranked first — see Architecture). Keeps renames from needing cross-row FTS updates.
-- Any home-screen UI change beyond the fact that ranked results replace newest-first
-  ordering while a query is active.
+  ranked first — see Architecture). Keeps renames from touching the FTS index.
+- Any home-screen UI change beyond ranked results replacing newest-first ordering while
+  a query is active.
 
 ## Tokenizer — why trigram (the key decision)
 
@@ -63,66 +71,78 @@ script** including CJK. The two FTS5 tokenizer choices differ on whether that su
 
 ## Architecture
 
-### Virtual table (standalone, NOT external-content)
+### Virtual table — one row per document (standalone, NOT external-content)
 
 ```sql
-CREATE VIRTUAL TABLE page_fts USING fts5(
-  text,
-  document_id UNINDEXED,
-  tokenize = 'trigram'
-);
+CREATE VIRTUAL TABLE doc_fts USING fts5(text, tokenize = 'trigram');
 ```
 
-- **`rowid` = `pages.id`.** Stores a **copy** of `ocr_text` plus the owning
-  `document_id` (UNINDEXED — carried for aggregation, not searched).
-- **Deliberately not `content='pages'` (external-content).** External-content needs the
-  fiddly `INSERT INTO page_fts(page_fts, rowid, …) VALUES('delete', …)` protocol with
-  OLD values in the UPDATE/DELETE triggers; a mistake there silently desyncs the index.
-  A standalone table with a text copy is trivially correct and OCR text is small.
+- **`rowid` = `documents.id`.** The single `text` column holds that document's pages'
+  `ocr_text` joined with spaces (`group_concat`). One row per document means a
+  multi-word `MATCH` (AND) is satisfied when the terms appear **anywhere across the
+  document's pages** — the core requirement.
+- **Deliberately not `content='...'` (external-content).** External-content needs the
+  fiddly `'delete'`-command trigger protocol with OLD values; a mistake there silently
+  desyncs the index. A standalone table holding a text copy is trivially correct, and a
+  document's concatenated OCR text is small at phone scale.
 
 ### Triggers (all sync lives here — no repository code touches the index)
 
-Column names are drift's **snake_case** (`ocr_text`, `document_id`), not the Dart
-getters. Pages are inserted with `ocr_text` NULL (OCR fills it later, fire-and-forget),
-so the triggers must handle null↔text transitions:
+Any change to a page's `ocr_text` rebuilds that **document's** row from scratch
+(delete-then-reinsert the `group_concat` of its still-present, non-null pages). Column
+names are drift's snake_case (`ocr_text`, `document_id`). The three bodies are identical
+except INSERT/UPDATE key on `NEW.document_id` and DELETE on `OLD.document_id`:
 
 ```sql
--- new page already carrying text (e.g. copied on split/merge)
-CREATE TRIGGER page_fts_ai AFTER INSERT ON pages
+-- a page arrives already carrying text (e.g. copied on split/merge)
+CREATE TRIGGER doc_fts_ai AFTER INSERT ON pages
 WHEN NEW.ocr_text IS NOT NULL BEGIN
-  INSERT INTO page_fts(rowid, text, document_id)
-  VALUES (NEW.id, NEW.ocr_text, NEW.document_id);
+  DELETE FROM doc_fts WHERE rowid = NEW.document_id;
+  INSERT INTO doc_fts(rowid, text)
+    SELECT document_id, group_concat(ocr_text, ' ')
+    FROM pages WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL
+    GROUP BY document_id;
 END;
 
--- ocr_text filled / changed / cleared
-CREATE TRIGGER page_fts_au AFTER UPDATE OF ocr_text ON pages BEGIN
-  DELETE FROM page_fts WHERE rowid = OLD.id;
-  INSERT INTO page_fts(rowid, text, document_id)
-    SELECT NEW.id, NEW.ocr_text, NEW.document_id
-    WHERE NEW.ocr_text IS NOT NULL;
+-- ocr_text filled / changed / cleared on an existing page
+CREATE TRIGGER doc_fts_au AFTER UPDATE OF ocr_text ON pages BEGIN
+  DELETE FROM doc_fts WHERE rowid = NEW.document_id;
+  INSERT INTO doc_fts(rowid, text)
+    SELECT document_id, group_concat(ocr_text, ' ')
+    FROM pages WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL
+    GROUP BY document_id;
 END;
 
--- page removed (explicit delete AND FK ON DELETE CASCADE both fire this)
-CREATE TRIGGER page_fts_ad AFTER DELETE ON pages BEGIN
-  DELETE FROM page_fts WHERE rowid = OLD.id;
+-- a page removed (explicit delete AND FK ON DELETE CASCADE both fire this)
+CREATE TRIGGER doc_fts_ad AFTER DELETE ON pages BEGIN
+  DELETE FROM doc_fts WHERE rowid = OLD.document_id;
+  INSERT INTO doc_fts(rowid, text)
+    SELECT document_id, group_concat(ocr_text, ' ')
+    FROM pages WHERE document_id = OLD.document_id AND ocr_text IS NOT NULL
+    GROUP BY document_id;
 END;
 ```
 
-So every current and future `ocr_text` write path (`runOcr`, re-crop re-OCR, split,
-merge, and anything added later) stays indexed for free; deletes (explicit in
-`deleteDocument`, and via FK cascade) leave no orphan rows.
+- The `GROUP BY document_id` makes the SELECT yield **zero rows** when the document has
+  no non-null pages left, so the row is simply dropped (no NULL insert). This is why
+  the last-page-deleted / text-cleared cases stay clean.
+- Rebuild-per-write is idempotent and cheap (a `group_concat` over a handful of small
+  page rows). Every current and future `ocr_text` write path (`runOcr`, split, merge,
+  and anything added later) stays indexed for free; deletes leave no orphan rows.
 
 ### Migration (v4 → v5) + backfill
 
 `schemaVersion` bumps to **5**. The vtable is raw SQL (not a drift table), so
 `m.createAll()` does not create it and **no `build_runner` regen is needed**. A shared
-private helper `_createFts(Migrator/QueryExecutor)` issues the `CREATE VIRTUAL TABLE` +
-three `CREATE TRIGGER` statements; it is called from **both** `onCreate` (after
-`createAll`) and `onUpgrade` (`if (from < 5)`). `onUpgrade` then backfills:
+private helper `_createFts()` issues the `CREATE VIRTUAL TABLE` + three `CREATE TRIGGER`
+statements; it is called from **both** `onCreate` (after `createAll`) and `onUpgrade`
+(`if (from < 5)`). `onUpgrade` then backfills one row per document:
 
 ```sql
-INSERT INTO page_fts(rowid, text, document_id)
-SELECT id, ocr_text, document_id FROM pages WHERE ocr_text IS NOT NULL;
+INSERT INTO doc_fts(rowid, text)
+SELECT document_id, group_concat(ocr_text, ' ')
+FROM pages WHERE ocr_text IS NOT NULL
+GROUP BY document_id;
 ```
 
 ### `searchDocuments(query)` rewrite
@@ -130,29 +150,29 @@ SELECT id, ocr_text, document_id FROM pages WHERE ocr_text IS NOT NULL;
 ```
 trim → empty? → listDocumentSummaries()          (unchanged fast path)
      → tokenize on whitespace, sanitize each term (strip FTS5 operator chars
-       " * : - ( ) ^ and bareword AND/OR/NOT/NEAR); drop empties
+       " * : - ( ) ^ ; drop bareword AND/OR/NOT/NEAR); drop empties
      → any surviving term < 3 chars, OR no terms survive?
           → LIKE fallback (today's O5 two-step name/ocrText match, unranked)
      → else RANKED path:
-          matchExpr = terms joined with ' AND ', each wrapped in double quotes:  "acme" AND "invoice"
-          rows = SELECT document_id, MIN(bm25(page_fts)) AS score
-                 FROM page_fts WHERE page_fts MATCH :matchExpr
-                 GROUP BY document_id                       -- best-matching page wins
-          nameIds = SELECT id FROM documents WHERE name LIKE %rawTrimmed%   -- name signal
-          order:  name-match docs first (createdAt desc), then text-only docs by score ASC
+          matchExpr = terms each wrapped in double quotes, joined ' AND ':  "acme" AND "invoice"
+          rows = SELECT rowid AS did, bm25(doc_fts) AS score
+                 FROM doc_fts WHERE doc_fts MATCH :matchExpr ORDER BY score   -- one row/doc
+          nameIds = SELECT id FROM documents WHERE name LIKE %rawTrimmed% ORDER BY created_at DESC
+          order:  name-match docs first (createdAt desc), then text-match docs by score ASC
                   (bm25: lower = more relevant), distinct doc ids
-          → _summaries(onlyIds: orderedIds) rebuilt in that order
+          → _summaries(onlyIds: idSet) then re-sorted into that computed order
 ```
 
 - **Sanitization is the crash guard.** Raw user text (which may contain `"`, `*`, `-`,
   `(`, `NEAR`, …) is **never** passed to `MATCH`; every term is stripped and quoted.
-  This is mandatory — a malformed `MATCH` expression is a SQL error, not empty results.
-- **Ordering:** `_summaries(onlyIds:)` today orders by `createdAt desc`. For the ranked
-  path it must instead preserve the **computed relevance order**; the helper gains an
-  optional ordered-id list (build a `CASE`/index map, or sort in Dart after fetch). The
-  `onlyIds: null` and unordered paths keep O5's behavior (existing tests guard them).
+  A malformed `MATCH` expression is a SQL error, not empty results — so this is
+  mandatory.
+- **Ordering:** `_summaries(onlyIds:)` today orders by `createdAt desc`; the ranked path
+  fetches those summaries and re-sorts them in Dart by the computed relevance order
+  (a doc-id→rank map). The `onlyIds: null` and LIKE-fallback paths keep O5's behavior
+  (existing tests guard them).
 - **Name matches rank first** because a title hit is a strong intent signal and names
-  aren't in the trigram index. Within each group, existing order applies.
+  aren't in the trigram index.
 
 ## Data flow
 
@@ -161,8 +181,9 @@ type "acme inv" ─▶ HomeScreen._onQueryChanged
                     └─ repo.searchDocuments('acme inv')
                         terms ["acme","inv"] → "inv" < 3 chars → LIKE fallback (unranked)
 type "acme invoice" ─▶ repo.searchDocuments('acme invoice')
-                        terms ["acme","invoice"] all ≥3 → MATCH  "acme" AND "invoice"
-                          → per-doc MIN(bm25) → merge name LIKE → relevance order
+                        terms all ≥3 → MATCH  "acme" AND "invoice"  over per-DOCUMENT rows
+                          (matches a doc even if the two words are on different pages)
+                          → bm25 order → merge name LIKE → relevance order
                         ─▶ (query still current?) setState(list)  [race guard unchanged]
 ```
 
@@ -170,14 +191,14 @@ type "acme invoice" ─▶ repo.searchDocuments('acme invoice')
 
 - Malformed `MATCH` is prevented by sanitization; still, `searchDocuments` DB failures
   surface the existing `documents-error` state + retry (same path as O5).
-- Migration failure (e.g. FTS5 unavailable) aborts the open — see Risk below; it is
-  retired before any user-facing work by the Plan's step 1 probe.
-- Trigger/index desync is structurally prevented (triggers own all writes); a delete
-  test asserts no orphan `page_fts` rows remain.
+- Migration failure (e.g. FTS5 unavailable) aborts the open — see Risk below; retired
+  before any user-facing work by the Plan's step 1 probe.
+- Trigger/index desync is structurally prevented (triggers own all writes, full rebuild
+  per change); a delete test asserts no orphan `doc_fts` rows remain.
 
 ## Testing strategy (TDD/BDD first)
 
-**Risk retired first (Plan step 1):** a throwaway probe that runs
+**Risk retired first (Plan Task 1):** a throwaway probe that runs
 `CREATE VIRTUAL TABLE t USING fts5(x, tokenize='trigram')` under **host** `flutter test`
 (drift `NativeDatabase.memory()`). Device is fine (`sqlite3_flutter_libs` ships FTS5);
 if the host's libsqlite3 lacks FTS5/trigram, the engine tests move to device
@@ -185,7 +206,8 @@ if the host's libsqlite3 lacks FTS5/trigram, the engine tests move to device
 unaffected.
 
 **Unit (host, `NativeDatabase.memory()` seeded with docs + pages/`ocrText`):**
-- multi-word AND across **different pages** of one doc matches (the core O5 gap);
+- **multi-word AND across DIFFERENT pages** of one doc matches (the core O5 gap) while a
+  decoy doc containing only one of the terms does not;
 - substring / mid-word match preserved ("scan" finds "rescanned"); CJK substring
   matches (trigram parity vs `LIKE`);
 - ranking: a doc with more/closer hits ranks above an incidental 1-hit;
@@ -196,14 +218,17 @@ unaffected.
 - empty/whitespace query returns the same set as `listDocumentSummaries`;
 - `pageCount` / `thumbnailPath` correct (reused `_summaries`), doc appears once.
 
-**Migration (host):**
-- v4 DB with pre-existing `ocr_text` → open at v5 → backfill indexed (search finds it);
-- INSERT-null-then-UPDATE-text indexes the page; UPDATE text→null removes it;
-- deleting a document (and a single page) leaves **no** orphan `page_fts` rows.
+**Data-layer (host):**
+- inserting/updating a page's `ocr_text` makes the doc findable; clearing it (→null)
+  and deleting the page/document leave **no** matching `doc_fts` row (rebuild + orphan
+  checks);
+- the **backfill** statement indexes pre-existing OCR text (populate pages, wipe
+  `doc_fts`, run backfill, assert found).
 
-**Existing tests updated:** O5 `searchDocuments` tests asserting newest-first order
-under a ranked query are updated to relevance order; `listDocumentSummaries`
-(`onlyIds: null`) tests stay green (regression guard on the unranked path).
+**Existing tests:** the O5 `search_documents_test.dart` cases assert membership, not
+cross-document order, so they should stay green **unchanged** under the ranked engine
+(verify, don't rewrite); `listDocumentSummaries` (`onlyIds: null`) tests guard the
+unranked path.
 
 **BDD (`.feature` → on-device Samsung RZCY51D0T1K):**
 - *Given two saved documents — one whose pages contain "acme" and "invoice" on
@@ -219,11 +244,11 @@ Pure SQLite + Dart. FTS5 with the trigram tokenizer is bundled in
 
 ## Definition of Done
 
-- `page_fts` vtable + triggers created in `onCreate` and `onUpgrade` (shared helper),
-  `schemaVersion = 5`, backfill verified by migration tests.
+- `doc_fts` vtable + triggers created in `onCreate` and `onUpgrade` (shared helper),
+  `schemaVersion = 5`, backfill verified by data-layer tests.
 - `searchDocuments` ranked trigram path + sanitization + `LIKE` short-term/edge
   fallback + name-first merge, TDD-covered; `listDocumentSummaries` tests green.
-- Existing O5 search tests updated to relevance ordering.
+- Existing O5 search tests stay green under the new engine.
 - `.feature` BDD (multi-word across pages) generated and green on-device.
 - `flutter analyze` clean; host suite green; on-device verification passes; plans/specs
   index updated. No orphan-row or desync path left open.
