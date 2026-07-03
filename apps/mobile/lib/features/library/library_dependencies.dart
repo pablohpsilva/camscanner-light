@@ -3,12 +3,15 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'dart_page_processor.dart';
 import 'document_file_store.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
 import 'drift/app_database.dart';
 import 'drift/drift_document_repository.dart';
+import 'fallback_page_processor.dart';
 import 'hybrid_warper.dart';
+import 'native_page_processor.dart';
 import 'jpeg_exif_scrubber.dart';
 import 'ocr/mlkit_ocr_engine.dart';
 import 'pdf/ocr_pdf_text_layer.dart';
@@ -42,6 +45,10 @@ Future<DocumentRepository> _defaultCreateRepository() async {
     clock: DateTime.now,
     pdfBuilder: const PdfBuilder(textLayer: OcrPdfTextLayer()),
     warper: const HybridWarper(),
+    pageProcessor: const FallbackPageProcessor(
+      primary: NativePageProcessor(),
+      fallback: DartPageProcessor(HybridWarper()),
+    ),
     ocrEngine: const MlKitOcrEngine(),
   );
 }
