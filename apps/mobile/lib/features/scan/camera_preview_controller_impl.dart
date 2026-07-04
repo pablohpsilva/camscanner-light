@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/widgets.dart';
@@ -14,7 +13,6 @@ class PluginCameraPreviewController implements CameraPreviewController {
   PluginCameraPreviewController();
 
   CameraController? _controller;
-  bool _takingPicture = false;
 
   void Function(CameraFrame)? _onFrame;
   bool _streaming = false;
@@ -67,15 +65,6 @@ class PluginCameraPreviewController implements CameraPreviewController {
     if (controller == null || !controller.value.isInitialized) {
       throw const CameraUnavailableException('capture() before initialize()');
     }
-    // A live-detection sample may have a takePicture in flight; the camera plugin
-    // rejects concurrent captures. Wait (bounded) for it to clear, then claim the
-    // camera. Single-threaded Dart makes the check-then-set between awaits atomic.
-    var waited = 0;
-    while (_takingPicture && waited < 3000) {
-      await Future.delayed(const Duration(milliseconds: 25));
-      waited += 25;
-    }
-    _takingPicture = true;
     try {
       if (_flash == ScanFlashMode.flash) {
         await controller.setFlashMode(FlashMode.always);
@@ -85,28 +74,9 @@ class PluginCameraPreviewController implements CameraPreviewController {
     } on CameraException catch (e) {
       throw CameraUnavailableException(e.description ?? e.code);
     } finally {
-      _takingPicture = false;
       if (_flash == ScanFlashMode.flash) {
         await controller.setFlashMode(FlashMode.off).catchError((_) {});
       }
-    }
-  }
-
-  @override
-  Future<Uint8List?> sampleFrame() async {
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return null;
-    if (_takingPicture) return null;
-    _takingPicture = true;
-    try {
-      final file = await controller.takePicture();
-      final bytes = await File(file.path).readAsBytes();
-      await File(file.path).delete();
-      return bytes;
-    } catch (_) {
-      return null;
-    } finally {
-      _takingPicture = false;
     }
   }
 
@@ -193,6 +163,7 @@ class PluginCameraPreviewController implements CameraPreviewController {
 
   @override
   Future<void> dispose() async {
+    stopSampling();
     await _controller?.dispose();
     _controller = null;
   }

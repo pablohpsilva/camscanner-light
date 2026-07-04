@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/widgets.dart';
 
 import 'camera_frame.dart';
@@ -29,10 +27,6 @@ abstract interface class CameraPreviewController {
   /// Captures a still image to a temporary file. Only valid after [initialize]
   /// succeeds. Throws [CameraUnavailableException] if capture fails.
   Future<CapturedImage> capture();
-
-  /// Returns JPEG bytes of a sampled still frame, or null on any error.
-  /// Only valid after [initialize()] succeeds. Never throws.
-  Future<Uint8List?> sampleFrame();
 
   /// Starts delivering live preview frames to [onFrame]. No-op if already
   /// sampling. Never throws.

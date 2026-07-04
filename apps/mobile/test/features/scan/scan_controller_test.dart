@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,9 +31,6 @@ class _GatedPreviewController implements CameraPreviewController {
   @override
   Future<CapturedImage> capture() async =>
       throw const CameraUnavailableException('gated: capture not used');
-
-  @override
-  Future<Uint8List?> sampleFrame() async => null;
 
   @override
   void startSampling(void Function(CameraFrame frame) onFrame) {}

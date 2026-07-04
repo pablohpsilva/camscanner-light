@@ -42,10 +42,8 @@ class FakeCameraPermissionService implements CameraPermissionService {
 class FakeCameraPreviewController implements CameraPreviewController {
   final bool unavailable;
   final String? captureReturnPath;
-  final Uint8List? sampleFrameResult;
   bool disposed = false;
   bool captureCalled = false;
-  int sampleFrameCalls = 0;
   CameraUnavailableException? captureError;
 
   bool sampling = false;
@@ -55,7 +53,6 @@ class FakeCameraPreviewController implements CameraPreviewController {
   FakeCameraPreviewController({
     this.unavailable = false,
     this.captureReturnPath,
-    this.sampleFrameResult,
   });
 
   @override
@@ -84,12 +81,6 @@ class FakeCameraPreviewController implements CameraPreviewController {
     final file = File('${dir.path}/page.jpg');
     await file.writeAsBytes(kFakeJpegBytes);
     return CapturedImage(file.path);
-  }
-
-  @override
-  Future<Uint8List?> sampleFrame() async {
-    sampleFrameCalls++;
-    return sampleFrameResult;
   }
 
   @override
@@ -225,20 +216,17 @@ ScanDependencies grantedScanDependenciesWithDetector(DetectionResult? result) =>
 FakeCameraPreviewController? liveDetectionFakePreview;
 
 /// [ScanDependencies] with controllable frame sampling and edge detection.
-/// Use in F3 widget and BDD tests. The preview controller returns
-/// [sampleFrameResult] (defaults to [kFakeJpegBytes]) from [sampleFrame()];
-/// the edge detector returns [detectionResult] from [detect()].
+/// Use in F3 widget and BDD tests. The preview controller delivers frames via
+/// the image-stream API ([startSampling]/[stopSampling]/[detectFrame]);
+/// the edge detector returns [detectionResult] from [detectFrame()].
 ScanDependencies liveDetectionScanDependencies({
   required DetectionResult? detectionResult,
-  Uint8List? sampleFrameResult,
 }) =>
     ScanDependencies(
       createPermissionService: () =>
           FakeCameraPermissionService(CameraPermissionStatus.granted),
       createPreviewController: () {
-        final c = FakeCameraPreviewController(
-          sampleFrameResult: sampleFrameResult ?? kFakeJpegBytes,
-        );
+        final c = FakeCameraPreviewController();
         liveDetectionFakePreview = c;
         return c;
       },

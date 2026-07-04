@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,8 +27,6 @@ class _GatedPreview implements CameraPreviewController {
     await gate.future;
     return const CapturedImage('/nonexistent/capture.jpg');
   }
-  @override
-  Future<Uint8List?> sampleFrame() async => null;
   @override
   void startSampling(void Function(CameraFrame frame) onFrame) {}
   @override
