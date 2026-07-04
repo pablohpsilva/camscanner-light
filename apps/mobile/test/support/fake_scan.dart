@@ -219,6 +219,11 @@ ScanDependencies grantedScanDependenciesWithDetector(DetectionResult? result) =>
       createEdgeDetector: () => FakeEdgeDetector(result: result),
     );
 
+/// Module-level handle to the [FakeCameraPreviewController] most recently
+/// created by [liveDetectionScanDependencies]. Step definitions use this to
+/// emit frames without needing a return value from the factory.
+FakeCameraPreviewController? liveDetectionFakePreview;
+
 /// [ScanDependencies] with controllable frame sampling and edge detection.
 /// Use in F3 widget and BDD tests. The preview controller returns
 /// [sampleFrameResult] (defaults to [kFakeJpegBytes]) from [sampleFrame()];
@@ -230,8 +235,12 @@ ScanDependencies liveDetectionScanDependencies({
     ScanDependencies(
       createPermissionService: () =>
           FakeCameraPermissionService(CameraPermissionStatus.granted),
-      createPreviewController: () => FakeCameraPreviewController(
-        sampleFrameResult: sampleFrameResult ?? kFakeJpegBytes,
-      ),
+      createPreviewController: () {
+        final c = FakeCameraPreviewController(
+          sampleFrameResult: sampleFrameResult ?? kFakeJpegBytes,
+        );
+        liveDetectionFakePreview = c;
+        return c;
+      },
       createEdgeDetector: () => FakeEdgeDetector(result: detectionResult),
     );
