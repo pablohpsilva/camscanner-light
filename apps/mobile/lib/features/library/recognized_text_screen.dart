@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'share_channel.dart';
 
 import 'document_repository.dart';
 import 'page_image.dart';
+import 'widgets/share_menu_button.dart';
 
 /// Shows a single page's cached OCR text: selectable, copyable, exportable as a
 /// temporary `.txt` via the share sheet. Loads the text authoritatively from
@@ -115,11 +118,11 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
             icon: const Icon(Icons.copy),
             onPressed: (_busy || !hasText) ? null : _copy,
           ),
-          IconButton(
-            key: const Key('recognized-text-share'),
-            tooltip: 'Export as .txt',
-            icon: const Icon(Icons.share),
-            onPressed: (_busy || !hasText) ? null : _share,
+          ShareMenuButton(
+            buttonKey: const Key('recognized-text-share'),
+            onShare: () => unawaited(_share()),
+            showFax: false,
+            enabled: !(_busy || !hasText),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 import 'share_channel.dart';
+import 'widgets/share_menu_button.dart';
 
 /// Opens a PDF file and returns its [PdfDocument]. Injectable so host tests can
 /// drive loading/error without the native plugin. Default = pdfx's real opener.
@@ -72,11 +73,9 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
       appBar: AppBar(
         title: Text(widget.name),
         actions: [
-          IconButton(
-            key: const Key('pdf-preview-share'),
-            tooltip: 'Share PDF',
-            icon: const Icon(Icons.share),
-            onPressed: () => unawaited(
+          ShareMenuButton(
+            buttonKey: const Key('pdf-preview-share'),
+            onShare: () => unawaited(
               widget.share.share([widget.pdfPath], subject: widget.name),
             ),
           ),
