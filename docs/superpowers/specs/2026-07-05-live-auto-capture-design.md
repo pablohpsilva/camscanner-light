@@ -98,7 +98,7 @@ class AutoCaptureController {
   then trigger capture by invoking the existing `_onShutter()` (DRY — same stop→capture→
   review→resume flow). Otherwise `setState(() => _autoProgress = s.progress)`.
 - `_stopSampling()` additionally calls `_autoCapture.reset()` and clears `_autoProgress` — this
-  covers capture start, entering review, toggle-off, and dispose (sampling stops in all cases).
+  covers capture start, entering review, and dispose (sampling stops in all cases); toggle-off resets the tracker directly in `_onAutoCaptureToggled` without stopping the live overlay.
 - New `_onAutoCaptureToggled()`: flips `_autoCaptureEnabled`; when turning off, resets the
   tracker and clears `_autoProgress`.
 - Pass `autoCaptureEnabled`, `onAutoCaptureToggled`, `autoCaptureProgress` to

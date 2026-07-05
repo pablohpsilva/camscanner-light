@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/scan/auto_capture_controller.dart';
 import 'package:mobile/features/scan/camera_frame.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_screen.dart';
@@ -66,7 +67,8 @@ void main() {
     await tester.pumpWidget(_screen(fake));
     await tester.pumpAndSettle(); // ready + sampling
 
-    await _emitStable(tester, fake, 6); // requiredStableFrames default
+    await _emitStable(
+        tester, fake, AutoCaptureController().requiredStableFrames);
     await tester.pumpAndSettle(); // capture + navigate to review
 
     expect(find.byType(CaptureReviewScreen), findsOneWidget);
@@ -100,5 +102,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CaptureReviewScreen), findsOneWidget);
+  });
+
+  testWidgets('countdown ring appears mid-climb, before auto-fire',
+      (tester) async {
+    final fake = _fake();
+    await tester.pumpWidget(_screen(fake));
+    await tester.pumpAndSettle();
+
+    final n = AutoCaptureController().requiredStableFrames;
+    await _emitStable(tester, fake, n ~/ 2); // partway: progress > 0, not yet firing
+
+    expect(find.byKey(const Key('scan-auto-capture-ring')), findsOneWidget);
+    expect(find.byType(CaptureReviewScreen), findsNothing);
   });
 }
