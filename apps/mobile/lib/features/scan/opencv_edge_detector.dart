@@ -10,6 +10,8 @@ import '../library/crop_corners.dart';
 import 'camera_frame.dart';
 import 'detector_geometry.dart';
 import 'edge_detector.dart';
+import 'frame_reducer.dart';
+import 'gray_frame.dart';
 
 /// Runs the native detection pipeline for [bytes], returning the flat result
 /// list (see [_runPipeline]) or null. Injectable so tests can exercise the
@@ -19,10 +21,6 @@ typedef PipelineRunner = Future<List<double>?> Function(Uint8List bytes);
 /// Default runner: offloads the synchronous OpenCV pipeline to an isolate.
 Future<List<double>?> _computeRunner(Uint8List bytes) =>
     compute(_runPipeline, bytes);
-
-/// Frame runner: offloads the synchronous frame pipeline to an isolate.
-Future<List<double>?> _computeFrameRunner(CameraFrame frame) =>
-    Future.value(_runFramePipeline(frame));
 
 class OpenCvEdgeDetector implements EdgeDetector {
   /// Upper bound on a single [detect] call. If the native pipeline wedges
@@ -58,7 +56,8 @@ class OpenCvEdgeDetector implements EdgeDetector {
   @override
   Future<DetectionResult?> detectFrame(CameraFrame frame) async {
     try {
-      final flat = await compute(_computeFrameRunner, frame).timeout(timeout);
+      final gray = reduceToGray(frame, maxSide: kLiveDetectMaxSide);
+      final flat = await compute(_segmentGrayFrame, gray).timeout(timeout);
       if (flat == null) return null;
       return _resultFromFlat(flat);
     } catch (_) {
@@ -88,6 +87,11 @@ DetectionResult _resultFromFlat(List<double> flat) => DetectionResult(
 /// turns into spurious contours; a modest working size is both more robust and
 /// much faster. Corners are normalized to [0..1], so this is coordinate-safe.
 const int _kDetectMaxSide = 1024;
+
+/// Longest side (px) for LIVE frame detection — coarser than the still path
+/// (`_kDetectMaxSide`) because the live overlay is only a guide; the final crop
+/// corners come from `detect()` on the full-resolution still.
+const int kLiveDetectMaxSide = 400;
 
 /// Gaussian blur kernel side (odd) applied before Otsu, to suppress text and
 /// texture so the whole page reads as one region.
@@ -121,91 +125,32 @@ List<double>? _runPipeline(Uint8List bytes) {
   }
 }
 
-/// Builds a BGR result from a [CameraFrame] and runs the shared pipeline.
-List<double>? _runFramePipeline(CameraFrame frame) {
-  cv.Mat? bgr;
+/// Isolate entry (top-level, for `compute()`): wraps a [GrayFrame]'s single-channel
+/// bytes as a CV_8UC1 Mat and runs the shared segmentation. Returns the flat
+/// 9-element result (see [_resultFromFlat]) or null.
+List<double>? _segmentGrayFrame(GrayFrame frame) {
+  cv.Mat? gray;
   try {
-    bgr = _bgrMatFromFrame(frame);
-    if (bgr == null || bgr.isEmpty) return null;
-    final out = _runPipelineOnMat(bgr); // takes ownership
-    bgr = null;
+    gray = cv.Mat.fromList(
+        frame.height, frame.width, cv.MatType.CV_8UC1, frame.bytes);
+    if (gray.isEmpty) {
+      gray.dispose();
+      return null;
+    }
+    final out = _segmentGray(gray); // takes ownership: disposes `gray`
+    gray = null;
     return out;
-  } finally {
-    bgr?.dispose();
+  } catch (_) {
+    gray?.dispose();
+    return null;
   }
 }
 
-/// Builds a BGR [cv.Mat] from a [frame]. Returns null for unsupported formats.
-cv.Mat? _bgrMatFromFrame(CameraFrame frame) {
-  switch (frame.format) {
-    case CameraFrameFormat.bgra8888:
-      return _bgrFromBgra(frame);
-    case CameraFrameFormat.yuv420:
-      return _bgrFromYuv420(frame); // implemented in Task 3
-  }
-}
-
-cv.Mat _bgrFromBgra(CameraFrame frame) {
-  final plane = frame.planes.first;
-  final w = frame.width, h = frame.height;
-  final rowLen = w * 4;
-  Uint8List packed;
-  if (plane.bytesPerRow == rowLen) {
-    packed = plane.bytes;
-  } else {
-    // Drop per-row padding into a tight w*4 buffer.
-    packed = Uint8List(rowLen * h);
-    for (var row = 0; row < h; row++) {
-      final src = row * plane.bytesPerRow;
-      packed.setRange(row * rowLen, row * rowLen + rowLen, plane.bytes, src);
-    }
-  }
-  final bgra = cv.Mat.fromList(h, w, cv.MatType.CV_8UC4, packed);
-  final bgr = cv.cvtColor(bgra, cv.COLOR_BGRA2BGR);
-  bgra.dispose();
-  return bgr;
-}
-
-cv.Mat? _bgrFromYuv420(CameraFrame frame) {
-  if (frame.planes.length < 3) return null;
-  final w = frame.width, h = frame.height;
-  final cw = w ~/ 2, ch = h ~/ 2;
-
-  // Pack Y tightly.
-  final out = Uint8List(w * h + 2 * cw * ch);
-  final yP = frame.planes[0];
-  for (var row = 0; row < h; row++) {
-    final src = row * yP.bytesPerRow;
-    out.setRange(row * w, row * w + w, yP.bytes, src);
-  }
-  // Pack U then V tightly (I420), honoring pixel stride.
-  var o = w * h;
-  for (final plane in [frame.planes[1], frame.planes[2]]) {
-    final ps = plane.bytesPerPixel ?? 1;
-    for (var row = 0; row < ch; row++) {
-      var src = row * plane.bytesPerRow;
-      for (var col = 0; col < cw; col++) {
-        out[o++] = plane.bytes[src];
-        src += ps;
-      }
-    }
-  }
-
-  final yuv = cv.Mat.fromList(h + ch, w, cv.MatType.CV_8UC1, out);
-  final bgr = cv.cvtColor(yuv, cv.COLOR_YUV2BGR_I420);
-  yuv.dispose();
-  return bgr;
-}
-
-/// Steps 2–7 of the detection pipeline: downscale → grayscale → blur →
-/// dual-Otsu → contour → quad → score.
-///
-/// Takes ownership of [mat] and disposes it (and all intermediates) in its
-/// finally block. Callers must not use [mat] after this call.
+/// Still-capture front-end: downscale a large capture to `_kDetectMaxSide`,
+/// convert to gray, then segment. Takes ownership of [bgr].
 List<double>? _runPipelineOnMat(cv.Mat bgr) {
-  cv.Mat? mat = bgr, gray, blurred, maskBright, maskDark;
+  cv.Mat? mat = bgr, gray;
   try {
-    // Step 2: Downscale large captures (coordinate-safe: corners normalized).
     final longest = math.max(mat.rows, mat.cols);
     if (longest > _kDetectMaxSide) {
       final scale = _kDetectMaxSide / longest;
@@ -217,19 +162,34 @@ List<double>? _runPipelineOnMat(cv.Mat bgr) {
       mat.dispose();
       mat = resized;
     }
-    final rows = mat.rows;
-    final cols = mat.cols;
-    final imageArea = (rows * cols).toDouble();
-
-    // Step 3: Grayscale.
     gray = cv.cvtColor(mat, cv.COLOR_BGR2GRAY);
     mat.dispose();
     mat = null;
+    final out = _segmentGray(gray); // takes ownership: disposes `gray`
+    gray = null;
+    return out;
+  } catch (_) {
+    return null;
+  } finally {
+    mat?.dispose();
+    gray?.dispose();
+  }
+}
+
+/// Shared segmentation core (steps 4-7). Takes ownership of [gray] (single-channel
+/// CV_8UC1) and disposes it and all intermediates. Returns the flat 9-element
+/// result (see [_resultFromFlat]) or null.
+List<double>? _segmentGray(cv.Mat gray) {
+  cv.Mat? g = gray, blurred, maskBright, maskDark;
+  try {
+    final rows = g.rows;
+    final cols = g.cols;
+    final imageArea = (rows * cols).toDouble();
 
     // Step 4: Blur so text/texture doesn't fragment the page region.
-    blurred = cv.gaussianBlur(gray, (_kSegBlur, _kSegBlur), 0);
-    gray.dispose();
-    gray = null;
+    blurred = cv.gaussianBlur(g, (_kSegBlur, _kSegBlur), 0);
+    g.dispose();
+    g = null;
 
     // Step 5: Otsu → bright mask (page-brighter) + the inverse dark mask
     // (page-darker), so both polarities are considered.
@@ -337,8 +297,7 @@ List<double>? _runPipelineOnMat(cv.Mat bgr) {
   } catch (_) {
     return null;
   } finally {
-    mat?.dispose();
-    gray?.dispose();
+    g?.dispose();
     blurred?.dispose();
     maskBright?.dispose();
     maskDark?.dispose();
