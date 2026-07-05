@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
@@ -100,7 +101,11 @@ class _CameraScreenState extends State<CameraScreen> {
     }
     _isDetecting = true;
     try {
+      final sw = kDebugMode ? (Stopwatch()..start()) : null;
       final result = await _edgeDetector.detectFrame(frame);
+      if (sw != null) {
+        debugPrint('[scan] detectFrame ${sw.elapsedMilliseconds}ms');
+      }
       if (!mounted) return;
       setState(() {
         _liveResult =
