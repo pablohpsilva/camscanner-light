@@ -10,7 +10,7 @@ import './../test/step/i_capture_and_accept_the_first_page.dart';
 import './../test/step/the_camera_screen_shows_the_done_button.dart';
 import './../test/step/i_capture_and_accept_the_second_page.dart';
 import './../test/step/i_tap_done.dart';
-import '../test/step/the_document_has2_pages.dart';
+import './../test/step/the_document_has2_pages.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
