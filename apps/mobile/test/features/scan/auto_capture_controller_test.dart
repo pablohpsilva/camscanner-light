@@ -82,4 +82,14 @@ void main() {
     c.reset();
     expect(c.update(_res(_quad(0, 0), 0.9)).progress, closeTo(1 / 3, 1e-9));
   });
+
+  test('does not re-fire after a jump-and-restabilize without reset', () {
+    final c = AutoCaptureController(requiredStableFrames: 2);
+    c.update(_res(_quad(0, 0), 0.9)); // count 1
+    expect(c.update(_res(_quad(0, 0), 0.9)).shouldFire, isTrue); // fires
+    c.update(_res(_quad(0.2, 0), 0.9)); // big jump -> count 1, _fired stays set
+    final s = c.update(_res(_quad(0.2, 0), 0.9)); // restabilize -> count 2
+    expect(s.progress, 1.0);
+    expect(s.shouldFire, isFalse); // no re-fire without reset / doc-loss
+  });
 }

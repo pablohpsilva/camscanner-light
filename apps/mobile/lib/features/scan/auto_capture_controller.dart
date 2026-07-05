@@ -69,10 +69,10 @@ class AutoCaptureController {
     _fired = false;
   }
 
-  static double _maxDelta(CropCorners a, CropCorners b) => [
-        (a.topLeft - b.topLeft).distance,
-        (a.topRight - b.topRight).distance,
-        (a.bottomRight - b.bottomRight).distance,
-        (a.bottomLeft - b.bottomLeft).distance,
-      ].reduce(math.max);
+  static double _maxDelta(CropCorners a, CropCorners b) => math.max(
+        math.max((a.topLeft - b.topLeft).distance,
+            (a.topRight - b.topRight).distance),
+        math.max((a.bottomRight - b.bottomRight).distance,
+            (a.bottomLeft - b.bottomLeft).distance),
+      );
 }
