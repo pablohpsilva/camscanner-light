@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../document_summary.dart';
 import 'document_thumbnail.dart';
+import 'share_menu_button.dart';
 
 /// Rich list of saved documents: thumbnail, name, date, page count. Rendered in
 /// the order it is given — the caller (HomeScreen) applies the user's chosen
@@ -43,6 +44,9 @@ class DocumentsListView extends StatelessWidget {
                   onSelected: (v) {
                     if (v == 'rename') onRename?.call(s);
                     if (v == 'share') onShare?.call(s);
+                    if (v == kShareLinkValue || v == kFaxValue) {
+                      handleShareExtra(context, v);
+                    }
                   },
                   itemBuilder: (context) => [
                     if (onShare != null)
@@ -51,6 +55,9 @@ class DocumentsListView extends StatelessWidget {
                         value: 'share',
                         child: const Text('Share'),
                       ),
+                    if (onShare != null)
+                      ...shareExtraMenuItems(
+                          showFax: true, keyPrefix: 'document-${d.id}'),
                     if (onRename != null)
                       PopupMenuItem<String>(
                         key: Key('document-rename-${d.id}'),
