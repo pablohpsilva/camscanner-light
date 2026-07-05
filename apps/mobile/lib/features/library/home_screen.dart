@@ -11,6 +11,7 @@ import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_control_bar.dart';
+import '../donation/donation_banner.dart';
 
 /// The app's home: the document library. Builds the repository, lists saved
 /// documents (name + date), and opens the camera. Reloads the list whenever the
@@ -210,6 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const Icon(Icons.document_scanner_outlined),
               label: const Text('Scan'),
             ),
+      bottomNavigationBar: const DonationBanner(),
     );
   }
 

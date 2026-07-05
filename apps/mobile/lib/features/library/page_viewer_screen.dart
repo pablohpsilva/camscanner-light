@@ -19,6 +19,7 @@ import 'recognized_text_screen.dart';
 import 'widgets/page_thumbnail_strip.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/share_menu_button.dart';
+import '../donation/donation_banner.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
 /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
@@ -564,6 +565,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               : (_pages == null || _pages!.isEmpty)
                   ? _buildEmpty()
                   : _buildPages(_pages!),
+      bottomNavigationBar: const DonationBanner(),
     );
   }
 
