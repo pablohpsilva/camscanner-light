@@ -55,4 +55,30 @@ void main() {
         bytesPerRow: 2 * 4 + 8, pixel: (x, y) => (x == 1 && y == 1) ? 200 : 10);
     expect(reduceToGray(f, maxSide: 400).bytes, [10, 10, 10, 200]);
   });
+
+  test('ceiling division: non-multiple dims include the partial last strip', () {
+    final g = reduceToGray(_bgra(5, 3, pixel: (x, y) => 0), maxSide: 2);
+    // k = ceil(5/2) = 3; outW = ceil(5/3) = 2; outH = ceil(3/3) = 1
+    expect(g.width, 2);
+    expect(g.height, 1);
+    expect(g.bytes.length, 2);
+  });
+
+  test('BGRA luma isolates the green weight (pure green -> 149)', () {
+    final bytes = Uint8List(4)..[0] = 0..[1] = 255..[2] = 0..[3] = 255; // B,G,R,A
+    final f = CameraFrame(
+      width: 1, height: 1, format: CameraFrameFormat.bgra8888,
+      planes: [CameraFramePlane(bytes: bytes, bytesPerRow: 4, bytesPerPixel: 4)],
+    );
+    expect(reduceToGray(f, maxSide: 400).bytes[0], (150 * 255) >> 8); // 149
+  });
+
+  test('BGRA luma isolates the blue weight (pure blue -> 28)', () {
+    final bytes = Uint8List(4)..[0] = 255..[1] = 0..[2] = 0..[3] = 255; // B,G,R,A
+    final f = CameraFrame(
+      width: 1, height: 1, format: CameraFrameFormat.bgra8888,
+      planes: [CameraFramePlane(bytes: bytes, bytesPerRow: 4, bytesPerPixel: 4)],
+    );
+    expect(reduceToGray(f, maxSide: 400).bytes[0], (29 * 255) >> 8); // 28
+  });
 }
