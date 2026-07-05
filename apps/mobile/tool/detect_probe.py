@@ -50,6 +50,25 @@ def _corner_err_frac(det, truth, diag):
     return float(np.mean(np.linalg.norm(d - t, axis=1))) / diag
 
 
+def _is_convex_quad(q):
+    """Mirror of isConvexQuad in detector_geometry.dart."""
+    q = np.asarray(q, dtype=float).reshape(-1, 2)
+    if q.shape[0] != 4:
+        return False
+    sign = 0
+    for i in range(4):
+        a, b, c = q[i], q[(i + 1) % 4], q[(i + 2) % 4]
+        cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if abs(cross) < 1e-9:
+            return False
+        s = 1 if cross > 0 else -1
+        if sign == 0:
+            sign = s
+        elif s != sign:
+            return False
+    return True
+
+
 def detect(img, max_side=DETECT_MAX_SIDE):
     """Return (confidence, areaFrac, fill, polarity, quad) or None."""
     h0, w0 = img.shape[:2]
@@ -79,11 +98,20 @@ def detect(img, max_side=DETECT_MAX_SIDE):
             continue
         c = max(cnts, key=cv2.contourArea)
         carea = cv2.contourArea(c)
-        peri = cv2.arcLength(c, True)
-        ap = cv2.approxPolyDP(c, 0.02 * peri, True)
-        if len(ap) == 4 and cv2.isContourConvex(ap):
-            quad = ap.reshape(-1, 2).astype(float)
-        else:
+        # Tight fit: convex hull drops interior jaggedness, then the smallest
+        # epsilon that yields a 4-point convex quad wins; minAreaRect only if
+        # none does (it bounds every protrusion → loose).
+        hull = cv2.convexHull(c)
+        peri = cv2.arcLength(hull, True)
+        quad = None
+        for frac in (0.01, 0.02, 0.03, 0.04, 0.05):
+            ap = cv2.approxPolyDP(hull, frac * peri, True)
+            if len(ap) == 4:
+                cand = ap.reshape(-1, 2).astype(float)
+                if _is_convex_quad(cand):
+                    quad = cand
+                    break
+        if quad is None:
             quad = cv2.boxPoints(cv2.minAreaRect(c)).astype(float)
         qarea = _quad_area(quad)
         if qarea <= 0:
@@ -179,6 +207,11 @@ def _cases():
 
 
 def main():
+    # Tightness gate constants — fixed, hoisted above the loop.
+    TIGHT = {"page-on-dark", "page-on-light", "soft-shadow-on-dark",
+             "page-nub-on-dark"}
+    T_IOU, T_ERR = 0.95, 0.015  # IoU floor, corner-error ceiling (frac diag)
+
     failures = 0
     for name, img, expect_polarity in _cases():
         r = detect(img)
@@ -193,9 +226,6 @@ def main():
             failures += 1
         # Tightness gate: for known-page fixtures, the detected quad must hug
         # the true page rectangle. diag of the 800x600 working image = 1000.
-        TIGHT = {"page-on-dark", "page-on-light", "soft-shadow-on-dark",
-                 "page-nub-on-dark"}
-        T_IOU, T_ERR = 0.95, 0.015  # IoU floor, corner-error ceiling (frac diag)
         if name in TIGHT and r is not None:
             quad = r[4]
             iou = _iou(quad, PAGE_RECT, img.shape)
@@ -214,8 +244,11 @@ def main():
                   f"1024={'NULL' if r is None else r[3]} "
                   f"400={'NULL' if r400 is None else r400[3]}")
             failures += 1
-    print(f"\n{failures} failure(s)")
-    sys.exit(1 if failures else 0)
+    if failures:
+        print(f"\n{failures} failure(s)")
+        sys.exit(1)
+    print("\nALL PROBE CHECKS PASS")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
