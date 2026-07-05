@@ -11,5 +11,6 @@ class GrayFrame {
     required this.width,
     required this.height,
     required this.bytes,
-  });
+  }) : assert(bytes.length == width * height,
+            'GrayFrame: bytes.length (${bytes.length}) must equal width*height (${width * height})');
 }

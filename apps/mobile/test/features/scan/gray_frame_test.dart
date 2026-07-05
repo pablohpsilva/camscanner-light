@@ -9,4 +9,11 @@ void main() {
     expect(f.height, 3);
     expect(f.bytes.length, f.width * f.height);
   });
+
+  test('GrayFrame rejects a buffer whose length != width*height', () {
+    expect(
+      () => GrayFrame(width: 4, height: 3, bytes: Uint8List(11)),
+      throwsA(isA<AssertionError>()),
+    );
+  });
 }
