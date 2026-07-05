@@ -217,9 +217,10 @@ List<double>? _segmentGray(cv.Mat gray) {
     // Iterate the non-null locals `mb`/`md` (maskBright/maskDark hold the same
     // handles for disposal in `finally`.
     for (final mask in [mb, md]) {
-      cv.Mat? kernel, closed;
+      cv.Mat? kernel, closed, hullMat;
       cv.VecVec4i? hierarchy;
       cv.VecVecPoint? contours;
+      cv.VecPoint? hull;
       try {
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (kseg, kseg));
         closed = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel, iterations: 1);
@@ -251,9 +252,10 @@ List<double>? _segmentGray(cv.Mat gray) {
         // last resort only when no ε gives a clean quad (it bounds every
         // protrusion, so it reads slightly loose). Mirrors detect_probe.py.
         List<Pt>? quadPts;
-        final hullMat = cv.convexHull(contour);
-        final hull = cv.VecPoint.fromMat(hullMat);
-        hullMat.dispose();
+        // hull/hullMat are disposed in the per-polarity `finally` so a throw
+        // from any native call below cannot leak them in the isolate.
+        hullMat = cv.convexHull(contour);
+        hull = cv.VecPoint.fromMat(hullMat);
         final peri = cv.arcLength(hull, true);
         for (final frac in _kSegEpsFracs) {
           final approx = cv.approxPolyDP(hull, peri * frac, true);
@@ -271,7 +273,6 @@ List<double>? _segmentGray(cv.Mat gray) {
             approx.dispose();
           }
         }
-        hull.dispose();
         if (quadPts == null) {
           final rect = cv.minAreaRect(contour);
           final box = rect.points; // VecPoint2f, 4 corners
@@ -301,6 +302,8 @@ List<double>? _segmentGray(cv.Mat gray) {
         closed?.dispose();
         hierarchy?.dispose();
         contours?.dispose();
+        hull?.dispose();
+        hullMat?.dispose();
       }
     }
 
