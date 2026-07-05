@@ -124,4 +124,16 @@ void main() {
     final f = _yuv(2, 2, yPixStride: 2, luma: (x, y) => x * 10 + y);
     expect(reduceToGray(f, maxSide: 400).bytes, [0, 10, 1, 11]);
   });
+
+  test('YUV decimates with k>1, honoring stride', () {
+    // 6x6, maxSide=2 -> k = ceil(6/2) = 3 -> outW = outH = ceil(6/3) = 2
+    final f = _yuv(6, 6, luma: (x, y) => x + y * 10);
+    final g = reduceToGray(f, maxSide: 2);
+    expect(g.width, 2);
+    expect(g.height, 2);
+    expect(g.bytes[0], 0);   // luma(0,0)
+    expect(g.bytes[1], 3);   // luma(3,0)
+    expect(g.bytes[2], 30);  // luma(0,3)
+    expect(g.bytes[3], 33);  // luma(3,3)
+  });
 }
