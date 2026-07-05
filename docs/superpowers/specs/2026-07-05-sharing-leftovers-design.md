@@ -100,9 +100,13 @@ single widget forced everywhere:
   `kFaxUnavailableMessage`). Used by both the standalone widget and the two existing menus.
 - **`ShareMenuButton`** (`widgets/share_menu_button.dart`) — a `PopupMenuButton` (share
   icon) for the two screens that have a *standalone* share button (pdf_preview,
-  recognized_text). It renders **Share** (→ `share.share(filePaths, subject:)`, unchanged
-  behavior relocated into the menu) plus `shareExtraMenuItems(...)`, routing the extra
-  values through `handleShareExtra`.
+  recognized_text). Props: `required VoidCallback onShare`, `bool showFax = true`,
+  `bool enabled = true`. It renders **Share** (→ `onShare()`, delegating to the screen's
+  existing share action verbatim — pdf_preview's `share.share([pdfPath], subject:)` and
+  recognized_text's lazy `_share()` that exports the .txt first) plus
+  `shareExtraMenuItems(...)`, routing the extra values through `handleShareExtra`. Taking a
+  callback (not the channels) keeps the widget agnostic of *what* is shared and preserves
+  each screen's current behavior.
 
 **This release ships the not-available behavior only.** Tapping Fax/Share-link shows the
 SnackBar and calls no channel. The *available* branch — real fax-number entry, real
