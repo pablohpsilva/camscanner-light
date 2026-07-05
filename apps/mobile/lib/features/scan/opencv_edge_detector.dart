@@ -56,7 +56,7 @@ class OpenCvEdgeDetector implements EdgeDetector {
   @override
   Future<DetectionResult?> detectFrame(CameraFrame frame) async {
     try {
-      final gray = reduceToGray(frame, maxSide: kLiveDetectMaxSide);
+      final gray = reduceToGray(frame, maxSide: _kLiveDetectMaxSide);
       final flat = await compute(_segmentGrayFrame, gray).timeout(timeout);
       if (flat == null) return null;
       return _resultFromFlat(flat);
@@ -91,7 +91,7 @@ const int _kDetectMaxSide = 1024;
 /// Longest side (px) for LIVE frame detection — coarser than the still path
 /// (`_kDetectMaxSide`) because the live overlay is only a guide; the final crop
 /// corners come from `detect()` on the full-resolution still.
-const int kLiveDetectMaxSide = 400;
+const int _kLiveDetectMaxSide = 400;
 
 /// Gaussian blur kernel side (odd) applied before Otsu, to suppress text and
 /// texture so the whole page reads as one region.
