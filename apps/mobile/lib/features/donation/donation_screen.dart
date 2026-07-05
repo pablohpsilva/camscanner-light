@@ -109,7 +109,7 @@ class _BitcoinSection extends StatelessWidget {
           color: Colors.white,
           padding: const EdgeInsets.all(12),
           child: QrImageView(
-            data: address,
+            data: 'bitcoin:$address',
             version: QrVersions.auto,
             size: 200,
           ),
