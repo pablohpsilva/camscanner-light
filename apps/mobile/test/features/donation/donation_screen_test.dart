@@ -52,6 +52,8 @@ void main() {
 
     await pump(tester,
         kofiUrl: '', bitcoinAddress: 'bc1qexampleaddress');
+    await tester.ensureVisible(find.byKey(const Key('donation-bitcoin-copy')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('donation-bitcoin-copy')));
     await tester.pumpAndSettle();
 

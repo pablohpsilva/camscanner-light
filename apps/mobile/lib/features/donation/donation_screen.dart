@@ -19,11 +19,20 @@ class DonationScreen extends StatelessWidget {
   final String kofiUrl;
   final String bitcoinAddress;
 
-  Future<void> _openKofi() async {
+  Future<void> _openKofi(BuildContext context) async {
     final uri = Uri.tryParse(kofiUrl);
     if (uri == null) return;
-    // externalApplication keeps payment outside the app (App Store 3.1.1).
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      // externalApplication keeps payment outside the app (App Store 3.1.1).
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (ok) return;
+    } catch (_) {
+      // fall through to failure feedback
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Couldn't open Ko-fi")),
+    );
   }
 
   Future<void> _copyAddress(BuildContext context) async {
@@ -61,7 +70,7 @@ class DonationScreen extends StatelessWidget {
           if (kofiUrl.isNotEmpty) ...[
             FilledButton.icon(
               key: const Key('donation-kofi-button'),
-              onPressed: _openKofi,
+              onPressed: () => _openKofi(context),
               icon: const Icon(Icons.local_cafe_outlined),
               label: const Text('Donate via Ko-fi'),
             ),
@@ -95,7 +104,17 @@ class _BitcoinSection extends StatelessWidget {
     return Column(
       children: [
         Text('Or donate with Bitcoin', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(12),
+          child: QrImageView(
+            data: address,
+            version: QrVersions.auto,
+            size: 200,
+          ),
+        ),
+        const SizedBox(height: 16),
         SelectableText(
           address,
           textAlign: TextAlign.center,
@@ -107,16 +126,6 @@ class _BitcoinSection extends StatelessWidget {
           onPressed: onCopy,
           icon: const Icon(Icons.copy),
           label: const Text('Copy address'),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.all(12),
-          child: QrImageView(
-            data: address,
-            version: QrVersions.auto,
-            size: 200,
-          ),
         ),
       ],
     );
