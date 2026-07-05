@@ -49,6 +49,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.15.1
   share_plus: ^13.2.0
   syncfusion_flutter_pdf: ^33.2.15
+  url_launcher: ^6.3.2
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
