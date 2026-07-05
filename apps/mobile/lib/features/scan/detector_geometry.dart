@@ -84,3 +84,25 @@ bool isPlausiblePage({
   double minFill = 0.55,
 }) =>
     areaFrac >= minAreaFrac && areaFrac <= maxAreaFrac && fill >= minFill;
+
+/// True iff [quad] is a strictly convex quadrilateral, for either winding.
+/// The signed cross product at every consecutive vertex triple must share one
+/// non-zero sign; a near-zero cross means collinear/degenerate → false.
+bool isConvexQuad(List<Pt> quad) {
+  if (quad.length != 4) return false;
+  int sign = 0;
+  for (int i = 0; i < 4; i++) {
+    final a = quad[i];
+    final b = quad[(i + 1) % 4];
+    final c = quad[(i + 2) % 4];
+    final cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+    if (cross.abs() < 1e-9) return false; // collinear → degenerate
+    final s = cross > 0 ? 1 : -1;
+    if (sign == 0) {
+      sign = s;
+    } else if (s != sign) {
+      return false;
+    }
+  }
+  return true;
+}

@@ -106,4 +106,34 @@ void main() {
       expect(isPlausiblePage(areaFrac: 0.40, fill: 0.549), isFalse);
     });
   });
+
+  group('isConvexQuad', () {
+    test('accepts an axis-aligned square (CCW and CW windings)', () {
+      const ccw = <Pt>[(x: 0, y: 0), (x: 10, y: 0), (x: 10, y: 10), (x: 0, y: 10)];
+      const cw = <Pt>[(x: 0, y: 0), (x: 0, y: 10), (x: 10, y: 10), (x: 10, y: 0)];
+      expect(isConvexQuad(ccw), isTrue);
+      expect(isConvexQuad(cw), isTrue);
+    });
+
+    test('accepts a convex (non-axis-aligned) quad', () {
+      const q = <Pt>[(x: 2, y: 0), (x: 12, y: 3), (x: 9, y: 11), (x: 0, y: 8)];
+      expect(isConvexQuad(q), isTrue);
+    });
+
+    test('rejects a reflex (arrow/dart) quad', () {
+      // Third vertex pulled inside → one reflex angle.
+      const q = <Pt>[(x: 0, y: 0), (x: 10, y: 0), (x: 5, y: 3), (x: 10, y: 10)];
+      expect(isConvexQuad(q), isFalse);
+    });
+
+    test('rejects three collinear vertices', () {
+      const q = <Pt>[(x: 0, y: 0), (x: 5, y: 0), (x: 10, y: 0), (x: 5, y: 8)];
+      expect(isConvexQuad(q), isFalse);
+    });
+
+    test('rejects a non-4-point list', () {
+      const q = <Pt>[(x: 0, y: 0), (x: 10, y: 0), (x: 10, y: 10)];
+      expect(isConvexQuad(q), isFalse);
+    });
+  });
 }
