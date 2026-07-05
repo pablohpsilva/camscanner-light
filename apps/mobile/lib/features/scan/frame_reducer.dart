@@ -22,7 +22,7 @@ GrayFrame reduceToGray(CameraFrame frame, {required int maxSide}) {
     case CameraFrameFormat.bgra8888:
       _decimateBgra(frame, k, outW, outH, out);
     case CameraFrameFormat.yuv420:
-      throw UnimplementedError('yuv420 added in Task 3');
+      _decimateY(frame, k, outW, outH, out);
   }
   return GrayFrame(width: outW, height: outH, bytes: out);
 }
@@ -37,6 +37,19 @@ void _decimateBgra(
       final i = srcRow + (ox * k) * 4;
       final b = p.bytes[i], g = p.bytes[i + 1], r = p.bytes[i + 2];
       out[o++] = (77 * r + 150 * g + 29 * b) >> 8; // weights sum to 256
+    }
+  }
+}
+
+void _decimateY(
+    CameraFrame frame, int k, int outW, int outH, Uint8List out) {
+  final p = frame.planes[0];
+  final ps = p.bytesPerPixel ?? 1;
+  var o = 0;
+  for (var oy = 0; oy < outH; oy++) {
+    final srcRow = (oy * k) * p.bytesPerRow;
+    for (var ox = 0; ox < outW; ox++) {
+      out[o++] = p.bytes[srcRow + (ox * k) * ps];
     }
   }
 }
