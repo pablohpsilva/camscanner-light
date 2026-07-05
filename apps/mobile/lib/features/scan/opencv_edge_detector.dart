@@ -102,6 +102,11 @@ const int _kSegBlur = 7;
 /// proportional to the working-image width.
 const int _kSegKernelDivisor = 30;
 
+/// Ascending fractions of the hull perimeter for the quad-fit ε sweep. The
+/// smallest fraction yielding a 4-point convex quad wins; larger fractions
+/// simplify away small edge protrusions/nubs. Mirrors detect_probe.py.
+const List<double> _kSegEpsFracs = [0.01, 0.02, 0.03, 0.04, 0.05];
+
 /// Returns [tl.dx, tl.dy, tr.dx, tr.dy, br.dx, br.dy, bl.dx, bl.dy, confidence]
 /// or null if no plausible page quad is found or on any error.
 ///
@@ -212,9 +217,10 @@ List<double>? _segmentGray(cv.Mat gray) {
     // Iterate the non-null locals `mb`/`md` (maskBright/maskDark hold the same
     // handles for disposal in `finally`.
     for (final mask in [mb, md]) {
-      cv.Mat? kernel, closed;
+      cv.Mat? kernel, closed, hullMat;
       cv.VecVec4i? hierarchy;
       cv.VecVecPoint? contours;
+      cv.VecPoint? hull;
       try {
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (kseg, kseg));
         closed = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel, iterations: 1);
@@ -240,19 +246,34 @@ List<double>? _segmentGray(cv.Mat gray) {
         if (bestIdx < 0) continue;
         final contour = contours[bestIdx]; // owned by contours — do not dispose
 
-        // Build a quad: approxPolyDP if 4-pt convex (perspective fit), else
-        // the min-area rotated rectangle.
-        List<Pt> quadPts;
-        final epsilon = cv.arcLength(contour, true) * 0.02;
-        final approx = cv.approxPolyDP(contour, epsilon, true);
-        if (approx.length == 4 && cv.isContourConvex(approx)) {
-          quadPts = List.generate(
-            4,
-            (j) => (x: approx[j].x.toDouble(), y: approx[j].y.toDouble()),
-          );
-          approx.dispose();
-        } else {
-          approx.dispose();
+        // Tight quad fit: the convex hull drops interior/text jaggedness, then
+        // an ascending ε sweep takes the smallest simplification that yields a
+        // 4-point convex quad sitting on the true page edges. minAreaRect is the
+        // last resort only when no ε gives a clean quad (it bounds every
+        // protrusion, so it reads slightly loose). Mirrors detect_probe.py.
+        List<Pt>? quadPts;
+        // hull/hullMat are disposed in the per-polarity `finally` so a throw
+        // from any native call below cannot leak them in the isolate.
+        hullMat = cv.convexHull(contour);
+        hull = cv.VecPoint.fromMat(hullMat);
+        final peri = cv.arcLength(hull, true);
+        for (final frac in _kSegEpsFracs) {
+          final approx = cv.approxPolyDP(hull, peri * frac, true);
+          if (approx.length == 4) {
+            final cand = List<Pt>.generate(
+              4,
+              (j) => (x: approx[j].x.toDouble(), y: approx[j].y.toDouble()),
+            );
+            approx.dispose();
+            if (isConvexQuad(cand)) {
+              quadPts = cand;
+              break;
+            }
+          } else {
+            approx.dispose();
+          }
+        }
+        if (quadPts == null) {
           final rect = cv.minAreaRect(contour);
           final box = rect.points; // VecPoint2f, 4 corners
           quadPts = List.generate(4, (j) => (x: box[j].x, y: box[j].y));
@@ -281,6 +302,8 @@ List<double>? _segmentGray(cv.Mat gray) {
         closed?.dispose();
         hierarchy?.dispose();
         contours?.dispose();
+        hull?.dispose();
+        hullMat?.dispose();
       }
     }
 
