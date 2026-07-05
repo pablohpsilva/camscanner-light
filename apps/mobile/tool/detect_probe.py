@@ -22,12 +22,12 @@ def _quad_area(q):
                    for i in range(4))) / 2
 
 
-def detect(img):
+def detect(img, max_side=DETECT_MAX_SIDE):
     """Return (confidence, areaFrac, fill, polarity) or None."""
     h0, w0 = img.shape[:2]
     longest = max(h0, w0)
-    if longest > DETECT_MAX_SIDE:
-        s = DETECT_MAX_SIDE / longest
+    if longest > max_side:
+        s = max_side / longest
         img = cv2.resize(img, (round(w0 * s), round(h0 * s)),
                          interpolation=cv2.INTER_AREA)
     rows, cols = img.shape[:2]
@@ -145,6 +145,14 @@ def main():
             got = "NULL" if r is None else f"{r[3]} conf={r[0]:.2f} area={r[1]*100:.0f}% fill={r[2]:.2f}"
         print(f"[{'PASS' if ok else 'FAIL'}] {name:22s} expect={expect_polarity or 'NULL'} got={got}")
         if not ok:
+            failures += 1
+        r400 = detect(img, max_side=400)
+        coarse_ok = (r is None) == (r400 is None) and (
+            r is None or r[3] == r400[3])
+        if not coarse_ok:
+            print(f"[FAIL] {name:22s} 400px parity: "
+                  f"1024={'NULL' if r is None else r[3]} "
+                  f"400={'NULL' if r400 is None else r400[3]}")
             failures += 1
     print(f"\n{failures} failure(s)")
     sys.exit(1 if failures else 0)
