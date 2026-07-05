@@ -86,45 +86,58 @@ not fit `ShareChannel.share(List<String>) → void`; forcing it in would overloa
 interface (ISP violation). It is therefore a **separate** `LinkShareChannel`.
 `ShareChannel` is left untouched.
 
-### Shared menu widget
+### Shared menu items + widget (DRY)
 
-**`widgets/share_menu_button.dart` — `ShareMenuButton`**, a `PopupMenuButton`
-(share icon) that replaces the direct `IconButton(Icons.share, …)` on every screen.
-It takes the three channels, the `filePaths`, an optional `subject`, and the set of
-actions to show, and renders menu items:
+Two of the four menus already exist (page_viewer's action menu; the library
+per-document menu), so the reusable unit is the **menu entries + tap handling**, not a
+single widget forced everywhere:
 
-- **Share** → `share.share(filePaths, subject: subject)` — unchanged behavior,
-  relocated into the menu.
-- **Share link** → if `linkShare.isAvailable`: `createLink(filePaths.first)` then
-  (future) hand the resulting URL to the OS share sheet as text; else show a SnackBar
-  "Link sharing isn't available yet." (Only the unavailable branch ships now; the
-  available branch is behind `isAvailable` and out of scope until the backend exists.)
-- **Fax** → if `fax.isAvailable`: (real flow, future); else show a SnackBar
-  "Fax isn't available yet."
+- **`shareExtraMenuItems({required bool showFax})`** → the shared `PopupMenuEntry`s for
+  **Share link** (value `share-link`) and, unless `showFax` is false, **Fax** (value
+  `fax`), each with a stable `Key`.
+- **`handleShareExtra(BuildContext, String value)`** → for `share-link`/`fax`, shows the
+  shared "…isn't available yet" SnackBar (constants `kLinkShareUnavailableMessage` /
+  `kFaxUnavailableMessage`). Used by both the standalone widget and the two existing menus.
+- **`ShareMenuButton`** (`widgets/share_menu_button.dart`) — a `PopupMenuButton` (share
+  icon) for the two screens that have a *standalone* share button (pdf_preview,
+  recognized_text). It renders **Share** (→ `share.share(filePaths, subject:)`, unchanged
+  behavior relocated into the menu) plus `shareExtraMenuItems(...)`, routing the extra
+  values through `handleShareExtra`.
 
-Items are always **shown and tappable** (not greyed-out): discoverable, testable, and
-the *same* code path lights up when a real provider is injected. The
-availability-unavailable message uses a shared constant so tests and UI agree.
+**This release ships the not-available behavior only.** Tapping Fax/Share-link shows the
+SnackBar and calls no channel. The *available* branch — real fax-number entry, real
+link-then-share — is **out of scope** (it needs the deferred backend / paid provider), so
+it is deliberately not built here; wiring it is future work that ships with the real
+provider. `isAvailable` therefore lives on the interfaces as the tested seam a future
+provider flips (unit-tested on the impls, §Testing), not as a UI branch — avoiding a dead
+available-path in the widget.
 
-### Which actions per screen
+### Which actions per screen (and how they attach)
 
-| Screen | Share | Share link | Fax |
-|--------|-------|-----------|-----|
-| `pdf_preview_screen` (PDF)        | ✅ | ✅ | ✅ |
-| `page_viewer_screen` (page image) | ✅ | ✅ | ✅ |
-| `library` (document PDF)          | ✅ | ✅ | ✅ |
-| `recognized_text_screen` (.txt)   | ✅ | ✅ | ⛔ |
+| Screen | Share | Link | Fax | Attachment |
+|--------|-------|------|-----|-----------|
+| `pdf_preview_screen` (PDF)        | ✅ | ✅ | ✅ | `IconButton` → `ShareMenuButton` |
+| `recognized_text_screen` (.txt)   | ✅ | ✅ | ⛔ | `IconButton` → `ShareMenuButton(showFax:false)` |
+| `page_viewer_screen` (document)   | — | ✅ | ✅ | add `shareExtraMenuItems` to its existing action menu |
+| `library` documents menu (doc PDF)| — | ✅ | ✅ | add `shareExtraMenuItems` to the per-document `PopupMenuButton` |
 
-Fax is omitted on the recognized-text screen — you fax documents/images, not raw
-text. `ShareMenuButton` takes a `showFax` flag (default true) to express this.
+- Fax is omitted on the recognized-text screen — you fax documents/images, not raw text
+  (`showFax:false`).
+- `page_viewer` and `library` have **no standalone share button** (page_viewer shares as
+  the tail of export flows; library shares via a per-document menu item), so they get the
+  Link/Fax entries **added to their existing menus** rather than a `ShareMenuButton`. Their
+  current Share/export behavior is untouched.
 
 ### Wiring
 
 `library_dependencies.dart` already carries `ShareChannel share = const
 SystemShareChannel()`. Add `LinkShareChannel linkShare = const
-UnavailableLinkShareChannel()` and `FaxProvider fax = const UnavailableFaxProvider()`,
-threaded to the four screens exactly as `share` is today. Injecting a real provider
-later is a one-line change with zero UI churn (OCP achieved).
+UnavailableLinkShareChannel()` and `FaxProvider fax = const UnavailableFaxProvider()`
+as the composition-root **seam** — defaulting to the Unavailable impls, unit-tested. The
+shipped UI shows the not-available SnackBar and does not read the providers (no available
+branch yet), so they are not threaded into the screens now; a future provider integration
+wires them into the UI together with the available-branch UX. This keeps existing on-device
+channels undisturbed (OCP).
 
 ## Data flow
 
@@ -173,12 +186,15 @@ the system share sheet opens with the PDF.
       `sendFax` throws — *unit*.
 - [ ] `LinkShareChannel` interface + `UnavailableLinkShareChannel` exist; `isAvailable`
       false, `createLink` throws — *unit*.
-- [ ] `ShareMenuButton` renders Share + Share-link (+ Fax unless `showFax:false`);
-      Share invokes the injected `ShareChannel` with the file paths/subject — *widget*.
-- [ ] Tapping Fax/Share-link while unavailable shows the shared not-available message and
-      calls no channel — *widget/BDD*.
-- [ ] All four screens use `ShareMenuButton`; the system-share path still works from each
-      — *widget/BDD (existing share tests updated, still green)*.
+- [ ] `shareExtraMenuItems({showFax})` returns the Share-link entry (+ Fax unless
+      `showFax:false`) with stable keys; `handleShareExtra` shows the shared not-available
+      SnackBar for each and calls no channel — *widget*.
+- [ ] `ShareMenuButton` (pdf_preview, recognized_text) renders Share + the shared extra
+      items; Share invokes the injected `ShareChannel` with the file paths/subject; the
+      system-share path still works — *widget/BDD (existing share tests updated, still green)*.
+- [ ] `page_viewer` and `library` per-document menus gain the Link/Fax entries via
+      `shareExtraMenuItems`; their existing Share/export/print behavior is unchanged —
+      *widget/BDD*.
 - [ ] `library_dependencies` injects `linkShare`/`fax` defaulting to the Unavailable
       impls; existing on-device channels undisturbed — *unit: wiring*.
 - [ ] Full suite green; `flutter analyze` clean — *observed*.
