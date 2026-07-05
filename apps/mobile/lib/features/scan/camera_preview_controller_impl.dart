@@ -18,7 +18,9 @@ class PluginCameraPreviewController implements CameraPreviewController {
   bool _streaming = false;
   final Stopwatch _throttle = Stopwatch();
   ScanFlashMode _flash = ScanFlashMode.off;
-  static const _kMinSampleGapMs = 700;
+  // Overlay refreshes as fast as the pipeline allows; _onFrame's _isDetecting
+  // guard prevents detections from stacking, so a short gap is safe.
+  static const _kMinSampleGapMs = 150;
 
   @override
   Future<void> initialize() async {
