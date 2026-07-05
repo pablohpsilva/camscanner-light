@@ -49,10 +49,18 @@ void main() {
   });
 
   test('displacement at the threshold boundary counts as stable', () {
-    final c = AutoCaptureController(requiredStableFrames: 2, maxCornerDelta: 0.05);
-    c.update(_res(_quad(0, 0), 0.9)); // count 1
-    // every corner shifts by exactly 0.05 in x -> per-corner distance == 0.05
-    final s = c.update(_res(_quad(0.05, 0), 0.9));
+    final c =
+        AutoCaptureController(requiredStableFrames: 2, maxCornerDelta: 0.25);
+    // Base coords and the 0.25 shift are exactly representable in binary FP,
+    // so each corner moves exactly 0.25 == maxCornerDelta (boundary, still stable).
+    CropCorners q(double dx) => CropCorners(
+          topLeft: Offset(0.25 + dx, 0.25),
+          topRight: Offset(0.5 + dx, 0.25),
+          bottomRight: Offset(0.5 + dx, 0.5),
+          bottomLeft: Offset(0.25 + dx, 0.5),
+        );
+    c.update(_res(q(0), 0.9)); // count 1
+    final s = c.update(_res(q(0.25), 0.9));
     expect(s.progress, 1.0);
     expect(s.shouldFire, isTrue);
   });
