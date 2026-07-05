@@ -19,6 +19,9 @@ class CameraPreviewView extends StatelessWidget {
   final Size? previewSize;
   final ScanFlashMode flashMode;
   final ValueChanged<ScanFlashMode>? onFlashModeChanged;
+  final bool autoCaptureEnabled;
+  final VoidCallback? onAutoCaptureToggled;
+  final double autoCaptureProgress;
 
   const CameraPreviewView({
     super.key,
@@ -29,6 +32,9 @@ class CameraPreviewView extends StatelessWidget {
     this.previewSize,
     this.flashMode = ScanFlashMode.off,
     this.onFlashModeChanged,
+    this.autoCaptureEnabled = false,
+    this.onAutoCaptureToggled,
+    this.autoCaptureProgress = 0,
   });
 
   IconData get _flashIcon => switch (flashMode) {
@@ -42,6 +48,10 @@ class CameraPreviewView extends StatelessWidget {
         ScanFlashMode.torch => ScanFlashMode.flash,
         ScanFlashMode.flash => ScanFlashMode.off,
       };
+
+  IconData get _autoCaptureIcon => autoCaptureEnabled
+      ? Icons.motion_photos_auto
+      : Icons.motion_photos_paused;
 
   @override
   Widget build(BuildContext context) {
@@ -71,23 +81,55 @@ class CameraPreviewView extends StatelessWidget {
             ),
           ),
           Positioned(
+            top: 16 + MediaQuery.of(context).viewPadding.top,
+            left: 16,
+            child: IconButton(
+              key: const Key('scan-auto-capture-toggle'),
+              icon: Icon(_autoCaptureIcon, color: Colors.white, size: 28),
+              tooltip:
+                  autoCaptureEnabled ? 'Auto-capture on' : 'Auto-capture off',
+              onPressed: () => onAutoCaptureToggled?.call(),
+            ),
+          ),
+          Positioned(
             // Lift the shutter above the system navigation bar: the preview is
             // full-bleed (no SafeArea), so a fixed 32px would sit BEHIND an
             // on-screen nav bar on devices that have one, hiding the button.
             bottom: 32 + MediaQuery.of(context).viewPadding.bottom,
             child: SizedBox(
-              width: 72,
-              height: 72,
-              child: FloatingActionButton(
-                key: const Key('scan-shutter'),
-                heroTag: 'scan-shutter',
-                onPressed: capturing ? null : onShutter,
-                shape: const CircleBorder(),
-                backgroundColor: Colors.white,
-                child: capturing
-                    ? const CircularProgressIndicator(
-                        key: Key('scan-shutter-busy'))
-                    : const Icon(Icons.camera_alt, color: Colors.black),
+              width: 84,
+              height: 84,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (autoCaptureEnabled && autoCaptureProgress > 0)
+                    SizedBox(
+                      width: 84,
+                      height: 84,
+                      child: CircularProgressIndicator(
+                        key: const Key('scan-auto-capture-ring'),
+                        value: autoCaptureProgress,
+                        strokeWidth: 4,
+                        color: Colors.green,
+                        backgroundColor: Colors.white24,
+                      ),
+                    ),
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: FloatingActionButton(
+                      key: const Key('scan-shutter'),
+                      heroTag: 'scan-shutter',
+                      onPressed: capturing ? null : onShutter,
+                      shape: const CircleBorder(),
+                      backgroundColor: Colors.white,
+                      child: capturing
+                          ? const CircularProgressIndicator(
+                              key: Key('scan-shutter-busy'))
+                          : const Icon(Icons.camera_alt, color: Colors.black),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
