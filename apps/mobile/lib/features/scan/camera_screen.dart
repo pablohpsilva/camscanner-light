@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,7 @@ import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
 import '../library/image_enhancer.dart';
 import '../library/save_controller.dart';
+import 'auto_capture_controller.dart';
 import 'camera_frame.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
@@ -52,6 +55,9 @@ class _CameraScreenState extends State<CameraScreen> {
   bool _isDetecting = false;
   ScanFlashMode _flashMode = ScanFlashMode.off;
   DetectionResult? _liveResult;
+  bool _autoCaptureEnabled = true;
+  double _autoProgress = 0;
+  final AutoCaptureController _autoCapture = AutoCaptureController();
   int? _activeDocId;
   int _pageCount = 0;
 
@@ -91,6 +97,8 @@ class _CameraScreenState extends State<CameraScreen> {
     if (!_sampling) return;
     _sampling = false;
     _controller.preview.stopSampling();
+    _autoCapture.reset();
+    _autoProgress = 0;
   }
 
   Future<void> _onFrame(CameraFrame frame) async {
@@ -111,6 +119,16 @@ class _CameraScreenState extends State<CameraScreen> {
         _liveResult =
             (result != null && result.confidence >= 0.5) ? result : null;
       });
+      if (_autoCaptureEnabled) {
+        final auto = _autoCapture.update(result);
+        if (auto.shouldFire) {
+          _autoCapture.reset();
+          setState(() => _autoProgress = 0);
+          unawaited(_onShutter());
+        } else if (auto.progress != _autoProgress) {
+          setState(() => _autoProgress = auto.progress);
+        }
+      }
     } finally {
       _isDetecting = false;
     }
@@ -119,6 +137,16 @@ class _CameraScreenState extends State<CameraScreen> {
   void _onFlashModeChanged(ScanFlashMode mode) {
     setState(() => _flashMode = mode);
     _controller.preview.setFlashMode(mode);
+  }
+
+  void _onAutoCaptureToggled() {
+    setState(() {
+      _autoCaptureEnabled = !_autoCaptureEnabled;
+      if (!_autoCaptureEnabled) {
+        _autoCapture.reset();
+        _autoProgress = 0;
+      }
+    });
   }
 
   @override
@@ -296,6 +324,9 @@ class _CameraScreenState extends State<CameraScreen> {
                     : null,
                 flashMode: _flashMode,
                 onFlashModeChanged: _onFlashModeChanged,
+                autoCaptureEnabled: _autoCaptureEnabled,
+                onAutoCaptureToggled: _onAutoCaptureToggled,
+                autoCaptureProgress: _autoProgress,
               );
             case ScanStatus.permissionDenied:
               return PermissionDeniedView(
