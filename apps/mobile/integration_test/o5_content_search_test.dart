@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import '../test/step/a_saved_document_named_with_page_text.dart';
+import './../test/step/a_saved_document_named_with_page_text.dart';
 import './../test/step/the_app_launches_reading_that_same_storage.dart';
 import './../test/step/i_search_for.dart';
 import './../test/step/i_see_text.dart';

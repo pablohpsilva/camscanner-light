@@ -16,6 +16,8 @@ import 'jpeg_exif_scrubber.dart';
 import 'ocr/mlkit_ocr_engine.dart';
 import 'pdf/ocr_pdf_text_layer.dart';
 import 'pdf/pdf_builder.dart';
+import 'fax_provider.dart';
+import 'link_share_channel.dart';
 import 'share_channel.dart';
 
 typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
@@ -26,10 +28,14 @@ class LibraryDependencies {
   final DocumentRepositoryFactory createRepository;
   final DocumentPrinter printer;
   final ShareChannel share;
+  final LinkShareChannel linkShare;
+  final FaxProvider fax;
   const LibraryDependencies({
     this.createRepository = _defaultCreateRepository,
     this.printer = const SystemDocumentPrinter(),
     this.share = const SystemShareChannel(),
+    this.linkShare = const UnavailableLinkShareChannel(),
+    this.fax = const UnavailableFaxProvider(),
   });
 }
 

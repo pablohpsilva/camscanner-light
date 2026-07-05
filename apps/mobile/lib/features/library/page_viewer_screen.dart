@@ -18,6 +18,7 @@ import 'pdf_preview_screen.dart';
 import 'recognized_text_screen.dart';
 import 'widgets/page_thumbnail_strip.dart';
 import 'widgets/rename_dialog.dart';
+import 'widgets/share_menu_button.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
 /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
@@ -494,58 +495,62 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               if (v == 'export-all-images') unawaited(_exportAllImages());
               if (v == 'print') unawaited(_print());
               if (v == 'protect') unawaited(_protect());
+              if (v == kShareLinkValue || v == kFaxValue) {
+                handleShareExtra(context, v);
+              }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem<String>(
+            itemBuilder: (_) => [
+              const PopupMenuItem<String>(
                 value: 'view-text',
                 key: Key('page-viewer-view-text'),
                 child: Text('View text'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'rotate',
                 key: Key('page-viewer-rotate'),
                 child: Text('Rotate'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'merge',
                 key: Key('page-viewer-merge'),
                 child: Text('Merge another document…'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'split',
                 key: Key('page-viewer-split'),
                 child: Text('Split after this page'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'retake',
                 key: Key('page-viewer-retake'),
                 child: Text('Retake page'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'delete',
                 key: Key('page-viewer-delete-page'),
                 child: Text('Delete page'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'export-image',
                 key: Key('page-viewer-export-image'),
                 child: Text('Share as image'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'export-all-images',
                 key: Key('page-viewer-export-all-images'),
                 child: Text('Share all as images'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'print',
                 key: Key('page-viewer-print'),
                 child: Text('Print'),
               ),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'protect',
                 key: Key('page-viewer-protect'),
                 child: Text('Protect with password'),
               ),
+              ...shareExtraMenuItems(showFax: true, keyPrefix: 'page-viewer'),
             ],
           ),
         ],

@@ -23,7 +23,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('pdf-preview-share')));
+    await tester.tap(find.byKey(const Key('pdf-preview-share'))); // opens the menu
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('share-menu-share')));
     await tester.pump();
 
     expect(share.calls, 1);
@@ -51,7 +53,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('recognized-text-share')));
+    await tester.tap(find.byKey(const Key('recognized-text-share'))); // opens the menu
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('share-menu-share')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
