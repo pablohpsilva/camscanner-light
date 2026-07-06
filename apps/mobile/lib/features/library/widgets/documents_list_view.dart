@@ -8,6 +8,11 @@ import 'share_menu_button.dart';
 /// the order it is given — the caller (HomeScreen) applies the user's chosen
 /// sort (D3). Each row has an optional overflow menu (Rename / Share) when
 /// [onRename] or [onShare] is provided.
+///
+/// Opt-in multi-select: when [selectionMode] is true, rows show a checkbox and
+/// a tap routes to [onToggleSelect] (not [onOpen]); [onLongPress] enters the
+/// mode from the caller. All selection params default to a no-op so existing
+/// callers and tests are unaffected.
 class DocumentsListView extends StatelessWidget {
   /// Bottom scroll inset (~ one row's height) so the floating Scan button,
   /// which docks over the bottom-right of this list, never permanently covers
@@ -18,12 +23,20 @@ class DocumentsListView extends StatelessWidget {
   final ValueChanged<DocumentSummary>? onOpen;
   final ValueChanged<DocumentSummary>? onRename;
   final ValueChanged<DocumentSummary>? onShare;
+  final Set<int> selectedIds;
+  final bool selectionMode;
+  final ValueChanged<DocumentSummary>? onToggleSelect;
+  final ValueChanged<DocumentSummary>? onLongPress;
   const DocumentsListView({
     super.key,
     required this.summaries,
     this.onOpen,
     this.onRename,
     this.onShare,
+    this.selectedIds = const {},
+    this.selectionMode = false,
+    this.onToggleSelect,
+    this.onLongPress,
   });
 
   @override
@@ -35,14 +48,22 @@ class DocumentsListView extends StatelessWidget {
       itemBuilder: (context, i) {
         final s = summaries[i];
         final d = s.document;
+        final selected = selectedIds.contains(d.id);
         return ListTile(
           key: Key('document-tile-${d.id}'),
-          leading: DocumentThumbnail(
-              key: Key('document-thumb-${d.id}'), path: s.thumbnailPath),
+          selected: selectionMode && selected,
+          leading: selectionMode
+              ? Icon(
+                  selected ? Icons.check_circle : Icons.circle_outlined,
+                  key: Key('document-check-${d.id}'),
+                  color: selected ? Theme.of(context).colorScheme.primary : null,
+                )
+              : DocumentThumbnail(
+                  key: Key('document-thumb-${d.id}'), path: s.thumbnailPath),
           title: Text(d.name),
           subtitle: Text(
               '${_formatLocal(d.createdAt.toLocal())} · ${_pages(s.pageCount)}'),
-          trailing: (onRename == null && onShare == null)
+          trailing: (selectionMode || (onRename == null && onShare == null))
               ? null
               : PopupMenuButton<String>(
                   key: Key('document-menu-${d.id}'),
@@ -72,7 +93,10 @@ class DocumentsListView extends StatelessWidget {
                       ),
                   ],
                 ),
-          onTap: onOpen == null ? null : () => onOpen!(s),
+          onLongPress: onLongPress == null ? null : () => onLongPress!(s),
+          onTap: selectionMode
+              ? (onToggleSelect == null ? null : () => onToggleSelect!(s))
+              : (onOpen == null ? null : () => onOpen!(s)),
         );
       },
     );
