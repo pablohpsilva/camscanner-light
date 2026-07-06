@@ -14,12 +14,25 @@ SYMBOLS="$APP/build/symbols"
 
 cd "$APP"
 
+# Inject donation config (Ko-fi URL / Bitcoin address) if present. The real
+# values live in the gitignored donation_config.json; without it the donation
+# sections stay hidden. See donation_config.example.json.
+DEFINES=()
+if [[ -f "$APP/donation_config.json" ]]; then
+  DEFINES+=(--dart-define-from-file="$APP/donation_config.json")
+  echo "== using donation_config.json =="
+else
+  echo "!! donation_config.json not found -- donation methods will be hidden" >&2
+fi
+
 echo "== [1/2] split-per-abi release APKs =="
 flutter build apk --release --split-per-abi \
+  ${DEFINES[@]+"${DEFINES[@]}"} \
   --obfuscate --split-debug-info="$SYMBOLS"
 
 echo "== [2/2] release App Bundle (.aab) =="
 flutter build appbundle --release \
+  ${DEFINES[@]+"${DEFINES[@]}"} \
   --obfuscate --split-debug-info="$SYMBOLS"
 
 echo "== artifact sizes =="

@@ -7,7 +7,10 @@ void main() {
     expect(DonationConfig.bitcoinAddress, isA<String>());
   });
 
-  test('defaults are empty (unconfigured) so no dead links ship', () {
+  test('defaults to empty when no --dart-define is supplied', () {
+    // `flutter test` runs without the donation dart-defines, so the values
+    // resolve to '' — which drives the UI's "unconfigured → hidden" behavior
+    // and guarantees no address or URL is ever baked into source/history.
     expect(DonationConfig.kofiUrl, '');
     expect(DonationConfig.bitcoinAddress, '');
   });

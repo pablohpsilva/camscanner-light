@@ -70,6 +70,9 @@ dev_dependencies:
   drift_dev: ^2.20.0
   exif: ^3.3.0
   sqlite3: ^3.0.0
+  # Used by the donation Ko-fi launch-mode test to mock UrlLauncherPlatform.
+  url_launcher_platform_interface: ^2.3.2
+  plugin_platform_interface: ^2.1.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
