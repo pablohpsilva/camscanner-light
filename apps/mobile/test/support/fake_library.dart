@@ -438,16 +438,19 @@ class FakeDocumentPrinter implements DocumentPrinter {
 class FakeShareChannel implements ShareChannel {
   List<String>? lastFilePaths;
   String? lastSubject;
+  String? lastMimeType;
   int calls = 0;
   final bool throwOnShare;
   FakeShareChannel({this.throwOnShare = false});
 
   @override
-  Future<void> share(List<String> filePaths, {String? subject}) async {
+  Future<void> share(List<String> filePaths,
+      {String? subject, String? mimeType}) async {
     if (throwOnShare) throw Exception('fake: share failed');
     calls++;
     lastFilePaths = filePaths;
     lastSubject = subject;
+    lastMimeType = mimeType;
   }
 }
 

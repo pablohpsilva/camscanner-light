@@ -10,9 +10,11 @@ import 'package:share_plus/share_plus.dart';
 /// entirely inside [SystemShareChannel] and never leak into the abstraction.
 abstract interface class ShareChannel {
   /// Shares [filePaths] via the OS share sheet, with an optional [subject]
-  /// (used by targets like Mail). Files must already be metadata-scrubbed by
-  /// their producer — this channel does not scrub (DRY).
-  Future<void> share(List<String> filePaths, {String? subject});
+  /// (used by targets like Mail) and an optional [mimeType] applied to every
+  /// shared file (e.g. `application/zip`, so a `.zip` is not treated as opaque
+  /// `application/octet-stream` and rejected). Files must already be
+  /// metadata-scrubbed by their producer — this channel does not scrub (DRY).
+  Future<void> share(List<String> filePaths, {String? subject, String? mimeType});
 }
 
 /// Production channel backed by the `share_plus` package. The only file in the
@@ -21,10 +23,11 @@ class SystemShareChannel implements ShareChannel {
   const SystemShareChannel();
 
   @override
-  Future<void> share(List<String> filePaths, {String? subject}) async {
+  Future<void> share(List<String> filePaths,
+      {String? subject, String? mimeType}) async {
     await SharePlus.instance.share(
       ShareParams(
-        files: filePaths.map((p) => XFile(p)).toList(),
+        files: filePaths.map((p) => XFile(p, mimeType: mimeType)).toList(),
         subject: subject,
       ),
     );
