@@ -137,4 +137,49 @@ void main() {
     expect(shared, isNotNull);
     expect(shared!.document.id, 2);
   });
+
+  testWidgets('long-pressing a tile invokes onLongPress with that summary',
+      (tester) async {
+    DocumentSummary? pressed;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(
+          summaries: [summary(1), summary(2)],
+          onLongPress: (s) => pressed = s,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.longPress(find.byKey(const Key('document-tile-2')));
+    expect(pressed, isNotNull);
+    expect(pressed!.document.id, 2);
+  });
+
+  testWidgets('in selection mode a tap toggles selection instead of opening',
+      (tester) async {
+    DocumentSummary? toggled;
+    DocumentSummary? opened;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DocumentsListView(
+          summaries: [summary(1), summary(2)],
+          selectionMode: true,
+          selectedIds: const {1},
+          onOpen: (s) => opened = s,
+          onToggleSelect: (s) => toggled = s,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Check marks reflect selectedIds; the overflow menu is hidden.
+    expect(find.byKey(const Key('document-check-1')), findsOneWidget);
+    expect(find.byKey(const Key('document-check-2')), findsOneWidget);
+    expect(find.byKey(const Key('document-menu-1')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('document-tile-2')));
+    expect(toggled, isNotNull);
+    expect(toggled!.document.id, 2);
+    expect(opened, isNull);
+  });
 }

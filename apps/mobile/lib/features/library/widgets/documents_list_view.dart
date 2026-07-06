@@ -18,12 +18,20 @@ class DocumentsListView extends StatelessWidget {
   final ValueChanged<DocumentSummary>? onOpen;
   final ValueChanged<DocumentSummary>? onRename;
   final ValueChanged<DocumentSummary>? onShare;
+  final ValueChanged<DocumentSummary>? onToggleSelect;
+  final ValueChanged<DocumentSummary>? onLongPress;
+  final Set<int> selectedIds;
+  final bool selectionMode;
   const DocumentsListView({
     super.key,
     required this.summaries,
     this.onOpen,
     this.onRename,
     this.onShare,
+    this.onToggleSelect,
+    this.onLongPress,
+    this.selectedIds = const {},
+    this.selectionMode = false,
   });
 
   @override
@@ -42,7 +50,17 @@ class DocumentsListView extends StatelessWidget {
           title: Text(d.name),
           subtitle: Text(
               '${_formatLocal(d.createdAt.toLocal())} · ${_pages(s.pageCount)}'),
-          trailing: (onRename == null && onShare == null)
+          trailing: selectionMode
+              ? Icon(
+                  key: Key('document-check-${d.id}'),
+                  selectedIds.contains(d.id)
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: selectedIds.contains(d.id)
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                )
+              : (onRename == null && onShare == null)
               ? null
               : PopupMenuButton<String>(
                   key: Key('document-menu-${d.id}'),
@@ -72,7 +90,10 @@ class DocumentsListView extends StatelessWidget {
                       ),
                   ],
                 ),
-          onTap: onOpen == null ? null : () => onOpen!(s),
+          onTap: selectionMode
+              ? (onToggleSelect == null ? null : () => onToggleSelect!(s))
+              : (onOpen == null ? null : () => onOpen!(s)),
+          onLongPress: onLongPress == null ? null : () => onLongPress!(s),
         );
       },
     );
