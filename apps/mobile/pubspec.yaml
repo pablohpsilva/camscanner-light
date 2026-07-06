@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   camera: ^0.12.0+1
   image: ^4.5.0
-  opencv_dart: ^1.4.5
+  opencv_dart: 2.1.0
   permission_handler: ^12.0.3
   drift: ^2.20.0
   sqlite3_flutter_libs: ^0.5.24
@@ -49,6 +49,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.15.1
   share_plus: ^13.2.0
   syncfusion_flutter_pdf: ^33.2.15
+  url_launcher: ^6.3.2
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +70,19 @@ dev_dependencies:
   drift_dev: ^2.20.0
   exif: ^3.3.0
   sqlite3: ^3.0.0
+  # Used by the donation Ko-fi launch-mode test to mock UrlLauncherPlatform.
+  url_launcher_platform_interface: ^2.3.2
+  plugin_platform_interface: ^2.1.8
+
+# opencv_dart 2.x native-assets module config: the app only uses core + imgproc
+# + imgcodecs (perspective warp, filters, contours, decode/encode). Excluding the
+# heavy modules keeps the native binary small and the build fast.
+hooks:
+  user_defines:
+    dartcv4:
+      include_modules:
+        - imgproc
+        - imgcodecs
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

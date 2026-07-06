@@ -46,3 +46,7 @@ app.*.map.json
 
 # Gradle build output
 /android/build/
+
+# Donation secrets — real Ko-fi URL / Bitcoin address, injected via
+# --dart-define-from-file. Never commit real values; see donation_config.example.json.
+/donation_config.json

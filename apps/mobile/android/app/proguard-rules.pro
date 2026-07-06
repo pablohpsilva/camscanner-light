@@ -17,10 +17,6 @@
 -dontwarn com.google.mlkit.**
 -dontwarn com.google.android.gms.**
 
-# opencv_dart JNI/loader side (native FFI symbols are untouched by R8).
--keep class dev.rainyl.** { *; }
--dontwarn dev.rainyl.**
-
 # Flutter plugin implementations reached via registration/reflection
 # (camera, pdfx, printing, share_plus, permission_handler, sqlite3/drift).
 -keep class io.flutter.plugins.** { *; }

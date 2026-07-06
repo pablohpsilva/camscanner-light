@@ -26,9 +26,21 @@ SYMBOLS="$APP/build/symbols"
 
 cd "$APP"
 
+# Inject donation config (Ko-fi URL / Bitcoin address) if present. The real
+# values live in the gitignored donation_config.json; without it the donation
+# sections stay hidden. See donation_config.example.json.
+DEFINES=()
+if [[ -f "$APP/donation_config.json" ]]; then
+  DEFINES+=(--dart-define-from-file="$APP/donation_config.json")
+  echo "== using donation_config.json =="
+else
+  echo "!! donation_config.json not found -- donation methods will be hidden" >&2
+fi
+
 echo "== building release IPA (archive + app-store export) =="
 flutter build ipa --release \
   --export-options-plist="$APP/ios/ExportOptions.plist" \
+  ${DEFINES[@]+"${DEFINES[@]}"} \
   --obfuscate --split-debug-info="$SYMBOLS"
 
 IPA="$(ls "$APP"/build/ios/ipa/*.ipa 2>/dev/null | head -1)"
