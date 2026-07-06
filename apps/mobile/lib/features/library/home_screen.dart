@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
@@ -211,12 +212,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _clearSelection() => setState(_selectedIds.clear);
 
-  /// Ids of the currently-selected documents in the order the repository
-  /// returned them (which in production is newest-first, matching the initial
-  /// display sort). Using [_summaries] directly avoids a secondary sort and
-  /// ensures the export order is stable and predictable.
+  /// Ids of the currently-selected documents in displayed (sorted) order, so the
+  /// zip/entry order matches what the user sees.
   List<int> get _selectedInDisplayOrder => [
-        for (final s in _summaries)
+        for (final s in sortDocuments(_summaries, _sort))
           if (_selectedIds.contains(s.document.id)) s.document.id,
       ];
 
@@ -237,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final zip = await widget.libraryDependencies.archiver.zip(
           files,
           archiveName: 'documents.zip',
-          entryNames: [for (final id in ids) '${byId[id]?.name ?? 'document'}.pdf'],
+          entryNames: [for (final f in files) p.basename(f.path)],
         );
         await widget.libraryDependencies.share
             .share([zip.path], mimeType: 'application/zip');

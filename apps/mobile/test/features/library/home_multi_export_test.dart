@@ -28,8 +28,9 @@ class FakeFileArchiver implements FileArchiver {
 Document _doc(int id, String name) => Document(
       id: id,
       name: name,
-      createdAt: DateTime.utc(2026, 7, 6, id), // distinct so sort is stable
-      modifiedAt: DateTime.utc(2026, 7, 6, id),
+      // doc1 newer than doc2 → default (created,desc) sort = display order [1,2]
+      createdAt: DateTime.utc(2026, 7, 6, 12 - id),
+      modifiedAt: DateTime.utc(2026, 7, 6, 12 - id),
     );
 
 void main() {

@@ -166,9 +166,10 @@ class FakeDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('fake: no documents');
     }
     separateExportCalls.add(List<int>.unmodifiable(documentIds));
+    final byId = {for (final d in documents) d.id: d.name};
     return [
       for (final id in documentIds)
-        File('${Directory.systemTemp.path}/fake-export-$id.pdf')
+        File('${Directory.systemTemp.path}/${byId[id] ?? 'document'}.pdf')
     ];
   }
 
