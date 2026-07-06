@@ -44,6 +44,11 @@ abstract interface class DocumentRepository {
   Future<File> exportPdf(int documentId,
       {ExportQuality quality = ExportQuality.original});
 
+  /// Exports each document in [documentIds] as its own PDF (delegating to
+  /// [exportPdf] per id), returning the temp files in list order. Throws
+  /// [DocumentExportException] when [documentIds] is empty or any export fails.
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds);
+
   /// Builds [documentId]'s PDF and returns it AES-256 encrypted with [password]
   /// as a temporary file (same temp-file discipline as [exportPdf]). The
   /// recipient needs the password to open it. Nothing leaves the device. Throws

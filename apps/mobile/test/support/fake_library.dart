@@ -60,6 +60,7 @@ class FakeDocumentRepository implements DocumentRepository {
   int? lastReplacedPagePosition;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
+  final List<List<int>> separateExportCalls = <List<int>>[];
   ExportQuality? lastExportQuality;
   ExportQuality? lastImageExportQuality;
   ExportQuality? lastAllImagesExportQuality;
@@ -154,6 +155,21 @@ class FakeDocumentRepository implements DocumentRepository {
     protectCalls++;
     lastProtectPassword = password;
     return File('${Directory.systemTemp.path}/fake-protected-$documentId.pdf');
+  }
+
+  @override
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
+    if (throwOnExport) {
+      throw const DocumentExportException('fake: separate export failed');
+    }
+    if (documentIds.isEmpty) {
+      throw const DocumentExportException('fake: no documents');
+    }
+    separateExportCalls.add(List<int>.unmodifiable(documentIds));
+    return [
+      for (final id in documentIds)
+        File('${Directory.systemTemp.path}/fake-export-$id.pdf')
+    ];
   }
 
   @override

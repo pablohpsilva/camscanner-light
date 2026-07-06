@@ -390,6 +390,18 @@ class DriftDocumentRepository implements DocumentRepository {
     }
   }
 
+  @override
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
+    if (documentIds.isEmpty) {
+      throw const DocumentExportException('export failed: no documents');
+    }
+    final files = <File>[];
+    for (final id in documentIds) {
+      files.add(await exportPdf(id));
+    }
+    return files;
+  }
+
   /// Sanitized base name (no extension) from the document's name; 'document'
   /// when the name is empty/unknown. Shared by all export filename builders.
   Future<String> _exportBaseName(int documentId) async {
