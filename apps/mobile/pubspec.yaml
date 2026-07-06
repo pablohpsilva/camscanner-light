@@ -79,8 +79,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  assets:
-    - assets/icons/
+  # No runtime assets are bundled. The 1024px master icon in assets/icons/ is
+  # consumed ONLY by flutter_launcher_icons at build time (see
+  # flutter_launcher_icons.yaml, which reads it from the filesystem), so it is
+  # deliberately NOT declared here — declaring `assets: [assets/icons/]` packaged
+  # ~0.8 MB of unused art into the app on both iOS and Android.
 
   # To add assets to your application, add an assets section, like this:
   # assets:
