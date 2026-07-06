@@ -122,3 +122,15 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 @media (max-width: 520px) {
   .grid, .checks { grid-template-columns: 1fr; }
 }
+
+/* Donation */
+.donate { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; margin-top: 24px; }
+.donate__btc { display: flex; gap: 16px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.donate__btc img { width: 116px; height: 116px; border-radius: 8px; background: #fff; padding: 4px; }
+.donate__btc strong { display: block; margin-bottom: 4px; }
+.donate__btc code { display: block; font-size: .82rem; word-break: break-all; max-width: 240px; margin: 0 0 10px; color: var(--ink); }
+.copied { color: #1a9c5b; font-weight: 600; font-size: .85rem; margin-left: 10px; }
+
+@media (max-width: 520px) {
+  .donate__btc { flex-direction: column; align-items: flex-start; }
+}
