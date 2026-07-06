@@ -371,6 +371,42 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<File> exportCombinedPdf(List<int> documentIds) async {
+    if (documentIds.isEmpty) {
+      throw const DocumentExportException('combined export failed: no documents');
+    }
+    final pages = <PageImage>[];
+    for (final id in documentIds) {
+      pages.addAll(await getDocumentPages(id));
+    }
+    if (pages.isEmpty) {
+      throw const DocumentExportException('combined export failed: no pages');
+    }
+    try {
+      final bytes = await _pdfBuilder.build(pages);
+      final dir = await Directory.systemTemp.createTemp('pdf_combined');
+      final file = File('${dir.path}/documents.pdf');
+      await file.writeAsBytes(bytes);
+      return file;
+    } catch (e) {
+      if (e is DocumentExportException) rethrow;
+      throw DocumentExportException('combined export failed: $e');
+    }
+  }
+
+  @override
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
+    if (documentIds.isEmpty) {
+      throw const DocumentExportException('separate export failed: no documents');
+    }
+    final files = <File>[];
+    for (final id in documentIds) {
+      files.add(await exportPdf(id));
+    }
+    return files;
+  }
+
+  @override
   Future<File> exportProtectedPdf(int documentId, String password) async {
     final pages = await getDocumentPages(documentId);
     if (pages.isEmpty) {
@@ -388,18 +424,6 @@ class DriftDocumentRepository implements DocumentRepository {
       if (e is DocumentExportException) rethrow;
       throw DocumentExportException('protect failed: $e');
     }
-  }
-
-  @override
-  Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
-    if (documentIds.isEmpty) {
-      throw const DocumentExportException('export failed: no documents');
-    }
-    final files = <File>[];
-    for (final id in documentIds) {
-      files.add(await exportPdf(id));
-    }
-    return files;
   }
 
   /// Sanitized base name (no extension) from the document's name; 'document'

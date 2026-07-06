@@ -49,26 +49,26 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-          await _createFts();
-        },
-        onUpgrade: (m, from, to) async {
-          if (from < 2) await m.addColumn(pages, pages.corners);
-          if (from < 3) await m.addColumn(pages, pages.flatRelativePath);
-          if (from < 4) {
-            await m.addColumn(pages, pages.ocrText);
-            await m.addColumn(pages, pages.ocrBoxes);
-          }
-          if (from < 5) {
-            await _createFts();
-            await _backfillFts();
-          }
-        },
-        beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+      await _createFts();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) await m.addColumn(pages, pages.corners);
+      if (from < 3) await m.addColumn(pages, pages.flatRelativePath);
+      if (from < 4) {
+        await m.addColumn(pages, pages.ocrText);
+        await m.addColumn(pages, pages.ocrBoxes);
+      }
+      if (from < 5) {
+        await _createFts();
+        await _backfillFts();
+      }
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 
   /// Trigram FTS index over each DOCUMENT's concatenated page OCR text, plus the
   /// triggers that rebuild a document's row on any page ocr_text change. Raw SQL
@@ -77,36 +77,43 @@ class AppDatabase extends _$AppDatabase {
   /// row, so terms spread across a document's pages still match.
   Future<void> _createFts() async {
     await customStatement(
-        "CREATE VIRTUAL TABLE doc_fts USING fts5(text, tokenize = 'trigram')");
+      "CREATE VIRTUAL TABLE doc_fts USING fts5(text, tokenize = 'trigram')",
+    );
     // group_concat over a document's non-null pages; GROUP BY makes the SELECT
     // yield zero rows when none remain, so the row is dropped (no NULL insert).
-    const rebuildNew = "DELETE FROM doc_fts WHERE rowid = NEW.document_id; "
+    const rebuildNew =
+        "DELETE FROM doc_fts WHERE rowid = NEW.document_id; "
         "INSERT INTO doc_fts(rowid, text) "
         "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
         "WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL "
         "GROUP BY document_id;";
-    const rebuildOld = "DELETE FROM doc_fts WHERE rowid = OLD.document_id; "
+    const rebuildOld =
+        "DELETE FROM doc_fts WHERE rowid = OLD.document_id; "
         "INSERT INTO doc_fts(rowid, text) "
         "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
         "WHERE document_id = OLD.document_id AND ocr_text IS NOT NULL "
         "GROUP BY document_id;";
     await customStatement(
-        "CREATE TRIGGER doc_fts_ai AFTER INSERT ON pages "
-        "WHEN NEW.ocr_text IS NOT NULL BEGIN $rebuildNew END");
+      "CREATE TRIGGER doc_fts_ai AFTER INSERT ON pages "
+      "WHEN NEW.ocr_text IS NOT NULL BEGIN $rebuildNew END",
+    );
     await customStatement(
-        "CREATE TRIGGER doc_fts_au AFTER UPDATE OF ocr_text ON pages "
-        "BEGIN $rebuildNew END");
+      "CREATE TRIGGER doc_fts_au AFTER UPDATE OF ocr_text ON pages "
+      "BEGIN $rebuildNew END",
+    );
     await customStatement(
-        "CREATE TRIGGER doc_fts_ad AFTER DELETE ON pages "
-        "BEGIN $rebuildOld END");
+      "CREATE TRIGGER doc_fts_ad AFTER DELETE ON pages "
+      "BEGIN $rebuildOld END",
+    );
   }
 
   /// One-time population for documents whose pages already had ocr_text pre-v5.
   Future<void> _backfillFts() async {
     await customStatement(
-        "INSERT INTO doc_fts(rowid, text) "
-        "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
-        "WHERE ocr_text IS NOT NULL GROUP BY document_id");
+      "INSERT INTO doc_fts(rowid, text) "
+      "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+      "WHERE ocr_text IS NOT NULL GROUP BY document_id",
+    );
   }
 
   /// Test-only hook to exercise the backfill statement in isolation.
@@ -114,6 +121,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> backfillFtsForTest() => _backfillFts();
 }
 
-/// Production opener — lazily opens the SQLite file in a background isolate.
+/// Production opener — lazily opens the SQLite file on the CURRENT (root)
+/// isolate.
+///
+/// NOTE: This deliberately does NOT use `NativeDatabase.createInBackground`,
+/// which spawns a background isolate via `Isolate.spawn`. Since the
+/// opencv_dart 2.x upgrade the app builds with Dart **native assets**, and
+/// sqlite3 is now delivered as a native asset (see NativeAssetsManifest.json).
+/// Native-asset symbol resolution is unreliable in `Isolate.spawn`-ed isolates
+/// on the current Flutter, so opening in a background isolate never completes —
+/// the app then hangs forever on the home loading spinner ("opens but never
+/// loads"). Opening on the root isolate resolves the sqlite3 native asset
+/// reliably. Queries run on the UI isolate, which is fine for this app's small,
+/// infrequent metadata queries.
 LazyDatabase openAppDatabase(File file) =>
-    LazyDatabase(() async => NativeDatabase.createInBackground(file));
+    LazyDatabase(() async => NativeDatabase(file));

@@ -27,6 +27,12 @@ class HomeScreen extends StatefulWidget {
     this.libraryDependencies = const LibraryDependencies(),
   });
 
+  // Aggressive cold-start watchdog budget. Every startup step must finish within
+  // this or the app is treated as wedged (e.g. a native DB open that never
+  // resolves) and a named error is surfaced instead of an endless white/spinner
+  // screen. "Opens but never loads" is thus impossible to ship silently again.
+  static const Duration coldStartStepTimeout = Duration(seconds: 10);
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -42,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _searching = false;
   String _query = '';
   bool _sharing = false;
-  final Set<int> _selectedIds = {};
+  final Set<int> _selectedIds = <int>{};
   bool get _selectionMode => _selectedIds.isNotEmpty;
 
   @override
@@ -57,19 +63,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // Set when a startup step failed or timed out, so the error screen can name
+  // the stuck step (and it's logged for on-device diagnosis).
+  String? _startupFailure;
+
   Future<void> _init() async {
     try {
-      final repo = await widget.libraryDependencies.createRepository();
+      final repo = await widget.libraryDependencies.createRepository().timeout(
+        HomeScreen.coldStartStepTimeout,
+      );
       if (!mounted) return;
       _repository = repo;
       await _load();
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = true;
-        });
-      }
+    } catch (e) {
+      _failStartup('opening the library', e);
     }
   }
 
@@ -77,26 +84,36 @@ class _HomeScreenState extends State<HomeScreen> {
     final repo = _repository;
     if (repo == null) return;
     try {
-      final docs = await repo.listDocumentSummaries();
+      final docs = await repo.listDocumentSummaries().timeout(
+        HomeScreen.coldStartStepTimeout,
+      );
       if (!mounted) return;
       setState(() {
         _summaries = docs;
         _loading = false;
+        _startupFailure = null;
       });
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = true;
-        });
-      }
+    } catch (e) {
+      _failStartup('loading your documents', e);
     }
+  }
+
+  void _failStartup(String step, Object error) {
+    // Always logged so a wedged cold start is diagnosable from device logs.
+    debugPrint('HomeScreen cold-start failed while $step: $error');
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _error = true;
+      _startupFailure = 'Startup timed out while $step.';
+    });
   }
 
   void _retry() {
     setState(() {
       _error = false;
       _loading = true;
+      _startupFailure = null;
     });
     _init();
   }
@@ -132,9 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openSearch() => setState(() {
-        _selectedIds.clear();
-        _searching = true;
-      });
+    _selectedIds.clear();
+    _searching = true;
+  });
 
   void _closeSearch() {
     _searchController.clear();
@@ -175,9 +192,9 @@ class _HomeScreenState extends State<HomeScreen> {
       await _refresh(); // refresh the list (no spinner; active sort re-applies)
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't rename")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't rename")));
     }
   }
 
@@ -187,13 +204,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _sharing = true;
     try {
       final file = await repo.exportPdf(s.document.id);
-      await widget.libraryDependencies.share
-          .share([file.path], subject: s.document.name);
+      await widget.libraryDependencies.share.share([
+        file.path,
+      ], subject: s.document.name);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't share")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't share")));
     } finally {
       _sharing = false;
     }
@@ -206,47 +224,49 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _enterSelection(DocumentSummary s) {
+  void _startSelection(DocumentSummary s) {
     setState(() => _selectedIds.add(s.document.id));
   }
 
-  void _clearSelection() => setState(_selectedIds.clear);
+  void _clearSelection() => setState(() => _selectedIds.clear());
 
-  /// Ids of the currently-selected documents in displayed (sorted) order, so the
-  /// zip/entry order matches what the user sees.
-  List<int> get _selectedInDisplayOrder => [
-        for (final s in sortDocuments(_summaries, _sort))
-          if (_selectedIds.contains(s.document.id)) s.document.id,
-      ];
+  // The documents currently on screen, in display order (search order when
+  // searching, else the active sort). Selection export follows this order.
+  List<DocumentSummary> get _displayed =>
+      _searching ? _summaries : sortDocuments(_summaries, _sort);
 
   Future<void> _exportSelected() async {
     final repo = _repository;
     if (repo == null || _sharing) return;
-    final ids = _selectedInDisplayOrder;
-    if (ids.isEmpty) return;
+    final selected = _displayed
+        .where((s) => _selectedIds.contains(s.document.id))
+        .toList();
+    if (selected.isEmpty) return;
+    final ids = selected.map((s) => s.document.id).toList();
+
     _sharing = true;
     try {
+      final share = widget.libraryDependencies.share;
       if (ids.length == 1) {
-        final byId = {for (final s in _summaries) s.document.id: s.document};
-        final file = await repo.exportPdf(ids.single);
-        await widget.libraryDependencies.share
-            .share([file.path], subject: byId[ids.single]?.name);
+        final file = await repo.exportPdf(ids.first);
+        await share.share([file.path], subject: selected.first.document.name);
       } else {
         final files = await repo.exportSeparatePdfs(ids);
+        // Reuse the repo's sanitized per-doc PDF names as zip entry names (DRY).
+        final entryNames = [for (final f in files) p.basename(f.path)];
         final zip = await widget.libraryDependencies.archiver.zip(
           files,
           archiveName: 'documents.zip',
-          entryNames: [for (final f in files) p.basename(f.path)],
+          entryNames: entryNames,
         );
-        await widget.libraryDependencies.share
-            .share([zip.path], mimeType: 'application/zip');
+        await share.share([zip.path], mimeType: 'application/zip');
       }
       if (mounted) _clearSelection();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't share")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't share")));
     } finally {
       _sharing = false;
     }
@@ -255,18 +275,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _searching
+      appBar: _selectionMode
+          ? _buildSelectionAppBar()
+          : _searching
           ? _buildSearchAppBar()
-          : _selectionMode
-              ? _buildSelectionAppBar()
-              : _buildNormalAppBar(),
+          : _buildNormalAppBar(),
       body: _loading
           ? const Center(
               key: Key('documents-loading'),
-              child: CircularProgressIndicator())
+              child: CircularProgressIndicator(),
+            )
           : _error
-              ? _buildError()
-              : _buildBody(),
+          ? _buildError()
+          : _buildBody(),
       floatingActionButton: (_searching || _selectionMode)
           ? null
           : FloatingActionButton.extended(
@@ -278,66 +299,66 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  AppBar _buildNormalAppBar() => AppBar(
-        title: const Text('Documents'),
-        actions: [
-          IconButton(
-            key: const Key('documents-search'),
-            tooltip: 'Search',
-            icon: const Icon(Icons.search),
-            onPressed: _repository == null ? null : _openSearch,
-          ),
-        ],
-      );
-
   AppBar _buildSelectionAppBar() => AppBar(
-        leading: IconButton(
-          key: const Key('selection-close'),
-          tooltip: 'Cancel selection',
-          icon: const Icon(Icons.close),
-          onPressed: _clearSelection,
-        ),
-        title: Text('${_selectedIds.length} selected'),
-        actions: [
-          IconButton(
-            key: const Key('selection-export'),
-            tooltip: 'Export',
-            icon: const Icon(Icons.ios_share),
-            onPressed: _exportSelected,
-          ),
-        ],
-      );
+    leading: IconButton(
+      key: const Key('selection-close'),
+      tooltip: 'Cancel selection',
+      icon: const Icon(Icons.close),
+      onPressed: _clearSelection,
+    ),
+    title: Text('${_selectedIds.length} selected'),
+    actions: [
+      IconButton(
+        key: const Key('selection-export'),
+        tooltip: 'Export',
+        icon: const Icon(Icons.ios_share),
+        onPressed: _exportSelected,
+      ),
+    ],
+  );
+
+  AppBar _buildNormalAppBar() => AppBar(
+    title: const Text('Documents'),
+    actions: [
+      IconButton(
+        key: const Key('documents-search'),
+        tooltip: 'Search',
+        icon: const Icon(Icons.search),
+        onPressed: _repository == null ? null : _openSearch,
+      ),
+    ],
+  );
 
   AppBar _buildSearchAppBar() => AppBar(
-        leading: IconButton(
-          key: const Key('documents-search-close'),
-          tooltip: 'Close search',
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _closeSearch,
-        ),
-        title: TextField(
-          key: const Key('documents-search-field'),
-          controller: _searchController,
-          autofocus: true,
-          textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(
-            hintText: 'Search documents',
-            border: InputBorder.none,
-          ),
-          onChanged: _onQueryChanged,
-        ),
-        actions: [
-          IconButton(
-            key: const Key('documents-search-clear'),
-            tooltip: 'Clear',
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              _searchController.clear();
-              _onQueryChanged('');
-            },
-          ),
-        ],
-      );
+    leading: IconButton(
+      key: const Key('documents-search-close'),
+      tooltip: 'Close search',
+      icon: const Icon(Icons.arrow_back),
+      onPressed: _closeSearch,
+    ),
+    title: TextField(
+      key: const Key('documents-search-field'),
+      controller: _searchController,
+      autofocus: true,
+      textInputAction: TextInputAction.search,
+      decoration: const InputDecoration(
+        hintText: 'Search documents',
+        border: InputBorder.none,
+      ),
+      onChanged: _onQueryChanged,
+    ),
+    actions: [
+      IconButton(
+        key: const Key('documents-search-clear'),
+        tooltip: 'Clear',
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          _searchController.clear();
+          _onQueryChanged('');
+        },
+      ),
+    ],
+  );
 
   Widget _buildBody() {
     if (_searching) {
@@ -353,6 +374,10 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpen: _openDocument,
         onRename: _renameDocument,
         onShare: _shareDocument,
+        selectionMode: _selectionMode,
+        selectedIds: _selectedIds,
+        onToggleSelect: _toggleSelect,
+        onLongPress: _startSelection,
       );
     }
     if (_summaries.isEmpty) return const EmptyDocumentsView();
@@ -367,8 +392,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onShare: _shareDocument,
             selectionMode: _selectionMode,
             selectedIds: _selectedIds,
-            onLongPress: _enterSelection,
             onToggleSelect: _toggleSelect,
+            onLongPress: _startSelection,
           ),
         ),
       ],
@@ -381,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text("Couldn't load documents."),
+          Text(_startupFailure ?? "Couldn't load documents."),
           const SizedBox(height: 8),
           FilledButton(
             key: const Key('documents-retry'),
