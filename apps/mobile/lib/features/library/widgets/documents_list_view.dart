@@ -9,6 +9,11 @@ import 'share_menu_button.dart';
 /// sort (D3). Each row has an optional overflow menu (Rename / Share) when
 /// [onRename] or [onShare] is provided.
 class DocumentsListView extends StatelessWidget {
+  /// Bottom scroll inset (~ one row's height) so the floating Scan button,
+  /// which docks over the bottom-right of this list, never permanently covers
+  /// the last row's overflow (⋮) menu — the user can scroll it into the clear.
+  static const double fabBottomInset = 88;
+
   final List<DocumentSummary> summaries;
   final ValueChanged<DocumentSummary>? onOpen;
   final ValueChanged<DocumentSummary>? onRename;
@@ -25,6 +30,7 @@ class DocumentsListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       key: const Key('documents-list'),
+      padding: const EdgeInsets.only(bottom: fabBottomInset),
       itemCount: summaries.length,
       itemBuilder: (context, i) {
         final s = summaries[i];

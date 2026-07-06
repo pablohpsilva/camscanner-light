@@ -27,7 +27,7 @@ class DonationBanner extends StatelessWidget {
                 Icon(Icons.local_cafe_outlined, color: amber),
                 const SizedBox(width: 12),
                 const Expanded(
-                  child: Text('Enjoying the app? Tap to support it — thank you!'),
+                  child: Text('Enjoying the app? Tap to support it ❤️'),
                 ),
                 Icon(Icons.chevron_right, color: amber),
               ],
