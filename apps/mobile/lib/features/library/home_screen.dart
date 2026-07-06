@@ -41,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _searching = false;
   String _query = '';
   bool _sharing = false;
+  final Set<int> _selectedIds = {};
+  bool get _selectionMode => _selectedIds.isNotEmpty;
 
   @override
   void initState() {
@@ -128,7 +130,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _refresh(); // a delete may have happened in the viewer
   }
 
-  void _openSearch() => setState(() => _searching = true);
+  void _openSearch() => setState(() {
+        _selectedIds.clear();
+        _searching = true;
+      });
 
   void _closeSearch() {
     _searchController.clear();
@@ -193,10 +198,69 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _toggleSelect(DocumentSummary s) {
+    setState(() {
+      final id = s.document.id;
+      if (!_selectedIds.remove(id)) _selectedIds.add(id);
+    });
+  }
+
+  void _enterSelection(DocumentSummary s) {
+    setState(() => _selectedIds.add(s.document.id));
+  }
+
+  void _clearSelection() => setState(_selectedIds.clear);
+
+  /// Ids of the currently-selected documents in the order the repository
+  /// returned them (which in production is newest-first, matching the initial
+  /// display sort). Using [_summaries] directly avoids a secondary sort and
+  /// ensures the export order is stable and predictable.
+  List<int> get _selectedInDisplayOrder => [
+        for (final s in _summaries)
+          if (_selectedIds.contains(s.document.id)) s.document.id,
+      ];
+
+  Future<void> _exportSelected() async {
+    final repo = _repository;
+    if (repo == null || _sharing) return;
+    final ids = _selectedInDisplayOrder;
+    if (ids.isEmpty) return;
+    final byId = {for (final s in _summaries) s.document.id: s.document};
+    _sharing = true;
+    try {
+      if (ids.length == 1) {
+        final file = await repo.exportPdf(ids.single);
+        await widget.libraryDependencies.share
+            .share([file.path], subject: byId[ids.single]?.name);
+      } else {
+        final files = await repo.exportSeparatePdfs(ids);
+        final zip = await widget.libraryDependencies.archiver.zip(
+          files,
+          archiveName: 'documents.zip',
+          entryNames: [for (final id in ids) '${byId[id]?.name ?? 'document'}.pdf'],
+        );
+        await widget.libraryDependencies.share
+            .share([zip.path], mimeType: 'application/zip');
+      }
+      if (mounted) _clearSelection();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't share")),
+      );
+    } finally {
+      _sharing = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _searching ? _buildSearchAppBar() : _buildNormalAppBar(),
+      appBar: _searching
+          ? _buildSearchAppBar()
+          : _selectionMode
+              ? _buildSelectionAppBar()
+              : _buildNormalAppBar(),
       body: _loading
           ? const Center(
               key: Key('documents-loading'),
@@ -204,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : _error
               ? _buildError()
               : _buildBody(),
-      floatingActionButton: _searching
+      floatingActionButton: (_searching || _selectionMode)
           ? null
           : FloatingActionButton.extended(
               onPressed: _repository == null ? null : _openScan,
@@ -223,6 +287,24 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: 'Search',
             icon: const Icon(Icons.search),
             onPressed: _repository == null ? null : _openSearch,
+          ),
+        ],
+      );
+
+  AppBar _buildSelectionAppBar() => AppBar(
+        leading: IconButton(
+          key: const Key('selection-close'),
+          tooltip: 'Cancel selection',
+          icon: const Icon(Icons.close),
+          onPressed: _clearSelection,
+        ),
+        title: Text('${_selectedIds.length} selected'),
+        actions: [
+          IconButton(
+            key: const Key('selection-export'),
+            tooltip: 'Export',
+            icon: const Icon(Icons.ios_share),
+            onPressed: _exportSelected,
           ),
         ],
       );
@@ -284,6 +366,10 @@ class _HomeScreenState extends State<HomeScreen> {
             onOpen: _openDocument,
             onRename: _renameDocument,
             onShare: _shareDocument,
+            selectionMode: _selectionMode,
+            selectedIds: _selectedIds,
+            onLongPress: _enterSelection,
+            onToggleSelect: _toggleSelect,
           ),
         ),
       ],
