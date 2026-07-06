@@ -39,7 +39,8 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 /* Buttons */
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 13px 22px; border-radius: 12px; font-weight: 600;
+  padding: 13px 22px; border-radius: 12px;
+  font-family: inherit; font-size: 1rem; font-weight: 600;
   border: 1px solid var(--border); background: #fff; color: var(--ink);
   cursor: pointer; transition: transform .08s ease, box-shadow .2s ease;
 }
@@ -48,11 +49,11 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 .btn--primary:hover { background: var(--accent-dark); }
 .btn--store { flex-direction: column; align-items: flex-start; padding: 10px 20px; }
 .btn--store small { font-size: .7rem; color: var(--muted); font-weight: 500; }
-.btn[aria-disabled="true"] { opacity: .75; cursor: default; }
-.btn[aria-disabled="true"]:hover { transform: none; box-shadow: none; }
+.btn:disabled { opacity: .75; cursor: default; }
+.btn:disabled:hover { transform: none; box-shadow: none; }
 
 /* Nav */
-.nav { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.85); backdrop-filter: saturate(180%) blur(12px); border-bottom: 1px solid var(--border); }
+.nav { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.85); -webkit-backdrop-filter: saturate(180%) blur(12px); backdrop-filter: saturate(180%) blur(12px); border-bottom: 1px solid var(--border); }
 .nav__inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .nav__brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--ink); }
 .nav__brand img { width: 30px; height: 30px; border-radius: 7px; }
@@ -129,7 +130,6 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 .donate__btc img { width: 116px; height: 116px; border-radius: 8px; background: #fff; padding: 4px; }
 .donate__btc strong { display: block; margin-bottom: 4px; }
 .donate__btc code { display: block; font-size: .82rem; word-break: break-all; max-width: 240px; margin: 0 0 10px; color: var(--ink); }
-.copied { color: #1a9c5b; font-weight: 600; font-size: .85rem; margin-left: 10px; }
 
 @media (max-width: 520px) {
   .donate__btc { flex-direction: column; align-items: flex-start; }

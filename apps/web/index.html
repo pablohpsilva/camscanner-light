@@ -31,8 +31,8 @@
           <h1>Scan. Clean. Done.</h1>
           <p class="lead">A fast pocket scanner that turns any document into a crisp PDF — and never leaves your phone.</p>
           <div class="hero__cta" id="get">
-            <span class="btn btn--store" aria-disabled="true"><small>Coming soon on the</small> App Store</span>
-            <span class="btn btn--store" aria-disabled="true"><small>Coming soon on</small> Google Play</span>
+            <button class="btn btn--store" type="button" disabled><small>Coming soon on the</small> App Store</button>
+            <button class="btn btn--store" type="button" disabled><small>Coming soon on</small> Google Play</button>
           </div>
           <div class="badges">
             <span>🔒 On-device</span><span>🙅 No account</span><span>✈️ Offline</span><span>💸 Free</span>
@@ -64,11 +64,11 @@
         <span class="eyebrow">See it</span>
         <h2>Real screens, real scans</h2>
         <div class="gallery">
-          <button data-full="assets/screenshots/camera.png"><span class="device-frame"><img src="assets/screenshots/camera.png" alt="Automatic edge detection and crop" /></span></button>
-          <button data-full="assets/screenshots/library.png"><span class="device-frame"><img src="assets/screenshots/library.png" alt="Document library" /></span></button>
-          <button data-full="assets/screenshots/page-viewer.png"><span class="device-frame"><img src="assets/screenshots/page-viewer.png" alt="Page viewer" /></span></button>
-          <button data-full="assets/screenshots/search.png"><span class="device-frame"><img src="assets/screenshots/search.png" alt="Full-text search" /></span></button>
-          <button data-full="assets/screenshots/pdf-export.png"><span class="device-frame"><img src="assets/screenshots/pdf-export.png" alt="PDF export and share" /></span></button>
+          <button type="button" data-full="assets/screenshots/camera.png"><span class="device-frame"><img src="assets/screenshots/camera.png" alt="Automatic edge detection and crop" /></span></button>
+          <button type="button" data-full="assets/screenshots/library.png"><span class="device-frame"><img src="assets/screenshots/library.png" alt="Document library" /></span></button>
+          <button type="button" data-full="assets/screenshots/page-viewer.png"><span class="device-frame"><img src="assets/screenshots/page-viewer.png" alt="Page viewer" /></span></button>
+          <button type="button" data-full="assets/screenshots/search.png"><span class="device-frame"><img src="assets/screenshots/search.png" alt="Full-text search" /></span></button>
+          <button type="button" data-full="assets/screenshots/pdf-export.png"><span class="device-frame"><img src="assets/screenshots/pdf-export.png" alt="PDF export and share" /></span></button>
         </div>
       </div>
     </section>
@@ -119,7 +119,7 @@
       </div>
     </div>
   </footer>
-  <div class="lightbox" id="lightbox"><img src="" alt="" /></div>
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot preview" tabindex="-1"><img src="" alt="" /></div>
   <script src="main.js"></script>
 </body>
 </html>

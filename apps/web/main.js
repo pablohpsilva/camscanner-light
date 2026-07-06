@@ -17,6 +17,7 @@ if (lightbox) {
       lbImg.src = btn.getAttribute('data-full');
       lbImg.alt = btn.querySelector('img')?.alt || '';
       lightbox.classList.add('open');
+      lightbox.focus();
     });
   });
   lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
