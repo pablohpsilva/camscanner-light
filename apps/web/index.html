@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScannerCam Light — Fast, private document scanner</title>
+  <meta name="description" content="Scan documents on your phone. On-device, no account, no cloud, works offline. Free." />
+  <link rel="icon" href="assets/icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="index.html"><img src="assets/icon.png" alt="" /> ScannerCam Light</a>
+      <button class="nav__toggle" aria-label="Menu">☰</button>
+      <nav class="nav__links">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href="support.html">Support</a>
+        <a class="btn btn--primary" href="#get">Get the app</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div class="hero__grid">
+        <div>
+          <span class="eyebrow">Document scanner</span>
+          <h1>Scan. Clean. Done.</h1>
+          <p class="lead">A fast pocket scanner that turns any document into a crisp PDF — and never leaves your phone.</p>
+          <div class="hero__cta" id="get">
+            <span class="btn btn--store" aria-disabled="true"><small>Coming soon on the</small> App Store</span>
+            <span class="btn btn--store" aria-disabled="true"><small>Coming soon on</small> Google Play</span>
+          </div>
+          <div class="badges">
+            <span>🔒 On-device</span><span>🙅 No account</span><span>✈️ Offline</span><span>💸 Free</span>
+          </div>
+        </div>
+        <div class="device-frame">
+          <img src="assets/screenshots/hero.png" alt="ScannerCam Light app screenshot" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--surface" id="features">
+      <div class="container">
+        <span class="eyebrow">Everything you need</span>
+        <h2>A full scanner in your pocket</h2>
+        <div class="grid">
+          <div class="card"><div class="card__icon">📐</div><h3>Auto edge detection</h3><p>Finds the page and crops it for you — no fiddly corner dragging.</p></div>
+          <div class="card"><div class="card__icon">✨</div><h3>Perspective &amp; enhance</h3><p>Straightens skewed shots and cleans up lighting for a crisp, flat scan.</p></div>
+          <div class="card"><div class="card__icon">📚</div><h3>Multi-page documents</h3><p>Combine many pages into one document, reorder and rotate freely.</p></div>
+          <div class="card"><div class="card__icon">🔎</div><h3>Search inside scans</h3><p>On-device OCR makes every word findable with fast full-text search.</p></div>
+          <div class="card"><div class="card__icon">📄</div><h3>PDF export &amp; share</h3><p>Export a polished PDF and send it anywhere with the system share sheet.</p></div>
+          <div class="card"><div class="card__icon">🔁</div><h3>Edit any time</h3><p>Re-crop, rotate, or re-order pages whenever you like — nothing is baked in.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <span class="eyebrow">See it</span>
+        <h2>Real screens, real scans</h2>
+        <div class="gallery">
+          <button data-full="assets/screenshots/camera.png"><span class="device-frame"><img src="assets/screenshots/camera.png" alt="Camera with edge detection" /></span></button>
+          <button data-full="assets/screenshots/library.png"><span class="device-frame"><img src="assets/screenshots/library.png" alt="Document library" /></span></button>
+          <button data-full="assets/screenshots/page-viewer.png"><span class="device-frame"><img src="assets/screenshots/page-viewer.png" alt="Page viewer" /></span></button>
+          <button data-full="assets/screenshots/search.png"><span class="device-frame"><img src="assets/screenshots/search.png" alt="Full-text search" /></span></button>
+          <button data-full="assets/screenshots/pdf-export.png"><span class="device-frame"><img src="assets/screenshots/pdf-export.png" alt="PDF export and share" /></span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--surface" id="privacy">
+      <div class="container">
+        <span class="eyebrow">Private by design</span>
+        <h2>Your documents never leave your phone</h2>
+        <p class="lead">ScannerCam Light has no <code>INTERNET</code> permission on Android and bundles no analytics. Scanning, OCR, and storage all happen on your device.</p>
+        <div class="checks">
+          <div class="check">Works fully offline</div>
+          <div class="check">No account, ever</div>
+          <div class="check">No data collected</div>
+          <div class="check">Free to use</div>
+        </div>
+        <p style="margin-top:24px"><a href="privacy.html">Read the full privacy policy →</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div><strong>ScannerCam Light</strong><br /><span style="color:#9aa4bd">Scan. Clean. Done.</span></div>
+      <div>
+        <a href="privacy.html">Privacy</a> &nbsp;·&nbsp;
+        <a href="support.html">Support</a> &nbsp;·&nbsp;
+        <a href="mailto:scannercamlight.line149@passmail.net">Contact</a>
+      </div>
+    </div>
+  </footer>
+  <div class="lightbox" id="lightbox"><img src="" alt="" /></div>
+  <script src="main.js"></script>
+</body>
+</html>
