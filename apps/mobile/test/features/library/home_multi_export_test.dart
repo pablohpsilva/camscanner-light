@@ -105,6 +105,7 @@ void main() {
 
     expect(repo.separateExportCalls.single, [1, 2]); // displayed (sorted) order
     expect(archiver.calls, 1);
+    expect(archiver.lastArchiveName, 'documents.zip');
     expect(archiver.lastEntryNames, ['Alpha.pdf', 'Beta.pdf']);
     expect(share.lastFilePaths!.single, endsWith('.zip'));
     expect(share.lastMimeType, 'application/zip');
@@ -125,5 +126,6 @@ void main() {
     await tester.tap(find.byKey(const Key('selection-export')));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't share"), findsOneWidget);
+    expect(find.text('2 selected'), findsOneWidget); // selection persists on failure
   });
 }

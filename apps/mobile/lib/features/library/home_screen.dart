@@ -224,10 +224,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (repo == null || _sharing) return;
     final ids = _selectedInDisplayOrder;
     if (ids.isEmpty) return;
-    final byId = {for (final s in _summaries) s.document.id: s.document};
     _sharing = true;
     try {
       if (ids.length == 1) {
+        final byId = {for (final s in _summaries) s.document.id: s.document};
         final file = await repo.exportPdf(ids.single);
         await widget.libraryDependencies.share
             .share([file.path], subject: byId[ids.single]?.name);
