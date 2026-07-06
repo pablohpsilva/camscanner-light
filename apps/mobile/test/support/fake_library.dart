@@ -11,6 +11,7 @@ import 'package:mobile/features/library/perspective_warper.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
+import 'package:mobile/features/library/file_archiver.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
@@ -439,6 +440,28 @@ class FakeDocumentPrinter implements DocumentPrinter {
     if (throwOnPrint) throw Exception('fake: print failed');
     lastFile = pdf;
     lastName = name;
+  }
+}
+
+/// Recording archiver for tests: captures the last zip call, never touches the
+/// filesystem. [throwOnZip] simulates a zip failure.
+class FakeFileArchiver implements FileArchiver {
+  int calls = 0;
+  List<File>? lastFiles;
+  String? lastArchiveName;
+  List<String>? lastEntryNames;
+  final bool throwOnZip;
+  FakeFileArchiver({this.throwOnZip = false});
+
+  @override
+  Future<File> zip(List<File> files,
+      {required String archiveName, required List<String> entryNames}) async {
+    if (throwOnZip) throw Exception('fake: zip failed');
+    calls++;
+    lastFiles = files;
+    lastArchiveName = archiveName;
+    lastEntryNames = entryNames;
+    return File('${Directory.systemTemp.path}/$archiveName');
   }
 }
 

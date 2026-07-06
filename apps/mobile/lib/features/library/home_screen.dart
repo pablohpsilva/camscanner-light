@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../scan/camera_screen.dart';
 import '../scan/scan_dependencies.dart';
@@ -9,6 +10,7 @@ import 'library_dependencies.dart';
 import 'page_viewer_screen.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
+import 'widgets/export_choice_dialog.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_control_bar.dart';
 import '../donation/donation_banner.dart';
@@ -41,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _searching = false;
   String _query = '';
   bool _sharing = false;
+  final Set<int> _selectedIds = <int>{};
+  bool get _selectionMode => _selectedIds.isNotEmpty;
 
   @override
   void initState() {
@@ -128,7 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _refresh(); // a delete may have happened in the viewer
   }
 
-  void _openSearch() => setState(() => _searching = true);
+  void _openSearch() => setState(() {
+        _selectedIds.clear();
+        _searching = true;
+      });
 
   void _closeSearch() {
     _searchController.clear();
@@ -193,10 +200,74 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _toggleSelect(DocumentSummary s) {
+    setState(() {
+      final id = s.document.id;
+      if (!_selectedIds.remove(id)) _selectedIds.add(id);
+    });
+  }
+
+  void _startSelection(DocumentSummary s) {
+    setState(() => _selectedIds.add(s.document.id));
+  }
+
+  void _clearSelection() => setState(() => _selectedIds.clear());
+
+  // The documents currently on screen, in display order (search order when
+  // searching, else the active sort). Selection export follows this order.
+  List<DocumentSummary> get _displayed =>
+      _searching ? _summaries : sortDocuments(_summaries, _sort);
+
+  Future<void> _exportSelected() async {
+    final repo = _repository;
+    if (repo == null || _sharing) return;
+    final selected =
+        _displayed.where((s) => _selectedIds.contains(s.document.id)).toList();
+    if (selected.isEmpty) return;
+    final ids = selected.map((s) => s.document.id).toList();
+
+    MultiExportChoice? choice;
+    if (ids.length >= 2) {
+      choice = await showExportChoiceDialog(context);
+      if (choice == null || !mounted) return;
+    }
+
+    _sharing = true;
+    try {
+      final share = widget.libraryDependencies.share;
+      if (ids.length == 1) {
+        final file = await repo.exportPdf(ids.first);
+        await share.share([file.path], subject: selected.first.document.name);
+      } else if (choice == MultiExportChoice.merged) {
+        final file = await repo.exportCombinedPdf(ids);
+        await share.share([file.path], subject: '${ids.length} documents');
+      } else {
+        final files = await repo.exportSeparatePdfs(ids);
+        // Reuse the repo's sanitized per-doc PDF names as zip entry names (DRY).
+        final entryNames = [for (final f in files) p.basename(f.path)];
+        final zip = await widget.libraryDependencies.archiver
+            .zip(files, archiveName: 'documents.zip', entryNames: entryNames);
+        await share.share([zip.path]);
+      }
+      if (mounted) _clearSelection();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't share")),
+      );
+    } finally {
+      _sharing = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _searching ? _buildSearchAppBar() : _buildNormalAppBar(),
+      appBar: _selectionMode
+          ? _buildSelectionAppBar()
+          : _searching
+              ? _buildSearchAppBar()
+              : _buildNormalAppBar(),
       body: _loading
           ? const Center(
               key: Key('documents-loading'),
@@ -204,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : _error
               ? _buildError()
               : _buildBody(),
-      floatingActionButton: _searching
+      floatingActionButton: (_searching || _selectionMode)
           ? null
           : FloatingActionButton.extended(
               onPressed: _repository == null ? null : _openScan,
@@ -214,6 +285,24 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: const DonationBanner(),
     );
   }
+
+  AppBar _buildSelectionAppBar() => AppBar(
+        leading: IconButton(
+          key: const Key('selection-close'),
+          tooltip: 'Cancel selection',
+          icon: const Icon(Icons.close),
+          onPressed: _clearSelection,
+        ),
+        title: Text('${_selectedIds.length} selected'),
+        actions: [
+          IconButton(
+            key: const Key('selection-export'),
+            tooltip: 'Export',
+            icon: const Icon(Icons.ios_share),
+            onPressed: _exportSelected,
+          ),
+        ],
+      );
 
   AppBar _buildNormalAppBar() => AppBar(
         title: const Text('Documents'),
@@ -272,6 +361,10 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpen: _openDocument,
         onRename: _renameDocument,
         onShare: _shareDocument,
+        selectionMode: _selectionMode,
+        selectedIds: _selectedIds,
+        onToggleSelect: _toggleSelect,
+        onLongPress: _startSelection,
       );
     }
     if (_summaries.isEmpty) return const EmptyDocumentsView();
@@ -284,6 +377,10 @@ class _HomeScreenState extends State<HomeScreen> {
             onOpen: _openDocument,
             onRename: _renameDocument,
             onShare: _shareDocument,
+            selectionMode: _selectionMode,
+            selectedIds: _selectedIds,
+            onToggleSelect: _toggleSelect,
+            onLongPress: _startSelection,
           ),
         ),
       ],
