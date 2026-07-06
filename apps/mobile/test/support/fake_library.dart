@@ -60,6 +60,8 @@ class FakeDocumentRepository implements DocumentRepository {
   int? lastReplacedPagePosition;
   final List<int> deletedIds = <int>[];
   final List<int> exportedIds = <int>[];
+  final List<List<int>> combinedExports = <List<int>>[];
+  final List<List<int>> separateExports = <List<int>>[];
   ExportQuality? lastExportQuality;
   ExportQuality? lastImageExportQuality;
   ExportQuality? lastAllImagesExportQuality;
@@ -144,6 +146,29 @@ class FakeDocumentRepository implements DocumentRepository {
     // File; widget tests need the future to complete synchronously so that
     // pumpAndSettle can drive the success SnackBar before settling.
     return File('${Directory.systemTemp.path}/fake-export-$documentId.pdf');
+  }
+
+  @override
+  Future<File> exportCombinedPdf(List<int> documentIds) async {
+    if (throwOnExport) {
+      throw const DocumentExportException('fake: combined export failed');
+    }
+    if (exportGate != null) await exportGate!.future;
+    combinedExports.add(List<int>.of(documentIds));
+    return File('${Directory.systemTemp.path}/fake-combined.pdf');
+  }
+
+  @override
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
+    if (throwOnExport) {
+      throw const DocumentExportException('fake: separate export failed');
+    }
+    if (exportGate != null) await exportGate!.future;
+    separateExports.add(List<int>.of(documentIds));
+    return [
+      for (final id in documentIds)
+        File('${Directory.systemTemp.path}/fake-sep-$id.pdf')
+    ];
   }
 
   @override

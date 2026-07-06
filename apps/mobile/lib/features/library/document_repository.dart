@@ -67,6 +67,19 @@ abstract interface class DocumentRepository {
   Future<List<File>> exportAllPagesAsImages(int documentId,
       {ExportQuality quality = ExportQuality.original});
 
+  /// Builds ONE PDF containing every page of every document in [documentIds]
+  /// (documents in list order; pages in position order) and returns it as a
+  /// temporary file (same temp-file discipline as [exportPdf]). Nothing leaves
+  /// the device. Throws [DocumentExportException] when [documentIds] is empty
+  /// or none of the documents has any page.
+  Future<File> exportCombinedPdf(List<int> documentIds);
+
+  /// Exports each document in [documentIds] as its own PDF (delegating to
+  /// [exportPdf] per id), returning the temporary files in list order. Nothing
+  /// leaves the device. Throws [DocumentExportException] when [documentIds] is
+  /// empty or any per-document export fails.
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds);
+
   /// Renames [documentId] to [newName] (trimmed) and bumps modifiedAt. Returns
   /// the updated document. Throws [DocumentRenameException] when the trimmed
   /// name is empty or no document with that id exists. The name stays on-device.
