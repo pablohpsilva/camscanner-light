@@ -64,4 +64,29 @@ void main() {
     expect(repo.addPageCalls, 2);
     expect(repo.lastSavedCorners, CropCorners.fullFrame);
   });
+
+  testWidgets('retake mode: single page → onCapture with enhancer, pageLimit 1',
+      (tester) async {
+    final repo = FakeDocumentRepository();
+    final fakeScanner =
+        FakeDocumentScannerService([const CapturedImage('/nonexistent/re.jpg')]);
+    CapturedImage? captured;
+    await tester.pumpWidget(_host(ScanScreen(
+      dependencies: ScanDependencies(createDocumentScanner: () => fakeScanner),
+      repository: repo,
+      onCapture: (image, corners, enhancer) async {
+        captured = image;
+        return true;
+      },
+    )));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle();
+
+    expect(captured?.path, '/nonexistent/re.jpg');
+    expect(fakeScanner.lastPageLimit, 1);
+    expect(repo.createCalls, 0); // retake replaces, does not create
+  });
 }
