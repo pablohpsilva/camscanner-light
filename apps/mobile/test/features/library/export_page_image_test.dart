@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:exif/exif.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
@@ -69,7 +70,15 @@ void main() {
 
     final file = await repo().exportPageAsImage(docId, 1);
 
-    expect(file.path, endsWith('documents/$docId/page_1_export.jpg'));
+    // Privacy: the export must NOT land in the persistent document store
+    // (that dir is included in Google/iCloud backups and accumulates forever).
+    // It belongs in the OS temp/cache dir — self-purging and backup-excluded.
+    expect(file.existsSync(), isTrue);
+    expect(p.isWithin(base.path, file.path), isFalse,
+        reason: 'export must not be written into the persistent, backed-up store');
+    expect(p.isWithin(Directory.systemTemp.path, file.path), isTrue,
+        reason: 'export belongs in the OS temp/cache dir');
+    expect(file.path, endsWith('.jpg'));
     final bytes = file.readAsBytesSync();
     expect(bytes.sublist(0, 2), [0xFF, 0xD8], reason: 'valid JPEG header');
     // The scrubber removes IDENTIFYING/personal EXIF but intentionally KEEPS

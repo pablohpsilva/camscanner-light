@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Privacy (Android 12+ / API 31+): opt the app out of both cloud backup and
+  device-to-device transfer entirely. Scanned documents (OCR/full-text SQLite DB
+  and page images) contain PII and must not be copied off the device
+  automatically. On API <= 30 this file is ignored; android:allowBackup="false"
+  covers those levels.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="root" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="root" />
+    </device-transfer>
+</data-extraction-rules>

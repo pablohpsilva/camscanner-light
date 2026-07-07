@@ -458,9 +458,15 @@ class DriftDocumentRepository implements DocumentRepository {
       final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
       final compressed = await _compressor.compress(bytes, quality);
       final scrubbed = _scrubber.scrub(compressed); // privacy: always scrub
-      final rel = _fileStore.imageExportRelativeFor(documentId, position);
-      await _fileStore.writeRelative(rel, scrubbed);
-      return _fileStore.absoluteFor(rel);
+      // Privacy: write to the OS temp/cache dir, NOT the persistent document
+      // store. The store is included in Google/iCloud backups and would let
+      // export derivatives accumulate there forever; temp is self-purging and
+      // backup-excluded (same temp-file discipline as the PDF/text exports).
+      final dir = await Directory.systemTemp.createTemp('img_export');
+      final base = await _exportBaseName(documentId);
+      final file = File('${dir.path}/${base}_page_$position.jpg');
+      await file.writeAsBytes(scrubbed, flush: true);
+      return file;
     } catch (e) {
       if (e is DocumentExportException) rethrow;
       throw DocumentExportException('exportImage failed: $e');
