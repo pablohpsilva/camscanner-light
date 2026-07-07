@@ -566,14 +566,19 @@ class FakeOcrEngine implements OcrEngine {
 LibraryDependencies persistentLibraryDependencies({
   required File dbFile,
   required Directory baseDir,
-}) =>
-    LibraryDependencies(
-      createRepository: () async => DriftDocumentRepository(
-        db: AppDatabase(NativeDatabase(dbFile)),
-        scrubber: const JpegExifScrubber(),
-        fileStore: DocumentFileStore(baseDir),
-        clock: DateTime.now,
-        pdfBuilder: const PdfBuilder(),
-        warper: const PerspectiveWarper(),
-      ),
-    );
+}) {
+  final share = FakeShareChannel();
+  lastBddShareChannel = share;
+  return LibraryDependencies(
+    createRepository: () async => DriftDocumentRepository(
+      db: AppDatabase(NativeDatabase(dbFile)),
+      scrubber: const JpegExifScrubber(),
+      fileStore: DocumentFileStore(baseDir),
+      clock: DateTime.now,
+      pdfBuilder: const PdfBuilder(),
+      warper: const PerspectiveWarper(),
+    ),
+    printer: FakeDocumentPrinter(),
+    share: share,
+  );
+}

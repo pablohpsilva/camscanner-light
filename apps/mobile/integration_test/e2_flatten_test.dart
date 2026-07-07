@@ -6,8 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
-import './../test/step/i_tap_the_scan_button.dart';
-import './../test/step/i_tap_the_shutter.dart';
+import './../test/step/i_tap_the_import_button.dart';
 import './../test/step/i_see_the_crop_overlay.dart';
 import './../test/step/i_drag_the_top_left_crop_corner.dart';
 import './../test/step/i_tap_accept.dart';
@@ -20,11 +19,10 @@ void main() {
 
   group('''Perspective flatten''', () {
     testWidgets(
-        '''Flat image is shown in the page viewer after capture with adjusted corners''',
+        '''Flat image is shown in the page viewer after import with adjusted corners''',
         (tester) async {
       await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
-      await iTapTheScanButton(tester);
-      await iTapTheShutter(tester);
+      await iTapTheImportButton(tester);
       await iSeeTheCropOverlay(tester);
       await iDragTheTopLeftCropCorner(tester);
       await iTapAccept(tester);

@@ -1,11 +1,8 @@
 Feature: Split a document
 
   Scenario: Split after the first page
-    Given the app is launched with camera permission granted and empty storage
-    When I tap the Scan button
-    And I capture and accept the first page
-    And I capture and accept the second page
-    And I tap Done
+    Given a document with 2 real page images was saved to persistent storage earlier
+    When the app launches reading that same storage
     And I open the first document
     And I split after the first page
     Then I see the split confirmation

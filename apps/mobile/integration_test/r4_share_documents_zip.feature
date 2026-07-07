@@ -1,13 +1,8 @@
 Feature: Share multiple documents as a zip
 
   Scenario: Select two documents and share them as a single zip
-    Given the app is launched with camera permission granted and empty storage
-    When I tap the Scan button
-    And I capture and accept the first page
-    And I tap Done
-    And I tap the Scan button
-    And I capture and accept the first page
-    And I tap Done
+    Given two documents with real page images were saved to persistent storage earlier
+    When the app launches reading that same storage
     And I long press the first document
     And I select the second document
     And I export the selection
