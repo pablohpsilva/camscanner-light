@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/scan/camera_frame.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
@@ -15,11 +14,6 @@ class _FakeDetector implements EdgeDetector {
   const _FakeDetector(this.confidence);
   @override
   Future<DetectionResult?> detect(Uint8List bytes) async => DetectionResult(
-        corners: CropCorners.fullFrame,
-        confidence: confidence,
-      );
-  @override
-  Future<DetectionResult?> detectFrame(CameraFrame frame) async => DetectionResult(
         corners: CropCorners.fullFrame,
         confidence: confidence,
       );

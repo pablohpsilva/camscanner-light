@@ -15,7 +15,7 @@ void main() {
       image: const CapturedImage('/nonexistent/scan_1.jpg'),
       enableCrop: false,
       onRetake: () {},
-      onAccept: (_, __) {},
+      onAccept: (_, _) {},
     )));
     await tester.pumpAndSettle();
 

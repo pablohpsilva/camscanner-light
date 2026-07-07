@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import '../library/crop_corners.dart';
-import 'camera_frame.dart';
 
 /// Immutable detection result: four corners in normalized [0..1] display
 /// coordinates and a confidence score in [0.0, 1.0].
@@ -30,8 +29,4 @@ abstract interface class EdgeDetector {
   /// Returns [DetectionResult] when a 4-point convex quad is found, or [null]
   /// when no document is detected. Never throws — all failures become null.
   Future<DetectionResult?> detect(Uint8List bytes);
-
-  /// Detects the document quad in a raw live-preview [frame]. Returns null when
-  /// no document is found. Never throws — all failures become null.
-  Future<DetectionResult?> detectFrame(CameraFrame frame);
 }

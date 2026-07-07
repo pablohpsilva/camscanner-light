@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:flutter/painting.dart' show Offset;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:integration_test/integration_test.dart';
@@ -31,6 +30,7 @@ void main() {
   test('none + straight crop → warped JPEG, long side ≤ 3500, fast', () async {
     final s = Stopwatch()..start();
     final out = await p.process(_cap(6000, 4500), _straight, EnhancerMode.none);
+    // ignore: avoid_print
     print('NP1 none/straight: ${s.elapsedMilliseconds}ms');
     expect(out, isNotNull);
     final d = img.decodeImage(out!)!;

@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:flutter/painting.dart' show Offset;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:integration_test/integration_test.dart';
@@ -48,6 +47,7 @@ void main() {
       if (d > maxd) maxd = d;
     }
     final mean = sum / nb.length;
+    // ignore: avoid_print
     print('NP2 native-vs-dart Auto: mean=${mean.toStringAsFixed(3)} max=$maxd');
     expect(mean, lessThan(2.0), reason: 'quality parity gate');
   });
