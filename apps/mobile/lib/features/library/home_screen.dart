@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-import '../scan/camera_screen.dart';
+import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
 import 'document_repository.dart';
 import 'document_sort.dart';
@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) =>
-            CameraScreen(dependencies: widget.dependencies, repository: repo),
+            ScanScreen(dependencies: widget.dependencies, repository: repo),
       ),
     );
     await _refresh(); // a save may have happened while we were away

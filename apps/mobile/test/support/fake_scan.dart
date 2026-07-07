@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -233,6 +234,17 @@ ScanDependencies liveDetectionScanDependencies({
       },
       createEdgeDetector: () => FakeEdgeDetector(result: detectionResult),
     );
+
+/// A [DocumentScannerService] whose [scan] never completes — use in host widget
+/// tests that need to assert "ScanScreen is visible" without letting [_run()]
+/// immediately pop back. Unlike [FakeDocumentScannerService([])] (which pops
+/// on the same frame), this leaves ScanScreen on-screen indefinitely, allowing
+/// assertions before the CircularProgressIndicator causes pumpAndSettle to hang.
+class HangingDocumentScannerService implements DocumentScannerService {
+  @override
+  Future<List<CapturedImage>> scan({int? pageLimit}) =>
+      Completer<List<CapturedImage>>().future;
+}
 
 /// In-memory fake of [DocumentScannerService]. Returns [pages] (use NON-LOADABLE
 /// paths in host widget tests so FilterPickerStrip does not generate thumbnails).

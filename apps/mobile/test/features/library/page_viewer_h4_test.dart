@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
-import 'package:mobile/features/scan/camera_permission_service.dart';
-import 'package:mobile/features/scan/camera_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
+import 'package:mobile/features/scan/scan_screen.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
@@ -115,20 +114,20 @@ void main() {
     expect(find.byType(PageViewerScreen), findsOneWidget);
   });
 
-  testWidgets('Retake page pushes the camera', (tester) async {
+  testWidgets('Retake page pushes the scan screen', (tester) async {
     final repo = twoPageRepo();
-    // Camera-unavailable deps: builds CameraScreen without platform channels.
+    // Inject a never-completing scanner so ScanScreen stays visible.
+    // pumpAndSettle must NOT be used after tapping retake — ScanScreen shows
+    // a CircularProgressIndicator that keeps scheduling animation frames.
     final deps = ScanDependencies(
-      createPermissionService: () =>
-          FakeCameraPermissionService(CameraPermissionStatus.granted),
-      createPreviewController: () =>
-          FakeCameraPreviewController(captureReturnPath: '/nonexistent/r.jpg'),
+      createDocumentScanner: HangingDocumentScannerService.new,
     );
     await pushViewer(tester, repo, deps: deps);
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-retake')));
-    await tester.pumpAndSettle();
-    expect(find.byType(CameraScreen), findsOneWidget);
+    await tester.pump(); // dispatch tap, push ScanScreen, post-frame _run() starts
+    await tester.pump(); // settle pending microtasks; _run() awaits scanner
+    expect(find.byType(ScanScreen), findsOneWidget);
   });
 }
