@@ -7,6 +7,7 @@ import 'package:mobile/features/scan/camera_frame.dart';
 import 'package:mobile/features/scan/camera_permission_service.dart';
 import 'package:mobile/features/scan/camera_preview_controller.dart';
 import 'package:mobile/features/scan/captured_image.dart';
+import 'package:mobile/features/scan/document_scanner_service.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/scan/gallery_picker.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
@@ -232,3 +233,20 @@ ScanDependencies liveDetectionScanDependencies({
       },
       createEdgeDetector: () => FakeEdgeDetector(result: detectionResult),
     );
+
+/// In-memory fake of [DocumentScannerService]. Returns [pages] (use NON-LOADABLE
+/// paths in host widget tests so FilterPickerStrip does not generate thumbnails).
+/// An empty [pages] simulates a cancelled scan.
+class FakeDocumentScannerService implements DocumentScannerService {
+  final List<CapturedImage> pages;
+  int scanCalls = 0;
+  int? lastPageLimit;
+  FakeDocumentScannerService(this.pages);
+
+  @override
+  Future<List<CapturedImage>> scan({int? pageLimit}) async {
+    scanCalls++;
+    lastPageLimit = pageLimit;
+    return pages;
+  }
+}
