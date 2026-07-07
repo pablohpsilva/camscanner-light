@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import '../test/step/a_document_with2_real_page_images_was_saved_to_persistent_storage_earlier.dart';
+import './../test/step/a_document_with2_real_page_images_was_saved_to_persistent_storage_earlier.dart';
 import './../test/step/the_app_launches_reading_that_same_storage.dart';
 import './../test/step/i_open_the_first_document.dart';
 import './../test/step/i_split_after_the_first_page.dart';
