@@ -55,7 +55,9 @@ class _CameraScreenState extends State<CameraScreen> {
   bool _isDetecting = false;
   ScanFlashMode _flashMode = ScanFlashMode.off;
   DetectionResult? _liveResult;
-  bool _autoCaptureEnabled = true;
+  // Auto-capture starts paused: the user opts in via the toggle. Auto-firing by
+  // default surprised users (and could capture on a mis-detected frame).
+  bool _autoCaptureEnabled = false;
   double _autoProgress = 0;
   final AutoCaptureController _autoCapture = AutoCaptureController();
   int? _activeDocId;

@@ -61,11 +61,36 @@ Future<void> _emitStable(WidgetTester tester, FakeCameraPreviewController fake,
 }
 
 void main() {
-  testWidgets('auto-capture (default ON) fires after N stable frames',
+  testWidgets('auto-capture is OFF (paused) by default', (tester) async {
+    final fake = _fake();
+    await tester.pumpWidget(_screen(fake));
+    await tester.pumpAndSettle(); // ready + sampling
+
+    // The toggle shows the paused icon by default.
+    expect(
+        tester
+            .widget<Icon>(find.descendant(
+              of: find.byKey(const Key('scan-auto-capture-toggle')),
+              matching: find.byType(Icon),
+            ))
+            .icon,
+        Icons.motion_photos_paused);
+
+    // Many stable frames must NOT auto-fire while disabled by default.
+    await _emitStable(tester, fake, 8);
+    await tester.pumpAndSettle();
+    expect(find.byType(CaptureReviewScreen), findsNothing);
+  });
+
+  testWidgets('auto-capture (once enabled) fires after N stable frames',
       (tester) async {
     final fake = _fake();
     await tester.pumpWidget(_screen(fake));
     await tester.pumpAndSettle(); // ready + sampling
+
+    // Enable auto-capture (off by default).
+    await tester.tap(find.byKey(const Key('scan-auto-capture-toggle')));
+    await tester.pump();
 
     await _emitStable(
         tester, fake, AutoCaptureController().requiredStableFrames);
@@ -74,12 +99,15 @@ void main() {
     expect(find.byType(CaptureReviewScreen), findsOneWidget);
   });
 
-  testWidgets('toggling auto-capture off suppresses auto-fire',
+  testWidgets('toggling auto-capture on then off suppresses auto-fire',
       (tester) async {
     final fake = _fake();
     await tester.pumpWidget(_screen(fake));
     await tester.pumpAndSettle();
 
+    // Enable then disable — the toggle must turn auto-capture back off.
+    await tester.tap(find.byKey(const Key('scan-auto-capture-toggle')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('scan-auto-capture-toggle')));
     await tester.pump();
 
@@ -95,9 +123,7 @@ void main() {
     await tester.pumpWidget(_screen(fake));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('scan-auto-capture-toggle')));
-    await tester.pump();
-
+    // Auto-capture is off by default — no toggle needed.
     await tester.tap(find.byKey(const Key('scan-shutter')));
     await tester.pumpAndSettle();
 
@@ -109,6 +135,10 @@ void main() {
     final fake = _fake();
     await tester.pumpWidget(_screen(fake));
     await tester.pumpAndSettle();
+
+    // Enable auto-capture (off by default) so the ring can climb.
+    await tester.tap(find.byKey(const Key('scan-auto-capture-toggle')));
+    await tester.pump();
 
     final n = AutoCaptureController().requiredStableFrames;
     await _emitStable(tester, fake, n ~/ 2); // partway: progress > 0, not yet firing
