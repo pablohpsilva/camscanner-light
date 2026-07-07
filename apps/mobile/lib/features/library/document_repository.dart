@@ -59,9 +59,10 @@ abstract interface class DocumentRepository {
   /// Exports the page at [position] of [documentId] as a standalone JPG on device.
   /// Reads the page's display image (the flattened derivative when present, else
   /// the original capture), passes the bytes through the metadata scrubber, writes
-  /// `documents/<id>/page_<position>_export.jpg`, and returns the file. Nothing
-  /// leaves the device. Throws [DocumentExportException] when the page row/file is
-  /// missing or the scrub fails.
+  /// the result to a temporary file (same temp-file discipline as [exportPdf], so
+  /// export derivatives never accumulate in the persistent, backed-up store), and
+  /// returns the file. Nothing leaves the device. Throws [DocumentExportException]
+  /// when the page row/file is missing or the scrub fails.
   Future<File> exportPageAsImage(int documentId, int position,
       {ExportQuality quality = ExportQuality.original});
 

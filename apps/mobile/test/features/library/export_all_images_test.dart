@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
+import 'package:path/path.dart' as p;
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
@@ -57,9 +58,11 @@ void main() {
     final files = await repo.exportAllPagesAsImages(id);
 
     expect(files.length, 2);
-    expect(files[0].path, endsWith('page_1_export.jpg'));
-    expect(files[1].path, endsWith('page_2_export.jpg'));
+    // Exports go to the OS temp/cache dir, never the persistent backed-up store.
     for (final f in files) {
+      expect(f.path, endsWith('.jpg'));
+      expect(p.isWithin(base.path, f.path), isFalse,
+          reason: 'export must not be written into the persistent, backed-up store');
       final bytes = await f.readAsBytes();
       expect(bytes.sublist(0, 2), [0xFF, 0xD8]); // JPEG magic
     }

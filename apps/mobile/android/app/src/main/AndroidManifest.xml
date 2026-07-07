@@ -4,7 +4,14 @@
     <application
         android:label="ScannerCam Light"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"><!--
+        Privacy: scanned documents (the SQLite OCR/full-text DB and page images)
+        must never leave the device automatically. allowBackup="false" disables
+        Google Auto Backup + key/value backup + adb backup on all API levels;
+        dataExtractionRules additionally opts out of Android 12+ cloud-backup and
+        device-to-device transfer. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

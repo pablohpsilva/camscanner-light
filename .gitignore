@@ -20,3 +20,6 @@ apps/mobile/.flutter-plugins-dependencies
 
 # Superpowers SDD scratch
 .superpowers/
+
+# Playwright MCP debug output
+.playwright-mcp/
