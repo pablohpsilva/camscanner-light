@@ -60,9 +60,27 @@ void main() {
     await tester.tap(find.byKey(const Key('review-accept')));
     await tester.pumpAndSettle(); // save all → pop
 
+    expect(find.byType(ScanScreen), findsNothing); // popped after successful save
     expect(repo.createCalls, 1);
     expect(repo.addPageCalls, 2);
     expect(repo.lastSavedCorners, CropCorners.fullFrame);
+  });
+
+  testWidgets('save failure: stays on screen and shows retry', (tester) async {
+    final repo = FakeDocumentRepository(throwOnCreate: true);
+    await tester.pumpWidget(_host(ScanScreen(
+      dependencies: _deps(const ['/nonexistent/scan_fail.jpg']),
+      repository: repo,
+    )));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle(); // scanner returns → review pushed
+
+    expect(find.byType(CaptureReviewScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('review-accept')));
+    await tester.pumpAndSettle(); // save fails → stays on ScanScreen
+
+    expect(find.byKey(const Key('scan-save-error')), findsOneWidget);
+    expect(find.byType(ScanScreen), findsOneWidget); // NOT popped
   });
 
   testWidgets('retake mode: single page → onCapture with enhancer, pageLimit 1',

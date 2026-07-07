@@ -33,6 +33,9 @@ class _ScanScreenState extends State<ScanScreen> {
   late final DocumentScannerService _scanner;
   late final SaveController _saveController;
   int _pageCount = 0;
+  List<CapturedImage>? _pages;
+  ImageEnhancer? _enhancer;
+  bool _saveFailed = false;
 
   @override
   void initState() {
@@ -58,12 +61,31 @@ class _ScanScreenState extends State<ScanScreen> {
       return;
     }
     if (retake) {
-      await widget.onCapture!(pages.first, CropCorners.fullFrame, enhancer);
-      if (mounted) navigator.pop();
+      final messenger = ScaffoldMessenger.of(context);
+      final success =
+          await widget.onCapture!(pages.first, CropCorners.fullFrame, enhancer);
+      if (!mounted) return;
+      if (!success) {
+        messenger.showSnackBar(
+          const SnackBar(
+              content: Text("Couldn't replace page. Try again.")),
+        );
+      }
+      navigator.pop();
       return;
     }
+    setState(() {
+      _pages = pages;
+      _enhancer = enhancer;
+    });
     await _saveAll(pages, enhancer);
-    if (mounted) navigator.pop();
+    if (mounted && !_saveFailed) navigator.pop();
+  }
+
+  Future<void> _retry() async {
+    setState(() => _saveFailed = false);
+    await _saveAll(_pages!, _enhancer!);
+    if (mounted && !_saveFailed) Navigator.of(context).pop();
   }
 
   /// Shows one filter-only review on [image]; returns the chosen enhancer, or
@@ -97,6 +119,7 @@ class _ScanScreenState extends State<ScanScreen> {
         corners: CropCorners.fullFrame, enhancer: enhancer);
     if (!mounted) return;
     if (doc == null) {
+      setState(() => _saveFailed = true);
       messenger.showSnackBar(
         const SnackBar(content: Text("Couldn't save document. Try again.")),
       );
@@ -119,6 +142,27 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_saveFailed) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Scan')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Couldn't save the scan.",
+                key: Key('scan-save-error'),
+              ),
+              FilledButton(
+                key: const Key('scan-retry'),
+                onPressed: _retry,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: _pageCount == 0
