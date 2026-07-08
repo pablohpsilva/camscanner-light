@@ -24,12 +24,41 @@ class PdfBuilder {
 
   /// [compress] is the PDF-structure deflate flag (tests pass false to grep the
   /// text overlay). [quality] chooses the per-page image re-encode preset.
+  /// [idCardLayout] emits ONE portrait-A4 page with all images centered and
+  /// vertically stacked (front top, back bottom), aspect-ratio preserved.
   Future<Uint8List> build(
     List<PageImage> pages, {
     bool compress = true,
     ExportQuality quality = ExportQuality.original,
+    bool idCardLayout = false,
   }) async {
     final doc = pw.Document(compress: compress);
+    if (idCardLayout && pages.isNotEmpty) {
+      final images = <pw.MemoryImage>[];
+      for (final page in pages) {
+        final raw = await File(page.displayPath).readAsBytes();
+        final bytes = await compressor.compress(raw, quality);
+        images.add(pw.MemoryImage(bytes));
+      }
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(24),
+          build: (context) => pw.Column(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < images.length; i++) ...[
+                if (i > 0) pw.SizedBox(height: 24),
+                pw.Expanded(
+                  child: pw.Image(images[i], fit: pw.BoxFit.contain),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+      return doc.save();
+    }
     for (final page in pages) {
       final raw = await File(page.displayPath).readAsBytes();
       final bytes = await compressor.compress(raw, quality);
