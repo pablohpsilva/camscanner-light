@@ -422,7 +422,7 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('protect failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages);
+      final bytes = await _pdfBuilder.build(pages, idCardLayout: await _isIdCard(documentId));
       final encrypted = await _encryptor.encrypt(bytes, password);
       final dir = await Directory.systemTemp.createTemp('pdf_protect');
       final safeName = await _pdfFileNameFor(documentId);
