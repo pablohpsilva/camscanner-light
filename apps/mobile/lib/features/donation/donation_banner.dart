@@ -24,10 +24,10 @@ class DonationBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(Icons.local_cafe_outlined, color: amber),
+                const Text('❤️', style: TextStyle(fontSize: 22)),
                 const SizedBox(width: 12),
                 const Expanded(
-                  child: Text('Enjoying the app? Tap to support it ❤️'),
+                  child: Text('Enjoying the app? Tap to support it'),
                 ),
                 Icon(Icons.chevron_right, color: amber),
               ],
