@@ -53,8 +53,29 @@ class $DocumentsTable extends Documents
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isIdCardMeta = const VerificationMeta(
+    'isIdCard',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt, modifiedAt];
+  late final GeneratedColumn<bool> isIdCard = GeneratedColumn<bool>(
+    'is_id_card',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_id_card" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    createdAt,
+    modifiedAt,
+    isIdCard,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -94,6 +115,12 @@ class $DocumentsTable extends Documents
     } else if (isInserting) {
       context.missing(_modifiedAtMeta);
     }
+    if (data.containsKey('is_id_card')) {
+      context.handle(
+        _isIdCardMeta,
+        isIdCard.isAcceptableOrUnknown(data['is_id_card']!, _isIdCardMeta),
+      );
+    }
     return context;
   }
 
@@ -119,6 +146,10 @@ class $DocumentsTable extends Documents
         DriftSqlType.dateTime,
         data['${effectivePrefix}modified_at'],
       )!,
+      isIdCard: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_id_card'],
+      )!,
     );
   }
 
@@ -133,11 +164,16 @@ class Document extends DataClass implements Insertable<Document> {
   final String name;
   final DateTime createdAt;
   final DateTime modifiedAt;
+
+  /// True when this document is an ID card (front + back). Only its PDF export
+  /// layout differs (single page, both images centered). Default false.
+  final bool isIdCard;
   const Document({
     required this.id,
     required this.name,
     required this.createdAt,
     required this.modifiedAt,
+    required this.isIdCard,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -146,6 +182,7 @@ class Document extends DataClass implements Insertable<Document> {
     map['name'] = Variable<String>(name);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['modified_at'] = Variable<DateTime>(modifiedAt);
+    map['is_id_card'] = Variable<bool>(isIdCard);
     return map;
   }
 
@@ -155,6 +192,7 @@ class Document extends DataClass implements Insertable<Document> {
       name: Value(name),
       createdAt: Value(createdAt),
       modifiedAt: Value(modifiedAt),
+      isIdCard: Value(isIdCard),
     );
   }
 
@@ -168,6 +206,7 @@ class Document extends DataClass implements Insertable<Document> {
       name: serializer.fromJson<String>(json['name']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       modifiedAt: serializer.fromJson<DateTime>(json['modifiedAt']),
+      isIdCard: serializer.fromJson<bool>(json['isIdCard']),
     );
   }
   @override
@@ -178,6 +217,7 @@ class Document extends DataClass implements Insertable<Document> {
       'name': serializer.toJson<String>(name),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'modifiedAt': serializer.toJson<DateTime>(modifiedAt),
+      'isIdCard': serializer.toJson<bool>(isIdCard),
     };
   }
 
@@ -186,11 +226,13 @@ class Document extends DataClass implements Insertable<Document> {
     String? name,
     DateTime? createdAt,
     DateTime? modifiedAt,
+    bool? isIdCard,
   }) => Document(
     id: id ?? this.id,
     name: name ?? this.name,
     createdAt: createdAt ?? this.createdAt,
     modifiedAt: modifiedAt ?? this.modifiedAt,
+    isIdCard: isIdCard ?? this.isIdCard,
   );
   Document copyWithCompanion(DocumentsCompanion data) {
     return Document(
@@ -200,6 +242,7 @@ class Document extends DataClass implements Insertable<Document> {
       modifiedAt: data.modifiedAt.present
           ? data.modifiedAt.value
           : this.modifiedAt,
+      isIdCard: data.isIdCard.present ? data.isIdCard.value : this.isIdCard,
     );
   }
 
@@ -209,13 +252,14 @@ class Document extends DataClass implements Insertable<Document> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
-          ..write('modifiedAt: $modifiedAt')
+          ..write('modifiedAt: $modifiedAt, ')
+          ..write('isIdCard: $isIdCard')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt, modifiedAt);
+  int get hashCode => Object.hash(id, name, createdAt, modifiedAt, isIdCard);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -223,7 +267,8 @@ class Document extends DataClass implements Insertable<Document> {
           other.id == this.id &&
           other.name == this.name &&
           other.createdAt == this.createdAt &&
-          other.modifiedAt == this.modifiedAt);
+          other.modifiedAt == this.modifiedAt &&
+          other.isIdCard == this.isIdCard);
 }
 
 class DocumentsCompanion extends UpdateCompanion<Document> {
@@ -231,17 +276,20 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
   final Value<String> name;
   final Value<DateTime> createdAt;
   final Value<DateTime> modifiedAt;
+  final Value<bool> isIdCard;
   const DocumentsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.modifiedAt = const Value.absent(),
+    this.isIdCard = const Value.absent(),
   });
   DocumentsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required DateTime createdAt,
     required DateTime modifiedAt,
+    this.isIdCard = const Value.absent(),
   }) : name = Value(name),
        createdAt = Value(createdAt),
        modifiedAt = Value(modifiedAt);
@@ -250,12 +298,14 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Expression<String>? name,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? modifiedAt,
+    Expression<bool>? isIdCard,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (createdAt != null) 'created_at': createdAt,
       if (modifiedAt != null) 'modified_at': modifiedAt,
+      if (isIdCard != null) 'is_id_card': isIdCard,
     });
   }
 
@@ -264,12 +314,14 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Value<String>? name,
     Value<DateTime>? createdAt,
     Value<DateTime>? modifiedAt,
+    Value<bool>? isIdCard,
   }) {
     return DocumentsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       createdAt: createdAt ?? this.createdAt,
       modifiedAt: modifiedAt ?? this.modifiedAt,
+      isIdCard: isIdCard ?? this.isIdCard,
     );
   }
 
@@ -288,6 +340,9 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     if (modifiedAt.present) {
       map['modified_at'] = Variable<DateTime>(modifiedAt.value);
     }
+    if (isIdCard.present) {
+      map['is_id_card'] = Variable<bool>(isIdCard.value);
+    }
     return map;
   }
 
@@ -297,7 +352,8 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
-          ..write('modifiedAt: $modifiedAt')
+          ..write('modifiedAt: $modifiedAt, ')
+          ..write('isIdCard: $isIdCard')
           ..write(')'))
         .toString();
   }
@@ -867,6 +923,7 @@ typedef $$DocumentsTableCreateCompanionBuilder =
       required String name,
       required DateTime createdAt,
       required DateTime modifiedAt,
+      Value<bool> isIdCard,
     });
 typedef $$DocumentsTableUpdateCompanionBuilder =
     DocumentsCompanion Function({
@@ -874,6 +931,7 @@ typedef $$DocumentsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<DateTime> createdAt,
       Value<DateTime> modifiedAt,
+      Value<bool> isIdCard,
     });
 
 final class $$DocumentsTableReferences
@@ -926,6 +984,11 @@ class $$DocumentsTableFilterComposer
 
   ColumnFilters<DateTime> get modifiedAt => $composableBuilder(
     column: $table.modifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isIdCard => $composableBuilder(
+    column: $table.isIdCard,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -983,6 +1046,11 @@ class $$DocumentsTableOrderingComposer
     column: $table.modifiedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isIdCard => $composableBuilder(
+    column: $table.isIdCard,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DocumentsTableAnnotationComposer
@@ -1007,6 +1075,9 @@ class $$DocumentsTableAnnotationComposer
     column: $table.modifiedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get isIdCard =>
+      $composableBuilder(column: $table.isIdCard, builder: (column) => column);
 
   Expression<T> pagesRefs<T extends Object>(
     Expression<T> Function($$PagesTableAnnotationComposer a) f,
@@ -1066,11 +1137,13 @@ class $$DocumentsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> modifiedAt = const Value.absent(),
+                Value<bool> isIdCard = const Value.absent(),
               }) => DocumentsCompanion(
                 id: id,
                 name: name,
                 createdAt: createdAt,
                 modifiedAt: modifiedAt,
+                isIdCard: isIdCard,
               ),
           createCompanionCallback:
               ({
@@ -1078,11 +1151,13 @@ class $$DocumentsTableTableManager
                 required String name,
                 required DateTime createdAt,
                 required DateTime modifiedAt,
+                Value<bool> isIdCard = const Value.absent(),
               }) => DocumentsCompanion.insert(
                 id: id,
                 name: name,
                 createdAt: createdAt,
                 modifiedAt: modifiedAt,
+                isIdCard: isIdCard,
               ),
           withReferenceMapper: (p0) => p0
               .map(

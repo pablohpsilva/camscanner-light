@@ -13,6 +13,10 @@ class Documents extends Table {
   TextColumn get name => text()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get modifiedAt => dateTime()();
+
+  /// True when this document is an ID card (front + back). Only its PDF export
+  /// layout differs (single page, both images centered). Default false.
+  BoolColumn get isIdCard => boolean().withDefault(const Constant(false))();
 }
 
 /// One page of a document. B1 creates exactly one page (position 1). The image
@@ -45,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -64,6 +68,7 @@ class AppDatabase extends _$AppDatabase {
         await _createFts();
         await _backfillFts();
       }
+      if (from < 6) await m.addColumn(documents, documents.isIdCard);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
