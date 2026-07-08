@@ -360,7 +360,8 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('export failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages, quality: quality);
+      final bytes = await _pdfBuilder.build(pages,
+          quality: quality, idCardLayout: await _isIdCard(documentId));
       final dir = await Directory.systemTemp.createTemp('pdf_export');
       final safeName = await _pdfFileNameFor(documentId);
       final file = File('${dir.path}/$safeName');
@@ -369,6 +370,13 @@ class DriftDocumentRepository implements DocumentRepository {
     } catch (e) {
       throw DocumentExportException('export failed: $e');
     }
+  }
+
+  Future<bool> _isIdCard(int documentId) async {
+    final row = await (_db.select(_db.documents)
+          ..where((d) => d.id.equals(documentId)))
+        .getSingleOrNull();
+    return row?.isIdCard ?? false;
   }
 
   @override
@@ -414,7 +422,7 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('protect failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages);
+      final bytes = await _pdfBuilder.build(pages, idCardLayout: await _isIdCard(documentId));
       final encrypted = await _encryptor.encrypt(bytes, password);
       final dir = await Directory.systemTemp.createTemp('pdf_protect');
       final safeName = await _pdfFileNameFor(documentId);
@@ -1026,5 +1034,18 @@ class DriftDocumentRepository implements DocumentRepository {
         await f.delete();
       }
     } catch (_) {/* best-effort */}
+  }
+
+  @override
+  Future<void> markAsIdCard(int documentId) async {
+    final updated = await (_db.update(_db.documents)
+          ..where((d) => d.id.equals(documentId)))
+        .write(DocumentsCompanion(
+      isIdCard: const Value(true),
+      modifiedAt: Value(_clock().toUtc()),
+    ));
+    if (updated == 0) {
+      throw const DocumentSaveException('markAsIdCard: document not found');
+    }
   }
 }

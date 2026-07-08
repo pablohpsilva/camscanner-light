@@ -396,6 +396,13 @@ class FakeDocumentRepository implements DocumentRepository {
     );
   }
 
+  final List<int> markIdCardCalls = <int>[];
+
+  @override
+  Future<void> markAsIdCard(int documentId) async {
+    markIdCardCalls.add(documentId);
+  }
+
   int rotateCalls = 0;
   int? lastRotatedPosition;
 

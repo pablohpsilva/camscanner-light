@@ -7,6 +7,68 @@ import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Creates the v5-shaped documents + pages tables (no is_id_card column)
+/// including the FTS virtual table and triggers that were added in v4/v5, then
+/// sets PRAGMA user_version = 5.  The FTS table is required because the
+/// onUpgrade path only calls _createFts() when from < 5; skipping it would
+/// make the v5→v6 step leave the DB without the trigger set.
+void _buildV5Db(sqlite.Database raw) {
+  raw.execute('''
+    CREATE TABLE documents (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      modified_at TEXT NOT NULL
+    );
+  ''');
+  raw.execute('''
+    CREATE TABLE pages (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      document_id INTEGER NOT NULL REFERENCES documents (id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      relative_image_path TEXT NOT NULL,
+      corners TEXT,
+      flat_relative_path TEXT,
+      ocr_text TEXT,
+      ocr_boxes TEXT
+    );
+  ''');
+  raw.execute(
+      "CREATE VIRTUAL TABLE doc_fts USING fts5(text, tokenize = 'trigram')");
+  raw.execute(
+    "CREATE TRIGGER doc_fts_ai AFTER INSERT ON pages "
+    "WHEN NEW.ocr_text IS NOT NULL BEGIN "
+    "DELETE FROM doc_fts WHERE rowid = NEW.document_id; "
+    "INSERT INTO doc_fts(rowid, text) "
+    "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+    "WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL "
+    "GROUP BY document_id; END",
+  );
+  raw.execute(
+    "CREATE TRIGGER doc_fts_au AFTER UPDATE OF ocr_text ON pages "
+    "BEGIN "
+    "DELETE FROM doc_fts WHERE rowid = NEW.document_id; "
+    "INSERT INTO doc_fts(rowid, text) "
+    "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+    "WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL "
+    "GROUP BY document_id; END",
+  );
+  raw.execute(
+    "CREATE TRIGGER doc_fts_ad AFTER DELETE ON pages "
+    "BEGIN "
+    "DELETE FROM doc_fts WHERE rowid = OLD.document_id; "
+    "INSERT INTO doc_fts(rowid, text) "
+    "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+    "WHERE document_id = OLD.document_id AND ocr_text IS NOT NULL "
+    "GROUP BY document_id; END",
+  );
+  raw.execute('PRAGMA user_version = 5;');
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -137,6 +199,61 @@ void main() {
     expect(rows.single.flatRelativePath, isNull);
     expect(CropCorners.tryParse(rows.single.corners) ?? CropCorners.fullFrame,
         CropCorners.fullFrame);
+
+    await db.close();
+    await dir.delete(recursive: true);
+  });
+
+  // ---------------------------------------------------------------------------
+  // v5 → v6 : Documents.isIdCard column
+  // ---------------------------------------------------------------------------
+
+  test('schemaVersion is 6', () {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    expect(db.schemaVersion, 6);
+  });
+
+  test('fresh DB has the isIdCard column defaulting to false', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
+          name: 'Doc',
+          createdAt: DateTime.utc(2026, 7, 8),
+          modifiedAt: DateTime.utc(2026, 7, 8),
+        ));
+    final row = await (db.select(db.documents)
+          ..where((d) => d.id.equals(id)))
+        .getSingle();
+    expect(row.isIdCard, isFalse);
+  });
+
+  test('v5→v6: upgrading adds Documents.is_id_card defaulting to false', () async {
+    final dir = await Directory.systemTemp.createTemp('idmig_v5v6');
+    final file = File('${dir.path}/app.db');
+
+    // 1) Build a v5-shaped DB without is_id_card.
+    final raw = sqlite.sqlite3.open(file.path);
+    _buildV5Db(raw);
+    raw.execute("INSERT INTO documents (id, name, created_at, modified_at) "
+        "VALUES (1, 'Old Doc', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');");
+    raw.close();
+
+    // 2) Open at v6 → triggers onUpgrade (from=5, adds is_id_card).
+    final db = AppDatabase(NativeDatabase(file));
+
+    // 3a) Legacy row reads back false (column default).
+    final rows = await db.select(db.documents).get();
+    expect(rows, hasLength(1));
+    expect(rows.single.isIdCard, isFalse);
+
+    // 3b) A fresh isIdCard=true write round-trips.
+    await (db.update(db.documents)..where((d) => d.id.equals(1)))
+        .write(const DocumentsCompanion(isIdCard: Value(true)));
+    final updated =
+        await (db.select(db.documents)..where((d) => d.id.equals(1)))
+            .getSingle();
+    expect(updated.isIdCard, isTrue);
 
     await db.close();
     await dir.delete(recursive: true);

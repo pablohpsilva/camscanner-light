@@ -3,6 +3,7 @@ import 'package:path/path.dart' as p;
 
 import '../scan/capture_review_screen.dart';
 import '../scan/captured_image.dart';
+import '../scan/id_scan_screen.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
 import 'document_repository.dart';
@@ -131,6 +132,18 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     await _refresh(); // a save may have happened while we were away
+  }
+
+  Future<void> _openIdScan() async {
+    final repo = _repository;
+    if (repo == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            IdScanScreen(dependencies: widget.dependencies, repository: repo),
+      ),
+    );
+    await _refresh();
   }
 
   Future<void> _onImport() async {
@@ -378,6 +391,12 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar _buildNormalAppBar() => AppBar(
     title: const Text('Documents'),
     actions: [
+      IconButton(
+        key: const Key('home-scan-id'),
+        tooltip: 'Scan ID card',
+        icon: const Icon(Icons.badge_outlined),
+        onPressed: _repository == null ? null : _openIdScan,
+      ),
       IconButton(
         key: const Key('home-import'),
         tooltip: 'Import from gallery',
