@@ -7,11 +7,8 @@ import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
 import '../library/crop_corners.dart';
-import 'camera_frame.dart';
 import 'detector_geometry.dart';
 import 'edge_detector.dart';
-import 'frame_reducer.dart';
-import 'gray_frame.dart';
 
 /// Runs the native detection pipeline for [bytes], returning the flat result
 /// list (see [_runPipeline]) or null. Injectable so tests can exercise the
@@ -52,18 +49,6 @@ class OpenCvEdgeDetector implements EdgeDetector {
     if (raw == null) return null;
     return _resultFromFlat(raw);
   }
-
-  @override
-  Future<DetectionResult?> detectFrame(CameraFrame frame) async {
-    try {
-      final gray = reduceToGray(frame, maxSide: _kLiveDetectMaxSide);
-      final flat = await compute(_segmentGrayFrame, gray).timeout(timeout);
-      if (flat == null) return null;
-      return _resultFromFlat(flat);
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 /// Maps a flat 9-element result list to a [DetectionResult].
@@ -87,11 +72,6 @@ DetectionResult _resultFromFlat(List<double> flat) => DetectionResult(
 /// turns into spurious contours; a modest working size is both more robust and
 /// much faster. Corners are normalized to [0..1], so this is coordinate-safe.
 const int _kDetectMaxSide = 1024;
-
-/// Longest side (px) for LIVE frame detection — coarser than the still path
-/// (`_kDetectMaxSide`) because the live overlay is only a guide; the final crop
-/// corners come from `detect()` on the full-resolution still.
-const int _kLiveDetectMaxSide = 400;
 
 /// Gaussian blur kernel side (odd) applied before Otsu, to suppress text and
 /// texture so the whole page reads as one region.
@@ -126,27 +106,6 @@ List<double>? _runPipeline(Uint8List bytes) {
     return _runPipelineOnMat(mat); // takes ownership: disposes `mat`
   } catch (_) {
     mat?.dispose();
-    return null;
-  }
-}
-
-/// Isolate entry (top-level, for `compute()`): wraps a [GrayFrame]'s single-channel
-/// bytes as a CV_8UC1 Mat and runs the shared segmentation. Returns the flat
-/// 9-element result (see [_resultFromFlat]) or null.
-List<double>? _segmentGrayFrame(GrayFrame frame) {
-  cv.Mat? gray;
-  try {
-    gray = cv.Mat.fromList(
-        frame.height, frame.width, cv.MatType.CV_8UC1, frame.bytes);
-    if (gray.isEmpty) {
-      gray.dispose();
-      return null;
-    }
-    final out = _segmentGray(gray); // takes ownership: disposes `gray`
-    gray = null;
-    return out;
-  } catch (_) {
-    gray?.dispose();
     return null;
   }
 }

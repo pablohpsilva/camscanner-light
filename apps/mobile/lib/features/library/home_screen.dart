@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-import '../scan/camera_screen.dart';
+import '../scan/capture_review_screen.dart';
+import '../scan/captured_image.dart';
+import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
 import 'document_repository.dart';
 import 'document_sort.dart';
 import 'document_summary.dart';
 import 'library_dependencies.dart';
 import 'page_viewer_screen.dart';
+import 'save_controller.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
 import 'widgets/rename_dialog.dart';
@@ -124,10 +127,65 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) =>
-            CameraScreen(dependencies: widget.dependencies, repository: repo),
+            ScanScreen(dependencies: widget.dependencies, repository: repo),
       ),
     );
     await _refresh(); // a save may have happened while we were away
+  }
+
+  Future<void> _onImport() async {
+    final repo = _repository;
+    if (repo == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    CapturedImage? image;
+    try {
+      image = await widget.dependencies.createGalleryPicker().pick();
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Couldn't import photo")),
+      );
+      return;
+    }
+    if (image == null) return; // user cancelled
+    if (!mounted) return;
+
+    final capturedImage = image;
+    final navigator = Navigator.of(context);
+    final edgeDetector = widget.dependencies.createEdgeDetector();
+    final saveController = SaveController(repository: repo);
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => ListenableBuilder(
+          listenable: saveController,
+          builder: (context, _) => CaptureReviewScreen(
+            image: capturedImage,
+            enableCrop: true,
+            edgeDetector: edgeDetector,
+            saving: saveController.saving,
+            onRetake: () => navigator.pop(),
+            onAccept: (corners, enhancer) async {
+              final doc = await saveController.save(
+                capturedImage,
+                corners: corners,
+                enhancer: enhancer,
+              );
+              if (!mounted) return;
+              if (doc == null) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                      content: Text("Couldn't save document. Try again.")),
+                );
+                return;
+              }
+              navigator.pop();
+              await _refresh();
+            },
+          ),
+        ),
+      ),
+    );
+    saveController.dispose();
   }
 
   Future<void> _openDocument(DocumentSummary s) async {
@@ -320,6 +378,12 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar _buildNormalAppBar() => AppBar(
     title: const Text('Documents'),
     actions: [
+      IconButton(
+        key: const Key('home-import'),
+        tooltip: 'Import from gallery',
+        icon: const Icon(Icons.photo_library_outlined),
+        onPressed: _repository == null ? null : _onImport,
+      ),
       IconButton(
         key: const Key('documents-search'),
         tooltip: 'Search',

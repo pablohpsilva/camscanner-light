@@ -1,8 +1,6 @@
 Feature: Sort the library
   Scenario: Switch the library sort to name
-    Given the app is launched with camera permission granted and empty storage
-    When I tap the Scan button
-    And I tap the shutter
-    And I tap Accept
+    Given a document with a real page image was saved to persistent storage earlier
+    When the app launches reading that same storage
     And I tap the sort chip {'name'}
     Then I see the sort chip {'name'} is active

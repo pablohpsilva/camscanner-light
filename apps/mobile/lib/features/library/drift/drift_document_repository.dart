@@ -13,6 +13,7 @@ import '../export/export_quality.dart';
 import '../export/image_compressor.dart';
 import '../dart_page_processor.dart';
 import '../enhancer_mode.dart';
+import '../ensure_jpeg.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
@@ -81,7 +82,7 @@ class DriftDocumentRepository implements DocumentRepository {
         late final Uint8List scrubbed;
         try {
           final raw = await File(capture.path).readAsBytes();
-          scrubbed = _scrubber.scrub(Uint8List.fromList(raw));
+          scrubbed = _scrubber.scrub(ensureJpegBytes(Uint8List.fromList(raw)));
           // G1: for full-frame (no warp), apply enhancement to the original
           // before writing. Each ImageEnhancer is responsible for baking EXIF
           // orientation before encoding (encodeJpg strips EXIF).
@@ -647,7 +648,7 @@ class DriftDocumentRepository implements DocumentRepository {
         final newPosition = maxRow.position + 1;
         final rel = _fileStore.relativeFor(documentId, newPosition);
         final raw = await File(capture.path).readAsBytes();
-        final Uint8List scrubbed = _scrubber.scrub(raw);
+        final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
         final isFullFrame =
             corners == null || corners == CropCorners.fullFrame;
         Uint8List bytesToStore = scrubbed;
@@ -766,7 +767,7 @@ class DriftDocumentRepository implements DocumentRepository {
       }
 
       final raw = await File(capture.path).readAsBytes();
-      final Uint8List scrubbed = _scrubber.scrub(raw);
+      final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
       final isFullFrame = corners == null || corners == CropCorners.fullFrame;
 
       Uint8List bytesToStore = scrubbed;

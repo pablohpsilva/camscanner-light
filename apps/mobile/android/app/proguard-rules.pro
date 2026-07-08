@@ -18,6 +18,17 @@
 -dontwarn com.google.android.gms.**
 
 # Flutter plugin implementations reached via registration/reflection
-# (camera, pdfx, printing, share_plus, permission_handler, sqlite3/drift).
+# (pdfx, printing, share_plus, sqlite3/drift, cunning_document_scanner, …).
 -keep class io.flutter.plugins.** { *; }
 -dontwarn io.flutter.plugins.**
+
+# cunning_document_scanner (OS document scanner) transitively pulls Huawei HMS
+# ML/network libs. Their network layer references optional Cronet
+# (org.chromium.net) and Conscrypt classes that are NOT bundled on our
+# Google-services build path, so R8 full-mode aborts on the missing references.
+# Silence them (and the HMS surface) — unreachable on-device via Google services.
+-dontwarn org.chromium.net.**
+-dontwarn org.conscrypt.**
+-dontwarn com.huawei.hms.**
+# Huawei's secure-encrypt util references BouncyCastle crypto that is not bundled.
+-dontwarn org.bouncycastle.**

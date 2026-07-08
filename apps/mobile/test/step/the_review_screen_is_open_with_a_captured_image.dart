@@ -21,7 +21,7 @@ Future<void> theReviewScreenIsOpenWithACapturedImage(
       image: const CapturedImage('/nonexistent/g1bdd.jpg'),
       saving: false,
       onRetake: () {},
-      // Record the enhancer that CameraScreen would pass to SaveController.
+      // Record the enhancer the review screen passes to the save pipeline.
       onAccept: (CropCorners corners, ImageEnhancer enhancer) {
         g1Repo.lastSavedEnhancer = enhancer;
       },

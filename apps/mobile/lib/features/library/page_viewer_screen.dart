@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'share_channel.dart';
 
-import '../scan/camera_screen.dart';
+import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
 import 'crop_corners.dart';
 import 'document_printer.dart';
@@ -317,7 +317,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final page = pages[_current];
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => CameraScreen(
+        builder: (_) => ScanScreen(
           dependencies: widget.dependencies,
           repository: widget.repository,
           onCapture: (image, corners, enhancer) async {

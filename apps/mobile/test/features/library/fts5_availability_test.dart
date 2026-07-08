@@ -25,5 +25,5 @@ class _NoOpUser extends QueryExecutorUser {
   @override
   int get schemaVersion => 1;
   @override
-  Future<void> beforeOpen(_, __) async {}
+  Future<void> beforeOpen(_, _) async {}
 }

@@ -1,8 +1,7 @@
 Feature: Perspective flatten
-  Scenario: Flat image is shown in the page viewer after capture with adjusted corners
+  Scenario: Flat image is shown in the page viewer after import with adjusted corners
     Given the app is launched with camera permission granted and empty storage
-    When I tap the Scan button
-    And I tap the shutter
+    When I tap the import button
     And I see the crop overlay
     And I drag the top left crop corner
     And I tap Accept

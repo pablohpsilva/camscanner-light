@@ -40,6 +40,7 @@ class CaptureReviewScreen extends StatefulWidget {
   final VoidCallback onRetake;
   final void Function(CropCorners corners, ImageEnhancer enhancer) onAccept;
   final bool saving;
+  final bool enableCrop; // NEW: false = filter-only (already-cropped scanner page)
   final Future<Size> Function(String path) decodeImageSize;
   final Future<Uint8List> Function(String path) readBytes;   // NEW
   final EdgeDetector? edgeDetector;                          // NEW
@@ -50,6 +51,7 @@ class CaptureReviewScreen extends StatefulWidget {
     required this.onRetake,
     required this.onAccept,
     this.saving = false,
+    this.enableCrop = true,
     this.decodeImageSize = _resolveImageSize,
     this.readBytes = _defaultReadBytes,     // NEW
     this.edgeDetector,                      // NEW
@@ -92,6 +94,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   }
 
   Future<void> _runDetection() async {
+    if (!widget.enableCrop) return;
     final detector = widget.edgeDetector;
     if (detector == null) return;
     try {
@@ -137,7 +140,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                 ColoredBox(
                   color: Colors.black,
                   child: SizedBox.expand(
-                    child: size == null
+                    child: (!widget.enableCrop || size == null)
                         ? Center(child: _imageWidget())
                         : CropOverlay(
                             imageSize: size,
@@ -183,16 +186,17 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                 icon: const Icon(Icons.replay),
                 label: const Text('Retake'),
               ),
-              TextButton(
-                key: const Key('crop-reset'),
-                onPressed: canCrop
-                    ? () => setState(() {
-                          _userInteracted = true;           // NEW — block in-flight detection
-                          _corners = CropCorners.fullFrame;
-                        })
-                    : null,
-                child: const Text('Reset'),
-              ),
+              if (widget.enableCrop)
+                TextButton(
+                  key: const Key('crop-reset'),
+                  onPressed: canCrop
+                      ? () => setState(() {
+                            _userInteracted = true;           // NEW — block in-flight detection
+                            _corners = CropCorners.fullFrame;
+                          })
+                      : null,
+                  child: const Text('Reset'),
+                ),
               FilledButton.icon(
                 key: const Key('review-accept'),
                 onPressed: widget.saving
