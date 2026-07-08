@@ -360,7 +360,8 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('export failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages, quality: quality);
+      final bytes = await _pdfBuilder.build(pages,
+          quality: quality, idCardLayout: await _isIdCard(documentId));
       final dir = await Directory.systemTemp.createTemp('pdf_export');
       final safeName = await _pdfFileNameFor(documentId);
       final file = File('${dir.path}/$safeName');
@@ -369,6 +370,13 @@ class DriftDocumentRepository implements DocumentRepository {
     } catch (e) {
       throw DocumentExportException('export failed: $e');
     }
+  }
+
+  Future<bool> _isIdCard(int documentId) async {
+    final row = await (_db.select(_db.documents)
+          ..where((d) => d.id.equals(documentId)))
+        .getSingleOrNull();
+    return row?.isIdCard ?? false;
   }
 
   @override

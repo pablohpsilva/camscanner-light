@@ -24,7 +24,8 @@ class RecordingPdfBuilder extends PdfBuilder {
   @override
   Future<Uint8List> build(List<PageImage> pages,
       {bool compress = true,
-      ExportQuality quality = ExportQuality.original}) async {
+      ExportQuality quality = ExportQuality.original,
+      bool idCardLayout = false}) async {
     calls.add(List<PageImage>.of(pages));
     return Uint8List.fromList(const [0x25, 0x50, 0x44, 0x46, 0x0A]); // "%PDF\n"
   }
