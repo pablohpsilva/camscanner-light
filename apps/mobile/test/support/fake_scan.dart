@@ -96,3 +96,19 @@ class FakeDocumentScannerService implements DocumentScannerService {
     return pages;
   }
 }
+
+/// Fake [DocumentScannerService] that returns a different result per call — the
+/// i-th `scan()` returns `results[i]` (empty once exhausted). Use for the 2-step
+/// ID flow (front call, back call).
+class FakeSequentialDocumentScannerService implements DocumentScannerService {
+  final List<List<CapturedImage>> results;
+  int calls = 0;
+  FakeSequentialDocumentScannerService(this.results);
+
+  @override
+  Future<List<CapturedImage>> scan({int? pageLimit}) async {
+    final out = calls < results.length ? results[calls] : const <CapturedImage>[];
+    calls++;
+    return out;
+  }
+}
