@@ -13,6 +13,12 @@ Future<List<String>?> _pluginLaunch({int? noOfPages}) =>
     CunningDocumentScanner.getPictures(
       noOfPages: noOfPages ?? 100,
       scannerSource: ScannerSource.camera,
+      // VisionKit defaults to PNG on iOS; the JPEG storage pipeline (and its
+      // JPEG-only metadata scrubber) needs JPEG, and a full-page PNG is huge.
+      iosScannerOptions: const IosScannerOptions(
+        imageFormat: IosImageFormat.jpg,
+        jpgCompressionQuality: 0.9,
+      ),
     );
 
 class CunningDocumentScannerService implements DocumentScannerService {
