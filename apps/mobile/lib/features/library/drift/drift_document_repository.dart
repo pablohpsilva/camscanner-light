@@ -1027,4 +1027,17 @@ class DriftDocumentRepository implements DocumentRepository {
       }
     } catch (_) {/* best-effort */}
   }
+
+  @override
+  Future<void> markAsIdCard(int documentId) async {
+    final updated = await (_db.update(_db.documents)
+          ..where((d) => d.id.equals(documentId)))
+        .write(DocumentsCompanion(
+      isIdCard: const Value(true),
+      modifiedAt: Value(_clock().toUtc()),
+    ));
+    if (updated == 0) {
+      throw const DocumentSaveException('markAsIdCard: document not found');
+    }
+  }
 }

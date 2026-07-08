@@ -172,6 +172,10 @@ abstract interface class DocumentRepository {
   /// Nothing leaves the device. Throws [DocumentExportException] when the page
   /// row is missing or has no recognized text (null/empty/whitespace).
   Future<File> exportRecognizedText(int documentId, int position);
+
+  /// Flags [documentId] as an ID card (changes only its PDF export layout) and
+  /// bumps modifiedAt. Throws [DocumentSaveException] if the document is missing.
+  Future<void> markAsIdCard(int documentId);
 }
 
 class DocumentSaveException implements Exception {
