@@ -970,6 +970,15 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation** (Apple's 7-step validation)
 
+> **SECURITY CORRECTION (found in review, fixed in commit `e528983`):** the code
+> below pins the Apple root by **subject name** (`last.subject !== root.subject`),
+> which is BYPASSABLE — a self-signed cert with a forged `CN=Apple App Attest Root
+> CA…` subject passes. The shipped code instead pins by **raw DER bytes** via an
+> `isPinnedAppleRoot(cert)` helper (compare `cert.rawData` to the embedded root
+> constant) and additionally binds the client `keyId` to the authData
+> credentialId. If re-running this plan, apply that correction — do not ship the
+> name-only check shown here.
+
 `worker/src/verify/app_attest.ts`:
 ```ts
 import { decode as cborDecode } from "cbor-x";
