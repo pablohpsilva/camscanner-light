@@ -19,6 +19,11 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // Register native platform channels after the plugin registry is ready.
+    if let messenger = engineBridge.pluginRegistry
+        .registrar(forPlugin: "AttestationChannel")?.messenger {
+      AttestationChannel.register(with: messenger)
+    }
   }
 
   /// Marks the Documents and Application Support directories (and everything

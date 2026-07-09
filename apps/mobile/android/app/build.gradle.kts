@@ -81,6 +81,14 @@ kotlin {
     }
 }
 
+dependencies {
+    // Play Integrity API — used by AttestationChannel for Phase-2 app attestation.
+    // With CLOUD_PROJECT_NUMBER = 0L (Phase-1 placeholder) every request fails and
+    // the channel returns null → Turnstile fallback. Version 1.4.0 is the current
+    // stable release; bump when Play Console/SDK release notes recommend it.
+    implementation("com.google.android.play:integrity:1.4.0")
+}
+
 flutter {
     source = "../.."
 }
