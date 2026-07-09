@@ -30,4 +30,11 @@ describe("createIssue", () => {
     expect(cap.body.body).toContain("u [at] e.com");
     expect(cap.body.title.startsWith("[bug]")).toBe(true);
   });
+
+  it("omits the contact line when no email is provided", async () => {
+    const cap: { body?: any } = {};
+    const noEmail = { ...input, email: undefined };
+    await createIssue(env, noEmail, 1_720_000_000_000, githubMock(cap));
+    expect(cap.body.body).not.toContain("**Contact:**");
+  });
 });

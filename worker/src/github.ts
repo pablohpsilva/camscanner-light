@@ -6,7 +6,7 @@ import { b64url, pemToPkcs8 } from "./crypto_util";
 async function appJwt(env: Env, nowMs: number): Promise<string> {
   const now = Math.floor(nowMs / 1000);
   const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
-  const payload = b64url(new TextEncoder().encode(JSON.stringify({ iat: now - 60, exp: now + 540, iss: env.GITHUB_APP_ID })));
+  const payload = b64url(new TextEncoder().encode(JSON.stringify({ iat: now - 60, exp: now + 540, iss: Number(env.GITHUB_APP_ID) })));
   const signingInput = `${header}.${payload}`;
   const key = await crypto.subtle.importKey(
     "pkcs8", pemToPkcs8(env.GITHUB_APP_PRIVATE_KEY),
