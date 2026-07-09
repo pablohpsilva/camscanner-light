@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   bool _error = false;
   DocumentSort _sort = DocumentSort.initial;
+  bool _feedbackAvailable = false;
 
   final TextEditingController _searchController = TextEditingController();
   bool _searching = false;
@@ -63,6 +64,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _init();
+    _probeFeedback();
+  }
+
+  Future<void> _probeFeedback() async {
+    final available =
+        await widget.feedbackDependencies.availability().isAvailable();
+    if (mounted) setState(() => _feedbackAvailable = available);
   }
 
   @override
@@ -413,19 +421,25 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: const Icon(Icons.search),
         onPressed: _repository == null ? null : _openSearch,
       ),
-      PopupMenuButton<String>(
-        key: const Key('home-overflow-menu'),
-        onSelected: (v) {
-          if (v == 'feedback') {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => FeedbackScreen(dependencies: widget.feedbackDependencies),
-            ));
-          }
-        },
-        itemBuilder: (_) => const [
-          PopupMenuItem(key: Key('home-menu-feedback'), value: 'feedback', child: Text('Send feedback')),
-        ],
-      ),
+      if (_feedbackAvailable)
+        PopupMenuButton<String>(
+          key: const Key('home-overflow-menu'),
+          onSelected: (v) {
+            if (v == 'feedback') {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) =>
+                    FeedbackScreen(dependencies: widget.feedbackDependencies),
+              ));
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              key: Key('home-menu-feedback'),
+              value: 'feedback',
+              child: Text('Send feedback'),
+            ),
+          ],
+        ),
     ],
   );
 
