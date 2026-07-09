@@ -1,4 +1,5 @@
 import type { Env } from "./env";
+import { checkHealth } from "./health";
 import { guardRequest } from "./guards";
 import { validate, type FeedbackInput } from "./validate";
 import { verifyTurnstile } from "./verify/turnstile";
@@ -74,6 +75,10 @@ export async function handleFeedback(request: Request, env: Env, deps: Deps): Pr
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/health") {
+      if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
+      return checkHealth(env) ? json({ ok: true }, 200) : json({ ok: false }, 503);
+    }
     if (url.pathname === "/challenge") {
       if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
       const origin = request.headers.get("origin");
