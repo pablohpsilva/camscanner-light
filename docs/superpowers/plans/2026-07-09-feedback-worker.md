@@ -52,15 +52,15 @@
 ## Task 1: Project scaffold + first passing route
 
 **Files:**
-- Create: `worker/package.json`, `worker/tsconfig.json`, `worker/wrangler.toml`, `worker/vitest.config.ts`, `worker/src/index.ts`, `worker/src/env.ts`
-- Test: `worker/test/routing.test.ts`
+- Create: `apps/worker/package.json`, `apps/worker/tsconfig.json`, `apps/worker/wrangler.toml`, `apps/worker/vitest.config.ts`, `apps/worker/src/index.ts`, `apps/worker/src/env.ts`
+- Test: `apps/worker/test/routing.test.ts`
 
 **Interfaces:**
 - Produces: `export default { fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> }`. `Env` type (see `env.ts`).
 
 - [ ] **Step 1: Scaffold files**
 
-`worker/package.json`:
+`apps/worker/package.json`:
 ```json
 {
   "name": "feedback-worker",
@@ -84,7 +84,7 @@
 }
 ```
 
-`worker/tsconfig.json`:
+`apps/worker/tsconfig.json`:
 ```json
 {
   "compilerOptions": {
@@ -100,7 +100,7 @@
 }
 ```
 
-`worker/wrangler.toml`:
+`apps/worker/wrangler.toml`:
 ```toml
 name = "feedback-worker"
 main = "src/index.ts"
@@ -124,7 +124,7 @@ PLAY_PACKAGE_NAME = "REPLACE_PACKAGE"        # from P5
 # GITHUB_APP_PRIVATE_KEY, TURNSTILE_SECRET, PLAY_SA_CLIENT_EMAIL, PLAY_SA_PRIVATE_KEY
 ```
 
-`worker/vitest.config.ts`:
+`apps/worker/vitest.config.ts`:
 ```ts
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 export default defineWorkersConfig({
@@ -132,7 +132,7 @@ export default defineWorkersConfig({
 });
 ```
 
-`worker/src/env.ts`:
+`apps/worker/src/env.ts`:
 ```ts
 export interface Env {
   FEEDBACK_KV: KVNamespace;
@@ -154,7 +154,7 @@ export interface Env {
 
 - [ ] **Step 2: Write the failing test**
 
-`worker/test/routing.test.ts`:
+`apps/worker/test/routing.test.ts`:
 ```ts
 import { env, createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -183,7 +183,7 @@ Expected: FAIL — `../src/index` has no default export yet.
 
 - [ ] **Step 4: Minimal implementation**
 
-`worker/src/index.ts`:
+`apps/worker/src/index.ts`:
 ```ts
 import type { Env } from "./env";
 
@@ -212,7 +212,7 @@ Expected: PASS (2 tests).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add worker/package.json worker/tsconfig.json worker/wrangler.toml worker/vitest.config.ts worker/src worker/test worker/package-lock.json
+git add apps/worker/package.json apps/worker/tsconfig.json apps/worker/wrangler.toml apps/worker/vitest.config.ts apps/worker/src apps/worker/test apps/worker/package-lock.json
 git commit -m "feat(worker): scaffold feedback worker with routing"
 ```
 
@@ -221,16 +221,16 @@ git commit -m "feat(worker): scaffold feedback worker with routing"
 ## Task 2: Request guards (CORS/origin, content-type, body size)
 
 **Files:**
-- Create: `worker/src/guards.ts`
-- Modify: `worker/src/index.ts`
-- Test: `worker/test/guards.test.ts`
+- Create: `apps/worker/src/guards.ts`
+- Modify: `apps/worker/src/index.ts`
+- Test: `apps/worker/test/guards.test.ts`
 
 **Interfaces:**
 - Produces: `guardRequest(request: Request, env: Env): Promise<{ ok: true; body: unknown } | { ok: false; response: Response }>`
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/guards.test.ts`:
+`apps/worker/test/guards.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -267,7 +267,7 @@ Expected: FAIL — `../src/guards` not found.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/guards.ts`:
+`apps/worker/src/guards.ts`:
 ```ts
 import type { Env } from "./env";
 import { json } from "./index";
@@ -299,7 +299,7 @@ export async function guardRequest(
 }
 ```
 
-Modify `worker/src/index.ts` handler body (after the method check) to call the guard:
+Modify `apps/worker/src/index.ts` handler body (after the method check) to call the guard:
 ```ts
 import { guardRequest } from "./guards";
 // ...inside fetch, replacing `return json({ ok: true }, 200);`
@@ -316,7 +316,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/guards.ts worker/src/index.ts worker/test/guards.test.ts
+git add apps/worker/src/guards.ts apps/worker/src/index.ts apps/worker/test/guards.test.ts
 git commit -m "feat(worker): CORS/content-type/body-size guards"
 ```
 
@@ -325,8 +325,8 @@ git commit -m "feat(worker): CORS/content-type/body-size guards"
 ## Task 3: Payload validation
 
 **Files:**
-- Create: `worker/src/validate.ts`
-- Test: `worker/test/validate.test.ts`
+- Create: `apps/worker/src/validate.ts`
+- Test: `apps/worker/test/validate.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -345,7 +345,7 @@ git commit -m "feat(worker): CORS/content-type/body-size guards"
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/validate.test.ts`:
+`apps/worker/test/validate.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
 import { validate } from "../src/validate";
@@ -391,7 +391,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/validate.ts`:
+`apps/worker/src/validate.ts`:
 ```ts
 export interface FeedbackInput {
   category: "bug" | "idea" | "question";
@@ -470,7 +470,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/validate.ts worker/test/validate.test.ts
+git add apps/worker/src/validate.ts apps/worker/test/validate.test.ts
 git commit -m "feat(worker): payload validation"
 ```
 
@@ -479,8 +479,8 @@ git commit -m "feat(worker): payload validation"
 ## Task 4: Content sanitization
 
 **Files:**
-- Create: `worker/src/sanitize.ts`
-- Test: `worker/test/sanitize.test.ts`
+- Create: `apps/worker/src/sanitize.ts`
+- Test: `apps/worker/test/sanitize.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -493,7 +493,7 @@ git commit -m "feat(worker): payload validation"
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/sanitize.test.ts`:
+`apps/worker/test/sanitize.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
 import { neutralizeMentions, fenceBlock, obfuscateEmail, slugTitle } from "../src/sanitize";
@@ -529,7 +529,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/sanitize.ts`:
+`apps/worker/src/sanitize.ts`:
 ```ts
 const ZWSP = "​";
 
@@ -564,7 +564,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/sanitize.ts worker/test/sanitize.test.ts
+git add apps/worker/src/sanitize.ts apps/worker/test/sanitize.test.ts
 git commit -m "feat(worker): content sanitization (mentions, fencing, email, title)"
 ```
 
@@ -573,8 +573,8 @@ git commit -m "feat(worker): content sanitization (mentions, fencing, email, tit
 ## Task 5: Verifier interface + Turnstile fallback verifier
 
 **Files:**
-- Create: `worker/src/verify/verifier.ts`, `worker/src/verify/turnstile.ts`
-- Test: `worker/test/turnstile.test.ts`
+- Create: `apps/worker/src/verify/verifier.ts`, `apps/worker/src/verify/turnstile.ts`
+- Test: `apps/worker/test/turnstile.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -586,7 +586,7 @@ git commit -m "feat(worker): content sanitization (mentions, fencing, email, tit
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/turnstile.test.ts`:
+`apps/worker/test/turnstile.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
 import { verifyTurnstile } from "../src/verify/turnstile";
@@ -618,14 +618,14 @@ Expected: FAIL — modules missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/verify/verifier.ts`:
+`apps/worker/src/verify/verifier.ts`:
 ```ts
 import type { FeedbackInput } from "../validate";
 export interface VerifyResult { ok: boolean; reason?: string }
 export interface Verifier { verify(input: FeedbackInput, ip: string): Promise<VerifyResult>; }
 ```
 
-`worker/src/verify/turnstile.ts`:
+`apps/worker/src/verify/turnstile.ts`:
 ```ts
 export interface VerifyResult { ok: boolean; reason?: string }
 
@@ -657,7 +657,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/verify worker/test/turnstile.test.ts
+git add apps/worker/src/verify apps/worker/test/turnstile.test.ts
 git commit -m "feat(worker): verifier interface + Turnstile fallback"
 ```
 
@@ -666,8 +666,8 @@ git commit -m "feat(worker): verifier interface + Turnstile fallback"
 ## Task 6: Verification orchestration (attestation primary, Turnstile fallback)
 
 **Files:**
-- Create: `worker/src/verify/orchestrate.ts`
-- Test: `worker/test/orchestrate.test.ts`
+- Create: `apps/worker/src/verify/orchestrate.ts`
+- Test: `apps/worker/test/orchestrate.test.ts`
 
 **Interfaces:**
 - Consumes: `VerifyResult`, `FeedbackInput`.
@@ -682,7 +682,7 @@ git commit -m "feat(worker): verifier interface + Turnstile fallback"
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/orchestrate.test.ts`:
+`apps/worker/test/orchestrate.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
 import { verifyCaller } from "../src/verify/orchestrate";
@@ -720,7 +720,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/verify/orchestrate.ts`:
+`apps/worker/src/verify/orchestrate.ts`:
 ```ts
 import type { FeedbackInput } from "../validate";
 import type { VerifyResult } from "./verifier";
@@ -752,7 +752,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/verify/orchestrate.ts worker/test/orchestrate.test.ts
+git add apps/worker/src/verify/orchestrate.ts apps/worker/test/orchestrate.test.ts
 git commit -m "feat(worker): verification orchestration (attestation primary, turnstile fallback)"
 ```
 
@@ -761,8 +761,8 @@ git commit -m "feat(worker): verification orchestration (attestation primary, tu
 ## Task 7: Play Integrity verifier (Android attestation)
 
 **Files:**
-- Create: `worker/src/verify/play_integrity.ts`, `worker/src/google_token.ts`
-- Test: `worker/test/play_integrity.test.ts`
+- Create: `apps/worker/src/verify/play_integrity.ts`, `apps/worker/src/google_token.ts`
+- Test: `apps/worker/test/play_integrity.test.ts`
 
 **Interfaces:**
 - Consumes: `VerifyResult`, `FeedbackInput`, `Env`.
@@ -782,7 +782,7 @@ base64url of `requestDetails.requestHash` equals the challenge we issued.
 
 - [ ] **Step 1: Write the failing test** (mock Google's HTTP)
 
-`worker/test/play_integrity.test.ts`:
+`apps/worker/test/play_integrity.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -826,7 +826,7 @@ Expected: FAIL — modules missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/google_token.ts`:
+`apps/worker/src/google_token.ts`:
 ```ts
 function b64url(bytes: Uint8Array): string {
   let s = btoa(String.fromCharCode(...bytes));
@@ -866,7 +866,7 @@ export async function googleAccessToken(
 }
 ```
 
-`worker/src/verify/play_integrity.ts`:
+`apps/worker/src/verify/play_integrity.ts`:
 ```ts
 import type { Env } from "../env";
 import type { VerifyResult } from "./verifier";
@@ -907,7 +907,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/google_token.ts worker/src/verify/play_integrity.ts worker/test/play_integrity.test.ts
+git add apps/worker/src/google_token.ts apps/worker/src/verify/play_integrity.ts apps/worker/test/play_integrity.test.ts
 git commit -m "feat(worker): Play Integrity verifier via decode API"
 ```
 
@@ -916,8 +916,8 @@ git commit -m "feat(worker): Play Integrity verifier via decode API"
 ## Task 8: App Attest verifier (iOS attestation)
 
 **Files:**
-- Create: `worker/src/verify/app_attest.ts`
-- Test: `worker/test/app_attest.test.ts`
+- Create: `apps/worker/src/verify/app_attest.ts`
+- Test: `apps/worker/test/app_attest.test.ts`
 
 **Interfaces:**
 - Consumes: `VerifyResult`, `Env`, `FEEDBACK_KV`.
@@ -940,7 +940,7 @@ a silent one. Do not claim this task "passing" on the strength of unit tests alo
 
 - [ ] **Step 1: Write the failing test (failure-path + contract)**
 
-`worker/test/app_attest.test.ts`:
+`apps/worker/test/app_attest.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -979,7 +979,7 @@ Expected: FAIL — module missing.
 > credentialId. If re-running this plan, apply that correction — do not ship the
 > name-only check shown here.
 
-`worker/src/verify/app_attest.ts`:
+`apps/worker/src/verify/app_attest.ts`:
 ```ts
 import { decode as cborDecode } from "cbor-x";
 import { X509Certificate, X509ChainBuilder } from "@peculiar/x509";
@@ -1081,7 +1081,7 @@ Expected: PASS (failure-path assertions). Note in the commit that success-path i
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/verify/app_attest.ts worker/test/app_attest.test.ts
+git add apps/worker/src/verify/app_attest.ts apps/worker/test/app_attest.test.ts
 git commit -m "feat(worker): App Attest verifier (success path device-verified only)"
 ```
 
@@ -1090,8 +1090,8 @@ git commit -m "feat(worker): App Attest verifier (success path device-verified o
 ## Task 9: Rate limiting + global daily cap (KV)
 
 **Files:**
-- Create: `worker/src/limits.ts`
-- Test: `worker/test/limits.test.ts`
+- Create: `apps/worker/src/limits.ts`
+- Test: `apps/worker/test/limits.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -1102,7 +1102,7 @@ git commit -m "feat(worker): App Attest verifier (success path device-verified o
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/limits.test.ts`:
+`apps/worker/test/limits.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -1131,7 +1131,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/limits.ts`:
+`apps/worker/src/limits.ts`:
 ```ts
 import type { Env } from "./env";
 
@@ -1162,7 +1162,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/limits.ts worker/test/limits.test.ts
+git add apps/worker/src/limits.ts apps/worker/test/limits.test.ts
 git commit -m "feat(worker): per-IP rate limit + global daily cap"
 ```
 
@@ -1171,8 +1171,8 @@ git commit -m "feat(worker): per-IP rate limit + global daily cap"
 ## Task 10: Idempotency store
 
 **Files:**
-- Create: `worker/src/idempotency.ts`
-- Test: `worker/test/idempotency.test.ts`
+- Create: `apps/worker/src/idempotency.ts`
+- Test: `apps/worker/test/idempotency.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -1183,7 +1183,7 @@ git commit -m "feat(worker): per-IP rate limit + global daily cap"
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/idempotency.test.ts`:
+`apps/worker/test/idempotency.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -1206,7 +1206,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/idempotency.ts`:
+`apps/worker/src/idempotency.ts`:
 ```ts
 import type { Env } from "./env";
 
@@ -1229,7 +1229,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/idempotency.ts worker/test/idempotency.test.ts
+git add apps/worker/src/idempotency.ts apps/worker/test/idempotency.test.ts
 git commit -m "feat(worker): idempotency store"
 ```
 
@@ -1238,8 +1238,8 @@ git commit -m "feat(worker): idempotency store"
 ## Task 11: GitHub App token + issue creation
 
 **Files:**
-- Create: `worker/src/github.ts`
-- Test: `worker/test/github.test.ts`
+- Create: `apps/worker/src/github.ts`
+- Test: `apps/worker/test/github.test.ts`
 
 **Interfaces:**
 - Consumes: `FeedbackInput`, sanitizers, `Env`.
@@ -1251,7 +1251,7 @@ git commit -m "feat(worker): idempotency store"
 
 - [ ] **Step 1: Write the failing test** (mock GitHub HTTP)
 
-`worker/test/github.test.ts`:
+`apps/worker/test/github.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -1296,7 +1296,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/github.ts`:
+`apps/worker/src/github.ts`:
 ```ts
 import type { Env } from "./env";
 import type { FeedbackInput } from "./validate";
@@ -1376,7 +1376,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/github.ts worker/test/github.test.ts
+git add apps/worker/src/github.ts apps/worker/test/github.test.ts
 git commit -m "feat(worker): GitHub App token minting + issue creation"
 ```
 
@@ -1391,8 +1391,8 @@ Worker **consumes it once** (delete on use). A client-supplied challenge is neve
 trusted.
 
 **Files:**
-- Create: `worker/src/challenge.ts`
-- Test: `worker/test/challenge.test.ts`
+- Create: `apps/worker/src/challenge.ts`
+- Test: `apps/worker/test/challenge.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -1403,7 +1403,7 @@ trusted.
 
 - [ ] **Step 1: Write the failing test**
 
-`worker/test/challenge.test.ts`:
+`apps/worker/test/challenge.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -1429,7 +1429,7 @@ Expected: FAIL — module missing.
 
 - [ ] **Step 3: Implementation**
 
-`worker/src/challenge.ts`:
+`apps/worker/src/challenge.ts`:
 ```ts
 import type { Env } from "./env";
 
@@ -1458,7 +1458,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/challenge.ts worker/test/challenge.test.ts
+git add apps/worker/src/challenge.ts apps/worker/test/challenge.test.ts
 git commit -m "feat(worker): server-issued one-time attestation challenge"
 ```
 
@@ -1467,8 +1467,8 @@ git commit -m "feat(worker): server-issued one-time attestation challenge"
 ## Task 12: Wire the full pipeline in the handler
 
 **Files:**
-- Modify: `worker/src/index.ts`
-- Test: `worker/test/pipeline.test.ts`
+- Modify: `apps/worker/src/index.ts`
+- Test: `apps/worker/test/pipeline.test.ts`
 
 **Interfaces:**
 - Consumes: everything above. The handler injects real verifiers but accepts a
@@ -1476,7 +1476,7 @@ git commit -m "feat(worker): server-issued one-time attestation challenge"
 
 - [ ] **Step 1: Write the failing test** (end-to-end, mocks at the HTTP boundary)
 
-`worker/test/pipeline.test.ts`:
+`apps/worker/test/pipeline.test.ts`:
 ```ts
 import { env } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
@@ -1529,7 +1529,7 @@ Expected: FAIL — `handleFeedback` not exported.
 
 - [ ] **Step 3: Implementation** — refactor `index.ts` to expose `handleFeedback`
 
-`worker/src/index.ts` (full file):
+`apps/worker/src/index.ts` (full file):
 ```ts
 import type { Env } from "./env";
 import { guardRequest } from "./guards";
@@ -1630,7 +1630,7 @@ Expected: PASS (all tasks' tests).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add worker/src/index.ts worker/test/pipeline.test.ts
+git add apps/worker/src/index.ts apps/worker/test/pipeline.test.ts
 git commit -m "feat(worker): wire full feedback pipeline"
 ```
 
@@ -1639,10 +1639,10 @@ git commit -m "feat(worker): wire full feedback pipeline"
 ## Task 13: Deploy staging + README
 
 **Files:**
-- Create: `worker/README.md`, `worker/wrangler.staging.toml` (or a `[env.staging]` block)
-- Modify: `worker/wrangler.toml`
+- Create: `apps/worker/README.md`, `apps/worker/wrangler.staging.toml` (or a `[env.staging]` block)
+- Modify: `apps/worker/wrangler.toml`
 
-- [ ] **Step 1: Add a staging environment** — in `worker/wrangler.toml`:
+- [ ] **Step 1: Add a staging environment** — in `apps/worker/wrangler.toml`:
 ```toml
 [env.staging]
 vars = { REPO = "pablohpsilva/camscanner-feedback-test", ALLOWED_ORIGIN = "", RATE_PER_IP_PER_HOUR = "50", GLOBAL_CAP_PER_DAY = "1000", IDEMPOTENCY_TTL_SECONDS = "600", APPLE_APP_ID = "TEAMID.BUNDLEID", PLAY_PACKAGE_NAME = "REPLACE_PACKAGE" }
@@ -1669,11 +1669,11 @@ curl -i -X POST "$STAGING_URL/feedback" -H 'content-type: application/json' \
 ```
 Expected: `HTTP/1.1 401` `{"error":"unverified"}` (no attestation/Turnstile token). Confirms the pipeline runs and fails closed.
 
-- [ ] **Step 5: Write `worker/README.md`** documenting: prerequisites P1–P5, secret list, `npm test`, `wrangler deploy [--env staging]`, and the request/response contract (fields, status codes: 201 created, 200 duplicate, 400 invalid, 401 unverified, 413/415/403 guards, 429 rate/cap, 502 upstream).
+- [ ] **Step 5: Write `apps/worker/README.md`** documenting: prerequisites P1–P5, secret list, `npm test`, `wrangler deploy [--env staging]`, and the request/response contract (fields, status codes: 201 created, 200 duplicate, 400 invalid, 401 unverified, 413/415/403 guards, 429 rate/cap, 502 upstream).
 
 - [ ] **Step 6: Commit**
 ```bash
-git add worker/README.md worker/wrangler.toml
+git add apps/worker/README.md apps/worker/wrangler.toml
 git commit -m "chore(worker): staging env, secrets docs, README"
 ```
 

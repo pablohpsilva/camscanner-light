@@ -253,7 +253,7 @@ repos, no long-lived credential to leak.
 
 - `lib/features/feedback/` — Flutter feature (files above) + overflow-menu entry
   in `home_screen.dart`.
-- `worker/` (or sibling location — see open items) — Cloudflare Worker source,
+- `apps/worker/` (or sibling location — see open items) — Cloudflare Worker source,
   `wrangler.toml`, Worker unit tests, README covering GitHub App setup, secret
   setup, attestation config, and staging vs production config.
 - **`apps/web/privacy.html`** — add the Feedback disclosure section.
@@ -283,7 +283,7 @@ repos, no long-lived credential to leak.
 
 ## Open items to resolve during planning
 
-- Exact Worker source location in this monorepo (`worker/`, `apps/worker/`, or a
+- Exact Worker source location in this monorepo (`apps/worker/`, `apps/worker/`, or a
   separate repo).
 - Choice of Flutter Turnstile widget + attestation plugin(s) vs. thin platform
   channels / WebView.
