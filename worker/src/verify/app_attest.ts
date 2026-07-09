@@ -19,6 +19,25 @@ CgYIKoZIzj0EAwMDaAAwZQIwQgFGnByvsiVbpTKwSga0kP0e8EeDS4+sQmTvb7vn
 XTh6+kmr9Xr1L+2i5+iw0PZ3S8VG
 -----END CERTIFICATE-----`;
 
+// Pinned Apple root cert object — built once at module load time so rawData is
+// available for constant-time byte comparison in isPinnedAppleRoot().
+const APPLE_ROOT = new X509Certificate(APPLE_APP_ATTEST_ROOT);
+
+/**
+ * Returns true ONLY if `cert` is byte-for-byte identical to Apple's pinned
+ * App Attest Root CA. This comparison is done on raw DER bytes, NOT on the
+ * subject Distinguished Name string — a self-signed cert can trivially forge
+ * the subject DN.
+ */
+export function isPinnedAppleRoot(cert: X509Certificate): boolean {
+  const a = new Uint8Array(cert.rawData);
+  const b = new Uint8Array(APPLE_ROOT.rawData);
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a[i] ^ b[i];
+  return d === 0;
+}
+
 async function sha256(data: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", data));
 }
@@ -67,7 +86,10 @@ export async function verifyAppAttest(
     const chain = await new X509ChainBuilder({ certificates: [...intermediates, root] }).build(leaf);
     const last = chain[chain.length - 1];
     if (!last) return { ok: false, reason: "chain_build_failed" };
-    if (!(await last.isSelfSigned()) || last.subject !== root.subject) {
+    // FIX 1 (Critical): Verify by raw DER bytes, NOT by subject name.
+    // A self-signed cert can forge the Apple root subject DN — only a byte-level
+    // comparison against the pinned constant closes that bypass.
+    if (!(await last.isSelfSigned()) || !isPinnedAppleRoot(last)) {
       return { ok: false, reason: "chain_not_apple_root" };
     }
 
@@ -98,7 +120,20 @@ export async function verifyAppAttest(
       (att.authData[33] << 24) | (att.authData[34] << 16) | (att.authData[35] << 8) | att.authData[36];
     if (counter !== 0) return { ok: false, reason: "bad_counter" };
 
+    // FIX 2 (Important): Bind keyId to the attestation authData.
+    // authData layout: rpIdHash(32) + flags(1) + signCount(4) = 37 header bytes,
+    // then attestedCredentialData = aaguid(16) + credentialIdLength(2, big-endian)
+    // + credentialId(L) + publicKey(CBOR).
+    // credentialIdLength is at bytes 37+16 = 53..54; credentialId starts at byte 55.
+    // For App Attest, credentialId == the keyId, so we can bind them here.
+    const credIdLen = (att.authData[53] << 8) | att.authData[54];
+    const credId = att.authData.slice(55, 55 + credIdLen);
+    if (!eq(credId, declaredKeyId)) {
+      return { ok: false, reason: "key_id_mismatch" };
+    }
+
     // Step 6: Persist the attested public key so future assertions (not used in v1) could be verified.
+    // The KV key uses keyId which is now verified to match the authData credentialId.
     await env.FEEDBACK_KV.put(`attest:${keyId}`, btoa(String.fromCharCode(...spki)), {
       expirationTtl: 60 * 60 * 24 * 180,
     });
