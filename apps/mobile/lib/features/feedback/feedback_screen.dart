@@ -1,9 +1,9 @@
-import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart';
 
 import 'feedback_dependencies.dart';
 import 'feedback_result.dart';
 import 'feedback_service.dart';
+import 'turnstile_widget.dart';
 
 class FeedbackScreen extends StatefulWidget {
   final FeedbackDependencies dependencies;
@@ -151,12 +151,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               // this branch is never entered in the host suite, keeping widget tests
               // free of WebView dependencies.
               if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
-                CloudflareTurnstile(
+                TurnstileWidget(
                   siteKey: widget.dependencies.config.turnstileSiteKey,
-                  onTokenReceived: (token) =>
-                      setState(() => _turnstileToken = token),
-                  onTokenExpired: () => setState(() => _turnstileToken = null),
-                  onError: (_) => setState(() => _turnstileToken = null),
+                  baseUrl: () {
+                    final url = widget.dependencies.config.workerUrl;
+                    if (url.isEmpty) return 'https://localhost';
+                    final u = Uri.parse(url);
+                    return '${u.scheme}://${u.host}';
+                  }(),
+                  onToken: (t) => setState(() => _turnstileToken = t),
                 ),
               if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
                 const SizedBox(height: 12),

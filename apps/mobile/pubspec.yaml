@@ -55,7 +55,7 @@ dependencies:
   package_info_plus: ^10.2.0
   device_info_plus: ^13.0.0
   uuid: ^4.5.1
-  cloudflare_turnstile: ^3.7.2
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:
