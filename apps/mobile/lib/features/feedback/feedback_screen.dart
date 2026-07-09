@@ -1,3 +1,4 @@
+import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart';
 
 import 'feedback_dependencies.dart';
@@ -144,6 +145,21 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   ),
                 ),
               const SizedBox(height: 12),
+              // Turnstile human-verification widget — rendered on device only.
+              // Gated on a non-empty site key: host tests inject FeedbackDependencies
+              // with the default FeedbackConfig (String.fromEnvironment → ''), so
+              // this branch is never entered in the host suite, keeping widget tests
+              // free of WebView dependencies.
+              if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
+                CloudflareTurnstile(
+                  siteKey: widget.dependencies.config.turnstileSiteKey,
+                  onTokenReceived: (token) =>
+                      setState(() => _turnstileToken = token),
+                  onTokenExpired: () => setState(() => _turnstileToken = null),
+                  onError: (_) => setState(() => _turnstileToken = null),
+                ),
+              if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
+                const SizedBox(height: 12),
               FilledButton(
                 key: const Key('feedback-submit'),
                 onPressed: _submitting ? null : _submit,
