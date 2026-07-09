@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:mobile/features/scan/camera_permission.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/document_scanner_service.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
@@ -132,5 +133,18 @@ class FakePhotoCamera implements PhotoCamera {
     captureCount++;
     final p = i < paths.length ? paths[i] : null;
     return p == null ? null : CapturedImage(p);
+  }
+}
+
+/// Fake [CameraPermission] for host tests. Returns [granted] and counts calls.
+class FakeCameraPermission implements CameraPermission {
+  final bool granted;
+  int calls = 0;
+  FakeCameraPermission({this.granted = true});
+
+  @override
+  Future<bool> ensure() async {
+    calls++;
+    return granted;
   }
 }

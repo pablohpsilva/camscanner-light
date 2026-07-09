@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/scan/camera_permission.dart';
 import 'package:mobile/features/scan/cunning_document_scanner_service.dart';
 import 'package:mobile/features/scan/gallery_picker.dart';
 import 'package:mobile/features/scan/opencv_edge_detector.dart';
@@ -32,4 +33,14 @@ void main() {
       isA<ImagePickerPhotoCamera>(),
     );
   });
+
+  test(
+    'createCameraPermission defaults to PermissionHandlerCameraPermission',
+    () {
+      expect(
+        const ScanDependencies().createCameraPermission(),
+        isA<PermissionHandlerCameraPermission>(),
+      );
+    },
+  );
 }
