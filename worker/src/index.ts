@@ -1,5 +1,8 @@
 import type { Env } from "./env";
 import { guardRequest } from "./guards";
+import { json } from "./response";
+
+export { json } from "./response";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -11,10 +14,3 @@ export default {
     return json({ ok: true }, 200);
   },
 };
-
-export function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}

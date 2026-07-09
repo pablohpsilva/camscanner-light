@@ -1,5 +1,5 @@
 import type { Env } from "./env";
-import { json } from "./index";
+import { json } from "./response";
 
 const MAX_BODY_BYTES = 16 * 1024;
 
