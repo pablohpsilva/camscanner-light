@@ -75,7 +75,7 @@ void main() {
 
   testWidgets('toggling diagnostics reveals the preview', (t) async {
     await t.pumpWidget(_host(_StubService(const FeedbackSuccess('u'))));
-    expect(find.textContaining('app:'), findsNothing);
+    expect(find.textContaining('Diagnostics attached'), findsNothing);
     await t.tap(find.byKey(const Key('feedback-diagnostics-toggle')));
     await t.pumpAndSettle();
     expect(find.textContaining('Diagnostics attached'), findsOneWidget);
