@@ -250,10 +250,41 @@ The native camera UI cannot be driven by `integration_test` (same inherent limit
   and that Retake triggers an extra capture. Keep `FakeSequentialDocumentScannerService` for the
   batch-scan tests.
 
+## Refinements found during verification (3rd pass)
+
+- **Android camera runtime permission — NEW REQUIRED TASK, not just a checkpoint.**
+  `image_picker` is currently used ONLY for the gallery (`gallery_picker.dart:19`), which needs
+  no CAMERA permission — so image_picker's *camera* has never run in this app. The merged
+  manifest declares `android.permission.CAMERA` (app manifest line 2; `cunning_document_scanner`
+  also declares it). Per image_picker's documented Android behavior, **when CAMERA is declared it
+  must be granted at runtime or `pickImage(source: camera)` fails.** There is **no
+  `permission_handler` dep and no runtime permission request anywhere in `lib/`**;
+  `cunning_document_scanner` grants camera natively, masking this today. A user who opens **Scan
+  ID before ever using batch scan** would hit an ungranted camera → failure.
+  - **Task:** before calling `PhotoCamera.capture()` on Android, ensure camera permission
+    (add `permission_handler` and request `Permission.camera`, or an equivalent seam). iOS needs
+    nothing extra — the OS auto-prompts and `NSCameraUsageDescription` is present.
+  - **New failure mode:** permission denied → show a message (SnackBar) and pop; no partial doc.
+    Add a widget test with a fake permission gate returning denied. Keep the permission check
+    behind an injectable seam so host tests don't touch platform channels.
+
+- **BDD scenario needs explicit accept steps (bigger than a fake swap).** `iOpenTheIdScanner`
+  currently works only because the fake scanner resolves the whole front+back flow immediately,
+  so `pumpAndSettle` lands back on Home. The inserted `CaptureReviewScreen` pauses for the user,
+  so the scenario must gain steps like *"And I accept the captured front"* / *"And I accept the
+  captured back"* (tap `review-accept`), and a retake scenario adds *"And I retake the front"*.
+  New step files → regenerate via `build_runner`. iOS/Android device runs remain manual (real
+  camera UI is undrivable by `integration_test`).
+
+- **Reuse `FakeEdgeDetector`** (`test/support/fake_scan.dart:60`) — inject via
+  `createEdgeDetector` in ID/retake host tests for deterministic detection (confident corners,
+  low-confidence, and null/fallback cases). No new fake needed for detection.
+
 ## Non-goals / risks
 
 - Camera permission strings already present (`ios/Runner/Info.plist:NSCameraUsageDescription`,
-  Android `CAMERA`) — no manifest change.
+  Android `CAMERA`) — no *manifest* change, but Android needs a **runtime** grant in code
+  (see 3rd-pass refinements).
 - `DocumentScannerService` and `cunning_document_scanner` remain (batch scan). The ID flow's
   old `FakeSequentialDocumentScannerService` usage is replaced by `FakePhotoCamera`.
 - Risk: edge detection on a hand-held ID photo may be less reliable than VisionKit's crop.
