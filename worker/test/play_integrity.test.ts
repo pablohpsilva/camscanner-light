@@ -29,4 +29,14 @@ describe("verifyPlayIntegrity", () => {
     const r = await verifyPlayIntegrity(env, "tok", "chal", googleMock(bad));
     expect(r.ok).toBe(false);
   });
+  it("fails when device integrity is missing", async () => {
+    const bad = { ...good, deviceIntegrity: { deviceRecognitionVerdict: [] } };
+    const r = await verifyPlayIntegrity(env, "tok", "chal", googleMock(bad));
+    expect(r.ok).toBe(false);
+  });
+  it("fails when package name mismatches", async () => {
+    const bad = { ...good, requestDetails: { requestHash: "chal", requestPackageName: "com.evil.other" } };
+    const r = await verifyPlayIntegrity(env, "tok", "chal", googleMock(bad));
+    expect(r.ok).toBe(false);
+  });
 });
