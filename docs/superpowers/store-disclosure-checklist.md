@@ -102,3 +102,4 @@ Do not submit the build that includes in-app feedback until:
 1. All Apple App Privacy items above are saved in App Store Connect.
 2. All Google Play Data Safety items above are saved and the form is submitted.
 3. The live `privacy.html` URL is confirmed reachable and reflects the Feedback section.
+4. **RELEASE BLOCKER — Bump the Effective date in `apps/web/privacy.html`** to the date this policy goes live (currently stale after the feedback disclosure change).
