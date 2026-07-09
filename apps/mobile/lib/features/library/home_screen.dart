@@ -17,6 +17,8 @@ import 'widgets/empty_documents_view.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_control_bar.dart';
 import '../donation/donation_banner.dart';
+import '../feedback/feedback_dependencies.dart';
+import '../feedback/feedback_screen.dart';
 
 /// The app's home: the document library. Builds the repository, lists saved
 /// documents (name + date), and opens the camera. Reloads the list whenever the
@@ -24,11 +26,13 @@ import '../donation/donation_banner.dart';
 class HomeScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final LibraryDependencies libraryDependencies;
+  final FeedbackDependencies feedbackDependencies;
 
   const HomeScreen({
     super.key,
     this.dependencies = const ScanDependencies(),
     this.libraryDependencies = const LibraryDependencies(),
+    this.feedbackDependencies = const FeedbackDependencies(),
   });
 
   // Aggressive cold-start watchdog budget. Every startup step must finish within
@@ -408,6 +412,19 @@ class _HomeScreenState extends State<HomeScreen> {
         tooltip: 'Search',
         icon: const Icon(Icons.search),
         onPressed: _repository == null ? null : _openSearch,
+      ),
+      PopupMenuButton<String>(
+        key: const Key('home-overflow-menu'),
+        onSelected: (v) {
+          if (v == 'feedback') {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => FeedbackScreen(dependencies: widget.feedbackDependencies),
+            ));
+          }
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(key: Key('home-menu-feedback'), value: 'feedback', child: Text('Send feedback')),
+        ],
       ),
     ],
   );

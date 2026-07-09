@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'features/feedback/feedback_dependencies.dart';
 import 'features/library/home_screen.dart';
 import 'features/library/library_dependencies.dart';
 import 'features/scan/scan_dependencies.dart';
@@ -11,21 +12,25 @@ void main() => runCamScannerApp();
 void runCamScannerApp({
   ScanDependencies scanDependencies = const ScanDependencies(),
   LibraryDependencies libraryDependencies = const LibraryDependencies(),
+  FeedbackDependencies feedbackDependencies = const FeedbackDependencies(),
 }) {
   runApp(CamScannerApp(
     scanDependencies: scanDependencies,
     libraryDependencies: libraryDependencies,
+    feedbackDependencies: feedbackDependencies,
   ));
 }
 
 class CamScannerApp extends StatelessWidget {
   final ScanDependencies scanDependencies;
   final LibraryDependencies libraryDependencies;
+  final FeedbackDependencies feedbackDependencies;
 
   const CamScannerApp({
     super.key,
     this.scanDependencies = const ScanDependencies(),
     this.libraryDependencies = const LibraryDependencies(),
+    this.feedbackDependencies = const FeedbackDependencies(),
   });
 
   @override
@@ -37,6 +42,7 @@ class CamScannerApp extends StatelessWidget {
       home: HomeScreen(
         dependencies: scanDependencies,
         libraryDependencies: libraryDependencies,
+        feedbackDependencies: feedbackDependencies,
       ),
     );
   }
