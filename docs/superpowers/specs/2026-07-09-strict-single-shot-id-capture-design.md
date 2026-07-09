@@ -211,6 +211,45 @@ The native camera UI cannot be driven by `integration_test` (same inherent limit
   saved and marked as ID card; in-document page retake likewise single-shot. Exact commands +
   observations reported before claiming done.
 
+## Refinements found during verification (2nd pass)
+
+- **Format/orientation is already handled — precedent exists.** The gallery import flow
+  (`home_screen.dart:167-189`) already feeds an `image_picker` result into
+  `CaptureReviewScreen(enableCrop: true, edgeDetector: …)` — the identical pattern. And every
+  capture passes through `ensureJpegBytes()` (`drift_document_repository.dart:85`) before the
+  JPEG-only scrubber: JPEG is passed through unchanged, PNG/other decodable input is re-encoded,
+  undecodable bytes **fail closed** (rejected, never written corrupt). So EXIF orientation and
+  file format are solved by existing code, not new work.
+  - *Residual:* `img.decodeImage` (dart `image` pkg) cannot decode **HEIC**. image_picker's
+    *camera* returns JPEG on iOS, so this is low risk, and a stray HEIC fails safely (rejected).
+    Confirm on-device; if HEIC ever appears, pass `imageQuality` to `pickImage` to force JPEG
+    re-encode, or add HEIC handling in `ensureJpegBytes`.
+
+- **Two injection sites, not one.** The ID fake is wired via `createDocumentScanner` in BOTH
+  `test/features/scan/id_scan_screen_test.dart` (`_deps` helper) and
+  `test/step/the_app_is_launched_with_a_fake_id_scanner_returning_a_front_and_a_back.dart`.
+  Both switch to `createPhotoCamera: () => FakePhotoCamera(...)`. The step file's rename changes
+  the `.feature` Gherkin wording → `build_runner` regenerates a differently-named step. Delete
+  the stale scanner-named step.
+
+- **Review screen is now interactive — tests must tap through it.** Today's ID flow has no
+  review (scan → save directly); the happy-path test just `pumpAndSettle()`s. The new flow
+  inserts `CaptureReviewScreen`, which pauses for the user. Updated tests must
+  `tester.tap(find.byKey(const Key('review-accept')))` once per side (front, then back);
+  cancel tests model `capture()` returning null. Nonexistent image paths still work host-side
+  (decode fails → `errorBuilder`, detection → fullFrame, Accept still enabled).
+
+- **Double preview on device (accepted trade-off).** `image_picker`'s native camera shows its
+  own "Retake / Use Photo" confirm, then our `CaptureReviewScreen` appears — two confirmations.
+  This is inherent to reusing `image_picker` (the fully-custom single-shot camera that would
+  collapse it into one was deliberately removed from this project). Native confirm = framing;
+  our review = crop + filter.
+
+- **`FakePhotoCamera` support class** (add to `test/support/fake_scan.dart`): sequential
+  single-shot returns (null = cancel) plus a `captureCount` to assert exactly one photo per side
+  and that Retake triggers an extra capture. Keep `FakeSequentialDocumentScannerService` for the
+  batch-scan tests.
+
 ## Non-goals / risks
 
 - Camera permission strings already present (`ios/Runner/Info.plist:NSCameraUsageDescription`,
