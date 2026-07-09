@@ -1,0 +1,20 @@
+name = "feedback-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "FEEDBACK_KV"
+id = "REPLACE_WITH_KV_ID"          # from P2
+preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+
+[vars]
+REPO = "pablohpsilva/camscanner-light"
+ALLOWED_ORIGIN = ""                # native app => no Origin; browsers blocked
+RATE_PER_IP_PER_HOUR = "3"
+GLOBAL_CAP_PER_DAY = "300"
+IDEMPOTENCY_TTL_SECONDS = "600"
+APPLE_APP_ID = "REPLACE_TEAMID.BUNDLEID"     # from P4
+PLAY_PACKAGE_NAME = "REPLACE_PACKAGE"        # from P5
+# Secrets (set via `wrangler secret put`): GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID,
+# GITHUB_APP_PRIVATE_KEY, TURNSTILE_SECRET, PLAY_SA_CLIENT_EMAIL, PLAY_SA_PRIVATE_KEY
