@@ -1,10 +1,13 @@
 import type { Env } from "./env";
+import { guardRequest } from "./guards";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname !== "/feedback") return json({ error: "not_found" }, 404);
     if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+    const guarded = await guardRequest(request, env);
+    if (!guarded.ok) return guarded.response;
     return json({ ok: true }, 200);
   },
 };
