@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — ScannerCam Light</title>
-  <meta name="description" content="Privacy policy for ScannerCam Light. Your documents stay on your device — no data is collected or transmitted." />
+  <meta name="description" content="Privacy policy for ScannerCam Light. Your documents stay on your device. The only data ever transmitted is what you explicitly send via the optional feedback feature." />
   <link rel="icon" href="assets/icon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -27,11 +27,11 @@
     <div class="container prose">
       <span class="eyebrow">Privacy</span>
       <h1>Privacy Policy</h1>
-      <p class="lead">ScannerCam Light is built to keep your documents private. In short: everything stays on your device.</p>
+      <p class="lead">ScannerCam Light is built to keep your documents private. Everything stays on your device — with one explicit exception: the optional in-app feedback feature, described below, which only transmits data when you actively choose to send it.</p>
       <p><em>Effective date: 6 July 2026</em></p>
 
       <h2>What we collect</h2>
-      <p><strong>Nothing.</strong> ScannerCam Light does not collect, transmit, or store any personal data on any server. There are no user accounts and no analytics or tracking of any kind.</p>
+      <p><strong>Almost nothing.</strong> ScannerCam Light does not collect, transmit, or store any personal data on any server. There are no user accounts and no analytics or tracking of any kind. The sole exception is data you explicitly choose to submit through the optional feedback feature — see the <a href="#feedback">Feedback</a> section below.</p>
 
       <h2>Where your data lives</h2>
       <ul>
@@ -41,7 +41,22 @@
       </ul>
 
       <h2>Network access</h2>
-      <p>The Android version requests no <code>INTERNET</code> permission and makes no network requests. The only time an external destination can open is when you deliberately tap the optional donation link, which opens your browser to a third&#8209;party donation page. We don't control or receive data from that page.</p>
+      <p>The app makes no background network requests. The only times an outbound connection is made are: (1) when you deliberately tap the optional donation link, which opens your browser to a third&#8209;party donation page — we don't control or receive data from that page; and (2) when you explicitly submit feedback through the in-app feedback form, as described in the <a href="#feedback">Feedback</a> section below.</p>
+
+      <h2 id="feedback">Feedback</h2>
+      <p>The app includes an optional <strong>Send feedback</strong> feature. No data is ever sent unless you open the feedback form and tap <em>Submit</em>. When you do, the following is transmitted:</p>
+      <ul>
+        <li><strong>Your message</strong> — the text you type in the feedback form (required).</li>
+        <li><strong>Your email address</strong> — only if you choose to enter one. Providing an email is entirely optional.</li>
+        <li><strong>Non-personal diagnostics</strong> — app version, OS version, device model, and language/locale. These help reproduce reported issues and contain no information about your documents.</li>
+      </ul>
+      <p>This data is sent to a Cloudflare Worker service, which creates a <strong>publicly visible issue</strong> in the app's GitHub repository. This means:</p>
+      <ul>
+        <li>Your message text will be visible to anyone on the internet.</li>
+        <li>If you include your email address, it will also be publicly visible in the GitHub issue.</li>
+      </ul>
+      <p>The app warns you about this public visibility before you submit. Do not include sensitive information in your feedback message, and consider whether you want to include your email given that it will be public.</p>
+      <p><strong>No scanned documents or their contents are ever sent.</strong> Feedback submission is strictly limited to the fields listed above.</p>
 
       <h2>Sharing</h2>
       <p>When you export or share a document, you choose the destination through your device's own share sheet. That action, and where the file goes, is entirely under your control.</p>
