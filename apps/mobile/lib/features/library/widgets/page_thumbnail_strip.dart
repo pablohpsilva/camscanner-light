@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../../theme/ream_colors.dart';
 import '../page_image.dart';
 
 /// Horizontal scrollable strip of page thumbnails for [PageViewerScreen].
@@ -71,13 +72,13 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
   Widget _buildTile(BuildContext context, int index) {
     final isSelected = index == widget.currentIndex;
     final page = widget.pages[index];
-    final scheme = Theme.of(context).colorScheme;
+    final ream = context.ream;
     final dpr = MediaQuery.of(context).devicePixelRatio;
     final placeholder = Container(
       width: 56,
       height: 80,
-      color: scheme.surfaceContainerHighest,
-      child: Icon(Icons.description_outlined, color: scheme.onSurfaceVariant),
+      color: ream.surface,
+      child: Icon(Icons.description_outlined, color: ream.muted),
     );
     return GestureDetector(
       onTap: () => widget.onTap(index),
@@ -87,7 +88,7 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         foregroundDecoration: isSelected
             ? BoxDecoration(
-                border: Border.all(color: scheme.primary, width: 2),
+                border: Border.all(color: ream.green, width: 2),
                 borderRadius: BorderRadius.circular(4),
               )
             : null,
