@@ -102,6 +102,18 @@ flutter:
   assets:
     - assets/icons/
 
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: fonts/Figtree[wght].ttf
+    - family: IBMPlexMono
+      fonts:
+        - asset: fonts/IBMPlexMono-Regular.ttf
+        - asset: fonts/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: fonts/IBMPlexMono-SemiBold.ttf
+          weight: 600
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
