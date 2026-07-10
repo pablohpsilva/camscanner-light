@@ -52,5 +52,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('tb-x')));
     expect(find.text('Crop'), findsOneWidget); // no throw
+    final icon = tester.widget<Icon>(find.byIcon(Icons.crop));
+    expect(icon.color, ReamColors.dark.muted);
   });
 }

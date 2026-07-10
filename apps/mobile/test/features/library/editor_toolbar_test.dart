@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/editor_toolbar.dart';
+import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 import '../../support/ream_pump.dart';
 
@@ -82,7 +83,6 @@ void main() {
     testWidgets('null onCrop keeps page-viewer-edit present but inert', (
       tester,
     ) async {
-      var cropCount = 0;
       await pumpReam(
         tester,
         EditorToolbar(
@@ -98,13 +98,14 @@ void main() {
 
       expect(find.byKey(const Key('page-viewer-edit')), findsOneWidget);
 
-      await tester.tap(
-        find.byKey(const Key('page-viewer-edit')),
-        warnIfMissed: false,
+      // Assert Crop button icon renders in disabled color.
+      final icon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byKey(const Key('page-viewer-edit')),
+          matching: find.byType(Icon),
+        ),
       );
-      await tester.pump();
-
-      expect(cropCount, 0);
+      expect(icon.color, ReamColors.dark.muted);
     });
   });
 }
