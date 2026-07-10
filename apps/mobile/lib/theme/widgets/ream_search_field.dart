@@ -45,16 +45,21 @@ class ReamSearchField extends StatelessWidget {
               ),
             ),
           ),
-          if (controller.text.isNotEmpty)
-            GestureDetector(
-              key: const Key('documents-search-clear'),
-              onTap: () {
-                controller.clear();
-                onChanged('');
-                onClear?.call();
-              },
-              child: Icon(Icons.close, size: 16, color: r.muted),
-            ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return GestureDetector(
+                key: const Key('documents-search-clear'),
+                onTap: () {
+                  controller.clear();
+                  onChanged('');
+                  onClear?.call();
+                },
+                child: Icon(Icons.close, size: 16, color: r.muted),
+              );
+            },
+          ),
         ],
       ),
     );

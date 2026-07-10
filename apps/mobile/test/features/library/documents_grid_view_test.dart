@@ -94,6 +94,9 @@ void main() {
       // Verify both cards still render (no crash with selectedIds set).
       expect(find.byKey(const Key('document-card-1')), findsOneWidget);
       expect(find.byKey(const Key('document-card-2')), findsOneWidget);
+
+      // The selected card (id=1) shows a check_circle icon; the other does not.
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
     });
 
     testWidgets('long press calls onLongPress with the correct summary', (

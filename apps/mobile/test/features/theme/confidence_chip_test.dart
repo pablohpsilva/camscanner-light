@@ -33,4 +33,16 @@ void main() {
     );
     expect((dot.decoration as BoxDecoration).color, ReamColors.light.amber);
   });
+
+  testWidgets('info level renders label + blue dot', (tester) async {
+    await pumpReam(
+      tester,
+      const ConfidenceChip(level: ConfidenceLevel.info, label: 'Info'),
+    );
+    expect(find.text('Info'), findsOneWidget);
+    final dot = tester.widget<DecoratedBox>(
+      find.byKey(const Key('confidence-dot')),
+    );
+    expect((dot.decoration as BoxDecoration).color, ReamColors.light.blue);
+  });
 }

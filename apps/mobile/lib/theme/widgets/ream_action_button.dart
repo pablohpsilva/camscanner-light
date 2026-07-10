@@ -66,7 +66,7 @@ class ReamActionButton extends StatelessWidget {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(15),
           child: Container(
-            height: primary ? 52 : 52,
+            height: 52,
             decoration: primary
                 ? null
                 : BoxDecoration(

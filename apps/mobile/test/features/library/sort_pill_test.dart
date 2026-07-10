@@ -22,4 +22,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(picked, SortCriterion.name);
   });
+
+  testWidgets('tapping sort-option-created fires SortCriterion.created', (
+    tester,
+  ) async {
+    SortCriterion? picked;
+    await pumpReam(
+      tester,
+      SortPill(
+        sort: DocumentSort.initial,
+        onCriterionSelected: (c) => picked = c,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('sort-pill')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sort-option-created')));
+    await tester.pumpAndSettle();
+    expect(picked, SortCriterion.created);
+  });
+
+  testWidgets('tapping sort-option-modified fires SortCriterion.modified', (
+    tester,
+  ) async {
+    SortCriterion? picked;
+    await pumpReam(
+      tester,
+      SortPill(
+        sort: DocumentSort.initial,
+        onCriterionSelected: (c) => picked = c,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('sort-pill')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sort-option-modified')));
+    await tester.pumpAndSettle();
+    expect(picked, SortCriterion.modified);
+  });
 }
