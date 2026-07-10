@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/ream_colors.dart';
 import 'donation_screen.dart';
 
 /// A fixed, always-visible banner inviting the user to donate. Placed in a
@@ -10,27 +11,35 @@ class DonationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final amber = Colors.amber.shade700;
+    final ream = context.ream;
     return Material(
-      color: Colors.amber.shade50,
+      color: ream.amberSoft,
       child: SafeArea(
         top: false,
-        child: InkWell(
-          key: const Key('donation-banner'),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const DonationScreen()),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: ream.amber, width: 1)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                const Text('❤️', style: TextStyle(fontSize: 22)),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text('Enjoying the app? Tap to support it'),
-                ),
-                Icon(Icons.chevron_right, color: amber),
-              ],
+          child: InkWell(
+            key: const Key('donation-banner'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const DonationScreen()),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.favorite, color: ream.amber, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Enjoying the app? Tap to support it',
+                      style: TextStyle(color: ream.ink2),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: ream.amber),
+                ],
+              ),
             ),
           ),
         ),
