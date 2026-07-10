@@ -56,17 +56,16 @@ class CropCorners {
     Offset? rightMidDev,
     Offset? bottomMidDev,
     Offset? leftMidDev,
-  }) =>
-      CropCorners(
-        topLeft: topLeft ?? this.topLeft,
-        topRight: topRight ?? this.topRight,
-        bottomRight: bottomRight ?? this.bottomRight,
-        bottomLeft: bottomLeft ?? this.bottomLeft,
-        topMidDev: topMidDev ?? this.topMidDev,
-        rightMidDev: rightMidDev ?? this.rightMidDev,
-        bottomMidDev: bottomMidDev ?? this.bottomMidDev,
-        leftMidDev: leftMidDev ?? this.leftMidDev,
-      );
+  }) => CropCorners(
+    topLeft: topLeft ?? this.topLeft,
+    topRight: topRight ?? this.topRight,
+    bottomRight: bottomRight ?? this.bottomRight,
+    bottomLeft: bottomLeft ?? this.bottomLeft,
+    topMidDev: topMidDev ?? this.topMidDev,
+    rightMidDev: rightMidDev ?? this.rightMidDev,
+    bottomMidDev: bottomMidDev ?? this.bottomMidDev,
+    leftMidDev: leftMidDev ?? this.leftMidDev,
+  );
 
   /// Clamps corners to `[0,1]`, then pulls each resolved midpoint into `[0,1]`
   /// by adjusting its deviation.
@@ -90,15 +89,23 @@ class CropCorners {
   /// `"x0,y0,x1,y1,x2,y2,x3,y3,devX0,devY0,devX1,devY1,devX2,devY2,devX3,devY3"`
   /// in role order TL,TR,BR,BL,topDev,rightDev,bottomDev,leftDev, fixed precision.
   String toStorage() => [
-        topLeft.dx, topLeft.dy,
-        topRight.dx, topRight.dy,
-        bottomRight.dx, bottomRight.dy,
-        bottomLeft.dx, bottomLeft.dy,
-        topMidDev.dx, topMidDev.dy,
-        rightMidDev.dx, rightMidDev.dy,
-        bottomMidDev.dx, bottomMidDev.dy,
-        leftMidDev.dx, leftMidDev.dy,
-      ].map((d) => d.toStringAsFixed(6)).join(',');
+    topLeft.dx,
+    topLeft.dy,
+    topRight.dx,
+    topRight.dy,
+    bottomRight.dx,
+    bottomRight.dy,
+    bottomLeft.dx,
+    bottomLeft.dy,
+    topMidDev.dx,
+    topMidDev.dy,
+    rightMidDev.dx,
+    rightMidDev.dy,
+    bottomMidDev.dx,
+    bottomMidDev.dy,
+    leftMidDev.dx,
+    leftMidDev.dy,
+  ].map((d) => d.toStringAsFixed(6)).join(',');
 
   /// Fail-soft: returns null on null / empty / wrong count / non-numeric /
   /// non-finite (NaN/Infinity). NEVER throws — a bad stored value must not
@@ -144,8 +151,16 @@ class CropCorners {
       other.leftMidDev == leftMidDev;
 
   @override
-  int get hashCode => Object.hash(topLeft, topRight, bottomRight, bottomLeft,
-      topMidDev, rightMidDev, bottomMidDev, leftMidDev);
+  int get hashCode => Object.hash(
+    topLeft,
+    topRight,
+    bottomRight,
+    bottomLeft,
+    topMidDev,
+    rightMidDev,
+    bottomMidDev,
+    leftMidDev,
+  );
 
   @override
   String toString() =>

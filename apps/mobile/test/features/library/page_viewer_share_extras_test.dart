@@ -11,10 +11,11 @@ void main() {
     final repo = FakeDocumentRepository(
       pages: const [PageImage(position: 1, imagePath: '/nonexistent/p.jpg')],
     );
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(
-          documentId: 1, name: 'Scan X', repository: repo),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(documentId: 1, name: 'Scan X', repository: repo),
+      ),
+    );
     // Safe to settle: page image paths are NON-LOADABLE, which does not hang.
     await tester.pumpAndSettle();
 

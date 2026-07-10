@@ -13,7 +13,7 @@ enum SaveStatus { idle, saving, error }
 class SaveController extends ChangeNotifier {
   final DocumentRepository _repository;
   SaveController({required DocumentRepository repository})
-      : _repository = repository; // ignore: prefer_initializing_formals
+    : _repository = repository; // ignore: prefer_initializing_formals
 
   SaveStatus _status = SaveStatus.idle;
   SaveStatus get status => _status;
@@ -31,8 +31,11 @@ class SaveController extends ChangeNotifier {
     if (_disposed || _status == SaveStatus.saving) return null;
     _set(SaveStatus.saving);
     try {
-      final doc = await _repository.createFromCapture(image,
-          corners: corners, enhancer: enhancer);
+      final doc = await _repository.createFromCapture(
+        image,
+        corners: corners,
+        enhancer: enhancer,
+      );
       if (_disposed) return null;
       _set(SaveStatus.idle);
       return doc;
@@ -55,8 +58,11 @@ class SaveController extends ChangeNotifier {
     _set(SaveStatus.saving);
     try {
       final position = await _repository.addPageToDocument(
-          documentId, image,
-          corners: corners, enhancer: enhancer);
+        documentId,
+        image,
+        corners: corners,
+        enhancer: enhancer,
+      );
       if (_disposed) return null;
       _set(SaveStatus.idle);
       return position;

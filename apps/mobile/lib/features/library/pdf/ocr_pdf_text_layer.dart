@@ -14,25 +14,22 @@ class OcrPdfTextLayer implements PdfTextLayer {
   @override
   List<pw.Widget> overlayFor(PageImage page, double width, double height) {
     if (page.ocrWords.isEmpty) return const [];
-    return page.ocrWords
-        .where((w) => w.text.trim().isNotEmpty)
-        .map((w) {
-          final left = (w.left * width).clamp(0.0, width);
-          final top = (w.top * height).clamp(0.0, height);
-          final boxH = ((w.bottom - w.top) * height).clamp(1.0, height);
-          return pw.Positioned(
-            left: left,
-            top: top,
-            child: pw.Text(
-              w.text,
-              style: pw.TextStyle(
-                fontSize: boxH * 0.8,
-                color: PdfColors.black,
-                renderingMode: PdfTextRenderingMode.invisible,
-              ),
-            ),
-          );
-        })
-        .toList();
+    return page.ocrWords.where((w) => w.text.trim().isNotEmpty).map((w) {
+      final left = (w.left * width).clamp(0.0, width);
+      final top = (w.top * height).clamp(0.0, height);
+      final boxH = ((w.bottom - w.top) * height).clamp(1.0, height);
+      return pw.Positioned(
+        left: left,
+        top: top,
+        child: pw.Text(
+          w.text,
+          style: pw.TextStyle(
+            fontSize: boxH * 0.8,
+            color: PdfColors.black,
+            renderingMode: PdfTextRenderingMode.invisible,
+          ),
+        ),
+      );
+    }).toList();
   }
 }

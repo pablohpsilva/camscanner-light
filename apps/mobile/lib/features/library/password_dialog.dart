@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Prompts for a password (obscured). Resolves to the entered password, or null
 /// if cancelled. Protect is disabled until a non-empty password is entered.
-Future<String?> showPasswordDialog(BuildContext context) =>
-    showDialog<String>(context: context, builder: (_) => const PasswordDialog());
+Future<String?> showPasswordDialog(BuildContext context) => showDialog<String>(
+  context: context,
+  builder: (_) => const PasswordDialog(),
+);
 
 class PasswordDialog extends StatefulWidget {
   const PasswordDialog({super.key});
@@ -46,8 +48,9 @@ class _PasswordDialogState extends State<PasswordDialog> {
         ),
         TextButton(
           key: const Key('password-confirm'),
-          onPressed:
-              canConfirm ? () => Navigator.of(context).pop(_controller.text) : null,
+          onPressed: canConfirm
+              ? () => Navigator.of(context).pop(_controller.text)
+              : null,
           child: const Text('Protect'),
         ),
       ],

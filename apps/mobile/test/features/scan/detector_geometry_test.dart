@@ -6,10 +6,10 @@ void main() {
     test('assigns TL/TR/BR/BL for a shuffled axis-aligned rectangle', () {
       // Rect corners given out of order.
       final pts = <Pt>[
-        (x: 100, y: 80),  // BR
-        (x: 10, y: 5),    // TL
-        (x: 100, y: 5),   // TR
-        (x: 10, y: 80),   // BL
+        (x: 100, y: 80), // BR
+        (x: 10, y: 5), // TL
+        (x: 100, y: 5), // TR
+        (x: 10, y: 80), // BL
       ];
       final r = sortCornerRoles(pts);
       expect(r[0], (x: 10.0, y: 5.0), reason: 'TL = smallest x+y');
@@ -21,10 +21,10 @@ void main() {
     test('assigns roles for a rotated (perspective) quad', () {
       // A trapezoid tilted right: top edge shorter, shifted.
       final pts = <Pt>[
-        (x: 30, y: 10),   // TL
-        (x: 90, y: 20),   // TR
-        (x: 110, y: 95),  // BR
-        (x: 15, y: 85),   // BL
+        (x: 30, y: 10), // TL
+        (x: 90, y: 20), // TR
+        (x: 110, y: 95), // BR
+        (x: 15, y: 85), // BL
       ];
       final r = sortCornerRoles(pts);
       expect(r[0], (x: 30.0, y: 10.0));
@@ -37,7 +37,10 @@ void main() {
   group('quadArea', () {
     test('computes rectangle area', () {
       final rect = <Pt>[
-        (x: 0, y: 0), (x: 100, y: 0), (x: 100, y: 50), (x: 0, y: 50),
+        (x: 0, y: 0),
+        (x: 100, y: 0),
+        (x: 100, y: 50),
+        (x: 0, y: 50),
       ];
       expect(quadArea(rect), closeTo(5000, 1e-6));
     });
@@ -46,14 +49,20 @@ void main() {
   group('angleScore', () {
     test('1.0 for a perfect rectangle', () {
       final rect = <Pt>[
-        (x: 0, y: 0), (x: 100, y: 0), (x: 100, y: 50), (x: 0, y: 50),
+        (x: 0, y: 0),
+        (x: 100, y: 0),
+        (x: 100, y: 50),
+        (x: 0, y: 50),
       ];
       expect(angleScore(rect), closeTo(1.0, 1e-9));
     });
 
     test('lower for a skewed quad', () {
       final skew = <Pt>[
-        (x: 0, y: 0), (x: 100, y: 0), (x: 130, y: 50), (x: 0, y: 50),
+        (x: 0, y: 0),
+        (x: 100, y: 0),
+        (x: 130, y: 50),
+        (x: 0, y: 50),
       ];
       expect(angleScore(skew), lessThan(0.95));
       expect(angleScore(skew), greaterThan(0.0));
@@ -75,13 +84,24 @@ void main() {
 
   group('detectionConfidence', () {
     test('applies the 0.5/0.3/0.2 weighting', () {
-      final c = detectionConfidence(areaScore: 1.0, angleScore: 1.0, rectScore: 1.0);
+      final c = detectionConfidence(
+        areaScore: 1.0,
+        angleScore: 1.0,
+        rectScore: 1.0,
+      );
       expect(c, closeTo(1.0, 1e-9));
-      final c2 = detectionConfidence(areaScore: 0.4, angleScore: 1.0, rectScore: 0.5);
+      final c2 = detectionConfidence(
+        areaScore: 0.4,
+        angleScore: 1.0,
+        rectScore: 0.5,
+      );
       expect(c2, closeTo(0.5 * 0.4 + 0.3 * 1.0 + 0.2 * 0.5, 1e-9));
     });
     test('clamps to [0,1]', () {
-      expect(detectionConfidence(areaScore: 2.0, angleScore: 2.0, rectScore: 2.0), 1.0);
+      expect(
+        detectionConfidence(areaScore: 2.0, angleScore: 2.0, rectScore: 2.0),
+        1.0,
+      );
     });
   });
 
@@ -109,8 +129,18 @@ void main() {
 
   group('isConvexQuad', () {
     test('accepts an axis-aligned square (CCW and CW windings)', () {
-      const ccw = <Pt>[(x: 0, y: 0), (x: 10, y: 0), (x: 10, y: 10), (x: 0, y: 10)];
-      const cw = <Pt>[(x: 0, y: 0), (x: 0, y: 10), (x: 10, y: 10), (x: 10, y: 0)];
+      const ccw = <Pt>[
+        (x: 0, y: 0),
+        (x: 10, y: 0),
+        (x: 10, y: 10),
+        (x: 0, y: 10),
+      ];
+      const cw = <Pt>[
+        (x: 0, y: 0),
+        (x: 0, y: 10),
+        (x: 10, y: 10),
+        (x: 10, y: 0),
+      ];
       expect(isConvexQuad(ccw), isTrue);
       expect(isConvexQuad(cw), isTrue);
     });

@@ -13,7 +13,13 @@ void main() {
   });
 
   test('four rotations return the original box', () {
-    const b = OcrWordBox(text: 'x', left: 0.1, top: 0.2, right: 0.5, bottom: 0.7);
+    const b = OcrWordBox(
+      text: 'x',
+      left: 0.1,
+      top: 0.2,
+      right: 0.5,
+      bottom: 0.7,
+    );
     var r = b;
     for (var i = 0; i < 4; i++) {
       r = r.rotate90Cw();

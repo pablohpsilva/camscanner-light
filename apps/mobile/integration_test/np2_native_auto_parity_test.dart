@@ -12,9 +12,17 @@ Uint8List _doc(int w, int h) {
   for (var y = 0; y < h; y++) {
     for (var x = 0; x < w; x++) {
       final shade = 1.0 - 0.4 * (x + y) / (w + h);
-      var r = (235 * shade).round(), g = (225 * shade).round(), b = (205 * shade).round();
-      if (x > w ~/ 8 && x < 7 * w ~/ 8 && (y % 40) < 16 && y > h ~/ 8 && y < 7 * h ~/ 8) {
-        r = 35; g = 33; b = 30;
+      var r = (235 * shade).round(),
+          g = (225 * shade).round(),
+          b = (205 * shade).round();
+      if (x > w ~/ 8 &&
+          x < 7 * w ~/ 8 &&
+          (y % 40) < 16 &&
+          y > h ~/ 8 &&
+          y < 7 * h ~/ 8) {
+        r = 35;
+        g = 33;
+        b = 30;
       }
       im.setPixelRgb(x, y, r.clamp(0, 255), g.clamp(0, 255), b.clamp(0, 255));
     }
@@ -28,7 +36,11 @@ void main() {
 
   test('native Auto ≈ Dart Auto (full frame)', () async {
     final bytes = _doc(1600, 1200);
-    final nativeOut = await p.process(bytes, CropCorners.fullFrame, EnhancerMode.auto);
+    final nativeOut = await p.process(
+      bytes,
+      CropCorners.fullFrame,
+      EnhancerMode.auto,
+    );
     expect(nativeOut, isNotNull);
 
     // Dart reference (bake + autoEnhanceOriented, then encode q95).

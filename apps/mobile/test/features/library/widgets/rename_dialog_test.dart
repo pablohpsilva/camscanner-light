@@ -10,41 +10,48 @@ void main() {
     String current, {
     required void Function(String?) onResult,
   }) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => Center(
-            child: ElevatedButton(
-              onPressed: () async {
-                final r = await showRenameDialog(context, current);
-                onResult(r);
-              },
-              child: const Text('open'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  final r = await showRenameDialog(context, current);
+                  onResult(r);
+                },
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
   }
 
   testWidgets('pre-fills and fully selects the current name', (tester) async {
     await pumpDialog(tester, 'Scan 1', onResult: (_) {});
-    final field =
-        tester.widget<TextField>(find.byKey(const Key('rename-field')));
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('rename-field')),
+    );
     expect(field.controller!.text, 'Scan 1');
-    expect(field.controller!.selection,
-        const TextSelection(baseOffset: 0, extentOffset: 6));
+    expect(
+      field.controller!.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 6),
+    );
   });
 
-  testWidgets('Save is disabled when the field is empty/whitespace',
-      (tester) async {
+  testWidgets('Save is disabled when the field is empty/whitespace', (
+    tester,
+  ) async {
     await pumpDialog(tester, 'Scan 1', onResult: (_) {});
     await tester.enterText(find.byKey(const Key('rename-field')), '   ');
     await tester.pump();
-    final save =
-        tester.widget<TextButton>(find.byKey(const Key('rename-save')));
+    final save = tester.widget<TextButton>(
+      find.byKey(const Key('rename-save')),
+    );
     expect(save.onPressed, isNull);
   });
 
@@ -71,15 +78,18 @@ void main() {
   testWidgets('returns null when the name is unchanged', (tester) async {
     String? result = '__unset__';
     await pumpDialog(tester, 'Scan 1', onResult: (r) => result = r);
-    await tester.tap(find.byKey(const Key('rename-save'))); // Save without editing
+    await tester.tap(
+      find.byKey(const Key('rename-save')),
+    ); // Save without editing
     await tester.pumpAndSettle();
     expect(result, isNull);
   });
 
   testWidgets('caps the field at 100 characters', (tester) async {
     await pumpDialog(tester, 'Scan 1', onResult: (_) {});
-    final field =
-        tester.widget<TextField>(find.byKey(const Key('rename-field')));
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('rename-field')),
+    );
     expect(field.maxLength, 100);
   });
 }

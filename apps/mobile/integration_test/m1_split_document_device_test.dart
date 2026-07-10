@@ -15,8 +15,9 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('splitAfter moves trailing pages to a new document on device',
-      (tester) async {
+  testWidgets('splitAfter moves trailing pages to a new document on device', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('m1dev');
     final db = AppDatabase(NativeDatabase.memory());
     final store = DocumentFileStore(base);
@@ -30,15 +31,30 @@ void main() {
     );
 
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+      img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+    );
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     for (var p = 1; p <= 3; p++) {
       final rel = 'documents/$id/page_$p.jpg';
       await store.writeRelative(rel, jpeg);
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: id, position: p, relativeImagePath: rel));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: p,
+              relativeImagePath: rel,
+            ),
+          );
     }
 
     final created = await repo.splitAfter(id, 1);

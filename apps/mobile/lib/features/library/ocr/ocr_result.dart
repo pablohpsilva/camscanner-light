@@ -15,23 +15,28 @@ class OcrWordBox {
   /// This box after the page image is rotated 90° CLOCKWISE (normalized coords).
   /// Matches `image.copyRotate(angle: 90)`: a top-left box moves to the top-right.
   OcrWordBox rotate90Cw() => OcrWordBox(
-        text: text,
-        left: 1 - bottom,
-        top: left,
-        right: 1 - top,
-        bottom: right,
-      );
+    text: text,
+    left: 1 - bottom,
+    top: left,
+    right: 1 - top,
+    bottom: right,
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'t': text, 'l': left, 'o': top, 'r': right, 'b': bottom};
+  Map<String, dynamic> toJson() => {
+    't': text,
+    'l': left,
+    'o': top,
+    'r': right,
+    'b': bottom,
+  };
 
   factory OcrWordBox.fromJson(Map<String, dynamic> j) => OcrWordBox(
-        text: j['t'] as String,
-        left: (j['l'] as num).toDouble(),
-        top: (j['o'] as num).toDouble(),
-        right: (j['r'] as num).toDouble(),
-        bottom: (j['b'] as num).toDouble(),
-      );
+    text: j['t'] as String,
+    left: (j['l'] as num).toDouble(),
+    top: (j['o'] as num).toDouble(),
+    right: (j['r'] as num).toDouble(),
+    bottom: (j['b'] as num).toDouble(),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -54,8 +59,7 @@ class OcrResult {
 
   static const empty = OcrResult(text: '', words: []);
 
-  String encodeBoxes() =>
-      jsonEncode(words.map((w) => w.toJson()).toList());
+  String encodeBoxes() => jsonEncode(words.map((w) => w.toJson()).toList());
 
   static List<OcrWordBox> decodeBoxes(String? json) {
     if (json == null || json.isEmpty) return const [];

@@ -16,17 +16,18 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 
 class _FixedOcrEngine implements OcrEngine {
   @override
-  Future<OcrResult> recognize(Uint8List imageBytes) async =>
-      const OcrResult(text: 'ON DEVICE OCR', words: [
-        OcrWordBox(text: 'ON', left: .1, top: .1, right: .2, bottom: .2),
-      ]);
+  Future<OcrResult> recognize(Uint8List imageBytes) async => const OcrResult(
+    text: 'ON DEVICE OCR',
+    words: [OcrWordBox(text: 'ON', left: .1, top: .1, right: .2, bottom: .2)],
+  );
 }
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('runOcr caches recognized text on the real device DB',
-      (tester) async {
+  testWidgets('runOcr caches recognized text on the real device DB', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('o1dev');
     final db = AppDatabase(NativeDatabase.memory());
     final store = DocumentFileStore(base);
@@ -36,20 +37,36 @@ void main() {
       fileStore: store,
       clock: DateTime.now,
       pdfBuilder: const PdfBuilder(),
-      warper: const HybridWarper(), // production warper — not exercised by runOcr
+      warper:
+          const HybridWarper(), // production warper — not exercised by runOcr
       ocrEngine: _FixedOcrEngine(),
     );
 
     // Seed a document + page with a real JPEG on disk.
     final now = DateTime.now();
-    final docId = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final docId = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final rel = 'documents/$docId/page_1.jpg';
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+      img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+    );
     await store.writeRelative(rel, jpeg);
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: docId, position: 1, relativeImagePath: rel));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: docId,
+            position: 1,
+            relativeImagePath: rel,
+          ),
+        );
 
     await repo.runOcr(docId, 1);
 

@@ -51,9 +51,9 @@ class FakeGalleryPicker implements GalleryPicker {
 /// and a [FakeGalleryPicker]. Used by surviving launch steps and widget tests
 /// that need the Home import/scan entry points wired without hardware.
 ScanDependencies grantedScanDependencies() => ScanDependencies(
-      createGalleryPicker: () => const FakeGalleryPicker(),
-      createDocumentScanner: () => FakeDocumentScannerService(const []),
-    );
+  createGalleryPicker: () => const FakeGalleryPicker(),
+  createDocumentScanner: () => FakeDocumentScannerService(const []),
+);
 
 /// Fake [EdgeDetector] for host tests. Returns a fixed [DetectionResult] or
 /// null; counts calls.
@@ -107,7 +107,9 @@ class FakeSequentialDocumentScannerService implements DocumentScannerService {
 
   @override
   Future<List<CapturedImage>> scan({int? pageLimit}) async {
-    final out = calls < results.length ? results[calls] : const <CapturedImage>[];
+    final out = calls < results.length
+        ? results[calls]
+        : const <CapturedImage>[];
     calls++;
     return out;
   }

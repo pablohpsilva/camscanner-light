@@ -9,8 +9,14 @@ import 'package:mobile/features/scan/opencv_edge_detector.dart';
 Uint8List _pageOn({required int desk, required int page}) {
   final image = img.Image(width: 800, height: 600, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(desk, desk, desk));
-  img.fillRect(image, x1: 150, y1: 110, x2: 650, y2: 490,
-      color: img.ColorRgb8(page, page, page));
+  img.fillRect(
+    image,
+    x1: 150,
+    y1: 110,
+    x2: 650,
+    y2: 490,
+    color: img.ColorRgb8(page, page, page),
+  );
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
@@ -40,13 +46,17 @@ void main() {
     }
 
     test('page brighter than desk → bright-polarity quad', () async {
-      expectHugsPage(await detector.detect(_pageOn(desk: 55, page: 225)),
-          'bright page on a dark desk must segment');
+      expectHugsPage(
+        await detector.detect(_pageOn(desk: 55, page: 225)),
+        'bright page on a dark desk must segment',
+      );
     });
 
     test('page darker than desk → dark-polarity quad', () async {
-      expectHugsPage(await detector.detect(_pageOn(desk: 235, page: 150)),
-          'darker page on a light desk must segment via the inverse mask');
+      expectHugsPage(
+        await detector.detect(_pageOn(desk: 235, page: 150)),
+        'darker page on a light desk must segment via the inverse mask',
+      );
     });
 
     test('uniform frame → null (no page)', () async {

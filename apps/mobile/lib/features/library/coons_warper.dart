@@ -21,7 +21,9 @@ class CoonsWarper implements ImageWarper {
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) {
     if (corners == CropCorners.fullFrame) return Future.value(null);
     return compute(
-        _coonsFn, _CoonsArgs(bytes: bytes, corners: corners, maxDim: maxDimension));
+      _coonsFn,
+      _CoonsArgs(bytes: bytes, corners: corners, maxDim: maxDimension),
+    );
   }
 }
 
@@ -29,8 +31,11 @@ class _CoonsArgs {
   final Uint8List bytes;
   final CropCorners corners;
   final int maxDim;
-  const _CoonsArgs(
-      {required this.bytes, required this.corners, required this.maxDim});
+  const _CoonsArgs({
+    required this.bytes,
+    required this.corners,
+    required this.maxDim,
+  });
 }
 
 Uint8List? _coonsFn(_CoonsArgs args) {
@@ -43,7 +48,11 @@ Uint8List? _coonsFn(_CoonsArgs args) {
   if (decoded == null) throw WarpException('failed to decode JPEG');
   final src = img.bakeOrientation(decoded);
   return Uint8List.fromList(
-      img.encodeJpg(warpCoonsToImage(src, args.corners, args.maxDim), quality: 92));
+    img.encodeJpg(
+      warpCoonsToImage(src, args.corners, args.maxDim),
+      quality: 92,
+    ),
+  );
 }
 
 /// Unwarps a curved 8-point crop from an already-oriented image and returns the
@@ -74,8 +83,10 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
 
   Offset qbez(Offset p0, Offset ci, Offset p1, double t) {
     final mt = 1 - t, a = (1 - t) * (1 - t), b = 2 * mt * t, cc = t * t;
-    return Offset(a * p0.dx + b * ci.dx + cc * p1.dx,
-        a * p0.dy + b * ci.dy + cc * p1.dy);
+    return Offset(
+      a * p0.dx + b * ci.dx + cc * p1.dx,
+      a * p0.dy + b * ci.dy + cc * p1.dy,
+    );
   }
 
   Offset top(double u) => qbez(tl, cTop, tr, u);
@@ -117,12 +128,20 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
     for (int dx = 0; dx < outW; dx++) {
       final u = dx / (outW - 1);
       final tc = top(u), bc = bottom(u);
-      final bx = (1 - u) * (1 - v) * tl.dx + u * (1 - v) * tr.dx +
-          (1 - u) * v * bl.dx + u * v * br.dx;
-      final by = (1 - u) * (1 - v) * tl.dy + u * (1 - v) * tr.dy +
-          (1 - u) * v * bl.dy + u * v * br.dy;
-      final rawX = (1 - v) * tc.dx + v * bc.dx + (1 - u) * lc.dx + u * rc.dx - bx;
-      final rawY = (1 - v) * tc.dy + v * bc.dy + (1 - u) * lc.dy + u * rc.dy - by;
+      final bx =
+          (1 - u) * (1 - v) * tl.dx +
+          u * (1 - v) * tr.dx +
+          (1 - u) * v * bl.dx +
+          u * v * br.dx;
+      final by =
+          (1 - u) * (1 - v) * tl.dy +
+          u * (1 - v) * tr.dy +
+          (1 - u) * v * bl.dy +
+          u * v * br.dy;
+      final rawX =
+          (1 - v) * tc.dx + v * bc.dx + (1 - u) * lc.dx + u * rc.dx - bx;
+      final rawY =
+          (1 - v) * tc.dy + v * bc.dy + (1 - u) * lc.dy + u * rc.dy - by;
       final fx = rawX < 0 ? 0.0 : (rawX > xMax ? xMax : rawX);
       final fy = rawY < 0 ? 0.0 : (rawY > yMax ? yMax : rawY);
       final x0 = fx.toInt(), y0 = fy.toInt();
@@ -140,6 +159,10 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
     }
   }
   return img.Image.fromBytes(
-      width: outW, height: outH, bytes: out.buffer,
-      numChannels: 3, order: img.ChannelOrder.rgb);
+    width: outW,
+    height: outH,
+    bytes: out.buffer,
+    numChannels: 3,
+    order: img.ChannelOrder.rgb,
+  );
 }

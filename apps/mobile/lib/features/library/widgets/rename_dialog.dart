@@ -27,7 +27,9 @@ class _RenameDialogState extends State<_RenameDialog> {
     super.initState();
     _controller = TextEditingController(text: widget.currentName)
       ..selection = TextSelection(
-          baseOffset: 0, extentOffset: widget.currentName.length);
+        baseOffset: 0,
+        extentOffset: widget.currentName.length,
+      );
   }
 
   @override

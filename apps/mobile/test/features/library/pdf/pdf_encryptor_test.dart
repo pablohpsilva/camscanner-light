@@ -22,13 +22,19 @@ void main() {
 
   test('encrypts a PDF with AES-256 and the given password', () async {
     final plain = await plainPdf();
-    expect(_ascii(plain).contains('/Encrypt'), isFalse,
-        reason: 'the plain PDF must not be encrypted');
+    expect(
+      _ascii(plain).contains('/Encrypt'),
+      isFalse,
+      reason: 'the plain PDF must not be encrypted',
+    );
 
     final enc = await const SyncfusionPdfEncryptor().encrypt(plain, 'secret');
 
-    expect(_ascii(enc).contains('/Encrypt'), isTrue,
-        reason: 'the output must be an encrypted PDF');
+    expect(
+      _ascii(enc).contains('/Encrypt'),
+      isTrue,
+      reason: 'the output must be an encrypted PDF',
+    );
     // Reopens with the password (proves it is validly encrypted with it).
     final doc = sf.PdfDocument(inputBytes: enc, password: 'secret');
     expect(doc.pages.count, greaterThan(0));

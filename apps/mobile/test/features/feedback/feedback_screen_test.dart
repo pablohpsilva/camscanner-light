@@ -13,12 +13,12 @@ class _StubService extends FeedbackService {
   FeedbackDraft? lastDraft;
 
   _StubService(this.result)
-      : super(
-          config: testFeedbackConfig,
-          collector: const FakeDiagnosticsCollector(),
-          attestation: const NoAttestationProvider(),
-          httpClient: fakeHttpClient(),
-        );
+    : super(
+        config: testFeedbackConfig,
+        collector: const FakeDiagnosticsCollector(),
+        attestation: const NoAttestationProvider(),
+        httpClient: fakeHttpClient(),
+      );
 
   @override
   Future<FeedbackResult> submit(FeedbackDraft draft) async {
@@ -28,10 +28,10 @@ class _StubService extends FeedbackService {
 }
 
 Widget _host(FeedbackService service) => MaterialApp(
-      home: FeedbackScreen(
-        dependencies: FeedbackDependencies(createService: () => service),
-      ),
-    );
+  home: FeedbackScreen(
+    dependencies: FeedbackDependencies(createService: () => service),
+  ),
+);
 
 void main() {
   testWidgets('blocks submit when the message is empty', (t) async {
@@ -43,12 +43,15 @@ void main() {
     expect(find.text('Please enter a message'), findsOneWidget);
   });
 
-  testWidgets('shows the public-visibility warning next to the email field',
-      (t) async {
+  testWidgets('shows the public-visibility warning next to the email field', (
+    t,
+  ) async {
     await t.pumpWidget(_host(_StubService(const FeedbackSuccess('u'))));
     expect(find.byKey(const Key('feedback-email-warning')), findsOneWidget);
-    expect(find.text('Optional. This will be publicly visible on GitHub.'),
-        findsOneWidget);
+    expect(
+      find.text('Optional. This will be publicly visible on GitHub.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('rejects a malformed email', (t) async {
@@ -66,7 +69,9 @@ void main() {
     final s = _StubService(const FeedbackSuccess('u'));
     await t.pumpWidget(_host(s));
     await t.enterText(
-        find.byKey(const Key('feedback-message')), 'Great app, one bug');
+      find.byKey(const Key('feedback-message')),
+      'Great app, one bug',
+    );
     await t.tap(find.byKey(const Key('feedback-submit')));
     await t.pumpAndSettle();
     expect(s.lastDraft!.message, 'Great app, one bug');

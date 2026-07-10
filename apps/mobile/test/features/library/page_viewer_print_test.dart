@@ -19,10 +19,16 @@ void main() {
       pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
     );
     final printer = FakeDocumentPrinter();
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(
-          documentId: 3, name: 'Report', repository: repo, printer: printer),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(
+          documentId: 3,
+          name: 'Report',
+          repository: repo,
+          printer: printer,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tapPrint(tester);
@@ -38,10 +44,16 @@ void main() {
       pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
     );
     final printer = FakeDocumentPrinter();
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(
-          documentId: 3, name: 'Report', repository: repo, printer: printer),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(
+          documentId: 3,
+          name: 'Report',
+          repository: repo,
+          printer: printer,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tapPrint(tester);

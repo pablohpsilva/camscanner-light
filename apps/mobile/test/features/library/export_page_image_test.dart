@@ -31,13 +31,13 @@ void main() {
   });
 
   DriftDocumentRepository repo() => DriftDocumentRepository(
-        db: db,
-        scrubber: const JpegExifScrubber(),
-        fileStore: DocumentFileStore(base),
-        clock: clock,
-        pdfBuilder: const PdfBuilder(),
-        warper: FakeImageWarper(),
-      );
+    db: db,
+    scrubber: const JpegExifScrubber(),
+    fileStore: DocumentFileStore(base),
+    clock: clock,
+    pdfBuilder: const PdfBuilder(),
+    warper: FakeImageWarper(),
+  );
 
   Uint8List fixture(String name) =>
       File('test/fixtures/$name').readAsBytesSync();
@@ -47,8 +47,15 @@ void main() {
   Future<int> seedDoc({required String image, String? flat}) async {
     final now = clock();
     final store = DocumentFileStore(base);
-    final docId = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final docId = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final rel = 'documents/$docId/page_1.jpg';
     await store.writeRelative(rel, fixture(image));
     String? flatRel;
@@ -56,12 +63,16 @@ void main() {
       flatRel = 'documents/$docId/page_1_flat.jpg';
       await store.writeRelative(flatRel, fixture(flat));
     }
-    await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: docId,
-          position: 1,
-          relativeImagePath: rel,
-          flatRelativePath: Value(flatRel),
-        ));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: docId,
+            position: 1,
+            relativeImagePath: rel,
+            flatRelativePath: Value(flatRel),
+          ),
+        );
     return docId;
   }
 
@@ -74,10 +85,16 @@ void main() {
     // (that dir is included in Google/iCloud backups and accumulates forever).
     // It belongs in the OS temp/cache dir — self-purging and backup-excluded.
     expect(file.existsSync(), isTrue);
-    expect(p.isWithin(base.path, file.path), isFalse,
-        reason: 'export must not be written into the persistent, backed-up store');
-    expect(p.isWithin(Directory.systemTemp.path, file.path), isTrue,
-        reason: 'export belongs in the OS temp/cache dir');
+    expect(
+      p.isWithin(base.path, file.path),
+      isFalse,
+      reason: 'export must not be written into the persistent, backed-up store',
+    );
+    expect(
+      p.isWithin(Directory.systemTemp.path, file.path),
+      isTrue,
+      reason: 'export belongs in the OS temp/cache dir',
+    );
     expect(file.path, endsWith('.jpg'));
     final bytes = file.readAsBytesSync();
     expect(bytes.sublist(0, 2), [0xFF, 0xD8], reason: 'valid JPEG header');
@@ -89,26 +106,38 @@ void main() {
     expect(tags['Image Model'], isNull);
     expect(tags['Image Software'], isNull);
     expect(tags['Image DateTime'], isNull);
-    expect(tags.keys.where((k) => k.startsWith('GPS')), isEmpty,
-        reason: 'exported image has no GPS/personal metadata');
+    expect(
+      tags.keys.where((k) => k.startsWith('GPS')),
+      isEmpty,
+      reason: 'exported image has no GPS/personal metadata',
+    );
     // Positively lock the "Orientation kept" contract through the export path:
     // the scrub must PRESERVE Orientation, not strip all EXIF (which would make
     // the personal-tag-absence checks above pass vacuously).
-    expect(tags['Image Orientation'].toString(), 'Rotated 90 CW',
-        reason: 'export preserves Orientation losslessly');
+    expect(
+      tags['Image Orientation'].toString(),
+      'Rotated 90 CW',
+      reason: 'export preserves Orientation losslessly',
+    );
   });
 
   test('uses the flat image when flatRelativePath is set', () async {
-    final docId =
-        await seedDoc(image: 'exif_sample.jpg', flat: 'landscape_exif6.jpg');
+    final docId = await seedDoc(
+      image: 'exif_sample.jpg',
+      flat: 'landscape_exif6.jpg',
+    );
 
     final file = await repo().exportPageAsImage(docId, 1);
 
     final exported = file.readAsBytesSync();
-    final expectedFromFlat =
-        const JpegExifScrubber().scrub(fixture('landscape_exif6.jpg'));
-    expect(exported, expectedFromFlat,
-        reason: 'export uses the scrubbed flat derivative, not the original');
+    final expectedFromFlat = const JpegExifScrubber().scrub(
+      fixture('landscape_exif6.jpg'),
+    );
+    expect(
+      exported,
+      expectedFromFlat,
+      reason: 'export uses the scrubbed flat derivative, not the original',
+    );
   });
 
   test('missing page throws DocumentExportException', () async {

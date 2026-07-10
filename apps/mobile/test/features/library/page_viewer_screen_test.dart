@@ -30,63 +30,79 @@ void main() {
     DocumentRepository repo, {
     int id = 1,
   }) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => Center(
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => PageViewerScreen(
-                      documentId: id, name: 'Scan X', repository: repo),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PageViewerScreen(
+                      documentId: id,
+                      name: 'Scan X',
+                      repository: repo,
+                    ),
+                  ),
                 ),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     // Safe to settle: page image paths are NON-LOADABLE, which does not hang.
     await tester.pumpAndSettle();
   }
 
   testWidgets(
-      'loaded: full-res FileImage (NOT ResizeImage); strip replaces indicator',
-      (tester) async {
-    await pushViewer(tester, FakeDocumentRepository());
+    'loaded: full-res FileImage (NOT ResizeImage); strip replaces indicator',
+    (tester) async {
+      await pushViewer(tester, FakeDocumentRepository());
 
-    expect(find.byType(PageViewerScreen), findsOneWidget);
-    expect(find.byType(InteractiveViewer), findsOneWidget);
-    expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
+      expect(find.byType(PageViewerScreen), findsOneWidget);
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
 
-    // The full-res image is the one inside the InteractiveViewer (NOT the strip thumbnail).
-    final fullRes = tester.widget<Image>(
-      find.descendant(
-        of: find.byKey(const Key('page-viewer-page-1')),
-        matching: find.byType(Image),
-      ),
-    );
-    expect(fullRes.image, isA<FileImage>(),
-        reason: 'viewer decodes full-res; NOT a ResizeImage like strip thumbnails');
-    expect((fullRes.image as FileImage).file.path, '/nonexistent/page-1-1.jpg');
-    expect(fullRes.errorBuilder, isNotNull);
+      // The full-res image is the one inside the InteractiveViewer (NOT the strip thumbnail).
+      final fullRes = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const Key('page-viewer-page-1')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(
+        fullRes.image,
+        isA<FileImage>(),
+        reason:
+            'viewer decodes full-res; NOT a ResizeImage like strip thumbnails',
+      );
+      expect(
+        (fullRes.image as FileImage).file.path,
+        '/nonexistent/page-1-1.jpg',
+      );
+      expect(fullRes.errorBuilder, isNotNull);
 
-    // Strip replaces old text indicator.
-    expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
-    expect(find.byKey(const Key('page-viewer-indicator')), findsNothing);
-    expect(find.text('1 / 1'), findsNothing);
-  });
+      // Strip replaces old text indicator.
+      expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
+      expect(find.byKey(const Key('page-viewer-indicator')), findsNothing);
+      expect(find.text('1 / 1'), findsNothing);
+    },
+  );
 
-  testWidgets('empty: zero pages renders the empty placeholder', (tester) async {
+  testWidgets('empty: zero pages renders the empty placeholder', (
+    tester,
+  ) async {
     await pushViewer(tester, FakeDocumentRepository(pages: const []));
     expect(find.byKey(const Key('page-viewer-empty')), findsOneWidget);
     expect(find.byType(InteractiveViewer), findsNothing);
   });
 
-  testWidgets('load error shows a retryable error state; retry recovers',
-      (tester) async {
+  testWidgets('load error shows a retryable error state; retry recovers', (
+    tester,
+  ) async {
     await pushViewer(tester, _FlakyPagesRepo());
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
 
@@ -96,8 +112,9 @@ void main() {
     expect(find.byType(InteractiveViewer), findsOneWidget);
   });
 
-  testWidgets('delete confirm calls deleteDocument and pops to the list',
-      (tester) async {
+  testWidgets('delete confirm calls deleteDocument and pops to the list', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo, id: 7);
 
@@ -111,8 +128,9 @@ void main() {
     expect(find.text('open'), findsOneWidget); // back on the base screen
   });
 
-  testWidgets('delete cancel does nothing and stays on the viewer',
-      (tester) async {
+  testWidgets('delete cancel does nothing and stays on the viewer', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo);
 
@@ -128,24 +146,29 @@ void main() {
   testWidgets('delete is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
-    final btn = tester.widget<IconButton>(find.byKey(const Key('page-viewer-delete')));
+    final btn = tester.widget<IconButton>(
+      find.byKey(const Key('page-viewer-delete')),
+    );
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('delete failure stays on the viewer and shows an error SnackBar',
-      (tester) async {
-    final repo = FakeDocumentRepository(throwOnDelete: true);
-    await pushViewer(tester, repo);
+  testWidgets(
+    'delete failure stays on the viewer and shows an error SnackBar',
+    (tester) async {
+      final repo = FakeDocumentRepository(throwOnDelete: true);
+      await pushViewer(tester, repo);
 
-    await tester.tap(find.byKey(const Key('page-viewer-delete')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('page-viewer-delete-confirm')));
-    await tester.pumpAndSettle(); // drive the async throw -> catch -> SnackBar
+      await tester.tap(find.byKey(const Key('page-viewer-delete')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('page-viewer-delete-confirm')));
+      await tester
+          .pumpAndSettle(); // drive the async throw -> catch -> SnackBar
 
-    expect(find.text("Couldn't delete"), findsOneWidget);
-    expect(find.byType(PageViewerScreen), findsOneWidget);
-    expect(repo.deletedIds, isEmpty);
-  });
+      expect(find.text("Couldn't delete"), findsOneWidget);
+      expect(find.byType(PageViewerScreen), findsOneWidget);
+      expect(repo.deletedIds, isEmpty);
+    },
+  );
 
   testWidgets('export success navigates to the PDF preview', (tester) async {
     final repo = FakeDocumentRepository();
@@ -162,8 +185,9 @@ void main() {
     expect(find.byType(PdfPreviewScreen), findsOneWidget);
   });
 
-  testWidgets('export failure shows an error SnackBar and stays',
-      (tester) async {
+  testWidgets('export failure shows an error SnackBar and stays', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(throwOnExport: true);
     await pushViewer(tester, repo);
 
@@ -179,21 +203,24 @@ void main() {
   testWidgets('export is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
-    final btn =
-        tester.widget<IconButton>(find.byKey(const Key('page-viewer-export')));
+    final btn = tester.widget<IconButton>(
+      find.byKey(const Key('page-viewer-export')),
+    );
     expect(btn.onPressed, isNull);
   });
 
   testWidgets('export is disabled in the empty state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(pages: const []));
     expect(find.byKey(const Key('page-viewer-empty')), findsOneWidget);
-    final btn =
-        tester.widget<IconButton>(find.byKey(const Key('page-viewer-export')));
+    final btn = tester.widget<IconButton>(
+      find.byKey(const Key('page-viewer-export')),
+    );
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('all AppBar actions are disabled while an export is in flight',
-      (tester) async {
+  testWidgets('all AppBar actions are disabled while an export is in flight', (
+    tester,
+  ) async {
     final gate = Completer<void>();
     final repo = FakeDocumentRepository(exportGate: gate);
     await pushViewer(tester, repo);
@@ -202,21 +229,22 @@ void main() {
     await tester.pumpAndSettle(); // export-quality dialog animates in
     await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pump(); // start the export; gate holds it open
-    IconButton btn(String k) =>
-        tester.widget<IconButton>(find.byKey(Key(k)));
+    IconButton btn(String k) => tester.widget<IconButton>(find.byKey(Key(k)));
     expect(btn('page-viewer-rename').onPressed, isNull);
     expect(btn('page-viewer-edit').onPressed, isNull);
     expect(btn('page-viewer-export').onPressed, isNull);
     expect(btn('page-viewer-delete').onPressed, isNull);
 
     gate.complete();
-    await tester.pump(); // process export completion + navigation (NOT settle — pdfx channel)
+    await tester
+        .pump(); // process export completion + navigation (NOT settle — pdfx channel)
     await tester.pump();
     expect(find.byType(PdfPreviewScreen), findsOneWidget);
   });
 
-  testWidgets('rename: confirming Save updates the AppBar title',
-      (tester) async {
+  testWidgets('rename: confirming Save updates the AppBar title', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo, id: 3);
 
@@ -235,13 +263,15 @@ void main() {
   testWidgets('rename is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
-    final btn = tester
-        .widget<IconButton>(find.byKey(const Key('page-viewer-rename')));
+    final btn = tester.widget<IconButton>(
+      find.byKey(const Key('page-viewer-rename')),
+    );
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('rename failure shows an error SnackBar and stays',
-      (tester) async {
+  testWidgets('rename failure shows an error SnackBar and stays', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(throwOnRename: true);
     await pushViewer(tester, repo);
 
@@ -258,8 +288,9 @@ void main() {
 
   // E2: viewer uses displayPath — verify the page key is present regardless of
   // whether flatImagePath is set (visual path correctness is covered by page_image_test).
-  testWidgets('E2: viewer renders page key when flatImagePath is set',
-      (tester) async {
+  testWidgets('E2: viewer renders page key when flatImagePath is set', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(
       pages: [
         const PageImage(
@@ -269,15 +300,18 @@ void main() {
         ),
       ],
     );
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
+      ),
+    );
     await tester.pump();
     expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
   });
 
-  testWidgets('the AppBar actions carry screen-reader tooltips',
-      (tester) async {
+  testWidgets('the AppBar actions carry screen-reader tooltips', (
+    tester,
+  ) async {
     await pushViewer(tester, FakeDocumentRepository());
     String? tip(String key) =>
         tester.widget<IconButton>(find.byKey(Key(key))).tooltip;
@@ -289,51 +323,56 @@ void main() {
 
   // ── E3 — re-edit crop corners ──────────────────────────────────────────
 
-  testWidgets('edit crop: button is present, enabled, and has correct tooltip',
-      (tester) async {
-    await pushViewer(tester, FakeDocumentRepository());
-    final btn = tester.widget<IconButton>(
-        find.byKey(const Key('page-viewer-edit')));
-    expect(btn.onPressed, isNotNull);
-    expect(btn.tooltip, 'Edit crop');
-  });
+  testWidgets(
+    'edit crop: button is present, enabled, and has correct tooltip',
+    (tester) async {
+      await pushViewer(tester, FakeDocumentRepository());
+      final btn = tester.widget<IconButton>(
+        find.byKey(const Key('page-viewer-edit')),
+      );
+      expect(btn.onPressed, isNotNull);
+      expect(btn.tooltip, 'Edit crop');
+    },
+  );
 
   testWidgets(
-      'edit crop: accept returns corners, calls updatePageCorners, reloads viewer',
-      (tester) async {
-    const testCorners = CropCorners(
-      topLeft: Offset(0.1, 0.1),
-      topRight: Offset(0.9, 0.1),
-      bottomRight: Offset(0.9, 0.9),
-      bottomLeft: Offset(0.1, 0.9),
-    );
-    final repo = FakeDocumentRepository(
-      pages: [
-        const PageImage(
-          position: 1,
-          imagePath: '/nonexistent/page_1.jpg',
-          corners: testCorners,
-        ),
-      ],
-    );
-    await pushViewer(tester, repo, id: 5);
+    'edit crop: accept returns corners, calls updatePageCorners, reloads viewer',
+    (tester) async {
+      const testCorners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+      final repo = FakeDocumentRepository(
+        pages: [
+          const PageImage(
+            position: 1,
+            imagePath: '/nonexistent/page_1.jpg',
+            corners: testCorners,
+          ),
+        ],
+      );
+      await pushViewer(tester, repo, id: 5);
 
-    await tester.tap(find.byKey(const Key('page-viewer-edit')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('page-viewer-edit')));
+      await tester.pumpAndSettle();
 
-    // EditCropScreen is now on top; Accept button is in AppBar (always visible).
-    expect(find.byKey(const Key('edit-crop-accept')), findsOneWidget);
+      // EditCropScreen is now on top; Accept button is in AppBar (always visible).
+      expect(find.byKey(const Key('edit-crop-accept')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('edit-crop-accept')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-crop-accept')));
+      await tester.pumpAndSettle();
 
-    expect(repo.lastUpdatedCorners, testCorners);
-    expect(repo.lastUpdatedPosition, 1);
-    expect(find.byType(PageViewerScreen), findsOneWidget);
-  });
+      expect(repo.lastUpdatedCorners, testCorners);
+      expect(repo.lastUpdatedPosition, 1);
+      expect(find.byType(PageViewerScreen), findsOneWidget);
+    },
+  );
 
-  testWidgets('edit crop: failure shows SnackBar and stays on viewer',
-      (tester) async {
+  testWidgets('edit crop: failure shows SnackBar and stays on viewer', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(throwOnUpdate: true);
     await pushViewer(tester, repo);
 
@@ -349,37 +388,42 @@ void main() {
   testWidgets('edit crop is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     final btn = tester.widget<IconButton>(
-        find.byKey(const Key('page-viewer-edit')));
+      find.byKey(const Key('page-viewer-edit')),
+    );
     expect(btn.onPressed, isNull);
   });
 
   testWidgets('edit crop is disabled in the empty state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(pages: const []));
     final btn = tester.widget<IconButton>(
-        find.byKey(const Key('page-viewer-edit')));
+      find.byKey(const Key('page-viewer-edit')),
+    );
     expect(btn.onPressed, isNull);
   });
 
   // ── H2 — Page thumbnail strip ──────────────────────────────────────────
 
-  testWidgets('H2: strip is present with correct tile keys for 2-page document',
-      (tester) async {
-    // Two-page repo so the strip has two tiles.
-    final repo = FakeDocumentRepository(
-      pages: [
-        const PageImage(position: 1, imagePath: '/nonexistent/h2a.jpg'),
-        const PageImage(position: 2, imagePath: '/nonexistent/h2b.jpg'),
-      ],
-    );
-    await pushViewer(tester, repo);
+  testWidgets(
+    'H2: strip is present with correct tile keys for 2-page document',
+    (tester) async {
+      // Two-page repo so the strip has two tiles.
+      final repo = FakeDocumentRepository(
+        pages: [
+          const PageImage(position: 1, imagePath: '/nonexistent/h2a.jpg'),
+          const PageImage(position: 2, imagePath: '/nonexistent/h2b.jpg'),
+        ],
+      );
+      await pushViewer(tester, repo);
 
-    expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
-    expect(find.byKey(const Key('page-thumb-0')), findsOneWidget);
-    expect(find.byKey(const Key('page-thumb-1')), findsOneWidget);
-  });
+      expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
+      expect(find.byKey(const Key('page-thumb-0')), findsOneWidget);
+      expect(find.byKey(const Key('page-thumb-1')), findsOneWidget);
+    },
+  );
 
-  testWidgets('H2: tapping page-thumb-1 navigates PageView to page 2',
-      (tester) async {
+  testWidgets('H2: tapping page-thumb-1 navigates PageView to page 2', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(
       pages: [
         const PageImage(position: 1, imagePath: '/nonexistent/h2a.jpg'),
@@ -402,26 +446,30 @@ void main() {
   // ── H3 — Reorder pages ─────────────────────────────────────────────────
 
   testWidgets(
-      'H3: invoking onReorderItem(1,0) calls reorderPages([2,1]) and shows page 2 first',
-      (tester) async {
-    final repo = FakeDocumentRepository(
-      pages: [
-        const PageImage(position: 1, imagePath: '/nonexistent/r1.jpg'),
-        const PageImage(position: 2, imagePath: '/nonexistent/r2.jpg'),
-      ],
-    );
-    await pushViewer(tester, repo);
+    'H3: invoking onReorderItem(1,0) calls reorderPages([2,1]) and shows page 2 first',
+    (tester) async {
+      final repo = FakeDocumentRepository(
+        pages: [
+          const PageImage(position: 1, imagePath: '/nonexistent/r1.jpg'),
+          const PageImage(position: 2, imagePath: '/nonexistent/r2.jpg'),
+        ],
+      );
+      await pushViewer(tester, repo);
 
-    final rlv = tester.widget<ReorderableListView>(find.byType(ReorderableListView));
-    rlv.onReorderItem!(1, 0);
-    await tester.pumpAndSettle();
+      final rlv = tester.widget<ReorderableListView>(
+        find.byType(ReorderableListView),
+      );
+      rlv.onReorderItem!(1, 0);
+      await tester.pumpAndSettle();
 
-    expect(repo.lastReorderedPositions, [2, 1]);
-    expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
-  });
+      expect(repo.lastReorderedPositions, [2, 1]);
+      expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
+    },
+  );
 
-  testWidgets('H3: reorder failure shows SnackBar and stays on viewer',
-      (tester) async {
+  testWidgets('H3: reorder failure shows SnackBar and stays on viewer', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(
       throwOnReorder: true,
       pages: [
@@ -431,7 +479,9 @@ void main() {
     );
     await pushViewer(tester, repo);
 
-    final rlv = tester.widget<ReorderableListView>(find.byType(ReorderableListView));
+    final rlv = tester.widget<ReorderableListView>(
+      find.byType(ReorderableListView),
+    );
     rlv.onReorderItem!(1, 0);
     await tester.pumpAndSettle();
 

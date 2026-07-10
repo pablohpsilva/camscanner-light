@@ -5,14 +5,19 @@ import 'package:mobile/features/scan/opencv_edge_detector.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 void main() {
-  test('production ScanDependencies wires the plugin-backed implementations',
-      () {
-    const deps = ScanDependencies();
-    expect(deps.createGalleryPicker(), isA<ImagePickerGalleryPicker>());
-  });
+  test(
+    'production ScanDependencies wires the plugin-backed implementations',
+    () {
+      const deps = ScanDependencies();
+      expect(deps.createGalleryPicker(), isA<ImagePickerGalleryPicker>());
+    },
+  );
 
   test('createEdgeDetector() returns OpenCvEdgeDetector', () {
-    expect(const ScanDependencies().createEdgeDetector(), isA<OpenCvEdgeDetector>());
+    expect(
+      const ScanDependencies().createEdgeDetector(),
+      isA<OpenCvEdgeDetector>(),
+    );
   });
 
   test('createDocumentScanner defaults to CunningDocumentScannerService', () {

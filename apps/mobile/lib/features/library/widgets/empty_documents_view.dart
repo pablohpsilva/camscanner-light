@@ -13,11 +13,15 @@ class EmptyDocumentsView extends StatelessWidget {
         children: [
           Icon(Icons.folder_open_outlined, size: 72, color: muted),
           const SizedBox(height: 16),
-          const Text('No documents yet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            'No documents yet',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
-          Text('Tap Scan to create your first document',
-              style: TextStyle(color: muted)),
+          Text(
+            'Tap Scan to create your first document',
+            style: TextStyle(color: muted),
+          ),
         ],
       ),
     );

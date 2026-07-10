@@ -73,9 +73,9 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't recognize text")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't recognize text")));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -86,21 +86,23 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
     if (t == null || t.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: t));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copied')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Copied')));
   }
 
   Future<void> _share() async {
     try {
-      final file = await widget.repository
-          .exportRecognizedText(widget.documentId, widget.position);
+      final file = await widget.repository.exportRecognizedText(
+        widget.documentId,
+        widget.position,
+      );
       await widget.share.share([file.path], subject: widget.name);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't export text")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't export text")));
     }
   }
 
@@ -129,30 +131,31 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
       body: _busy && text == null
           ? const Center(
               key: Key('recognized-text-loading'),
-              child: CircularProgressIndicator())
+              child: CircularProgressIndicator(),
+            )
           : hasText
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: SelectableText(
-                    text,
-                    key: const Key('recognized-text-body'),
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                text,
+                key: const Key('recognized-text-body'),
+              ),
+            )
+          : Center(
+              key: const Key('recognized-text-empty'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('No text recognized on this page yet.'),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    key: const Key('recognized-text-run'),
+                    onPressed: _busy ? null : _recognize,
+                    child: const Text('Recognize text'),
                   ),
-                )
-              : Center(
-                  key: const Key('recognized-text-empty'),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('No text recognized on this page yet.'),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        key: const Key('recognized-text-run'),
-                        onPressed: _busy ? null : _recognize,
-                        child: const Text('Recognize text'),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
+              ),
+            ),
     );
   }
 }

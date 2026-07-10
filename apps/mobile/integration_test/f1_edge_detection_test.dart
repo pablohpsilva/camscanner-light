@@ -13,8 +13,14 @@ void main() {
   Uint8List makeRectFixture() {
     final image = img.Image(width: 640, height: 480, numChannels: 3);
     img.fill(image, color: img.ColorRgb8(0, 0, 0));
-    img.fillRect(image, x1: 120, y1: 100, x2: 520, y2: 380,
-        color: img.ColorRgb8(255, 255, 255));
+    img.fillRect(
+      image,
+      x1: 120,
+      y1: 100,
+      x2: 520,
+      y2: 380,
+      color: img.ColorRgb8(255, 255, 255),
+    );
     return Uint8List.fromList(img.encodeJpg(image, quality: 95));
   }
 
@@ -22,8 +28,9 @@ void main() {
     late EdgeDetector detector;
     setUp(() => detector = const OpenCvEdgeDetector());
 
-    testWidgets('white rect on dark background → non-null, confidence > 0.5',
-        (tester) async {
+    testWidgets('white rect on dark background → non-null, confidence > 0.5', (
+      tester,
+    ) async {
       final result = await detector.detect(makeRectFixture());
       expect(result, isNotNull);
       expect(result!.confidence, greaterThan(0.5));
@@ -36,8 +43,9 @@ void main() {
       expect(await detector.detect(bytes), isNull);
     });
 
-    testWidgets('circular-only shape → best-guess quad (minAreaRect fallback)',
-        (tester) async {
+    testWidgets('circular-only shape → best-guess quad (minAreaRect fallback)', (
+      tester,
+    ) async {
       // Best-guess-always: a large circle (~26% of frame, above the 5% floor)
       // isn't a clean 4-point quad, so the pipeline returns its min-area
       // bounding rectangle. Non-null, but a circle fills only ~π/4 of that
@@ -55,8 +63,12 @@ void main() {
       final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
       final result = await detector.detect(bytes);
       expect(result, isNotNull);
-      expect(result!.confidence, lessThan(0.9),
-          reason: 'a circle is not a clean rectangle — confidence must not be high');
+      expect(
+        result!.confidence,
+        lessThan(0.9),
+        reason:
+            'a circle is not a clean rectangle — confidence must not be high',
+      );
     });
 
     testWidgets('corrupt bytes → null, no throw', (tester) async {
@@ -64,7 +76,9 @@ void main() {
       expect(await detector.detect(corrupt), isNull);
     });
 
-    testWidgets('corner ordering canonical for axis-aligned rect', (tester) async {
+    testWidgets('corner ordering canonical for axis-aligned rect', (
+      tester,
+    ) async {
       final result = await detector.detect(makeRectFixture());
       expect(result, isNotNull);
       final c = result!.corners;
@@ -82,7 +96,12 @@ void main() {
       expect(sumBr, greaterThanOrEqualTo(c.bottomLeft.dx + c.bottomLeft.dy));
 
       // all corners in [0,1]
-      for (final corner in [c.topLeft, c.topRight, c.bottomRight, c.bottomLeft]) {
+      for (final corner in [
+        c.topLeft,
+        c.topRight,
+        c.bottomRight,
+        c.bottomLeft,
+      ]) {
         expect(corner.dx, inInclusiveRange(0.0, 1.0));
         expect(corner.dy, inInclusiveRange(0.0, 1.0));
       }
@@ -91,8 +110,14 @@ void main() {
     testWidgets('large image (4000×3000) → detected in < 2 s', (tester) async {
       final image = img.Image(width: 4000, height: 3000, numChannels: 3);
       img.fill(image, color: img.ColorRgb8(0, 0, 0));
-      img.fillRect(image, x1: 400, y1: 300, x2: 3600, y2: 2700,
-          color: img.ColorRgb8(255, 255, 255));
+      img.fillRect(
+        image,
+        x1: 400,
+        y1: 300,
+        x2: 3600,
+        y2: 2700,
+        color: img.ColorRgb8(255, 255, 255),
+      );
       final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 85));
 
       final start = DateTime.now();
@@ -100,8 +125,11 @@ void main() {
       final elapsed = DateTime.now().difference(start).inMilliseconds;
 
       expect(result, isNotNull, reason: 'large white rect must be detected');
-      expect(elapsed, lessThan(2000),
-          reason: 'detection must complete in < 2 s; took ${elapsed}ms');
+      expect(
+        elapsed,
+        lessThan(2000),
+        reason: 'detection must complete in < 2 s; took ${elapsed}ms',
+      );
     });
   });
 }

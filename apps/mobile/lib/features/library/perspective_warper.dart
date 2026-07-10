@@ -20,8 +20,10 @@ class PerspectiveWarper implements ImageWarper {
   @override
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) {
     if (corners == CropCorners.fullFrame) return Future.value(null);
-    return compute(_warpFn,
-        _WarpArgs(bytes: bytes, corners: corners, maxDim: maxDimension));
+    return compute(
+      _warpFn,
+      _WarpArgs(bytes: bytes, corners: corners, maxDim: maxDimension),
+    );
   }
 }
 
@@ -33,8 +35,12 @@ Uint8List? _warpFn(_WarpArgs args) {
   // bakeOrientation rotates pixels into the EXIF-applied display frame.
   // Corners are normalized against THIS frame; skipping bake misaligns them.
   final src = img.bakeOrientation(decoded);
-  return Uint8List.fromList(img.encodeJpg(
-      warpPerspectiveToImage(src, args.corners, args.maxDim), quality: 92));
+  return Uint8List.fromList(
+    img.encodeJpg(
+      warpPerspectiveToImage(src, args.corners, args.maxDim),
+      quality: 92,
+    ),
+  );
 }
 
 /// Perspective-flattens [corners] out of an already-oriented image and returns
@@ -46,7 +52,10 @@ Uint8List? _warpFn(_WarpArgs args) {
 /// hand-rolled bilinear interpolation instead of `getPixelInterpolate` per
 /// pixel — the same interpolation, ~5-10x faster on a multi-megapixel warp.
 img.Image warpPerspectiveToImage(
-    img.Image src, CropCorners corners, int maxDim) {
+  img.Image src,
+  CropCorners corners,
+  int maxDim,
+) {
   final w = src.width, h = src.height;
   final tl = Offset(corners.topLeft.dx * w, corners.topLeft.dy * h);
   final tr = Offset(corners.topRight.dx * w, corners.topRight.dy * h);
@@ -59,7 +68,8 @@ img.Image warpPerspectiveToImage(
 
   var outW = _maxEdge(tl, tr, bl, br).round();
   var outH = _maxEdge(tl, bl, tr, br).round();
-  if (outW < 2 || outH < 2) throw WarpException('degenerate quad: output too small');
+  if (outW < 2 || outH < 2)
+    throw WarpException('degenerate quad: output too small');
 
   // Cap the long side: solving the homography to the reduced rectangle makes
   // the warp sample fewer points (and enhance/encode run smaller) with no loss
@@ -76,8 +86,12 @@ img.Image warpPerspectiveToImage(
   // Src → dst homography; invert for inverse mapping (dst pixel → src pixel).
   final hMat = _solveHomography(
     [tl, tr, br, bl],
-    [const Offset(0, 0), Offset(outW.toDouble(), 0),
-     Offset(outW.toDouble(), outH.toDouble()), Offset(0, outH.toDouble())],
+    [
+      const Offset(0, 0),
+      Offset(outW.toDouble(), 0),
+      Offset(outW.toDouble(), outH.toDouble()),
+      Offset(0, outH.toDouble()),
+    ],
   );
   final hInv = _invertH3x3(hMat);
 
@@ -98,16 +112,22 @@ img.Image warpPerspectiveToImage(
       final i00 = y0 * stride + x0 * 3, i10 = y0 * stride + x1 * 3;
       final i01 = y1 * stride + x0 * 3, i11 = y1 * stride + x1 * 3;
       for (var ch = 0; ch < 3; ch++) {
-        final top = srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
-        final bot = srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
+        final top =
+            srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
+        final bot =
+            srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
         out[o + ch] = (top + (bot - top) * wy).round().clamp(0, 255);
       }
       o += 3;
     }
   }
   return img.Image.fromBytes(
-      width: outW, height: outH, bytes: out.buffer,
-      numChannels: 3, order: img.ChannelOrder.rgb);
+    width: outW,
+    height: outH,
+    bytes: out.buffer,
+    numChannels: 3,
+    order: img.ChannelOrder.rgb,
+  );
 }
 
 // ── Math helpers ───────────────────────────────────────────────────────────
@@ -159,8 +179,11 @@ List<double> _gaussElim(List<List<double>> m) {
     for (int row = col + 1; row < n; row++) {
       if (m[row][col].abs() > m[maxRow][col].abs()) maxRow = row;
     }
-    final tmp = m[col]; m[col] = m[maxRow]; m[maxRow] = tmp;
-    if (m[col][col].abs() < 1e-12) throw WarpException('singular homography system');
+    final tmp = m[col];
+    m[col] = m[maxRow];
+    m[maxRow] = tmp;
+    if (m[col][col].abs() < 1e-12)
+      throw WarpException('singular homography system');
     for (int row = 0; row < n; row++) {
       if (row == col) continue;
       final factor = m[row][col] / m[col][col];
@@ -177,23 +200,31 @@ List<double> _invertH3x3(List<double> h) {
   final a = h[0], b = h[1], c = h[2];
   final d = h[3], e = h[4], f = h[5];
   final g = h[6], hh = h[7], k = h[8];
-  final c00 = e * k - f * hh,  c01 = -(d * k - f * g),  c02 = d * hh - e * g;
-  final c10 = -(b * k - c * hh), c11 = a * k - c * g,   c12 = -(a * hh - b * g);
-  final c20 = b * f - c * e,   c21 = -(a * f - c * d),  c22 = a * e - b * d;
+  final c00 = e * k - f * hh, c01 = -(d * k - f * g), c02 = d * hh - e * g;
+  final c10 = -(b * k - c * hh), c11 = a * k - c * g, c12 = -(a * hh - b * g);
+  final c20 = b * f - c * e, c21 = -(a * f - c * d), c22 = a * e - b * d;
   final det = a * c00 + b * c01 + c * c02;
   if (det.abs() < 1e-10) throw WarpException('singular homography');
   return [
-    c00/det, c10/det, c20/det,
-    c01/det, c11/det, c21/det,
-    c02/det, c12/det, c22/det,
+    c00 / det,
+    c10 / det,
+    c20 / det,
+    c01 / det,
+    c11 / det,
+    c21 / det,
+    c02 / det,
+    c12 / det,
+    c22 / det,
   ];
 }
 
 /// Applies a flat 9-element row-major 3×3 homography to point (x, y).
 Offset _applyH(List<double> h, double x, double y) {
   final w = h[6] * x + h[7] * y + h[8];
-  return Offset((h[0] * x + h[1] * y + h[2]) / w,
-                (h[3] * x + h[4] * y + h[5]) / w);
+  return Offset(
+    (h[0] * x + h[1] * y + h[2]) / w,
+    (h[3] * x + h[4] * y + h[5]) / w,
+  );
 }
 
 // ── Isolate-safe args ──────────────────────────────────────────────────────
@@ -202,6 +233,9 @@ class _WarpArgs {
   final Uint8List bytes;
   final CropCorners corners;
   final int maxDim;
-  const _WarpArgs(
-      {required this.bytes, required this.corners, required this.maxDim});
+  const _WarpArgs({
+    required this.bytes,
+    required this.corners,
+    required this.maxDim,
+  });
 }

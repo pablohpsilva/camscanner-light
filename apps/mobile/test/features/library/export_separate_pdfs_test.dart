@@ -40,14 +40,29 @@ void main() {
 
   Future<int> seedDoc(String name) async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: name,
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+      img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+    );
     final rel = 'documents/$id/page_1.jpg';
     await store.writeRelative(rel, jpeg);
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id, position: 1, relativeImagePath: rel));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+          ),
+        );
     return id;
   }
 
@@ -61,23 +76,37 @@ void main() {
     expect(p.basename(files[0].path), 'Beta.pdf');
     expect(p.basename(files[1].path), 'Alpha.pdf');
     for (final f in files) {
-      expect(p.isWithin(base.path, f.path), isFalse,
-          reason: 'exports must not land in the persistent, backed-up store');
+      expect(
+        p.isWithin(base.path, f.path),
+        isFalse,
+        reason: 'exports must not land in the persistent, backed-up store',
+      );
       expect(await f.readAsBytes(), isNotEmpty);
     }
   });
 
   test('throws when documentIds is empty', () async {
-    expect(() => repo.exportSeparatePdfs(const []),
-        throwsA(isA<DocumentExportException>()));
+    expect(
+      () => repo.exportSeparatePdfs(const []),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 
   test('propagates a per-document export failure', () async {
     // A document row with no page file → exportPdf throws → propagates.
     final now = DateTime.now();
-    final empty = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Empty', createdAt: now, modifiedAt: now));
-    expect(() => repo.exportSeparatePdfs([empty]),
-        throwsA(isA<DocumentExportException>()));
+    final empty = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Empty',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
+    expect(
+      () => repo.exportSeparatePdfs([empty]),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 }

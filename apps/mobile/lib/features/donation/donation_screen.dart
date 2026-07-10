@@ -30,17 +30,17 @@ class DonationScreen extends StatelessWidget {
       // fall through to failure feedback
     }
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Couldn't open Ko-fi")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Couldn't open Ko-fi")));
   }
 
   Future<void> _copyAddress(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: bitcoinAddress));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bitcoin address copied')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Bitcoin address copied')));
   }
 
   @override

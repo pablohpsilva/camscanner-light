@@ -20,6 +20,7 @@ class DonationConfig {
 
   /// Bitcoin address (display-only: shown as a BIP-21 QR + copyable text).
   /// Set via `--dart-define=BITCOIN_ADDRESS=bc1q...`.
-  static const String bitcoinAddress =
-      String.fromEnvironment('BITCOIN_ADDRESS');
+  static const String bitcoinAddress = String.fromEnvironment(
+    'BITCOIN_ADDRESS',
+  );
 }

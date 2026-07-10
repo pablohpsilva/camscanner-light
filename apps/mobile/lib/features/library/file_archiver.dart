@@ -13,8 +13,11 @@ abstract interface class FileArchiver {
   /// [files]); colliding names are de-duplicated with a numeric suffix. Entries
   /// are STORED (no compression) — the producer's files (PDFs) are already
   /// compressed, so deflate wastes CPU for ~0 gain.
-  Future<File> zip(List<File> files,
-      {required String archiveName, required List<String> entryNames});
+  Future<File> zip(
+    List<File> files, {
+    required String archiveName,
+    required List<String> entryNames,
+  });
 }
 
 /// Production archiver backed by the `archive` package. The only file in the
@@ -25,14 +28,18 @@ class SystemFileArchiver implements FileArchiver {
   const SystemFileArchiver();
 
   @override
-  Future<File> zip(List<File> files,
-      {required String archiveName, required List<String> entryNames}) async {
+  Future<File> zip(
+    List<File> files, {
+    required String archiveName,
+    required List<String> entryNames,
+  }) async {
     final archive = Archive();
     final used = <String>{};
     for (var i = 0; i < files.length; i++) {
       final bytes = await files[i].readAsBytes();
       final entry = ArchiveFile.bytes(_dedup(entryNames[i], used), bytes)
-        ..compression = CompressionType.none; // store; PDFs are already compressed
+        ..compression =
+            CompressionType.none; // store; PDFs are already compressed
       archive.addFile(entry);
     }
     final encoded = ZipEncoder().encodeBytes(archive);
@@ -48,7 +55,7 @@ class SystemFileArchiver implements FileArchiver {
     if (used.add(name)) return name;
     final ext = p.extension(name);
     final stem = p.basenameWithoutExtension(name);
-    for (var n = 2;; n++) {
+    for (var n = 2; ; n++) {
       final candidate = '$stem ($n)$ext';
       if (used.add(candidate)) return candidate;
     }

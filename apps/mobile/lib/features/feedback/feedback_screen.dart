@@ -8,8 +8,10 @@ import 'turnstile_widget.dart';
 class FeedbackScreen extends StatefulWidget {
   final FeedbackDependencies dependencies;
 
-  const FeedbackScreen(
-      {super.key, this.dependencies = const FeedbackDependencies()});
+  const FeedbackScreen({
+    super.key,
+    this.dependencies = const FeedbackDependencies(),
+  });
 
   @override
   State<FeedbackScreen> createState() => _FeedbackScreenState();
@@ -39,12 +41,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     try {
-      final result = await _service.submit(FeedbackDraft(
-        category: _category,
-        message: _message.text.trim(),
-        email: _email.text.trim().isEmpty ? null : _email.text.trim(),
-        turnstileToken: _turnstileToken,
-      ));
+      final result = await _service.submit(
+        FeedbackDraft(
+          category: _category,
+          message: _message.text.trim(),
+          email: _email.text.trim().isEmpty ? null : _email.text.trim(),
+          turnstileToken: _turnstileToken,
+        ),
+      );
       if (!mounted) return;
       _showResult(result);
     } finally {
@@ -54,9 +58,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   void _showResult(FeedbackResult r) {
     final msg = switch (r) {
-      FeedbackSuccess() || FeedbackDuplicate() => 'Thanks! Your feedback was sent.',
-      FeedbackRateLimited() => "You've sent a few already — please try again later.",
-      FeedbackRejectedUnverified() => "Couldn't verify the app — please try again.",
+      FeedbackSuccess() ||
+      FeedbackDuplicate() => 'Thanks! Your feedback was sent.',
+      FeedbackRateLimited() =>
+        "You've sent a few already — please try again later.",
+      FeedbackRejectedUnverified() =>
+        "Couldn't verify the app — please try again.",
       FeedbackOffline() => 'Check your connection and try again.',
       FeedbackInvalid() => 'Please check your message and try again.',
       FeedbackServerError() => "Couldn't send right now — please try again.",
@@ -99,8 +106,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   labelText: 'Your feedback',
                   border: OutlineInputBorder(),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Please enter a message' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please enter a message'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -113,8 +121,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null;
-                  final ok =
-                      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim());
+                  final ok = RegExp(
+                    r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                  ).hasMatch(v.trim());
                   return ok ? null : 'Enter a valid email or leave it blank';
                 },
               ),
@@ -132,7 +141,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 onPressed: () =>
                     setState(() => _showDiagnostics = !_showDiagnostics),
                 child: Text(
-                  _showDiagnostics ? 'Hide what will be sent' : 'What will be sent?',
+                  _showDiagnostics
+                      ? 'Hide what will be sent'
+                      : 'What will be sent?',
                 ),
               ),
               if (_showDiagnostics)

@@ -13,5 +13,8 @@ abstract interface class PageProcessor {
   /// return null on failure (corrupt/timeout) so a wrapping fallback can run.
   /// Never throws.
   Future<Uint8List?> process(
-      Uint8List bytes, CropCorners corners, EnhancerMode mode);
+    Uint8List bytes,
+    CropCorners corners,
+    EnhancerMode mode,
+  );
 }

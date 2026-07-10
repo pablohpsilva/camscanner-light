@@ -39,15 +39,27 @@ void main() {
     if (await base.exists()) await base.delete(recursive: true);
   });
 
-  Uint8List jpeg() =>
-      Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+  Uint8List jpeg() => Uint8List.fromList(
+    img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+  );
 
   // Creates a document with [pageCount] pages; page 1 optionally gets a flat + boxes.
-  Future<int> seedDoc(String name, int pageCount,
-      {bool firstHasFlat = false, String? firstOcrText}) async {
+  Future<int> seedDoc(
+    String name,
+    int pageCount, {
+    bool firstHasFlat = false,
+    String? firstOcrText,
+  }) async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: name,
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     for (var pos = 1; pos <= pageCount; pos++) {
       final rel = 'documents/$id/page_$pos.jpg';
       await store.writeRelative(rel, jpeg());
@@ -56,56 +68,79 @@ void main() {
         flatRel = store.flatForImage(rel);
         await store.writeRelative(flatRel, jpeg());
       }
-      await db.into(db.pages).insert(PagesCompanion.insert(
-            documentId: id,
-            position: pos,
-            relativeImagePath: rel,
-            flatRelativePath: Value(flatRel),
-            ocrText: Value(pos == 1 ? firstOcrText : null),
-            ocrBoxes: Value(pos == 1 && firstOcrText != null
-                ? const OcrResult(text: 'x', words: [
-                    OcrWordBox(text: 'x', left: 0.1, top: 0.1, right: 0.2, bottom: 0.2)
-                  ]).encodeBoxes()
-                : null),
-          ));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: pos,
+              relativeImagePath: rel,
+              flatRelativePath: Value(flatRel),
+              ocrText: Value(pos == 1 ? firstOcrText : null),
+              ocrBoxes: Value(
+                pos == 1 && firstOcrText != null
+                    ? const OcrResult(
+                        text: 'x',
+                        words: [
+                          OcrWordBox(
+                            text: 'x',
+                            left: 0.1,
+                            top: 0.1,
+                            right: 0.2,
+                            bottom: 0.2,
+                          ),
+                        ],
+                      ).encodeBoxes()
+                    : null,
+              ),
+            ),
+          );
     }
     return id;
   }
 
-  test('appends source pages to target in order and deletes the source',
-      () async {
-    final target = await seedDoc('Target', 2);
-    final source =
-        await seedDoc('Source', 2, firstHasFlat: true, firstOcrText: 'HELLO');
+  test(
+    'appends source pages to target in order and deletes the source',
+    () async {
+      final target = await seedDoc('Target', 2);
+      final source = await seedDoc(
+        'Source',
+        2,
+        firstHasFlat: true,
+        firstOcrText: 'HELLO',
+      );
 
-    await repo.mergeInto(target, source);
+      await repo.mergeInto(target, source);
 
-    final pages = await repo.getDocumentPages(target);
-    expect(pages.length, 4);
-    expect(pages.map((p) => p.position), [1, 2, 3, 4]);
-    // The merged first source page (now position 3) kept its flat + OCR.
-    final merged = pages[2];
-    expect(merged.flatImagePath, isNotNull);
-    expect(File(merged.flatImagePath!).existsSync(), isTrue);
-    expect(merged.ocrText, 'HELLO');
-    expect(merged.ocrWords, isNotEmpty);
-    expect(File(merged.imagePath).existsSync(), isTrue);
-    expect(merged.imagePath, contains('page_m${source}_1.jpg'));
+      final pages = await repo.getDocumentPages(target);
+      expect(pages.length, 4);
+      expect(pages.map((p) => p.position), [1, 2, 3, 4]);
+      // The merged first source page (now position 3) kept its flat + OCR.
+      final merged = pages[2];
+      expect(merged.flatImagePath, isNotNull);
+      expect(File(merged.flatImagePath!).existsSync(), isTrue);
+      expect(merged.ocrText, 'HELLO');
+      expect(merged.ocrWords, isNotEmpty);
+      expect(File(merged.imagePath).existsSync(), isTrue);
+      expect(merged.imagePath, contains('page_m${source}_1.jpg'));
 
-    // Source is gone (rows + dir).
-    expect(await repo.getDocumentPages(source), isEmpty);
-    expect(Directory('${base.path}/documents/$source').existsSync(), isFalse);
-  });
+      // Source is gone (rows + dir).
+      expect(await repo.getDocumentPages(source), isEmpty);
+      expect(Directory('${base.path}/documents/$source').existsSync(), isFalse);
+    },
+  );
 
-  test('merging a source page without a flat leaves flatImagePath null',
-      () async {
-    final target = await seedDoc('T', 1);
-    final source = await seedDoc('S', 1); // no flat
-    await repo.mergeInto(target, source);
-    final pages = await repo.getDocumentPages(target);
-    expect(pages.length, 2);
-    expect(pages[1].flatImagePath, isNull);
-  });
+  test(
+    'merging a source page without a flat leaves flatImagePath null',
+    () async {
+      final target = await seedDoc('T', 1);
+      final source = await seedDoc('S', 1); // no flat
+      await repo.mergeInto(target, source);
+      final pages = await repo.getDocumentPages(target);
+      expect(pages.length, 2);
+      expect(pages[1].flatImagePath, isNull);
+    },
+  );
 
   test('rejects merging a document into itself', () async {
     final id = await seedDoc('Self', 1);

@@ -35,34 +35,53 @@ void main() {
 
   Future<int> seedPage({String? ocrText}) async {
     final now = DateTime.now();
-    final docId = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'My Report', createdAt: now, modifiedAt: now));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: docId,
-        position: 1,
-        relativeImagePath: 'documents/$docId/page_1.jpg',
-        ocrText: Value(ocrText)));
+    final docId = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'My Report',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: docId,
+            position: 1,
+            relativeImagePath: 'documents/$docId/page_1.jpg',
+            ocrText: Value(ocrText),
+          ),
+        );
     return docId;
   }
 
-  test('writes a temp .txt with the cached text and a sanitized name', () async {
-    final docId = await seedPage(ocrText: 'HELLO WORLD');
-    final file = await repo.exportRecognizedText(docId, 1);
+  test(
+    'writes a temp .txt with the cached text and a sanitized name',
+    () async {
+      final docId = await seedPage(ocrText: 'HELLO WORLD');
+      final file = await repo.exportRecognizedText(docId, 1);
 
-    expect(await file.readAsString(), 'HELLO WORLD');
-    expect(file.path, endsWith('My Report_page_1.txt'));
-    // Temp, not under the documents dir.
-    expect(file.path.contains(base.path), isFalse);
-  });
+      expect(await file.readAsString(), 'HELLO WORLD');
+      expect(file.path, endsWith('My Report_page_1.txt'));
+      // Temp, not under the documents dir.
+      expect(file.path.contains(base.path), isFalse);
+    },
+  );
 
   test('throws when the page has no recognized text', () async {
     final docId = await seedPage(ocrText: null);
-    expect(() => repo.exportRecognizedText(docId, 1),
-        throwsA(isA<DocumentExportException>()));
+    expect(
+      () => repo.exportRecognizedText(docId, 1),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 
   test('throws when the page row does not exist', () async {
-    expect(() => repo.exportRecognizedText(999, 1),
-        throwsA(isA<DocumentExportException>()));
+    expect(
+      () => repo.exportRecognizedText(999, 1),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 }

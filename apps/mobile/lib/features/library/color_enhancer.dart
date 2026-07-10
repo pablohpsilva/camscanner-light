@@ -17,7 +17,9 @@ Uint8List _colorFn(Uint8List bytes) {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return bytes;
     final oriented = img.bakeOrientation(decoded);
-    return Uint8List.fromList(img.encodeJpg(colorEnhanceOriented(oriented), quality: 92));
+    return Uint8List.fromList(
+      img.encodeJpg(colorEnhanceOriented(oriented), quality: 92),
+    );
   } catch (_) {
     return bytes;
   }

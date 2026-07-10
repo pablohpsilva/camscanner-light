@@ -11,12 +11,16 @@ Widget _host(Widget child) => MaterialApp(home: child);
 
 void main() {
   testWidgets('filter-only mode hides crop overlay and Reset', (tester) async {
-    await tester.pumpWidget(_host(CaptureReviewScreen(
-      image: const CapturedImage('/nonexistent/scan_1.jpg'),
-      enableCrop: false,
-      onRetake: () {},
-      onAccept: (_, _) {},
-    )));
+    await tester.pumpWidget(
+      _host(
+        CaptureReviewScreen(
+          image: const CapturedImage('/nonexistent/scan_1.jpg'),
+          enableCrop: false,
+          onRetake: () {},
+          onAccept: (_, _) {},
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(CropOverlay), findsNothing);
@@ -24,19 +28,24 @@ void main() {
     expect(find.byKey(const Key('filter-picker-strip')), findsOneWidget);
   });
 
-  testWidgets('filter-only accept returns full-frame corners + enhancer',
-      (tester) async {
+  testWidgets('filter-only accept returns full-frame corners + enhancer', (
+    tester,
+  ) async {
     CropCorners? corners;
     ImageEnhancer? enhancer;
-    await tester.pumpWidget(_host(CaptureReviewScreen(
-      image: const CapturedImage('/nonexistent/scan_1.jpg'),
-      enableCrop: false,
-      onRetake: () {},
-      onAccept: (c, e) {
-        corners = c;
-        enhancer = e;
-      },
-    )));
+    await tester.pumpWidget(
+      _host(
+        CaptureReviewScreen(
+          image: const CapturedImage('/nonexistent/scan_1.jpg'),
+          enableCrop: false,
+          onRetake: () {},
+          onAccept: (c, e) {
+            corners = c;
+            enhancer = e;
+          },
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('review-accept')));

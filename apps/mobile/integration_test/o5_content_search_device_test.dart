@@ -14,8 +14,9 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('searchDocuments matches by page OCR text on device',
-      (tester) async {
+  testWidgets('searchDocuments matches by page OCR text on device', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('o5dev');
     final db = AppDatabase(NativeDatabase.memory());
     final repo = DriftDocumentRepository(
@@ -28,15 +29,34 @@ void main() {
     );
 
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Untitled', createdAt: now, modifiedAt: now));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id,
-        position: 1,
-        relativeImagePath: 'documents/$id/page_1.jpg',
-        ocrText: const Value('INVOICE 2026 TOTAL DUE')));
-    await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Recipe', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Untitled',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: 'documents/$id/page_1.jpg',
+            ocrText: const Value('INVOICE 2026 TOTAL DUE'),
+          ),
+        );
+    await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Recipe',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
 
     final hit = await repo.searchDocuments('invoice');
     expect(hit.map((s) => s.document.name), ['Untitled']);

@@ -24,10 +24,14 @@ void main() {
         position INTEGER NOT NULL, relative_image_path TEXT NOT NULL,
         corners TEXT, flat_relative_path TEXT);
     ''');
-    raw.execute("INSERT INTO documents VALUES "
-        "(1,'Scan','2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z');");
-    raw.execute("INSERT INTO pages (id,document_id,position,relative_image_path) "
-        "VALUES (1,1,1,'1/1.jpg');");
+    raw.execute(
+      "INSERT INTO documents VALUES "
+      "(1,'Scan','2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z');",
+    );
+    raw.execute(
+      "INSERT INTO pages (id,document_id,position,relative_image_path) "
+      "VALUES (1,1,1,'1/1.jpg');",
+    );
     raw.execute('PRAGMA user_version = 3;');
     raw.close();
 
@@ -39,10 +43,11 @@ void main() {
 
     // Fresh write round-trips.
     await (db.update(db.pages)..where((t) => t.id.equals(1))).write(
-        const PagesCompanion(
-            ocrText: Value('HELLO'), ocrBoxes: Value('[]')));
-    final updated =
-        await (db.select(db.pages)..where((t) => t.id.equals(1))).getSingle();
+      const PagesCompanion(ocrText: Value('HELLO'), ocrBoxes: Value('[]')),
+    );
+    final updated = await (db.select(
+      db.pages,
+    )..where((t) => t.id.equals(1))).getSingle();
     expect(updated.ocrText, 'HELLO');
     expect(updated.ocrBoxes, '[]');
 

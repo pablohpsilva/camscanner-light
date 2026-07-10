@@ -7,15 +7,23 @@ import '../../support/fake_library.dart';
 
 void main() {
   testWidgets('Share all as images shares one JPG per page', (tester) async {
-    final repo = FakeDocumentRepository(pages: const [
-      PageImage(position: 1, imagePath: '/a.jpg'),
-      PageImage(position: 2, imagePath: '/b.jpg'),
-    ]);
+    final repo = FakeDocumentRepository(
+      pages: const [
+        PageImage(position: 1, imagePath: '/a.jpg'),
+        PageImage(position: 2, imagePath: '/b.jpg'),
+      ],
+    );
     final share = FakeShareChannel();
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(
-          documentId: 1, name: 'Doc', repository: repo, share: share),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(
+          documentId: 1,
+          name: 'Doc',
+          repository: repo,
+          share: share,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
@@ -38,10 +46,16 @@ void main() {
       pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
     );
     final share = FakeShareChannel();
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(
-          documentId: 1, name: 'Doc', repository: repo, share: share),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(
+          documentId: 1,
+          name: 'Doc',
+          repository: repo,
+          share: share,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));

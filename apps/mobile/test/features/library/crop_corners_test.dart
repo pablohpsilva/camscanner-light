@@ -11,8 +11,11 @@ void main() {
 
   test('clamp pulls every corner into [0,1]x[0,1]', () {
     const c = CropCorners(
-      topLeft: Offset(-0.2, -0.5), topRight: Offset(1.3, 0.1),
-      bottomRight: Offset(2.0, 1.4), bottomLeft: Offset(-1.0, 0.9));
+      topLeft: Offset(-0.2, -0.5),
+      topRight: Offset(1.3, 0.1),
+      bottomRight: Offset(2.0, 1.4),
+      bottomLeft: Offset(-1.0, 0.9),
+    );
     final r = c.clamp();
     expect(r.topLeft, const Offset(0, 0));
     expect(r.topRight, const Offset(1, 0.1));
@@ -22,8 +25,11 @@ void main() {
 
   test('toStorage <-> tryParse round-trips in role order', () {
     const c = CropCorners(
-      topLeft: Offset(0.1, 0.2), topRight: Offset(0.9, 0.15),
-      bottomRight: Offset(0.85, 0.95), bottomLeft: Offset(0.05, 0.9));
+      topLeft: Offset(0.1, 0.2),
+      topRight: Offset(0.9, 0.15),
+      bottomRight: Offset(0.85, 0.95),
+      bottomLeft: Offset(0.05, 0.9),
+    );
     final parsed = CropCorners.tryParse(c.toStorage());
     expect(parsed, c);
   });
@@ -31,45 +37,65 @@ void main() {
   test('tryParse is fail-soft on bad input (never throws)', () {
     expect(CropCorners.tryParse(null), isNull);
     expect(CropCorners.tryParse(''), isNull);
-    expect(CropCorners.tryParse('0.1,0.2,0.3'), isNull);            // wrong count
-    expect(CropCorners.tryParse('a,b,c,d,e,f,g,h'), isNull);        // non-numeric
-    expect(CropCorners.tryParse('0,0,1,0,1,1,0,NaN'), isNull);      // NaN token
+    expect(CropCorners.tryParse('0.1,0.2,0.3'), isNull); // wrong count
+    expect(CropCorners.tryParse('a,b,c,d,e,f,g,h'), isNull); // non-numeric
+    expect(CropCorners.tryParse('0,0,1,0,1,1,0,NaN'), isNull); // NaN token
     expect(CropCorners.tryParse('0,0,1,0,1,1,0,Infinity'), isNull); // inf token
   });
 
   test('value equality', () {
     expect(CropCorners.fullFrame, CropCorners.fullFrame);
     expect(
-      const CropCorners(topLeft: Offset(0, 0), topRight: Offset(1, 0),
-          bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1)),
+      const CropCorners(
+        topLeft: Offset(0, 0),
+        topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1),
+        bottomLeft: Offset(0, 1),
+      ),
       CropCorners.fullFrame,
     );
     expect(
-      const CropCorners(topLeft: Offset(0.5, 0), topRight: Offset(1, 0),
-          bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1)),
+      const CropCorners(
+        topLeft: Offset(0.5, 0),
+        topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1),
+        bottomLeft: Offset(0, 1),
+      ),
       isNot(CropCorners.fullFrame),
     );
   });
 
   group('deviation model', () {
     const bent = CropCorners(
-      topLeft: Offset(0, 0), topRight: Offset(1, 0),
-      bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
-      topMidDev: Offset(0, 0.1));
+      topLeft: Offset(0, 0),
+      topRight: Offset(1, 0),
+      bottomRight: Offset(1, 1),
+      bottomLeft: Offset(0, 1),
+      topMidDev: Offset(0, 0.1),
+    );
 
     test('defaults: no deviations → isStraight, midpoints at edge centers', () {
       const c = CropCorners(
-        topLeft: Offset(0, 0), topRight: Offset(1, 0),
-        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1));
+        topLeft: Offset(0, 0),
+        topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1),
+        bottomLeft: Offset(0, 1),
+      );
       expect(c.isStraight, isTrue);
       expect(c.topMid, const Offset(0.5, 0));
       expect(c.leftMid, const Offset(0, 0.5));
     });
 
-    test('a non-zero deviation offsets the midpoint from center and is not straight', () {
-      expect(bent.isStraight, isFalse);
-      expect(bent.topMid, const Offset(0.5, 0.1)); // center (0.5,0) + dev (0,0.1)
-    });
+    test(
+      'a non-zero deviation offsets the midpoint from center and is not straight',
+      () {
+        expect(bent.isStraight, isFalse);
+        expect(
+          bent.topMid,
+          const Offset(0.5, 0.1),
+        ); // center (0.5,0) + dev (0,0.1)
+      },
+    );
 
     test('midpoint follows a moved corner (deviation is relative)', () {
       final moved = bent.copyWith(topRight: const Offset(0.8, 0));
@@ -85,9 +111,12 @@ void main() {
 
     test('== and hashCode include deviations', () {
       const same = CropCorners(
-        topLeft: Offset(0, 0), topRight: Offset(1, 0),
-        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
-        topMidDev: Offset(0, 0.1));
+        topLeft: Offset(0, 0),
+        topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1),
+        bottomLeft: Offset(0, 1),
+        topMidDev: Offset(0, 0.1),
+      );
       expect(bent, same);
       expect(bent.hashCode, same.hashCode);
       expect(bent, isNot(CropCorners.fullFrame));
@@ -95,18 +124,25 @@ void main() {
 
     test('clamp pulls resolved midpoints into [0,1]', () {
       const c = CropCorners(
-        topLeft: Offset(0, 0), topRight: Offset(1, 0),
-        bottomRight: Offset(1, 1), bottomLeft: Offset(0, 1),
-        topMidDev: Offset(0, -0.5)); // topMid = (0.5,-0.5) → clamp to (0.5,0)
+        topLeft: Offset(0, 0),
+        topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1),
+        bottomLeft: Offset(0, 1),
+        topMidDev: Offset(0, -0.5),
+      ); // topMid = (0.5,-0.5) → clamp to (0.5,0)
       expect(c.clamp().topMid.dy, 0.0);
     });
   });
 
   group('16-number persistence', () {
     const bent = CropCorners(
-      topLeft: Offset(0.1, 0.2), topRight: Offset(0.9, 0.15),
-      bottomRight: Offset(0.85, 0.95), bottomLeft: Offset(0.05, 0.9),
-      topMidDev: Offset(0.0, 0.07), rightMidDev: Offset(-0.03, 0.0));
+      topLeft: Offset(0.1, 0.2),
+      topRight: Offset(0.9, 0.15),
+      bottomRight: Offset(0.85, 0.95),
+      bottomLeft: Offset(0.05, 0.9),
+      topMidDev: Offset(0.0, 0.07),
+      rightMidDev: Offset(-0.03, 0.0),
+    );
 
     test('toStorage emits 16 numbers and round-trips deviations', () {
       expect(bent.toStorage().split(',').length, 16);
@@ -114,7 +150,9 @@ void main() {
     });
 
     test('legacy 8-number string parses as zero-deviation (straight)', () {
-      final parsed = CropCorners.tryParse('0.1,0.2,0.9,0.15,0.85,0.95,0.05,0.9');
+      final parsed = CropCorners.tryParse(
+        '0.1,0.2,0.9,0.15,0.85,0.95,0.05,0.9',
+      );
       expect(parsed, isNotNull);
       expect(parsed!.isStraight, isTrue);
       expect(parsed.topLeft, const Offset(0.1, 0.2));

@@ -66,7 +66,9 @@ Uint8List _autoFn(Uint8List bytes) {
     // The EXIF scrubber keeps the Orientation tag; encodeJpg strips EXIF, so
     // bake orientation into pixels first. Safe no-op for already-flat bytes.
     final baked = img.bakeOrientation(decoded);
-    return Uint8List.fromList(img.encodeJpg(autoEnhanceOriented(baked), quality: 95));
+    return Uint8List.fromList(
+      img.encodeJpg(autoEnhanceOriented(baked), quality: 95),
+    );
   } catch (_) {
     return bytes;
   }
@@ -123,14 +125,19 @@ img.Image autoEnhanceOriented(img.Image oriented) {
   final pw = proxy.width, ph = proxy.height;
 
   final dilated = _maxFilter(
-      proxy.getBytes(order: img.ChannelOrder.rgb), pw, ph, kAutoDilateRadius);
+    proxy.getBytes(order: img.ChannelOrder.rgb),
+    pw,
+    ph,
+    kAutoDilateRadius,
+  );
   final blurred = img.gaussianBlur(
     img.Image.fromBytes(
-        width: pw,
-        height: ph,
-        bytes: dilated.buffer,
-        numChannels: 3,
-        order: img.ChannelOrder.rgb),
+      width: pw,
+      height: ph,
+      bytes: dilated.buffer,
+      numChannels: 3,
+      order: img.ChannelOrder.rgb,
+    ),
     radius: kAutoBlurRadius,
   );
   return (blurred.getBytes(order: img.ChannelOrder.rgb), pw, ph);
@@ -197,8 +204,7 @@ Uint8List _maxFilter(Uint8List src, int w, int h, int radius) {
 /// The background lives at proxy resolution ([bw]x[bh]); its value under each
 /// full-res pixel is bilinearly interpolated here — the same interpolation a
 /// linear upsample would produce, but without allocating a full-res image.
-void _flatten(
-    Uint8List px, int w, int h, Uint8List bg, int bw, int bh) {
+void _flatten(Uint8List px, int w, int h, Uint8List bg, int bw, int bh) {
   final sx = bw > 1 ? (bw - 1) / (w - 1) : 0.0;
   final sy = bh > 1 ? (bh - 1) / (h - 1) : 0.0;
   final bStride = bw * 3;

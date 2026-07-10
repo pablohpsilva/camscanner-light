@@ -15,8 +15,9 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('mergeInto appends pages and deletes source on device',
-      (tester) async {
+  testWidgets('mergeInto appends pages and deletes source on device', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('l1dev');
     final db = AppDatabase(NativeDatabase.memory());
     final store = DocumentFileStore(base);
@@ -30,16 +31,31 @@ void main() {
     );
 
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+      img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+    );
     Future<int> mk(String name, int pages) async {
       final now = DateTime.now();
-      final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-          name: name, createdAt: now, modifiedAt: now));
+      final id = await db
+          .into(db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: name,
+              createdAt: now,
+              modifiedAt: now,
+            ),
+          );
       for (var p = 1; p <= pages; p++) {
         final rel = 'documents/$id/page_$p.jpg';
         await store.writeRelative(rel, jpeg);
-        await db.into(db.pages).insert(PagesCompanion.insert(
-            documentId: id, position: p, relativeImagePath: rel));
+        await db
+            .into(db.pages)
+            .insert(
+              PagesCompanion.insert(
+                documentId: id,
+                position: p,
+                relativeImagePath: rel,
+              ),
+            );
       }
       return id;
     }

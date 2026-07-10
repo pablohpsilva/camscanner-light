@@ -9,7 +9,10 @@ import '../support/persistent_storage.dart';
 
 /// Usage: a saved document named {'Untitled'} with page text {'INVOICE 2026'}
 Future<void> aSavedDocumentNamedWithPageText(
-    WidgetTester tester, String name, String pageText) async {
+  WidgetTester tester,
+  String name,
+  String pageText,
+) async {
   final dir = await Directory.systemTemp.createTemp('o5persist');
   persistentDir = dir;
   persistentDbFile = File('${dir.path}/camscanner.sqlite');
@@ -19,12 +22,20 @@ Future<void> aSavedDocumentNamedWithPageText(
 
   final db = AppDatabase(NativeDatabase(persistentDbFile!));
   final now = DateTime.utc(2026, 7, 1, 12);
-  final docId = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: name, createdAt: now, modifiedAt: now));
-  await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: docId,
-        position: 1,
-        relativeImagePath: 'documents/$docId/page_1.jpg',
-        ocrText: Value(pageText)));
+  final docId = await db
+      .into(db.documents)
+      .insert(
+        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now),
+      );
+  await db
+      .into(db.pages)
+      .insert(
+        PagesCompanion.insert(
+          documentId: docId,
+          position: 1,
+          relativeImagePath: 'documents/$docId/page_1.jpg',
+          ocrText: Value(pageText),
+        ),
+      );
   await db.close();
 }

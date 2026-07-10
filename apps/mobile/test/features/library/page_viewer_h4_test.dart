@@ -9,39 +9,47 @@ import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
 
 void main() {
-  Future<void> pushViewer(WidgetTester tester, FakeDocumentRepository repo,
-      {ScanDependencies? deps}) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => Center(
-          child: ElevatedButton(
-            key: const Key('open'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => PageViewerScreen(
-                  documentId: 1,
-                  name: 'Doc',
-                  repository: repo,
-                  dependencies: deps ?? const ScanDependencies(),
+  Future<void> pushViewer(
+    WidgetTester tester,
+    FakeDocumentRepository repo, {
+    ScanDependencies? deps,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: ElevatedButton(
+              key: const Key('open'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PageViewerScreen(
+                    documentId: 1,
+                    name: 'Doc',
+                    repository: repo,
+                    dependencies: deps ?? const ScanDependencies(),
+                  ),
                 ),
               ),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.byKey(const Key('open')));
     await tester.pumpAndSettle();
   }
 
-  FakeDocumentRepository twoPageRepo() => FakeDocumentRepository(pages: [
-        const PageImage(position: 1, imagePath: '/nonexistent/p1.jpg'),
-        const PageImage(position: 2, imagePath: '/nonexistent/p2.jpg'),
-      ]);
+  FakeDocumentRepository twoPageRepo() => FakeDocumentRepository(
+    pages: [
+      const PageImage(position: 1, imagePath: '/nonexistent/p1.jpg'),
+      const PageImage(position: 2, imagePath: '/nonexistent/p2.jpg'),
+    ],
+  );
 
-  testWidgets('overflow menu exposes Retake page and Delete page',
-      (tester) async {
+  testWidgets('overflow menu exposes Retake page and Delete page', (
+    tester,
+  ) async {
     await pushViewer(tester, twoPageRepo());
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
@@ -73,20 +81,23 @@ void main() {
     expect(repo.lastDeletedPagePosition, isNull);
   });
 
-  testWidgets('Delete the only page: whole-document copy + pops viewer',
-      (tester) async {
-    final repo = FakeDocumentRepository(pages: [
-      const PageImage(position: 1, imagePath: '/nonexistent/p1.jpg'),
-    ]);
+  testWidgets('Delete the only page: whole-document copy + pops viewer', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository(
+      pages: [const PageImage(position: 1, imagePath: '/nonexistent/p1.jpg')],
+    );
     await pushViewer(tester, repo);
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
     await tester.pumpAndSettle();
     expect(
-        find.text(
-            'This is the only page. Deleting it removes the whole document.'),
-        findsOneWidget);
+      find.text(
+        'This is the only page. Deleting it removes the whole document.',
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('page-viewer-delete-page-confirm')));
     await tester.pumpAndSettle();
     // remaining == 0 → viewer popped back to the opener button.
@@ -94,8 +105,9 @@ void main() {
     expect(find.byType(PageViewerScreen), findsNothing);
   });
 
-  testWidgets('Delete page failure shows a snackbar, stays on viewer',
-      (tester) async {
+  testWidgets('Delete page failure shows a snackbar, stays on viewer', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(
       throwOnDeletePage: true,
       pages: [
@@ -126,7 +138,8 @@ void main() {
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-retake')));
-    await tester.pump(); // dispatch tap, push ScanScreen, post-frame _run() starts
+    await tester
+        .pump(); // dispatch tap, push ScanScreen, post-frame _run() starts
     await tester.pump(); // settle pending microtasks; _run() awaits scanner
     expect(find.byType(ScanScreen), findsOneWidget);
   });

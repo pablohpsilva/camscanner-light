@@ -28,21 +28,24 @@ class MlKitOcrEngine implements OcrEngine {
     final file = File('${dir.path}/img.jpg')..writeAsBytesSync(imageBytes);
     final recognizer = TextRecognizer();
     try {
-      final recognized =
-          await recognizer.processImage(InputImage.fromFilePath(file.path));
+      final recognized = await recognizer.processImage(
+        InputImage.fromFilePath(file.path),
+      );
       final words = <OcrWordBox>[];
       if (w > 0 && h > 0) {
         for (final block in recognized.blocks) {
           for (final line in block.lines) {
             for (final el in line.elements) {
               final r = el.boundingBox;
-              words.add(OcrWordBox(
-                text: el.text,
-                left: (r.left / w).clamp(0.0, 1.0),
-                top: (r.top / h).clamp(0.0, 1.0),
-                right: (r.right / w).clamp(0.0, 1.0),
-                bottom: (r.bottom / h).clamp(0.0, 1.0),
-              ));
+              words.add(
+                OcrWordBox(
+                  text: el.text,
+                  left: (r.left / w).clamp(0.0, 1.0),
+                  top: (r.top / h).clamp(0.0, 1.0),
+                  right: (r.right / w).clamp(0.0, 1.0),
+                  bottom: (r.bottom / h).clamp(0.0, 1.0),
+                ),
+              );
             }
           }
         }
@@ -52,7 +55,9 @@ class MlKitOcrEngine implements OcrEngine {
       await recognizer.close();
       try {
         dir.deleteSync(recursive: true);
-      } catch (_) {/* best-effort temp cleanup */}
+      } catch (_) {
+        /* best-effort temp cleanup */
+      }
     }
   }
 }

@@ -52,16 +52,16 @@ class DriftDocumentRepository implements DocumentRepository {
     OcrEngine ocrEngine = const NoOpOcrEngine(),
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
     ImageCompressor compressor = const ImageLibraryCompressor(),
-  })  : _db = db, // ignore: prefer_initializing_formals
-        _scrubber = scrubber, // ignore: prefer_initializing_formals
-        _fileStore = fileStore, // ignore: prefer_initializing_formals
-        _clock = clock, // ignore: prefer_initializing_formals
-        _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
-        _warper = warper, // ignore: prefer_initializing_formals
-        _processor = pageProcessor ?? DartPageProcessor(warper),
-        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
-        _encryptor = encryptor, // ignore: prefer_initializing_formals
-        _compressor = compressor; // ignore: prefer_initializing_formals
+  }) : _db = db, // ignore: prefer_initializing_formals
+       _scrubber = scrubber, // ignore: prefer_initializing_formals
+       _fileStore = fileStore, // ignore: prefer_initializing_formals
+       _clock = clock, // ignore: prefer_initializing_formals
+       _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
+       _warper = warper, // ignore: prefer_initializing_formals
+       _processor = pageProcessor ?? DartPageProcessor(warper),
+       _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
+       _encryptor = encryptor, // ignore: prefer_initializing_formals
+       _compressor = compressor; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(
@@ -74,9 +74,14 @@ class DriftDocumentRepository implements DocumentRepository {
     final name = _defaultName(now);
     try {
       final doc = await _db.transaction(() async {
-        final docId = await _db.into(_db.documents).insert(
+        final docId = await _db
+            .into(_db.documents)
+            .insert(
               DocumentsCompanion.insert(
-                  name: name, createdAt: createdUtc, modifiedAt: createdUtc),
+                name: name,
+                createdAt: createdUtc,
+                modifiedAt: createdUtc,
+              ),
             );
         final rel = _fileStore.relativeFor(docId, 1);
         late final Uint8List scrubbed;
@@ -86,11 +91,15 @@ class DriftDocumentRepository implements DocumentRepository {
           // G1: for full-frame (no warp), apply enhancement to the original
           // before writing. Each ImageEnhancer is responsible for baking EXIF
           // orientation before encoding (encodeJpg strips EXIF).
-          final isFullFrame = corners == null || corners == CropCorners.fullFrame;
+          final isFullFrame =
+              corners == null || corners == CropCorners.fullFrame;
           Uint8List bytesToStore = scrubbed;
           if (enhancer != null && isFullFrame) {
             final enhanced = await _processor.process(
-                scrubbed, CropCorners.fullFrame, enhancerModeOf(enhancer));
+              scrubbed,
+              CropCorners.fullFrame,
+              enhancerModeOf(enhancer),
+            );
             if (enhanced != null) {
               bytesToStore = enhanced;
             } else {
@@ -117,19 +126,23 @@ class DriftDocumentRepository implements DocumentRepository {
             flatRel = null; // IO failure — save proceeds with the original only
           }
         }
-        await _db.into(_db.pages).insert(
+        await _db
+            .into(_db.pages)
+            .insert(
               PagesCompanion.insert(
-                  documentId: docId,
-                  position: 1,
-                  relativeImagePath: rel,
-                  corners: Value(corners?.toStorage()),
-                  flatRelativePath: Value(flatRel)),
+                documentId: docId,
+                position: 1,
+                relativeImagePath: rel,
+                corners: Value(corners?.toStorage()),
+                flatRelativePath: Value(flatRel),
+              ),
             );
         return Document(
-            id: docId,
-            name: name,
-            createdAt: createdUtc,
-            modifiedAt: createdUtc);
+          id: docId,
+          name: name,
+          createdAt: createdUtc,
+          modifiedAt: createdUtc,
+        );
       });
       await _deleteTempSource(capture.path);
       _triggerOcr(doc.id, 1);
@@ -147,7 +160,10 @@ class DriftDocumentRepository implements DocumentRepository {
   /// frame — so a failed/degenerate crop still yields a de-shadowed page rather
   /// than the raw capture. Warp and enhancement failures are both silent.
   Future<Uint8List?> _enhancedFlat(
-      Uint8List scrubbed, CropCorners? corners, ImageEnhancer? enhancer) async {
+    Uint8List scrubbed,
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  ) async {
     if (corners == null || corners == CropCorners.fullFrame) return null;
     final mode = enhancerModeOf(enhancer);
     final out = await _processor.process(scrubbed, corners, mode);
@@ -207,13 +223,18 @@ class DriftDocumentRepository implements DocumentRepository {
   // LIKE %q%, newest-first. Retained for short-term / degenerate queries.
   Future<List<DocumentSummary>> _searchByLike(String q) async {
     final like = '%$q%';
-    final idQuery = _db.select(_db.documents).join([
-      leftOuterJoin(_db.pages, _db.pages.documentId.equalsExp(_db.documents.id)),
-    ])
-      ..where(_db.documents.name.like(like) | _db.pages.ocrText.like(like))
-      ..groupBy([_db.documents.id]);
-    final ids =
-        (await idQuery.get()).map((r) => r.readTable(_db.documents).id).toSet();
+    final idQuery =
+        _db.select(_db.documents).join([
+            leftOuterJoin(
+              _db.pages,
+              _db.pages.documentId.equalsExp(_db.documents.id),
+            ),
+          ])
+          ..where(_db.documents.name.like(like) | _db.pages.ocrText.like(like))
+          ..groupBy([_db.documents.id]);
+    final ids = (await idQuery.get())
+        .map((r) => r.readTable(_db.documents).id)
+        .toSet();
     if (ids.isEmpty) return const [];
     return _summaries(onlyIds: ids);
   }
@@ -221,20 +242,25 @@ class DriftDocumentRepository implements DocumentRepository {
   // Ranked trigram search over per-document rows: bm25 relevance, with document
   // name matches ordered first. Returns summaries in relevance order.
   Future<List<DocumentSummary>> _searchRanked(
-      String q, List<String> terms) async {
+    String q,
+    List<String> terms,
+  ) async {
     final matchExpr = terms.map((t) => '"$t"').join(' AND ');
-    final rows = await _db.customSelect(
-      'SELECT rowid AS did, bm25(doc_fts) AS score '
-      'FROM doc_fts WHERE doc_fts MATCH ? ORDER BY score',
-      variables: [Variable.withString(matchExpr)],
-    ).get();
+    final rows = await _db
+        .customSelect(
+          'SELECT rowid AS did, bm25(doc_fts) AS score '
+          'FROM doc_fts WHERE doc_fts MATCH ? ORDER BY score',
+          variables: [Variable.withString(matchExpr)],
+        )
+        .get();
     final textIds = rows.map((r) => r.read<int>('did')).toList(); // best first
 
     // Name matches: strong signal, and names are not in the trigram index.
-    final nameRows = await (_db.select(_db.documents)
-          ..where((t) => t.name.like('%$q%'))
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
+    final nameRows =
+        await (_db.select(_db.documents)
+              ..where((t) => t.name.like('%$q%'))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .get();
 
     final ordered = <int>[];
     final seen = <int>{};
@@ -249,32 +275,39 @@ class DriftDocumentRepository implements DocumentRepository {
     final summaries = await _summaries(onlyIds: ordered.toSet());
     final rank = {for (var i = 0; i < ordered.length; i++) ordered[i]: i};
     summaries.sort(
-        (a, b) => rank[a.document.id]!.compareTo(rank[b.document.id]!));
+      (a, b) => rank[a.document.id]!.compareTo(rank[b.document.id]!),
+    );
     return summaries;
   }
 
   Future<List<DocumentSummary>> _summaries({Set<int>? onlyIds}) async {
     // (1) page count per document, newest doc first — one grouped query.
     final pageCount = _db.pages.id.count();
-    final query = _db.select(_db.documents).join([
-      leftOuterJoin(_db.pages, _db.pages.documentId.equalsExp(_db.documents.id)),
-    ])
-      ..addColumns([pageCount])
-      ..groupBy([_db.documents.id])
-      ..orderBy([OrderingTerm.desc(_db.documents.createdAt)]);
+    final query =
+        _db.select(_db.documents).join([
+            leftOuterJoin(
+              _db.pages,
+              _db.pages.documentId.equalsExp(_db.documents.id),
+            ),
+          ])
+          ..addColumns([pageCount])
+          ..groupBy([_db.documents.id])
+          ..orderBy([OrderingTerm.desc(_db.documents.createdAt)]);
     if (onlyIds != null) {
       query.where(_db.documents.id.isIn(onlyIds.toList()));
     }
     final rows = await query.get();
 
     // (2) lowest-position page path per document — one query, no N+1.
-    final pages = await (_db.select(_db.pages)
-          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-        .get();
+    final pages = await (_db.select(
+      _db.pages,
+    )..orderBy([(t) => OrderingTerm.asc(t.position)])).get();
     final firstPathByDoc = <int, String>{};
     for (final pg in pages) {
       firstPathByDoc.putIfAbsent(
-          pg.documentId, () => pg.flatRelativePath ?? pg.relativeImagePath);
+        pg.documentId,
+        () => pg.flatRelativePath ?? pg.relativeImagePath,
+      );
     }
 
     return rows.map((row) {
@@ -282,10 +315,11 @@ class DriftDocumentRepository implements DocumentRepository {
       final rel = firstPathByDoc[d.id];
       return DocumentSummary(
         document: Document(
-            id: d.id,
-            name: d.name,
-            createdAt: d.createdAt,
-            modifiedAt: d.modifiedAt),
+          id: d.id,
+          name: d.name,
+          createdAt: d.createdAt,
+          modifiedAt: d.modifiedAt,
+        ),
         pageCount: row.read(pageCount)!,
         thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
       );
@@ -294,21 +328,24 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<List<PageImage>> getDocumentPages(int documentId) async {
-    final pages = await (_db.select(_db.pages)
-          ..where((t) => t.documentId.equals(documentId))
-          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-        .get();
+    final pages =
+        await (_db.select(_db.pages)
+              ..where((t) => t.documentId.equals(documentId))
+              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+            .get();
     return pages
-        .map((pg) => PageImage(
-              position: pg.position,
-              imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
-              corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
-              flatImagePath: pg.flatRelativePath == null
-                  ? null
-                  : _fileStore.absoluteFor(pg.flatRelativePath!).path,
-              ocrText: pg.ocrText,
-              ocrWords: OcrResult.decodeBoxes(pg.ocrBoxes),
-            ))
+        .map(
+          (pg) => PageImage(
+            position: pg.position,
+            imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
+            corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
+            flatImagePath: pg.flatRelativePath == null
+                ? null
+                : _fileStore.absoluteFor(pg.flatRelativePath!).path,
+            ocrText: pg.ocrText,
+            ocrWords: OcrResult.decodeBoxes(pg.ocrBoxes),
+          ),
+        )
         .toList();
   }
 
@@ -319,10 +356,12 @@ class DriftDocumentRepository implements DocumentRepository {
   // the trigger so a no-text pass can't wipe previously recognized text.
   @override
   Future<void> runOcr(int documentId, int position) async {
-    final row = await (_db.select(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
     if (row == null) {
       throw DocumentSaveException('runOcr: no page ($documentId, $position)');
     }
@@ -331,9 +370,11 @@ class DriftDocumentRepository implements DocumentRepository {
     final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
     final result = await _ocrEngine.recognize(bytes);
     await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
-        PagesCompanion(
-            ocrText: Value(result.text),
-            ocrBoxes: Value(result.encodeBoxes())));
+      PagesCompanion(
+        ocrText: Value(result.text),
+        ocrBoxes: Value(result.encodeBoxes()),
+      ),
+    );
   }
 
   @override
@@ -341,11 +382,12 @@ class DriftDocumentRepository implements DocumentRepository {
     // Row-first: the DB delete is authoritative. Explicit page delete (not
     // relying solely on the FK cascade pragma), then the document row.
     await _db.transaction(() async {
-      await (_db.delete(_db.pages)
-            ..where((t) => t.documentId.equals(documentId)))
-          .go();
-      await (_db.delete(_db.documents)..where((t) => t.id.equals(documentId)))
-          .go();
+      await (_db.delete(
+        _db.pages,
+      )..where((t) => t.documentId.equals(documentId))).go();
+      await (_db.delete(
+        _db.documents,
+      )..where((t) => t.id.equals(documentId))).go();
     });
     // Best-effort file cleanup AFTER commit. Worst case = harmless orphan files
     // (no row references them). deleteDocumentDir guards dir-absent.
@@ -353,15 +395,20 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<File> exportPdf(int documentId,
-      {ExportQuality quality = ExportQuality.original}) async {
+  Future<File> exportPdf(
+    int documentId, {
+    ExportQuality quality = ExportQuality.original,
+  }) async {
     final pages = await getDocumentPages(documentId);
     if (pages.isEmpty) {
       throw const DocumentExportException('export failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages,
-          quality: quality, idCardLayout: await _isIdCard(documentId));
+      final bytes = await _pdfBuilder.build(
+        pages,
+        quality: quality,
+        idCardLayout: await _isIdCard(documentId),
+      );
       final dir = await Directory.systemTemp.createTemp('pdf_export');
       final safeName = await _pdfFileNameFor(documentId);
       final file = File('${dir.path}/$safeName');
@@ -373,16 +420,18 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   Future<bool> _isIdCard(int documentId) async {
-    final row = await (_db.select(_db.documents)
-          ..where((d) => d.id.equals(documentId)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.documents,
+    )..where((d) => d.id.equals(documentId))).getSingleOrNull();
     return row?.isIdCard ?? false;
   }
 
   @override
   Future<File> exportCombinedPdf(List<int> documentIds) async {
     if (documentIds.isEmpty) {
-      throw const DocumentExportException('combined export failed: no documents');
+      throw const DocumentExportException(
+        'combined export failed: no documents',
+      );
     }
     final pages = <PageImage>[];
     for (final id in documentIds) {
@@ -406,7 +455,9 @@ class DriftDocumentRepository implements DocumentRepository {
   @override
   Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
     if (documentIds.isEmpty) {
-      throw const DocumentExportException('separate export failed: no documents');
+      throw const DocumentExportException(
+        'separate export failed: no documents',
+      );
     }
     final files = <File>[];
     for (final id in documentIds) {
@@ -422,7 +473,10 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentExportException('protect failed: no pages');
     }
     try {
-      final bytes = await _pdfBuilder.build(pages, idCardLayout: await _isIdCard(documentId));
+      final bytes = await _pdfBuilder.build(
+        pages,
+        idCardLayout: await _isIdCard(documentId),
+      );
       final encrypted = await _encryptor.encrypt(bytes, password);
       final dir = await Directory.systemTemp.createTemp('pdf_protect');
       final safeName = await _pdfFileNameFor(documentId);
@@ -438,9 +492,9 @@ class DriftDocumentRepository implements DocumentRepository {
   /// Sanitized base name (no extension) from the document's name; 'document'
   /// when the name is empty/unknown. Shared by all export filename builders.
   Future<String> _exportBaseName(int documentId) async {
-    final doc = await (_db.select(_db.documents)
-          ..where((d) => d.id.equals(documentId)))
-        .getSingleOrNull();
+    final doc = await (_db.select(
+      _db.documents,
+    )..where((d) => d.id.equals(documentId))).getSingleOrNull();
     final base = (doc?.name ?? 'document')
         .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
         .trim();
@@ -451,15 +505,21 @@ class DriftDocumentRepository implements DocumentRepository {
       '${await _exportBaseName(documentId)}.pdf';
 
   @override
-  Future<File> exportPageAsImage(int documentId, int position,
-      {ExportQuality quality = ExportQuality.original}) async {
-    final row = await (_db.select(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .getSingleOrNull();
+  Future<File> exportPageAsImage(
+    int documentId,
+    int position, {
+    ExportQuality quality = ExportQuality.original,
+  }) async {
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
     if (row == null) {
       throw DocumentExportException(
-          'exportImage failed: no page ($documentId, $position)');
+        'exportImage failed: no page ($documentId, $position)',
+      );
     }
     try {
       // Display image: the flattened derivative when present, else the original.
@@ -483,8 +543,10 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<File>> exportAllPagesAsImages(int documentId,
-      {ExportQuality quality = ExportQuality.original}) async {
+  Future<List<File>> exportAllPagesAsImages(
+    int documentId, {
+    ExportQuality quality = ExportQuality.original,
+  }) async {
     final pages = await getDocumentPages(documentId);
     if (pages.isEmpty) {
       throw const DocumentExportException('exportAll failed: no pages');
@@ -492,24 +554,30 @@ class DriftDocumentRepository implements DocumentRepository {
     final files = <File>[];
     for (final page in pages) {
       files.add(
-          await exportPageAsImage(documentId, page.position, quality: quality));
+        await exportPageAsImage(documentId, page.position, quality: quality),
+      );
     }
     return files;
   }
 
   @override
   Future<File> exportRecognizedText(int documentId, int position) async {
-    final row = await (_db.select(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
     if (row == null) {
       throw DocumentExportException(
-          'exportText failed: no page ($documentId, $position)');
+        'exportText failed: no page ($documentId, $position)',
+      );
     }
     final text = row.ocrText;
     if (text == null || text.trim().isEmpty) {
-      throw const DocumentExportException('exportText failed: no recognized text');
+      throw const DocumentExportException(
+        'exportText failed: no recognized text',
+      );
     }
     try {
       final dir = await Directory.systemTemp.createTemp('txt_export');
@@ -529,16 +597,21 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentRenameException('rename failed: empty name');
     }
     final modifiedUtc = _clock().toUtc();
-    final updated = await (_db.update(_db.documents)
-          ..where((t) => t.id.equals(documentId)))
-        .write(DocumentsCompanion(
-            name: Value(trimmed), modifiedAt: Value(modifiedUtc)));
+    final updated =
+        await (_db.update(
+          _db.documents,
+        )..where((t) => t.id.equals(documentId))).write(
+          DocumentsCompanion(
+            name: Value(trimmed),
+            modifiedAt: Value(modifiedUtc),
+          ),
+        );
     if (updated == 0) {
       throw const DocumentRenameException('rename failed: no such document');
     }
-    final row = await (_db.select(_db.documents)
-          ..where((t) => t.id.equals(documentId)))
-        .getSingle();
+    final row = await (_db.select(
+      _db.documents,
+    )..where((t) => t.id.equals(documentId))).getSingle();
     return Document(
       id: row.id,
       name: row.name,
@@ -549,14 +622,20 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<void> updatePageCorners(
-      int documentId, int position, CropCorners corners) async {
-    final page = await (_db.select(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .getSingleOrNull();
+    int documentId,
+    int position,
+    CropCorners corners,
+  ) async {
+    final page =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
     if (page == null) {
       throw DocumentSaveException(
-          'updatePageCorners: no page ($documentId, $position)');
+        'updatePageCorners: no page ($documentId, $position)',
+      );
     }
 
     if (corners == CropCorners.fullFrame) {
@@ -564,42 +643,56 @@ class DriftDocumentRepository implements DocumentRepository {
       if (flatRel != null) {
         try {
           await _fileStore.absoluteFor(flatRel).delete();
-        } on FileSystemException {/* already gone — fine */}
+        } on FileSystemException {
+          /* already gone — fine */
+        }
       }
-      await (_db.update(_db.pages)
-            ..where((t) =>
-                t.documentId.equals(documentId) & t.position.equals(position)))
-          .write(PagesCompanion(
+      await (_db.update(_db.pages)..where(
+            (t) =>
+                t.documentId.equals(documentId) & t.position.equals(position),
+          ))
+          .write(
+            PagesCompanion(
               corners: const Value<String?>(null),
-              flatRelativePath: const Value<String?>(null)));
+              flatRelativePath: const Value<String?>(null),
+            ),
+          );
       return;
     }
 
     // Non-fullFrame: read original JPEG, warp, write flat, update row.
-    final bytes =
-        await _fileStore.absoluteFor(page.relativeImagePath).readAsBytes();
+    final bytes = await _fileStore
+        .absoluteFor(page.relativeImagePath)
+        .readAsBytes();
     final flat = await _warper.warp(bytes, corners);
     if (flat == null) return; // warper returned null — no-op here
     // Derive the flat name from the page's own image path so it remains stable
     // under reorder (unlike a position-derived name which can collide).
     final flatRel = _fileStore.flatForImage(page.relativeImagePath);
     await _fileStore.writeRelative(flatRel, flat);
-    await (_db.update(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .write(PagesCompanion(
+    await (_db.update(_db.pages)..where(
+          (t) => t.documentId.equals(documentId) & t.position.equals(position),
+        ))
+        .write(
+          PagesCompanion(
             corners: Value(corners.toStorage()),
-            flatRelativePath: Value(flatRel)));
+            flatRelativePath: Value(flatRel),
+          ),
+        );
   }
 
   @override
   Future<void> rotatePage(int documentId, int position) async {
-    final row = await (_db.select(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
     if (row == null) {
-      throw DocumentSaveException('rotatePage: no page ($documentId, $position)');
+      throw DocumentSaveException(
+        'rotatePage: no page ($documentId, $position)',
+      );
     }
     // Rotate the DISPLAY image (flat if present, else original) 90° CW.
     final displayRel = row.flatRelativePath ?? row.relativeImagePath;
@@ -624,14 +717,20 @@ class DriftDocumentRepository implements DocumentRepository {
     final boxes = OcrResult.decodeBoxes(row.ocrBoxes);
     final String? newBoxes = boxes.isEmpty
         ? row.ocrBoxes
-        : OcrResult(text: '', words: [for (final b in boxes) b.rotate90Cw()])
-            .encodeBoxes();
+        : OcrResult(
+            text: '',
+            words: [for (final b in boxes) b.rotate90Cw()],
+          ).encodeBoxes();
 
-    await (_db.update(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .write(PagesCompanion(
-            flatRelativePath: Value(flatRel), ocrBoxes: Value(newBoxes)));
+    await (_db.update(_db.pages)..where(
+          (t) => t.documentId.equals(documentId) & t.position.equals(position),
+        ))
+        .write(
+          PagesCompanion(
+            flatRelativePath: Value(flatRel),
+            ocrBoxes: Value(newBoxes),
+          ),
+        );
     await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
         .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
   }
@@ -645,11 +744,12 @@ class DriftDocumentRepository implements DocumentRepository {
   }) async {
     try {
       final position = await _db.transaction(() async {
-        final maxRow = await (_db.select(_db.pages)
-              ..where((p) => p.documentId.equals(documentId))
-              ..orderBy([(p) => OrderingTerm.desc(p.position)])
-              ..limit(1))
-            .getSingleOrNull();
+        final maxRow =
+            await (_db.select(_db.pages)
+                  ..where((p) => p.documentId.equals(documentId))
+                  ..orderBy([(p) => OrderingTerm.desc(p.position)])
+                  ..limit(1))
+                .getSingleOrNull();
         if (maxRow == null) {
           throw DocumentSaveException('document $documentId has no pages');
         }
@@ -657,12 +757,14 @@ class DriftDocumentRepository implements DocumentRepository {
         final rel = _fileStore.relativeFor(documentId, newPosition);
         final raw = await File(capture.path).readAsBytes();
         final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
-        final isFullFrame =
-            corners == null || corners == CropCorners.fullFrame;
+        final isFullFrame = corners == null || corners == CropCorners.fullFrame;
         Uint8List bytesToStore = scrubbed;
         if (enhancer != null && isFullFrame) {
           final enhanced = await _processor.process(
-              scrubbed, CropCorners.fullFrame, enhancerModeOf(enhancer));
+            scrubbed,
+            CropCorners.fullFrame,
+            enhancerModeOf(enhancer),
+          );
           if (enhanced != null) {
             bytesToStore = enhanced;
           } else {
@@ -682,7 +784,9 @@ class DriftDocumentRepository implements DocumentRepository {
             flatRel = null;
           }
         }
-        await _db.into(_db.pages).insert(
+        await _db
+            .into(_db.pages)
+            .insert(
               PagesCompanion.insert(
                 documentId: documentId,
                 position: newPosition,
@@ -691,8 +795,7 @@ class DriftDocumentRepository implements DocumentRepository {
                 flatRelativePath: Value(flatRel),
               ),
             );
-        await (_db.update(_db.documents)
-              ..where((d) => d.id.equals(documentId)))
+        await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
         return newPosition;
       });
@@ -707,17 +810,22 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<int> deletePage(int documentId, int position) async {
-    final row = await (_db.select(_db.pages)
-          ..where((t) =>
-              t.documentId.equals(documentId) & t.position.equals(position)))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
     if (row == null) {
-      throw DocumentSaveException('deletePage: no page ($documentId, $position)');
+      throw DocumentSaveException(
+        'deletePage: no page ($documentId, $position)',
+      );
     }
-    final rows = await (_db.select(_db.pages)
-          ..where((t) => t.documentId.equals(documentId))
-          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-        .get();
+    final rows =
+        await (_db.select(_db.pages)
+              ..where((t) => t.documentId.equals(documentId))
+              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+            .get();
     final remaining = rows.length - 1;
 
     await _db.transaction(() async {
@@ -731,12 +839,12 @@ class DriftDocumentRepository implements DocumentRepository {
                 .write(PagesCompanion(position: Value(r.position - 1)));
           }
         }
-        await (_db.update(_db.documents)
-              ..where((d) => d.id.equals(documentId)))
+        await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
       } else {
-        await (_db.delete(_db.documents)..where((d) => d.id.equals(documentId)))
-            .go();
+        await (_db.delete(
+          _db.documents,
+        )..where((d) => d.id.equals(documentId))).go();
       }
     });
 
@@ -746,12 +854,16 @@ class DriftDocumentRepository implements DocumentRepository {
     } else {
       try {
         await _fileStore.absoluteFor(row.relativeImagePath).delete();
-      } on FileSystemException {/* already gone — fine */}
+      } on FileSystemException {
+        /* already gone — fine */
+      }
       final flat = row.flatRelativePath;
       if (flat != null) {
         try {
           await _fileStore.absoluteFor(flat).delete();
-        } on FileSystemException {/* already gone — fine */}
+        } on FileSystemException {
+          /* already gone — fine */
+        }
       }
     }
     return remaining;
@@ -766,12 +878,17 @@ class DriftDocumentRepository implements DocumentRepository {
     ImageEnhancer? enhancer,
   }) async {
     try {
-      final row = await (_db.select(_db.pages)
-            ..where((t) =>
-                t.documentId.equals(documentId) & t.position.equals(position)))
-          .getSingleOrNull();
+      final row =
+          await (_db.select(_db.pages)..where(
+                (t) =>
+                    t.documentId.equals(documentId) &
+                    t.position.equals(position),
+              ))
+              .getSingleOrNull();
       if (row == null) {
-        throw DocumentSaveException('replacePage: no page ($documentId, $position)');
+        throw DocumentSaveException(
+          'replacePage: no page ($documentId, $position)',
+        );
       }
 
       final raw = await File(capture.path).readAsBytes();
@@ -781,7 +898,10 @@ class DriftDocumentRepository implements DocumentRepository {
       Uint8List bytesToStore = scrubbed;
       if (enhancer != null && isFullFrame) {
         final enhanced = await _processor.process(
-            scrubbed, CropCorners.fullFrame, enhancerModeOf(enhancer));
+          scrubbed,
+          CropCorners.fullFrame,
+          enhancerModeOf(enhancer),
+        );
         if (enhanced != null) {
           bytesToStore = enhanced;
         } else {
@@ -808,7 +928,8 @@ class DriftDocumentRepository implements DocumentRepository {
             // never orphan a stale derivative (positions can drift after reorders).
             // For a new flat, derive the name from the page's own image path
             // (stable under reorder) rather than from position (collision-prone).
-            flatRel = row.flatRelativePath ??
+            flatRel =
+                row.flatRelativePath ??
                 _fileStore.flatForImage(row.relativeImagePath);
             await _fileStore.writeRelative(flatRel, flatBytes);
           }
@@ -819,14 +940,18 @@ class DriftDocumentRepository implements DocumentRepository {
       if (flatRel == null && row.flatRelativePath != null) {
         try {
           await _fileStore.absoluteFor(row.flatRelativePath!).delete();
-        } on FileSystemException {/* already gone — fine */}
+        } on FileSystemException {
+          /* already gone — fine */
+        }
       }
 
       await _db.transaction(() async {
         await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
-            PagesCompanion(
-                corners: Value(corners?.toStorage()),
-                flatRelativePath: Value(flatRel)));
+          PagesCompanion(
+            corners: Value(corners?.toStorage()),
+            flatRelativePath: Value(flatRel),
+          ),
+        );
         await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
       });
@@ -843,13 +968,13 @@ class DriftDocumentRepository implements DocumentRepository {
     // Pre-fetch rows before the transaction to build a position→rowId map.
     // Updates inside the transaction use the primary key (id) to avoid
     // position-value conflicts when two pages swap positions.
-    final rows = await (_db.select(_db.pages)
-          ..where((t) => t.documentId.equals(documentId))
-          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-        .get();
+    final rows =
+        await (_db.select(_db.pages)
+              ..where((t) => t.documentId.equals(documentId))
+              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+            .get();
     if (rows.isEmpty) {
-      throw DocumentSaveException(
-          'reorderPages: no pages for $documentId');
+      throw DocumentSaveException('reorderPages: no pages for $documentId');
     }
     final posToId = {for (final r in rows) r.position: r.id};
 
@@ -860,12 +985,11 @@ class DriftDocumentRepository implements DocumentRepository {
         if (rowId == null) continue; // unknown position — skip
         final newPosition = i + 1;
         if (oldPosition == newPosition) continue; // no change needed
-        await (_db.update(_db.pages)
-              ..where((t) => t.id.equals(rowId)))
-            .write(PagesCompanion(position: Value(newPosition)));
+        await (_db.update(_db.pages)..where((t) => t.id.equals(rowId))).write(
+          PagesCompanion(position: Value(newPosition)),
+        );
       }
-      await (_db.update(_db.documents)
-            ..where((d) => d.id.equals(documentId)))
+      await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
           .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
     });
   }
@@ -876,16 +1000,18 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentSaveException('mergeInto: target == source');
     }
     try {
-      final maxRow = await (_db.select(_db.pages)
-            ..where((p) => p.documentId.equals(targetDocumentId))
-            ..orderBy([(p) => OrderingTerm.desc(p.position)])
-            ..limit(1))
-          .getSingleOrNull();
+      final maxRow =
+          await (_db.select(_db.pages)
+                ..where((p) => p.documentId.equals(targetDocumentId))
+                ..orderBy([(p) => OrderingTerm.desc(p.position)])
+                ..limit(1))
+              .getSingleOrNull();
       final targetMax = maxRow?.position ?? 0;
-      final sourcePages = await (_db.select(_db.pages)
-            ..where((p) => p.documentId.equals(sourceDocumentId))
-            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
-          .get();
+      final sourcePages =
+          await (_db.select(_db.pages)
+                ..where((p) => p.documentId.equals(sourceDocumentId))
+                ..orderBy([(p) => OrderingTerm.asc(p.position)]))
+              .get();
 
       // Copy files first (outside the DB txn), building the row inserts.
       final inserts = <PagesCompanion>[];
@@ -894,25 +1020,29 @@ class DriftDocumentRepository implements DocumentRepository {
         k++;
         final imageRel =
             'documents/$targetDocumentId/page_m${sourceDocumentId}_${src.position}.jpg';
-        final srcBytes =
-            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
+        final srcBytes = await _fileStore
+            .absoluteFor(src.relativeImagePath)
+            .readAsBytes();
         await _fileStore.writeRelative(imageRel, srcBytes);
         String? flatRel;
         if (src.flatRelativePath != null) {
-          final flatBytes =
-              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
+          final flatBytes = await _fileStore
+              .absoluteFor(src.flatRelativePath!)
+              .readAsBytes();
           flatRel = _fileStore.flatForImage(imageRel);
           await _fileStore.writeRelative(flatRel, flatBytes);
         }
-        inserts.add(PagesCompanion.insert(
-          documentId: targetDocumentId,
-          position: targetMax + k,
-          relativeImagePath: imageRel,
-          corners: Value(src.corners),
-          flatRelativePath: Value(flatRel),
-          ocrText: Value(src.ocrText),
-          ocrBoxes: Value(src.ocrBoxes),
-        ));
+        inserts.add(
+          PagesCompanion.insert(
+            documentId: targetDocumentId,
+            position: targetMax + k,
+            relativeImagePath: imageRel,
+            corners: Value(src.corners),
+            flatRelativePath: Value(flatRel),
+            ocrText: Value(src.ocrText),
+            ocrBoxes: Value(src.ocrBoxes),
+          ),
+        );
       }
       await _db.transaction(() async {
         for (final c in inserts) {
@@ -933,62 +1063,75 @@ class DriftDocumentRepository implements DocumentRepository {
   @override
   Future<Document> splitAfter(int documentId, int position) async {
     try {
-      final pages = await (_db.select(_db.pages)
-            ..where((p) => p.documentId.equals(documentId))
-            ..orderBy([(p) => OrderingTerm.asc(p.position)]))
-          .get();
+      final pages =
+          await (_db.select(_db.pages)
+                ..where((p) => p.documentId.equals(documentId))
+                ..orderBy([(p) => OrderingTerm.asc(p.position)]))
+              .get();
       if (pages.isEmpty) {
         throw DocumentSaveException('splitAfter: no pages ($documentId)');
       }
       final maxPos = pages.last.position;
       if (position < 1 || position >= maxPos) {
         throw DocumentSaveException(
-            'splitAfter: nothing after position $position');
+          'splitAfter: nothing after position $position',
+        );
       }
-      final doc = await (_db.select(_db.documents)
-            ..where((d) => d.id.equals(documentId)))
-          .getSingleOrNull();
+      final doc = await (_db.select(
+        _db.documents,
+      )..where((d) => d.id.equals(documentId))).getSingleOrNull();
       if (doc == null) {
         throw DocumentSaveException('splitAfter: no document $documentId');
       }
       final now = _clock().toUtc();
       final newName = '${doc.name} (split)';
-      final newId = await _db.into(_db.documents).insert(
-          DocumentsCompanion.insert(
-              name: newName, createdAt: now, modifiedAt: now));
+      final newId = await _db
+          .into(_db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: newName,
+              createdAt: now,
+              modifiedAt: now,
+            ),
+          );
 
       final moved = pages.where((p) => p.position > position).toList();
       var k = 0;
       for (final src in moved) {
         k++;
         final imageRel = 'documents/$newId/page_$k.jpg';
-        final bytes =
-            await _fileStore.absoluteFor(src.relativeImagePath).readAsBytes();
+        final bytes = await _fileStore
+            .absoluteFor(src.relativeImagePath)
+            .readAsBytes();
         await _fileStore.writeRelative(imageRel, bytes);
         String? flatRel;
         if (src.flatRelativePath != null) {
-          final flatBytes =
-              await _fileStore.absoluteFor(src.flatRelativePath!).readAsBytes();
+          final flatBytes = await _fileStore
+              .absoluteFor(src.flatRelativePath!)
+              .readAsBytes();
           flatRel = _fileStore.flatForImage(imageRel);
           await _fileStore.writeRelative(flatRel, flatBytes);
         }
-        await _db.into(_db.pages).insert(PagesCompanion.insert(
-          documentId: newId,
-          position: k,
-          relativeImagePath: imageRel,
-          corners: Value(src.corners),
-          flatRelativePath: Value(flatRel),
-          ocrText: Value(src.ocrText),
-          ocrBoxes: Value(src.ocrBoxes),
-        ));
+        await _db
+            .into(_db.pages)
+            .insert(
+              PagesCompanion.insert(
+                documentId: newId,
+                position: k,
+                relativeImagePath: imageRel,
+                corners: Value(src.corners),
+                flatRelativePath: Value(flatRel),
+                ocrText: Value(src.ocrText),
+                ocrBoxes: Value(src.ocrBoxes),
+              ),
+            );
       }
 
       await _db.transaction(() async {
         for (final src in moved) {
           await (_db.delete(_db.pages)..where((t) => t.id.equals(src.id))).go();
         }
-        await (_db.update(_db.documents)
-              ..where((d) => d.id.equals(documentId)))
+        await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(now)));
       });
 
@@ -996,17 +1139,25 @@ class DriftDocumentRepository implements DocumentRepository {
       for (final src in moved) {
         try {
           await _fileStore.absoluteFor(src.relativeImagePath).delete();
-        } on FileSystemException {/* already gone */}
+        } on FileSystemException {
+          /* already gone */
+        }
         final f = src.flatRelativePath;
         if (f != null) {
           try {
             await _fileStore.absoluteFor(f).delete();
-          } on FileSystemException {/* already gone */}
+          } on FileSystemException {
+            /* already gone */
+          }
         }
       }
 
       return Document(
-          id: newId, name: newName, createdAt: now, modifiedAt: now);
+        id: newId,
+        name: newName,
+        createdAt: now,
+        modifiedAt: now,
+      );
     } catch (e) {
       if (e is DocumentSaveException) rethrow;
       throw DocumentSaveException('splitAfter failed: $e');
@@ -1033,17 +1184,22 @@ class DriftDocumentRepository implements DocumentRepository {
       if (await f.exists() && path.contains(Directory.systemTemp.path)) {
         await f.delete();
       }
-    } catch (_) {/* best-effort */}
+    } catch (_) {
+      /* best-effort */
+    }
   }
 
   @override
   Future<void> markAsIdCard(int documentId) async {
-    final updated = await (_db.update(_db.documents)
-          ..where((d) => d.id.equals(documentId)))
-        .write(DocumentsCompanion(
-      isIdCard: const Value(true),
-      modifiedAt: Value(_clock().toUtc()),
-    ));
+    final updated =
+        await (_db.update(
+          _db.documents,
+        )..where((d) => d.id.equals(documentId))).write(
+          DocumentsCompanion(
+            isIdCard: const Value(true),
+            modifiedAt: Value(_clock().toUtc()),
+          ),
+        );
     if (updated == 0) {
       throw const DocumentSaveException('markAsIdCard: document not found');
     }

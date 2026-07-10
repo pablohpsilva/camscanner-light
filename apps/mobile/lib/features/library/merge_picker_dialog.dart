@@ -6,11 +6,16 @@ import 'document_summary.dart';
 /// Shows a dialog listing every document EXCEPT [currentDocumentId] and resolves
 /// to the chosen document's id (or null if cancelled / none available).
 Future<int?> showMergePicker(
-    BuildContext context, DocumentRepository repository, int currentDocumentId) {
+  BuildContext context,
+  DocumentRepository repository,
+  int currentDocumentId,
+) {
   return showDialog<int>(
     context: context,
     builder: (_) => MergePickerDialog(
-        repository: repository, currentDocumentId: currentDocumentId),
+      repository: repository,
+      currentDocumentId: currentDocumentId,
+    ),
   );
 }
 
@@ -40,9 +45,11 @@ class _MergePickerDialogState extends State<MergePickerDialog> {
     try {
       final all = await widget.repository.listDocumentSummaries();
       if (!mounted) return;
-      setState(() => _others = all
-          .where((s) => s.document.id != widget.currentDocumentId)
-          .toList());
+      setState(
+        () => _others = all
+            .where((s) => s.document.id != widget.currentDocumentId)
+            .toList(),
+      );
     } catch (_) {
       if (mounted) setState(() => _others = const []);
     }
@@ -59,28 +66,28 @@ class _MergePickerDialogState extends State<MergePickerDialog> {
         child: others == null
             ? const SizedBox(
                 height: 64,
-                child: Center(child: CircularProgressIndicator()))
+                child: Center(child: CircularProgressIndicator()),
+              )
             : others.isEmpty
-                ? const Padding(
-                    key: Key('merge-picker-empty'),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No other documents to merge.'),
-                  )
-                : ListView(
-                    shrinkWrap: true,
-                    children: [
-                      for (final s in others)
-                        ListTile(
-                          key: Key('merge-picker-item-${s.document.id}'),
-                          title: Text(s.document.name),
-                          subtitle: Text(s.pageCount == 1
-                              ? '1 page'
-                              : '${s.pageCount} pages'),
-                          onTap: () =>
-                              Navigator.of(context).pop(s.document.id),
-                        ),
-                    ],
-                  ),
+            ? const Padding(
+                key: Key('merge-picker-empty'),
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text('No other documents to merge.'),
+              )
+            : ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final s in others)
+                    ListTile(
+                      key: Key('merge-picker-item-${s.document.id}'),
+                      title: Text(s.document.name),
+                      subtitle: Text(
+                        s.pageCount == 1 ? '1 page' : '${s.pageCount} pages',
+                      ),
+                      onTap: () => Navigator.of(context).pop(s.document.id),
+                    ),
+                ],
+              ),
       ),
       actions: [
         TextButton(

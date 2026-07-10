@@ -27,63 +27,81 @@ void main() {
   });
 
   DriftDocumentRepository repo() => DriftDocumentRepository(
-        db: db,
-        scrubber: const JpegExifScrubber(),
-        fileStore: DocumentFileStore(base),
-        clock: clock,
-        pdfBuilder: const PdfBuilder(),
-        warper: FakeImageWarper(),
-      );
+    db: db,
+    scrubber: const JpegExifScrubber(),
+    fileStore: DocumentFileStore(base),
+    clock: clock,
+    pdfBuilder: const PdfBuilder(),
+    warper: FakeImageWarper(),
+  );
 
   CapturedImage freshCapture(String filename) {
     final src = File('${base.path}/$filename')
       ..writeAsBytesSync(
-          File('test/fixtures/exif_sample.jpg').readAsBytesSync());
+        File('test/fixtures/exif_sample.jpg').readAsBytesSync(),
+      );
     return CapturedImage(src.path);
   }
 
-  test('deleting a middle page renumbers survivors and removes its files',
-      () async {
-    final r = repo();
-    final doc = await r.createFromCapture(freshCapture('c1.jpg')); // pos 1
-    await r.addPageToDocument(doc.id, freshCapture('c2.jpg')); // pos 2
-    await r.addPageToDocument(doc.id, freshCapture('c3.jpg')); // pos 3
+  test(
+    'deleting a middle page renumbers survivors and removes its files',
+    () async {
+      final r = repo();
+      final doc = await r.createFromCapture(freshCapture('c1.jpg')); // pos 1
+      await r.addPageToDocument(doc.id, freshCapture('c2.jpg')); // pos 2
+      await r.addPageToDocument(doc.id, freshCapture('c3.jpg')); // pos 3
 
-    final before = await r.getDocumentPages(doc.id);
-    final page2Path = before[1].imagePath; // absolute path of page at pos 2
-    expect(File(page2Path).existsSync(), isTrue);
+      final before = await r.getDocumentPages(doc.id);
+      final page2Path = before[1].imagePath; // absolute path of page at pos 2
+      expect(File(page2Path).existsSync(), isTrue);
 
-    final remaining = await r.deletePage(doc.id, 2);
+      final remaining = await r.deletePage(doc.id, 2);
 
-    expect(remaining, 2);
-    final after = await r.getDocumentPages(doc.id);
-    expect(after.map((p) => p.position), [1, 2],
-        reason: 'survivors renumbered contiguously');
-    expect(File(page2Path).existsSync(), isFalse,
-        reason: "deleted page's image file removed (best-effort)");
-  });
+      expect(remaining, 2);
+      final after = await r.getDocumentPages(doc.id);
+      expect(after.map((p) => p.position), [
+        1,
+        2,
+      ], reason: 'survivors renumbered contiguously');
+      expect(
+        File(page2Path).existsSync(),
+        isFalse,
+        reason: "deleted page's image file removed (best-effort)",
+      );
+    },
+  );
 
-  test('deleting the only page deletes the whole document (returns 0)',
-      () async {
-    final r = repo();
-    final doc = await r.createFromCapture(freshCapture('c1.jpg'));
+  test(
+    'deleting the only page deletes the whole document (returns 0)',
+    () async {
+      final r = repo();
+      final doc = await r.createFromCapture(freshCapture('c1.jpg'));
 
-    final remaining = await r.deletePage(doc.id, 1);
+      final remaining = await r.deletePage(doc.id, 1);
 
-    expect(remaining, 0);
-    expect(await db.select(db.documents).get(), isEmpty,
-        reason: 'last-page rule: document row deleted');
-    expect(Directory('${base.path}/documents/${doc.id}').existsSync(), isFalse,
-        reason: 'document dir nuked');
-  });
+      expect(remaining, 0);
+      expect(
+        await db.select(db.documents).get(),
+        isEmpty,
+        reason: 'last-page rule: document row deleted',
+      );
+      expect(
+        Directory('${base.path}/documents/${doc.id}').existsSync(),
+        isFalse,
+        reason: 'document dir nuked',
+      );
+    },
+  );
 
-  test('deleting a non-existent position throws DocumentSaveException',
-      () async {
-    final r = repo();
-    final doc = await r.createFromCapture(freshCapture('c1.jpg'));
-    await expectLater(
-      r.deletePage(doc.id, 99),
-      throwsA(isA<DocumentSaveException>()),
-    );
-  });
+  test(
+    'deleting a non-existent position throws DocumentSaveException',
+    () async {
+      final r = repo();
+      final doc = await r.createFromCapture(freshCapture('c1.jpg'));
+      await expectLater(
+        r.deletePage(doc.id, 99),
+        throwsA(isA<DocumentSaveException>()),
+      );
+    },
+  );
 }

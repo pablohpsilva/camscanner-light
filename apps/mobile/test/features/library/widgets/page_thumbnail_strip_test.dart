@@ -16,17 +16,18 @@ void main() {
     int current = 0,
     void Function(int)? onTap,
     void Function(int, int)? onReorder,
-  }) =>
-      tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: PageThumbnailStrip(
-            pages: p ?? pages,
-            currentIndex: current,
-            onTap: onTap ?? (_) {},
-            onReorder: onReorder,
-          ),
+  }) => tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: PageThumbnailStrip(
+          pages: p ?? pages,
+          currentIndex: current,
+          onTap: onTap ?? (_) {},
+          onReorder: onReorder,
         ),
-      ));
+      ),
+    ),
+  );
 
   testWidgets('ListView has key page-thumbnail-strip', (tester) async {
     await pump(tester);
@@ -34,7 +35,9 @@ void main() {
     expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);
   });
 
-  testWidgets('renders one tile per page with the correct 0-based key', (tester) async {
+  testWidgets('renders one tile per page with the correct 0-based key', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.pump();
     expect(find.byKey(const Key('page-thumb-0')), findsOneWidget);
@@ -42,16 +45,30 @@ void main() {
     expect(find.byKey(const Key('page-thumb-2')), findsOneWidget);
   });
 
-  testWidgets('current tile has a border; non-current tiles do not', (tester) async {
+  testWidgets('current tile has a border; non-current tiles do not', (
+    tester,
+  ) async {
     await pump(tester, current: 1);
     await tester.pump();
 
-    final selected = tester.widget<Container>(find.byKey(const Key('page-thumb-1')));
+    final selected = tester.widget<Container>(
+      find.byKey(const Key('page-thumb-1')),
+    );
     final decoration = selected.foregroundDecoration as BoxDecoration?;
-    expect(decoration?.border, isNotNull, reason: 'selected tile must have a border');
+    expect(
+      decoration?.border,
+      isNotNull,
+      reason: 'selected tile must have a border',
+    );
 
-    final notSelected = tester.widget<Container>(find.byKey(const Key('page-thumb-0')));
-    expect(notSelected.foregroundDecoration, isNull, reason: 'non-selected tile must have no border');
+    final notSelected = tester.widget<Container>(
+      find.byKey(const Key('page-thumb-0')),
+    );
+    expect(
+      notSelected.foregroundDecoration,
+      isNull,
+      reason: 'non-selected tile must have no border',
+    );
   });
 
   testWidgets('tapping tile i calls onTap(i)', (tester) async {
@@ -79,24 +96,34 @@ void main() {
   // IMPORTANT: On host, Image.file with a non-loadable path does NOT hang and does NOT
   // fire errorBuilder inside FakeAsync. Asserting cacheWidth and errorBuilder is the
   // deterministic wiring check; actual image rendering is verified on-device.
-  testWidgets('each visible tile uses a downsampled Image.file with errorBuilder', (tester) async {
-    await pump(tester);
-    await tester.pump();
-    final imgs = tester.widgetList<Image>(find.byType(Image)).toList();
-    expect(imgs, isNotEmpty);
-    expect(imgs.first.image, isA<ResizeImage>(),
-        reason: 'cacheWidth set → ResizeImage wraps FileImage');
-    expect(imgs.first.errorBuilder, isNotNull);
-  });
+  testWidgets(
+    'each visible tile uses a downsampled Image.file with errorBuilder',
+    (tester) async {
+      await pump(tester);
+      await tester.pump();
+      final imgs = tester.widgetList<Image>(find.byType(Image)).toList();
+      expect(imgs, isNotEmpty);
+      expect(
+        imgs.first.image,
+        isA<ResizeImage>(),
+        reason: 'cacheWidth set → ResizeImage wraps FileImage',
+      );
+      expect(imgs.first.errorBuilder, isNotNull);
+    },
+  );
 
-  testWidgets('onReorder provided → ReorderableListView is rendered', (tester) async {
+  testWidgets('onReorder provided → ReorderableListView is rendered', (
+    tester,
+  ) async {
     await pump(tester, onReorder: (_, _) {});
     await tester.pump();
     expect(find.byType(ReorderableListView), findsOneWidget);
     expect(find.byType(ListView), findsNothing);
   });
 
-  testWidgets('onReorder null → ListView is rendered (default)', (tester) async {
+  testWidgets('onReorder null → ListView is rendered (default)', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.pump();
     expect(find.byType(ListView), findsOneWidget);

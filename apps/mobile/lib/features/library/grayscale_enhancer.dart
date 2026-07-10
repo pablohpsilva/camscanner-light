@@ -23,7 +23,9 @@ Uint8List _grayscaleFn(Uint8List bytes) {
     // strips EXIF, so orientation must be baked into pixels first.
     // For already-baked flat bytes (post-warp), this is a safe no-op.
     final oriented = img.bakeOrientation(decoded); // positional arg
-    return Uint8List.fromList(img.encodeJpg(grayscaleEnhanceOriented(oriented), quality: 92));
+    return Uint8List.fromList(
+      img.encodeJpg(grayscaleEnhanceOriented(oriented), quality: 92),
+    );
   } catch (e) {
     // On any error during decoding or processing, return bytes unchanged
     return bytes;

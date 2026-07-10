@@ -12,16 +12,17 @@ class FakeDiagnosticsCollector implements DiagnosticsCollector {
 
   @override
   Future<Diagnostics> collect() async => const Diagnostics(
-        appVersion: '1.0.0',
-        build: '42',
-        os: 'iOS 18.3',
-        device: 'iPhone15,2',
-        locale: 'en_US',
-      );
+    appVersion: '1.0.0',
+    build: '42',
+    os: 'iOS 18.3',
+    device: 'iPhone15,2',
+    locale: 'en_US',
+  );
 }
 
 /// A no-op [http.Client] that returns `{}` with status 200 for every request.
-http.Client fakeHttpClient() => MockClient((req) async => http.Response('{}', 200));
+http.Client fakeHttpClient() =>
+    MockClient((req) async => http.Response('{}', 200));
 
 /// A [FeedbackConfig] with deterministic values suitable for tests.
 const testFeedbackConfig = FeedbackConfig(

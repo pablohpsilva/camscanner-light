@@ -13,15 +13,20 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Split after this page splits when not on the last page',
-      (tester) async {
-    final repo = FakeDocumentRepository(pages: const [
-      PageImage(position: 1, imagePath: '/a.jpg'),
-      PageImage(position: 2, imagePath: '/b.jpg'),
-    ]);
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
-    ));
+  testWidgets('Split after this page splits when not on the last page', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository(
+      pages: const [
+        PageImage(position: 1, imagePath: '/a.jpg'),
+        PageImage(position: 2, imagePath: '/b.jpg'),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await openMenuAndSplit(tester);
@@ -31,19 +36,23 @@ void main() {
     expect(find.text('Split into a new document'), findsOneWidget);
   });
 
-  testWidgets('Split on the only (last) page shows a message and does not split',
-      (tester) async {
-    final repo = FakeDocumentRepository(
-      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
-    );
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
-    ));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'Split on the only (last) page shows a message and does not split',
+    (tester) async {
+      final repo = FakeDocumentRepository(
+        pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await openMenuAndSplit(tester);
+      await openMenuAndSplit(tester);
 
-    expect(repo.lastSplitDoc, isNull);
-    expect(find.textContaining('last page'), findsOneWidget);
-  });
+      expect(repo.lastSplitDoc, isNull);
+      expect(find.textContaining('last page'), findsOneWidget);
+    },
+  );
 }

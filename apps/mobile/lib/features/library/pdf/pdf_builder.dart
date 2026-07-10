@@ -49,9 +49,7 @@ class PdfBuilder {
             children: [
               for (var i = 0; i < images.length; i++) ...[
                 if (i > 0) pw.SizedBox(height: 24),
-                pw.Expanded(
-                  child: pw.Image(images[i], fit: pw.BoxFit.contain),
-                ),
+                pw.Expanded(child: pw.Image(images[i], fit: pw.BoxFit.contain)),
               ],
             ],
           ),
@@ -62,13 +60,20 @@ class PdfBuilder {
     for (final page in pages) {
       final raw = await File(page.displayPath).readAsBytes();
       final bytes = await compressor.compress(raw, quality);
-      final image = pw.MemoryImage(bytes); // EXIF auto-orient (baked on re-encode)
+      final image = pw.MemoryImage(
+        bytes,
+      ); // EXIF auto-orient (baked on re-encode)
       final overlay = textLayer.overlayFor(
-          page, image.width!.toDouble(), image.height!.toDouble());
+        page,
+        image.width!.toDouble(),
+        image.height!.toDouble(),
+      );
       doc.addPage(
         pw.Page(
-          pageFormat:
-              PdfPageFormat(image.width!.toDouble(), image.height!.toDouble()),
+          pageFormat: PdfPageFormat(
+            image.width!.toDouble(),
+            image.height!.toDouble(),
+          ),
           build: (context) => pw.Stack(children: [pw.Image(image), ...overlay]),
         ),
       );

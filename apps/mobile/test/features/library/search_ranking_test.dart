@@ -34,15 +34,26 @@ void main() {
   // Seeds a doc and sets each page's ocrText from [pageTexts] (index 0 → pos 1).
   Future<int> seed(String name, List<String?> pageTexts) async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: name,
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     for (var i = 0; i < pageTexts.length; i++) {
-      await db.into(db.pages).insert(PagesCompanion.insert(
-            documentId: id,
-            position: i + 1,
-            relativeImagePath: 'documents/$id/page_${i + 1}.jpg',
-            ocrText: Value(pageTexts[i]),
-          ));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: i + 1,
+              relativeImagePath: 'documents/$id/page_${i + 1}.jpg',
+              ocrText: Value(pageTexts[i]),
+            ),
+          );
     }
     return id;
   }
@@ -50,13 +61,19 @@ void main() {
   List<String> names(List<dynamic> r) =>
       r.map((s) => s.document.name as String).toList();
 
-  test('multi-word query matches terms across different pages of one doc',
-      () async {
-    await seed('Report', ['ACME corporation header', null, 'final INVOICE total']);
-    await seed('Decoy', ['acme only, nothing else here']);
-    final r = await repo.searchDocuments('acme invoice');
-    expect(names(r), ['Report']);
-  });
+  test(
+    'multi-word query matches terms across different pages of one doc',
+    () async {
+      await seed('Report', [
+        'ACME corporation header',
+        null,
+        'final INVOICE total',
+      ]);
+      await seed('Decoy', ['acme only, nothing else here']);
+      final r = await repo.searchDocuments('acme invoice');
+      expect(names(r), ['Report']);
+    },
+  );
 
   test('mid-word substring still matches (trigram parity with LIKE)', () async {
     await seed('Scans', ['these were all rescanned yesterday']);
@@ -67,7 +84,11 @@ void main() {
     await seed('Weak', ['mentions invoice once, buried in prose about cats']);
     await seed('Strong', ['invoice invoice invoice invoice']);
     final r = await repo.searchDocuments('invoice');
-    expect(names(r).first, 'Strong', reason: 'higher term frequency ranks first');
+    expect(
+      names(r).first,
+      'Strong',
+      reason: 'higher term frequency ranks first',
+    );
   });
 
   test('a name match sorts ahead of a text-only match', () async {
@@ -83,9 +104,11 @@ void main() {
     expect(names(r), ['Doc']);
   });
 
-  test('sub-3-char term falls back to LIKE and still matches substrings',
-      () async {
-    await seed('AB Co', ['the ab shorthand appears here']);
-    expect(names(await repo.searchDocuments('ab')), ['AB Co']);
-  });
+  test(
+    'sub-3-char term falls back to LIKE and still matches substrings',
+    () async {
+      await seed('AB Co', ['the ab shorthand appears here']);
+      expect(names(await repo.searchDocuments('ab')), ['AB Co']);
+    },
+  );
 }

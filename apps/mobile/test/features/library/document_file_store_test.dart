@@ -35,18 +35,25 @@ void main() {
     final base2 = Directory.systemTemp.createTempSync('b1fs2');
     addTearDown(() => base2.deleteSync(recursive: true));
     final src = File(p.join(base.path, rel));
-    final dst = File(p.join(base2.path, rel))..parent.createSync(recursive: true);
+    final dst = File(p.join(base2.path, rel))
+      ..parent.createSync(recursive: true);
     dst.writeAsBytesSync(src.readAsBytesSync());
 
     final store2 = DocumentFileStore(base2);
-    expect(store2.absoluteFor(rel).existsSync(), isTrue,
-        reason: 'relative path must resolve under the new base');
+    expect(
+      store2.absoluteFor(rel).existsSync(),
+      isTrue,
+      reason: 'relative path must resolve under the new base',
+    );
   });
 
   test('deleteDocumentDir removes the per-document directory', () async {
     final store = DocumentFileStore(base);
     await store.writeRelative(store.relativeFor(7, 1), [1]);
     await store.deleteDocumentDir(7);
-    expect(Directory(p.join(base.path, 'documents', '7')).existsSync(), isFalse);
+    expect(
+      Directory(p.join(base.path, 'documents', '7')).existsSync(),
+      isFalse,
+    );
   });
 }

@@ -32,8 +32,9 @@ void main() {
     expect(seen.paper, const Color(0xFFF4F1EA));
   });
 
-  testWidgets('context.ream falls back to light when no extension is present',
-      (tester) async {
+  testWidgets('context.ream falls back to light when no extension is present', (
+    tester,
+  ) async {
     late ReamColors seen;
     await tester.pumpWidget(
       MaterialApp(

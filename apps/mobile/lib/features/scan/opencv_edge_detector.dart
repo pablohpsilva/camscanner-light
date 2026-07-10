@@ -27,7 +27,7 @@ class OpenCvEdgeDetector implements EdgeDetector {
   final PipelineRunner _runner;
 
   const OpenCvEdgeDetector({this.timeout = const Duration(seconds: 5)})
-      : _runner = _computeRunner;
+    : _runner = _computeRunner;
 
   /// Test-only: inject a custom [runner] (e.g. a slow/never-completing stub) to
   /// exercise the timeout guard without loading libdartcv.
@@ -53,14 +53,14 @@ class OpenCvEdgeDetector implements EdgeDetector {
 
 /// Maps a flat 9-element result list to a [DetectionResult].
 DetectionResult _resultFromFlat(List<double> flat) => DetectionResult(
-      corners: CropCorners(
-        topLeft: Offset(flat[0], flat[1]),
-        topRight: Offset(flat[2], flat[3]),
-        bottomRight: Offset(flat[4], flat[5]),
-        bottomLeft: Offset(flat[6], flat[7]),
-      ),
-      confidence: flat[8],
-    );
+  corners: CropCorners(
+    topLeft: Offset(flat[0], flat[1]),
+    topRight: Offset(flat[2], flat[3]),
+    bottomRight: Offset(flat[4], flat[5]),
+    bottomLeft: Offset(flat[6], flat[7]),
+  ),
+  confidence: flat[8],
+);
 
 // ── Isolate entry point ────────────────────────────────────────────────────
 // Must be top-level (not a method) — compute() requires it.
@@ -118,11 +118,10 @@ List<double>? _runPipelineOnMat(cv.Mat bgr) {
     final longest = math.max(mat.rows, mat.cols);
     if (longest > _kDetectMaxSide) {
       final scale = _kDetectMaxSide / longest;
-      final resized = cv.resize(
-        mat,
-        ((mat.cols * scale).round(), (mat.rows * scale).round()),
-        interpolation: cv.INTER_AREA,
-      );
+      final resized = cv.resize(mat, (
+        (mat.cols * scale).round(),
+        (mat.rows * scale).round(),
+      ), interpolation: cv.INTER_AREA);
       mat.dispose();
       mat = resized;
     }
@@ -157,8 +156,12 @@ List<double>? _segmentGray(cv.Mat gray) {
 
     // Step 5: Otsu → bright mask (page-brighter) + the inverse dark mask
     // (page-darker), so both polarities are considered.
-    final (otsuT, mb) =
-        cv.threshold(blurred, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
+    final (otsuT, mb) = cv.threshold(
+      blurred,
+      0,
+      255,
+      cv.THRESH_BINARY | cv.THRESH_OTSU,
+    );
     maskBright = mb;
     final (_, md) = cv.threshold(blurred, otsuT, 255, cv.THRESH_BINARY_INV);
     maskDark = md;
@@ -268,12 +271,19 @@ List<double>? _segmentGray(cv.Mat gray) {
 
     if (bestQuad == null) return null;
 
-    final tl = bestQuad[0], tr = bestQuad[1], br = bestQuad[2], bl = bestQuad[3];
+    final tl = bestQuad[0],
+        tr = bestQuad[1],
+        br = bestQuad[2],
+        bl = bestQuad[3];
     return [
-      tl.x / cols, tl.y / rows,
-      tr.x / cols, tr.y / rows,
-      br.x / cols, br.y / rows,
-      bl.x / cols, bl.y / rows,
+      tl.x / cols,
+      tl.y / rows,
+      tr.x / cols,
+      tr.y / rows,
+      br.x / cols,
+      br.y / rows,
+      bl.x / cols,
+      bl.y / rows,
       bestConfidence,
     ];
   } catch (_) {

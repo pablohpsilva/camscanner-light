@@ -10,7 +10,14 @@ class _Fake implements AttestationProvider {
 
 void main() {
   test('a provider can return an attestation carrying the challenge', () async {
-    final p = _Fake(const Attestation(platform: 'ios', token: 't', challenge: 'c', keyId: 'k'));
+    final p = _Fake(
+      const Attestation(
+        platform: 'ios',
+        token: 't',
+        challenge: 'c',
+        keyId: 'k',
+      ),
+    );
     final a = await p.attest('c');
     expect(a!.challenge, 'c');
     expect(a.platform, 'ios');

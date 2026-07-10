@@ -14,7 +14,8 @@ import '../support/persistent_storage.dart';
 /// thumbnail will resolve to a placeholder (which also exercises the
 /// missing-file path on-device); the home assertion only needs the row.
 Future<void> aDocumentWasSavedToPersistentStorageEarlier(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   final dir = await Directory.systemTemp.createTemp('b2persist');
   persistentDir = dir;
   persistentDbFile = File('${dir.path}/camscanner.sqlite');
@@ -24,15 +25,23 @@ Future<void> aDocumentWasSavedToPersistentStorageEarlier(
   });
 
   final db = AppDatabase(NativeDatabase(persistentDbFile!));
-  final docId = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Scan 2026-06-27 20.26.42',
-        createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
-        modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
-      ));
-  await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: docId,
-        position: 1,
-        relativeImagePath: 'documents/$docId/page_1.jpg',
-      ));
+  final docId = await db
+      .into(db.documents)
+      .insert(
+        DocumentsCompanion.insert(
+          name: 'Scan 2026-06-27 20.26.42',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+        ),
+      );
+  await db
+      .into(db.pages)
+      .insert(
+        PagesCompanion.insert(
+          documentId: docId,
+          position: 1,
+          relativeImagePath: 'documents/$docId/page_1.jpg',
+        ),
+      );
   await db.close();
 }

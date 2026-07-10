@@ -53,9 +53,11 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
   void _scrollToCurrent() {
     if (!_scrollController.hasClients) return;
     const double kSlot = 64.0; // 56 tile + 4 left margin + 4 right margin
-    const double kPad = 8.0;   // ListView horizontal padding start
-    final target = (kPad + widget.currentIndex * kSlot)
-        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    const double kPad = 8.0; // ListView horizontal padding start
+    final target = (kPad + widget.currentIndex * kSlot).clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
     _scrollController.animateTo(
       target,
       duration: const Duration(milliseconds: 200),
@@ -75,8 +77,7 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
       width: 56,
       height: 80,
       color: scheme.surfaceContainerHighest,
-      child:
-          Icon(Icons.description_outlined, color: scheme.onSurfaceVariant),
+      child: Icon(Icons.description_outlined, color: scheme.onSurfaceVariant),
     );
     return GestureDetector(
       onTap: () => widget.onTap(index),

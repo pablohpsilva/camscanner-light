@@ -22,7 +22,8 @@ import '../../support/fake_library.dart';
 /// A scrubber that throws — to drive the crash-safety rollback test.
 class _ThrowingScrubber implements ImageMetadataScrubber {
   @override
-  Uint8List scrub(Uint8List bytes) => throw const MetadataScrubException('boom');
+  Uint8List scrub(Uint8List bytes) =>
+      throw const MetadataScrubException('boom');
 }
 
 /// Records enhance() calls for assertions; returns bytes unchanged.
@@ -68,7 +69,9 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     // a real captured temp file (use the committed EXIF fixture bytes)
     final src = File('${base.path}/cap.jpg')
-      ..writeAsBytesSync(File('test/fixtures/exif_sample.jpg').readAsBytesSync());
+      ..writeAsBytesSync(
+        File('test/fixtures/exif_sample.jpg').readAsBytesSync(),
+      );
     capture = CapturedImage(src.path);
   });
   tearDown(() async {
@@ -80,62 +83,78 @@ void main() {
     ImageMetadataScrubber? scrubber,
     ImageWarper? warper,
     PageProcessor? pageProcessor,
-  }) =>
-      DriftDocumentRepository(
-        db: db,
-        scrubber: scrubber ?? const JpegExifScrubber(),
-        fileStore: DocumentFileStore(base),
-        clock: clock,
-        pdfBuilder: const PdfBuilder(),
-        warper: warper ?? FakeImageWarper(),
-        pageProcessor: pageProcessor,
+  }) => DriftDocumentRepository(
+    db: db,
+    scrubber: scrubber ?? const JpegExifScrubber(),
+    fileStore: DocumentFileStore(base),
+    clock: clock,
+    pdfBuilder: const PdfBuilder(),
+    warper: warper ?? FakeImageWarper(),
+    pageProcessor: pageProcessor,
+  );
+
+  test(
+    'createFromCapture writes a scrubbed JPEG and a document+page row',
+    () async {
+      final doc = await repo().createFromCapture(capture);
+
+      expect(doc.name, 'Scan 2026-06-27 20.26.42');
+      expect(doc.createdAt, DateTime.utc(2026, 6, 27, 20, 26, 42));
+
+      final file = File('${base.path}/documents/${doc.id}/page_1.jpg');
+      expect(file.existsSync(), isTrue);
+      expect(file.lengthSync(), greaterThan(0));
+
+      final pages = await db.select(db.pages).get();
+      expect(pages.single.relativeImagePath, 'documents/${doc.id}/page_1.jpg');
+      expect(
+        pages.single.relativeImagePath.startsWith('/'),
+        isFalse,
+        reason: 'path MUST be relative, never absolute',
       );
-
-  test('createFromCapture writes a scrubbed JPEG and a document+page row',
-      () async {
-    final doc = await repo().createFromCapture(capture);
-
-    expect(doc.name, 'Scan 2026-06-27 20.26.42');
-    expect(doc.createdAt, DateTime.utc(2026, 6, 27, 20, 26, 42));
-
-    final file = File('${base.path}/documents/${doc.id}/page_1.jpg');
-    expect(file.existsSync(), isTrue);
-    expect(file.lengthSync(), greaterThan(0));
-
-    final pages = await db.select(db.pages).get();
-    expect(pages.single.relativeImagePath, 'documents/${doc.id}/page_1.jpg');
-    expect(pages.single.relativeImagePath.startsWith('/'), isFalse,
-        reason: 'path MUST be relative, never absolute');
-  });
+    },
+  );
 
   test('a failed write rolls back — no orphan document row, no dir', () async {
     await expectLater(
       repo(scrubber: _ThrowingScrubber()).createFromCapture(capture),
       throwsA(isA<DocumentSaveException>()),
     );
-    expect(await db.select(db.documents).get(), isEmpty,
-        reason: 'transaction must roll the row back');
+    expect(
+      await db.select(db.documents).get(),
+      isEmpty,
+      reason: 'transaction must roll the row back',
+    );
     expect(Directory('${base.path}/documents').existsSync(), isFalse);
   });
 
-  test('listDocumentSummaries reports page count and first-page path',
-      () async {
-    final doc = await repo().createFromCapture(capture);
-    // Add a second page directly (multi-page capture is not built yet).
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: doc.id,
-        position: 2,
-        relativeImagePath: 'documents/${doc.id}/page_2.jpg'));
+  test(
+    'listDocumentSummaries reports page count and first-page path',
+    () async {
+      final doc = await repo().createFromCapture(capture);
+      // Add a second page directly (multi-page capture is not built yet).
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: doc.id,
+              position: 2,
+              relativeImagePath: 'documents/${doc.id}/page_2.jpg',
+            ),
+          );
 
-    final summaries = await repo().listDocumentSummaries();
-    expect(summaries, hasLength(1));
-    expect(summaries.single.document.id, doc.id);
-    expect(summaries.single.pageCount, 2);
-    expect(summaries.single.thumbnailPath, startsWith(base.path));
-    expect(summaries.single.thumbnailPath,
+      final summaries = await repo().listDocumentSummaries();
+      expect(summaries, hasLength(1));
+      expect(summaries.single.document.id, doc.id);
+      expect(summaries.single.pageCount, 2);
+      expect(summaries.single.thumbnailPath, startsWith(base.path));
+      expect(
+        summaries.single.thumbnailPath,
         endsWith('documents/${doc.id}/page_1.jpg'),
-        reason: 'first page is MIN(position) = position 1');
-  });
+        reason: 'first page is MIN(position) = position 1',
+      );
+    },
+  );
 
   test('listDocumentSummaries returns newest first', () async {
     final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
@@ -158,102 +177,133 @@ void main() {
 
     final s = await r.listDocumentSummaries();
     expect(s, hasLength(2));
-    expect(s.first.document.createdAt.isAfter(s.last.document.createdAt), isTrue);
+    expect(
+      s.first.document.createdAt.isAfter(s.last.document.createdAt),
+      isTrue,
+    );
   });
 
-  test('a document with no page yields pageCount 0 and a null thumbnail',
-      () async {
-    await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'orphan',
-        createdAt: DateTime.utc(2026, 1, 1),
-        modifiedAt: DateTime.utc(2026, 1, 1)));
-    final s = await repo().listDocumentSummaries();
-    expect(s.single.pageCount, 0);
-    expect(s.single.thumbnailPath, isNull);
-  });
+  test(
+    'a document with no page yields pageCount 0 and a null thumbnail',
+    () async {
+      await db
+          .into(db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: 'orphan',
+              createdAt: DateTime.utc(2026, 1, 1),
+              modifiedAt: DateTime.utc(2026, 1, 1),
+            ),
+          );
+      final s = await repo().listDocumentSummaries();
+      expect(s.single.pageCount, 0);
+      expect(s.single.thumbnailPath, isNull);
+    },
+  );
 
-  test('getDocumentPages returns pages position-asc with absolute paths',
-      () async {
-    final doc = await repo().createFromCapture(capture);
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: doc.id,
-        position: 2,
-        relativeImagePath: 'documents/${doc.id}/page_2.jpg'));
+  test(
+    'getDocumentPages returns pages position-asc with absolute paths',
+    () async {
+      final doc = await repo().createFromCapture(capture);
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: doc.id,
+              position: 2,
+              relativeImagePath: 'documents/${doc.id}/page_2.jpg',
+            ),
+          );
 
-    final pages = await repo().getDocumentPages(doc.id);
+      final pages = await repo().getDocumentPages(doc.id);
 
-    expect(pages.map((p) => p.position), [1, 2]);
-    expect(pages.first.imagePath, startsWith(base.path));
-    expect(pages.first.imagePath, endsWith('documents/${doc.id}/page_1.jpg'));
-    expect(pages.first.imagePath.startsWith('/'), isTrue,
-        reason: 'viewer needs an absolute path resolved at read time');
-  });
+      expect(pages.map((p) => p.position), [1, 2]);
+      expect(pages.first.imagePath, startsWith(base.path));
+      expect(pages.first.imagePath, endsWith('documents/${doc.id}/page_1.jpg'));
+      expect(
+        pages.first.imagePath.startsWith('/'),
+        isTrue,
+        reason: 'viewer needs an absolute path resolved at read time',
+      );
+    },
+  );
 
   test('getDocumentPages returns empty for a document with no pages', () async {
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'empty',
-        createdAt: DateTime.utc(2026, 1, 1),
-        modifiedAt: DateTime.utc(2026, 1, 1)));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'empty',
+            createdAt: DateTime.utc(2026, 1, 1),
+            modifiedAt: DateTime.utc(2026, 1, 1),
+          ),
+        );
     expect(await repo().getDocumentPages(id), isEmpty);
   });
 
-  test('deleteDocument removes the document, its pages, and its on-disk dir',
-      () async {
-    final doc = await repo().createFromCapture(capture);
-    final dir = Directory('${base.path}/documents/${doc.id}');
-    expect(dir.existsSync(), isTrue);
+  test(
+    'deleteDocument removes the document, its pages, and its on-disk dir',
+    () async {
+      final doc = await repo().createFromCapture(capture);
+      final dir = Directory('${base.path}/documents/${doc.id}');
+      expect(dir.existsSync(), isTrue);
 
-    await repo().deleteDocument(doc.id);
+      await repo().deleteDocument(doc.id);
 
-    expect(await db.select(db.documents).get(), isEmpty);
-    expect(await db.select(db.pages).get(), isEmpty);
-    expect(dir.existsSync(), isFalse);
-  });
+      expect(await db.select(db.documents).get(), isEmpty);
+      expect(await db.select(db.pages).get(), isEmpty);
+      expect(dir.existsSync(), isFalse);
+    },
+  );
 
   test('deleteDocument on a non-existent id is a no-op (no throw)', () async {
     await repo().deleteDocument(99999); // never inserted
     expect(await db.select(db.documents).get(), isEmpty);
   });
 
-  test('Tier 1: a delete is durable across a DB close/reopen on disk',
-      () async {
-    final dir = Directory.systemTemp.createTempSync('b3delpersist');
-    final dbFile = File('${dir.path}/camscanner.sqlite');
-    final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
-    final src = File('${dir.path}/cap.jpg')..writeAsBytesSync(fixture);
+  test(
+    'Tier 1: a delete is durable across a DB close/reopen on disk',
+    () async {
+      final dir = Directory.systemTemp.createTempSync('b3delpersist');
+      final dbFile = File('${dir.path}/camscanner.sqlite');
+      final fixture = File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+      final src = File('${dir.path}/cap.jpg')..writeAsBytesSync(fixture);
 
-    final db1 = AppDatabase(NativeDatabase(dbFile));
-    final repo1 = DriftDocumentRepository(
-      db: db1,
-      scrubber: const JpegExifScrubber(),
-      fileStore: DocumentFileStore(dir),
-      clock: () => DateTime.utc(2026, 6, 27, 9),
-      pdfBuilder: const PdfBuilder(),
-      warper: FakeImageWarper(),
-    );
-    final saved = await repo1.createFromCapture(CapturedImage(src.path));
-    await repo1.deleteDocument(saved.id);
-    await db1.close(); // destroy the connection
+      final db1 = AppDatabase(NativeDatabase(dbFile));
+      final repo1 = DriftDocumentRepository(
+        db: db1,
+        scrubber: const JpegExifScrubber(),
+        fileStore: DocumentFileStore(dir),
+        clock: () => DateTime.utc(2026, 6, 27, 9),
+        pdfBuilder: const PdfBuilder(),
+        warper: FakeImageWarper(),
+      );
+      final saved = await repo1.createFromCapture(CapturedImage(src.path));
+      await repo1.deleteDocument(saved.id);
+      await db1.close(); // destroy the connection
 
-    final db2 = AppDatabase(NativeDatabase(dbFile)); // brand-new, same file
-    final repo2 = DriftDocumentRepository(
-      db: db2,
-      scrubber: const JpegExifScrubber(),
-      fileStore: DocumentFileStore(dir),
-      clock: () => DateTime.utc(2026, 6, 27, 9),
-      pdfBuilder: const PdfBuilder(),
-      warper: FakeImageWarper(),
-    );
-    final summaries = await repo2.listDocumentSummaries();
-    final pages = await repo2.getDocumentPages(saved.id);
-    await db2.close();
-    final dirGone = !Directory('${dir.path}/documents/${saved.id}').existsSync();
-    dir.deleteSync(recursive: true);
+      final db2 = AppDatabase(NativeDatabase(dbFile)); // brand-new, same file
+      final repo2 = DriftDocumentRepository(
+        db: db2,
+        scrubber: const JpegExifScrubber(),
+        fileStore: DocumentFileStore(dir),
+        clock: () => DateTime.utc(2026, 6, 27, 9),
+        pdfBuilder: const PdfBuilder(),
+        warper: FakeImageWarper(),
+      );
+      final summaries = await repo2.listDocumentSummaries();
+      final pages = await repo2.getDocumentPages(saved.id);
+      await db2.close();
+      final dirGone = !Directory(
+        '${dir.path}/documents/${saved.id}',
+      ).existsSync();
+      dir.deleteSync(recursive: true);
 
-    expect(summaries, isEmpty, reason: 'the delete must survive a reopen');
-    expect(pages, isEmpty);
-    expect(dirGone, isTrue);
-  });
+      expect(summaries, isEmpty, reason: 'the delete must survive a reopen');
+      expect(pages, isEmpty);
+      expect(dirGone, isTrue);
+    },
+  );
 
   test('Tier 1: documents persist across a DB close/reopen on disk', () async {
     final dir = Directory.systemTemp.createTempSync('b2persist');
@@ -302,71 +352,102 @@ void main() {
     expect(head, [0x25, 0x50, 0x44, 0x46]); // %PDF
   });
 
-  test('exportPdf throws DocumentExportException when the page file is missing',
-      () async {
-    // Seed a doc + page row, but never write the image file on disk.
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'noimg',
-        createdAt: DateTime.utc(2026, 1, 1),
-        modifiedAt: DateTime.utc(2026, 1, 1)));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id, position: 1, relativeImagePath: 'documents/$id/page_1.jpg'));
+  test(
+    'exportPdf throws DocumentExportException when the page file is missing',
+    () async {
+      // Seed a doc + page row, but never write the image file on disk.
+      final id = await db
+          .into(db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: 'noimg',
+              createdAt: DateTime.utc(2026, 1, 1),
+              modifiedAt: DateTime.utc(2026, 1, 1),
+            ),
+          );
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: 1,
+              relativeImagePath: 'documents/$id/page_1.jpg',
+            ),
+          );
 
-    await expectLater(
-      repo().exportPdf(id),
-      throwsA(isA<DocumentExportException>()),
-    );
-  });
+      await expectLater(
+        repo().exportPdf(id),
+        throwsA(isA<DocumentExportException>()),
+      );
+    },
+  );
 
-  test('exportPdf writes one PDF page per document page (3-page doc)', () async {
-    final r = repo();
-    final doc = await r.createFromCapture(capture); // page 1
-    Uint8List fixture() =>
-        File('test/fixtures/exif_sample.jpg').readAsBytesSync();
-    CapturedImage cap(String name) => CapturedImage(
-        (File('${base.path}/$name.jpg')..writeAsBytesSync(fixture())).path);
-    await r.addPageToDocument(doc.id, cap('c2')); // page 2
-    await r.addPageToDocument(doc.id, cap('c3')); // page 3
+  test(
+    'exportPdf writes one PDF page per document page (3-page doc)',
+    () async {
+      final r = repo();
+      final doc = await r.createFromCapture(capture); // page 1
+      Uint8List fixture() =>
+          File('test/fixtures/exif_sample.jpg').readAsBytesSync();
+      CapturedImage cap(String name) => CapturedImage(
+        (File('${base.path}/$name.jpg')..writeAsBytesSync(fixture())).path,
+      );
+      await r.addPageToDocument(doc.id, cap('c2')); // page 2
+      await r.addPageToDocument(doc.id, cap('c3')); // page 3
 
-    final file = await r.exportPdf(doc.id);
-    final s = latin1.decode(file.readAsBytesSync(), allowInvalid: true);
-    expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 3,
-        reason: 'exportPdf passes ALL pages, not just the first');
-    for (final marker in ['/Author', '/Producer', '/Creator', '/CreationDate']) {
-      expect(s.contains(marker), isFalse, reason: 'metadata leak: $marker');
-    }
-  });
+      final file = await r.exportPdf(doc.id);
+      final s = latin1.decode(file.readAsBytesSync(), allowInvalid: true);
+      expect(
+        RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length,
+        3,
+        reason: 'exportPdf passes ALL pages, not just the first',
+      );
+      for (final marker in [
+        '/Author',
+        '/Producer',
+        '/Creator',
+        '/CreationDate',
+      ]) {
+        expect(s.contains(marker), isFalse, reason: 'metadata leak: $marker');
+      }
+    },
+  );
 
-  test('rename updates the name and bumps modifiedAt; createdAt unchanged',
-      () async {
-    // The shared repo() helper uses a FIXED clock, which cannot show a bump.
-    // Use the advancing-clock pattern (as 'listDocumentSummaries returns newest
-    // first' does): create at T1, rename at T2.
-    var t = DateTime.utc(2026, 6, 27, 10);
-    final r = DriftDocumentRepository(
-      db: db,
-      scrubber: const JpegExifScrubber(),
-      fileStore: DocumentFileStore(base),
-      clock: () => t,
-      pdfBuilder: const PdfBuilder(),
-      warper: FakeImageWarper(),
-    );
-    final doc = await r.createFromCapture(capture);
-    t = DateTime.utc(2026, 6, 27, 12); // clock advances before the rename
+  test(
+    'rename updates the name and bumps modifiedAt; createdAt unchanged',
+    () async {
+      // The shared repo() helper uses a FIXED clock, which cannot show a bump.
+      // Use the advancing-clock pattern (as 'listDocumentSummaries returns newest
+      // first' does): create at T1, rename at T2.
+      var t = DateTime.utc(2026, 6, 27, 10);
+      final r = DriftDocumentRepository(
+        db: db,
+        scrubber: const JpegExifScrubber(),
+        fileStore: DocumentFileStore(base),
+        clock: () => t,
+        pdfBuilder: const PdfBuilder(),
+        warper: FakeImageWarper(),
+      );
+      final doc = await r.createFromCapture(capture);
+      t = DateTime.utc(2026, 6, 27, 12); // clock advances before the rename
 
-    final renamed = await r.rename(doc.id, 'Tax 2026');
+      final renamed = await r.rename(doc.id, 'Tax 2026');
 
-    expect(renamed.name, 'Tax 2026');
-    expect(renamed.createdAt, DateTime.utc(2026, 6, 27, 10));
-    expect(renamed.modifiedAt, DateTime.utc(2026, 6, 27, 12),
-        reason: 'rename bumps modifiedAt to the clock at rename time');
+      expect(renamed.name, 'Tax 2026');
+      expect(renamed.createdAt, DateTime.utc(2026, 6, 27, 10));
+      expect(
+        renamed.modifiedAt,
+        DateTime.utc(2026, 6, 27, 12),
+        reason: 'rename bumps modifiedAt to the clock at rename time',
+      );
 
-    final row = await (db.select(db.documents)
-          ..where((d) => d.id.equals(doc.id)))
-        .getSingle();
-    expect(row.name, 'Tax 2026', reason: 'the new name is persisted');
-    expect(row.modifiedAt, DateTime.utc(2026, 6, 27, 12));
-  });
+      final row = await (db.select(
+        db.documents,
+      )..where((d) => d.id.equals(doc.id))).getSingle();
+      expect(row.name, 'Tax 2026', reason: 'the new name is persisted');
+      expect(row.modifiedAt, DateTime.utc(2026, 6, 27, 12));
+    },
+  );
 
   test('rename trims surrounding whitespace', () async {
     final doc = await repo().createFromCapture(capture);
@@ -374,14 +455,16 @@ void main() {
     expect(renamed.name, 'Spaced Name');
   });
 
-  test('rename throws DocumentRenameException on an empty/whitespace name',
-      () async {
-    final doc = await repo().createFromCapture(capture);
-    await expectLater(
-      repo().rename(doc.id, '   '),
-      throwsA(isA<DocumentRenameException>()),
-    );
-  });
+  test(
+    'rename throws DocumentRenameException on an empty/whitespace name',
+    () async {
+      final doc = await repo().createFromCapture(capture);
+      await expectLater(
+        repo().rename(doc.id, '   '),
+        throwsA(isA<DocumentRenameException>()),
+      );
+    },
+  );
 
   test('rename throws DocumentRenameException for a non-existent id', () async {
     await expectLater(
@@ -390,15 +473,20 @@ void main() {
     );
   });
 
-  test('createFromCapture persists the given corners; getDocumentPages reads them back',
-      () async {
-    const corners = CropCorners(
-      topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.12),
-      bottomRight: Offset(0.88, 0.9), bottomLeft: Offset(0.08, 0.92));
-    final doc = await repo().createFromCapture(capture, corners: corners);
-    final pages = await repo().getDocumentPages(doc.id);
-    expect(pages.single.corners, corners);
-  });
+  test(
+    'createFromCapture persists the given corners; getDocumentPages reads them back',
+    () async {
+      const corners = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.12),
+        bottomRight: Offset(0.88, 0.9),
+        bottomLeft: Offset(0.08, 0.92),
+      );
+      final doc = await repo().createFromCapture(capture, corners: corners);
+      final pages = await repo().getDocumentPages(doc.id);
+      expect(pages.single.corners, corners);
+    },
+  );
 
   test('createFromCapture with no corners reads back fullFrame', () async {
     final doc = await repo().createFromCapture(capture);
@@ -407,38 +495,48 @@ void main() {
   });
 
   group('E2 — warp on save', () {
-    test('non-full-frame corners: flatRelativePath written and round-trips', () async {
-      final fakeBytes = Uint8List.fromList([0xFF, 0xD8, 0x01]); // fake JPEG marker
-      final warper = FakeImageWarper(returnValue: fakeBytes);
-      const corners = CropCorners(
-        topLeft: Offset(0.1, 0.1),
-        topRight: Offset(0.9, 0.1),
-        bottomRight: Offset(0.9, 0.9),
-        bottomLeft: Offset(0.1, 0.9),
-      );
+    test(
+      'non-full-frame corners: flatRelativePath written and round-trips',
+      () async {
+        final fakeBytes = Uint8List.fromList([
+          0xFF,
+          0xD8,
+          0x01,
+        ]); // fake JPEG marker
+        final warper = FakeImageWarper(returnValue: fakeBytes);
+        const corners = CropCorners(
+          topLeft: Offset(0.1, 0.1),
+          topRight: Offset(0.9, 0.1),
+          bottomRight: Offset(0.9, 0.9),
+          bottomLeft: Offset(0.1, 0.9),
+        );
 
-      final doc = await repo(warper: warper).createFromCapture(capture,
-          corners: corners);
+        final doc = await repo(
+          warper: warper,
+        ).createFromCapture(capture, corners: corners);
 
-      // Warper was called once.
-      expect(warper.calls, 1);
+        // Warper was called once.
+        expect(warper.calls, 1);
 
-      // Flat file exists on disk.
-      final flatFile =
-          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
-      expect(flatFile.existsSync(), isTrue);
-      expect(flatFile.readAsBytesSync(), fakeBytes);
+        // Flat file exists on disk.
+        final flatFile = File(
+          '${base.path}/documents/${doc.id}/page_1_flat.jpg',
+        );
+        expect(flatFile.existsSync(), isTrue);
+        expect(flatFile.readAsBytesSync(), fakeBytes);
 
-      // getDocumentPages round-trips flatImagePath.
-      final pages = await repo(warper: warper).getDocumentPages(doc.id);
-      expect(pages.single.flatImagePath, flatFile.path);
-      expect(pages.single.displayPath, flatFile.path);
-    });
+        // getDocumentPages round-trips flatImagePath.
+        final pages = await repo(warper: warper).getDocumentPages(doc.id);
+        expect(pages.single.flatImagePath, flatFile.path);
+        expect(pages.single.displayPath, flatFile.path);
+      },
+    );
 
     test('full-frame corners: flatRelativePath stays null', () async {
       final warper = FakeImageWarper();
-      final doc = await repo(warper: warper).createFromCapture(capture,
-          corners: CropCorners.fullFrame);
+      final doc = await repo(
+        warper: warper,
+      ).createFromCapture(capture, corners: CropCorners.fullFrame);
       expect(warper.calls, 0); // short-circuited before calling warper
 
       final pages = await repo(warper: warper).getDocumentPages(doc.id);
@@ -465,8 +563,9 @@ void main() {
         bottomLeft: Offset(0.1, 0.9),
       );
 
-      final doc = await repo(warper: warper).createFromCapture(capture,
-          corners: corners);
+      final doc = await repo(
+        warper: warper,
+      ).createFromCapture(capture, corners: corners);
       expect(doc.id, greaterThan(0));
 
       // A failed crop must NOT drop back to the raw capture as the displayed
@@ -475,12 +574,10 @@ void main() {
       final pages = await repo(warper: warper).getDocumentPages(doc.id);
       expect(pages.single.flatImagePath, isNotNull);
       expect(pages.single.displayPath, pages.single.flatImagePath);
-      final flatFile =
-          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      final flatFile = File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
       expect(flatFile.existsSync(), isTrue);
       // Original (pristine, for re-crop) still written too.
-      final origFile =
-          File('${base.path}/documents/${doc.id}/page_1.jpg');
+      final origFile = File('${base.path}/documents/${doc.id}/page_1.jpg');
       expect(origFile.existsSync(), isTrue);
     });
 
@@ -493,13 +590,12 @@ void main() {
         bottomRight: Offset(0.9, 0.9),
         bottomLeft: Offset(0.1, 0.9),
       );
-      final doc = await repo(warper: warper).createFromCapture(capture,
-          corners: corners);
+      final doc = await repo(
+        warper: warper,
+      ).createFromCapture(capture, corners: corners);
 
-      final summaries =
-          await repo(warper: warper).listDocumentSummaries();
-      final flatPath =
-          '${base.path}/documents/${doc.id}/page_1_flat.jpg';
+      final summaries = await repo(warper: warper).listDocumentSummaries();
+      final flatPath = '${base.path}/documents/${doc.id}/page_1_flat.jpg';
       expect(summaries.single.thumbnailPath, flatPath);
     });
   });
@@ -518,11 +614,11 @@ void main() {
         bottomRight: Offset(0.95, 0.95),
         bottomLeft: Offset(0.05, 0.95),
       );
-      await repo(warper: FakeImageWarper(returnValue: fakeFlat))
-          .updatePageCorners(doc.id, 1, newCorners);
+      await repo(
+        warper: FakeImageWarper(returnValue: fakeFlat),
+      ).updatePageCorners(doc.id, 1, newCorners);
 
-      final flatFile =
-          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      final flatFile = File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
       expect(flatFile.existsSync(), isTrue);
       expect(flatFile.readAsBytesSync(), fakeFlat);
 
@@ -540,17 +636,24 @@ void main() {
         bottomLeft: Offset(0.1, 0.9),
       );
       // Create document WITH a flat.
-      final doc = await repo(warper: FakeImageWarper(returnValue: fakeFlat))
-          .createFromCapture(capture, corners: initCorners);
-      final flatFile =
-          File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
-      expect(flatFile.existsSync(), isTrue, reason: 'pre-condition: flat exists');
+      final doc = await repo(
+        warper: FakeImageWarper(returnValue: fakeFlat),
+      ).createFromCapture(capture, corners: initCorners);
+      final flatFile = File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
+      expect(
+        flatFile.existsSync(),
+        isTrue,
+        reason: 'pre-condition: flat exists',
+      );
 
       // Re-edit to fullFrame.
       await repo().updatePageCorners(doc.id, 1, CropCorners.fullFrame);
 
-      expect(flatFile.existsSync(), isFalse,
-          reason: 'flat file must be deleted on fullFrame reset');
+      expect(
+        flatFile.existsSync(),
+        isFalse,
+        reason: 'flat file must be deleted on fullFrame reset',
+      );
       final after = await repo().getDocumentPages(doc.id);
       expect(after.single.flatImagePath, isNull);
       expect(after.single.corners, CropCorners.fullFrame);
@@ -566,15 +669,19 @@ void main() {
       );
 
       await expectLater(
-        repo(warper: FakeImageWarper(throws: true))
-            .updatePageCorners(doc.id, 1, badCorners),
+        repo(
+          warper: FakeImageWarper(throws: true),
+        ).updatePageCorners(doc.id, 1, badCorners),
         throwsA(isA<WarpException>()),
       );
 
       // DB must remain unchanged: no flatRelativePath set.
       final after = await repo().getDocumentPages(doc.id);
-      expect(after.single.flatImagePath, isNull,
-          reason: 'rethrow must not update DB');
+      expect(
+        after.single.flatImagePath,
+        isNull,
+        reason: 'rethrow must not update DB',
+      );
     });
 
     test('unknown page: throws DocumentSaveException', () async {
@@ -593,34 +700,51 @@ void main() {
   );
 
   test(
-      'createFromCapture applies enhancer to flat bytes on cropped capture',
-      () async {
-    final enhancer = _RecordingEnhancer();
-    // FakeImageWarper with a non-null returnValue simulates a successful warp.
-    final r = repo(warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
-    await r.createFromCapture(capture,
-        corners: testCorners, enhancer: enhancer);
-    expect(enhancer.calls, 1,
-        reason: 'enhancer must be called once on the flat bytes');
-  });
+    'createFromCapture applies enhancer to flat bytes on cropped capture',
+    () async {
+      final enhancer = _RecordingEnhancer();
+      // FakeImageWarper with a non-null returnValue simulates a successful warp.
+      final r = repo(
+        warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])),
+      );
+      await r.createFromCapture(
+        capture,
+        corners: testCorners,
+        enhancer: enhancer,
+      );
+      expect(
+        enhancer.calls,
+        1,
+        reason: 'enhancer must be called once on the flat bytes',
+      );
+    },
+  );
 
   test(
-      'createFromCapture applies enhancer to original bytes on full-frame capture',
-      () async {
-    final enhancer = _RecordingEnhancer();
-    // No corners → full-frame path; warp is skipped regardless of FakeImageWarper's return value.
-    final r = repo(warper: FakeImageWarper());
-    await r.createFromCapture(capture, enhancer: enhancer);
-    expect(enhancer.calls, 1,
-        reason: 'enhancer must be called once on the scrubbed original');
-  });
+    'createFromCapture applies enhancer to original bytes on full-frame capture',
+    () async {
+      final enhancer = _RecordingEnhancer();
+      // No corners → full-frame path; warp is skipped regardless of FakeImageWarper's return value.
+      final r = repo(warper: FakeImageWarper());
+      await r.createFromCapture(capture, enhancer: enhancer);
+      expect(
+        enhancer.calls,
+        1,
+        reason: 'enhancer must be called once on the scrubbed original',
+      );
+    },
+  );
 
   test('createFromCapture proceeds silently when enhancer throws', () async {
     final r = repo(
-        warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])));
+      warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])),
+    );
     await expectLater(
-      r.createFromCapture(capture,
-          corners: testCorners, enhancer: const _ThrowingEnhancer()),
+      r.createFromCapture(
+        capture,
+        corners: testCorners,
+        enhancer: const _ThrowingEnhancer(),
+      ),
       completes,
       reason: 'enhancement failure must not abort the save',
     );
@@ -633,7 +757,8 @@ void main() {
       // Add a second page using the same fixture file.
       final src2 = File('${base.path}/cap2.jpg')
         ..writeAsBytesSync(
-            File('test/fixtures/exif_sample.jpg').readAsBytesSync());
+          File('test/fixtures/exif_sample.jpg').readAsBytesSync(),
+        );
       await r.addPageToDocument(doc.id, CapturedImage(src2.path));
 
       final before = await r.getDocumentPages(doc.id);
@@ -645,10 +770,16 @@ void main() {
       await r.reorderPages(doc.id, [2, 1]);
 
       final after = await r.getDocumentPages(doc.id);
-      expect(after[0].imagePath, path2,
-          reason: 'former page 2 is now at index 0');
-      expect(after[1].imagePath, path1,
-          reason: 'former page 1 is now at index 1');
+      expect(
+        after[0].imagePath,
+        path2,
+        reason: 'former page 2 is now at index 0',
+      );
+      expect(
+        after[1].imagePath,
+        path1,
+        reason: 'former page 1 is now at index 1',
+      );
     });
 
     test('throws DocumentSaveException when documentId has no pages', () async {
@@ -664,10 +795,14 @@ void main() {
       final fakeFlat = Uint8List.fromList([0xFF, 0xD8, 0x42]);
       final proc = _FakeProcessor(fakeFlat);
       const corners = CropCorners(
-        topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.1),
-        bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.9));
-      final doc = await repo(pageProcessor: proc)
-          .createFromCapture(capture, corners: corners);
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+      );
+      final doc = await repo(
+        pageProcessor: proc,
+      ).createFromCapture(capture, corners: corners);
       final flat = File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
       expect(flat.existsSync(), isTrue);
       expect(flat.readAsBytesSync(), fakeFlat);

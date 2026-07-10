@@ -35,17 +35,23 @@ void main() {
 
   test('straight crop → perspective path', () async {
     const straight = CropCorners(
-      topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.1),
-      bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.9));
+      topLeft: Offset(0.1, 0.1),
+      topRight: Offset(0.9, 0.1),
+      bottomRight: Offset(0.9, 0.9),
+      bottomLeft: Offset(0.1, 0.9),
+    );
     await warper.warp(bytes, straight);
     expect(log, ['perspective']);
   });
 
   test('bent crop → coons path', () async {
     const bent = CropCorners(
-      topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.1),
-      bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.9),
-      topMidDev: Offset(0, -0.05));
+      topLeft: Offset(0.1, 0.1),
+      topRight: Offset(0.9, 0.1),
+      bottomRight: Offset(0.9, 0.9),
+      bottomLeft: Offset(0.1, 0.9),
+      topMidDev: Offset(0, -0.05),
+    );
     await warper.warp(bytes, bent);
     expect(log, ['coons']);
   });

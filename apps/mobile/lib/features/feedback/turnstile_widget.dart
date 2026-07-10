@@ -46,18 +46,12 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         'TurnstileError',
         onMessageReceived: (_) => widget.onToken(null),
       )
-      ..loadHtmlString(
-        _buildHtml(widget.siteKey),
-        baseUrl: widget.baseUrl,
-      );
+      ..loadHtmlString(_buildHtml(widget.siteKey), baseUrl: widget.baseUrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 72,
-      child: WebViewWidget(controller: _controller),
-    );
+    return SizedBox(height: 72, child: WebViewWidget(controller: _controller));
   }
 }
 

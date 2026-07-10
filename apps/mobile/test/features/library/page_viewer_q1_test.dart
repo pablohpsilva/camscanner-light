@@ -5,22 +5,28 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
 
-Future<void> _pumpViewer(WidgetTester tester, FakeDocumentRepository repo,
-    FakeShareChannel share) async {
-  await tester.pumpWidget(MaterialApp(
-    home: PageViewerScreen(
-      repository: repo,
-      documentId: 4,
-      name: 'Doc',
-      share: share,
+Future<void> _pumpViewer(
+  WidgetTester tester,
+  FakeDocumentRepository repo,
+  FakeShareChannel share,
+) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: PageViewerScreen(
+        repository: repo,
+        documentId: 4,
+        name: 'Doc',
+        share: share,
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('image share: choosing Medium passes quality + shares',
-      (tester) async {
+  testWidgets('image share: choosing Medium passes quality + shares', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     final share = FakeShareChannel();
     await _pumpViewer(tester, repo, share);
@@ -48,8 +54,9 @@ void main() {
     expect(share.calls, 0);
   });
 
-  testWidgets('PDF export: choosing Low passes quality (pump, not settle)',
-      (tester) async {
+  testWidgets('PDF export: choosing Low passes quality (pump, not settle)', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await _pumpViewer(tester, repo, FakeShareChannel());
     await tester.tap(find.byKey(const Key('page-viewer-export')));

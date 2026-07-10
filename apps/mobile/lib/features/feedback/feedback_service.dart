@@ -43,7 +43,9 @@ class FeedbackService {
       // 1. One-time server-issued challenge (anti-replay for attestation).
       final chalRes = await httpClient.post(base.replace(path: '/challenge'));
       if (chalRes.statusCode != 200) return const FeedbackServerError();
-      final challenge = (jsonDecode(chalRes.body) as Map<String, dynamic>)['challenge'] as String;
+      final challenge =
+          (jsonDecode(chalRes.body) as Map<String, dynamic>)['challenge']
+              as String;
 
       // 2. Attestation over the challenge; null → rely on Turnstile.
       final att = await attestation.attest(challenge);
@@ -54,8 +56,10 @@ class FeedbackService {
       final payload = <String, dynamic>{
         'category': draft.category,
         'message': draft.message,
-        if (draft.email != null && draft.email!.isNotEmpty) 'email': draft.email,
-        if (draft.turnstileToken != null) 'turnstileToken': draft.turnstileToken,
+        if (draft.email != null && draft.email!.isNotEmpty)
+          'email': draft.email,
+        if (draft.turnstileToken != null)
+          'turnstileToken': draft.turnstileToken,
         if (att != null) 'attestation': att.toJson(),
         'idempotencyKey': _newId(),
         'diagnostics': diag.toJson(),
@@ -81,7 +85,9 @@ class FeedbackService {
         return FeedbackSuccess(_url(res));
       case 200:
         final body = _json(res);
-        return body['duplicate'] == true ? FeedbackDuplicate(_url(res)) : FeedbackSuccess(_url(res));
+        return body['duplicate'] == true
+            ? FeedbackDuplicate(_url(res))
+            : FeedbackSuccess(_url(res));
       case 400:
         return const FeedbackInvalid();
       case 401:

@@ -13,7 +13,8 @@ import 'a_document_with_a_real_page_image_was_saved_to_persistent_storage_earlie
 /// bytes for each, so the multi-page PDF export feature can assert a 3-page PDF
 /// against a seeded document without the custom camera flow.
 Future<void> aDocumentWith3RealPageImagesWasSavedToPersistentStorageEarlier(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   final dir = await Directory.systemTemp.createTemp('seedimg3');
   persistentDir = dir;
   persistentDbFile = File('${dir.path}/camscanner.sqlite');
@@ -23,17 +24,25 @@ Future<void> aDocumentWith3RealPageImagesWasSavedToPersistentStorageEarlier(
   });
 
   final db = AppDatabase(NativeDatabase(persistentDbFile!));
-  final docId = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Scan 2026-06-27 20.26.42',
-        createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
-        modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
-      ));
+  final docId = await db
+      .into(db.documents)
+      .insert(
+        DocumentsCompanion.insert(
+          name: 'Scan 2026-06-27 20.26.42',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+        ),
+      );
   for (final position in [1, 2, 3]) {
-    await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: docId,
-          position: position,
-          relativeImagePath: 'documents/$docId/page_$position.jpg',
-        ));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: docId,
+            position: position,
+            relativeImagePath: 'documents/$docId/page_$position.jpg',
+          ),
+        );
   }
   await db.close();
 

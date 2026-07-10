@@ -23,6 +23,7 @@ class UnavailableLinkShareChannel implements LinkShareChannel {
   bool get isAvailable => false;
 
   @override
-  Future<Uri> createLink(String filePath) =>
-      throw UnsupportedError('Link sharing is not available (no backend configured).');
+  Future<Uri> createLink(String filePath) => throw UnsupportedError(
+    'Link sharing is not available (no backend configured).',
+  );
 }

@@ -11,7 +11,8 @@ void main() {
 
     test('sendFax throws UnsupportedError', () {
       expect(
-        () => provider.sendFax(filePaths: const ['/tmp/a.pdf'], faxNumber: '123'),
+        () =>
+            provider.sendFax(filePaths: const ['/tmp/a.pdf'], faxNumber: '123'),
         throwsUnsupportedError,
       );
     });

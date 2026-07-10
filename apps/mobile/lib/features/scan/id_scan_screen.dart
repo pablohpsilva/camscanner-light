@@ -61,8 +61,11 @@ class _IdScanScreenState extends State<IdScanScreen> {
     setState(() => _step = _Step.saving);
     const corners = CropCorners.fullFrame;
     const enhancer = NoneEnhancer();
-    final doc = await _saveController.save(front,
-        corners: corners, enhancer: enhancer);
+    final doc = await _saveController.save(
+      front,
+      corners: corners,
+      enhancer: enhancer,
+    );
     if (!mounted) return;
     if (doc == null) {
       messenger.showSnackBar(
@@ -71,14 +74,21 @@ class _IdScanScreenState extends State<IdScanScreen> {
       navigator.pop();
       return;
     }
-    final pos = await _saveController.addPage(back, doc.id,
-        corners: corners, enhancer: enhancer);
+    final pos = await _saveController.addPage(
+      back,
+      doc.id,
+      corners: corners,
+      enhancer: enhancer,
+    );
     if (!mounted) return;
     if (pos == null) {
       messenger.showSnackBar(
         const SnackBar(
-            content: Text("Saved the front, but the back failed. Retake it "
-                "from the document.")),
+          content: Text(
+            "Saved the front, but the back failed. Retake it "
+            "from the document.",
+          ),
+        ),
       );
       navigator.pop();
       return;

@@ -28,19 +28,20 @@ void main() {
   });
 
   DriftDocumentRepository repo() => DriftDocumentRepository(
-        db: db,
-        scrubber: const JpegExifScrubber(),
-        fileStore: DocumentFileStore(base),
-        clock: clock,
-        pdfBuilder: const PdfBuilder(),
-        warper: FakeImageWarper(),
-      );
+    db: db,
+    scrubber: const JpegExifScrubber(),
+    fileStore: DocumentFileStore(base),
+    clock: clock,
+    pdfBuilder: const PdfBuilder(),
+    warper: FakeImageWarper(),
+  );
 
   /// Returns a CapturedImage backed by a copy of the existing test fixture.
   CapturedImage capture(String filename) {
     final src = File('${base.path}/$filename')
       ..writeAsBytesSync(
-          File('test/fixtures/exif_sample.jpg').readAsBytesSync());
+        File('test/fixtures/exif_sample.jpg').readAsBytesSync(),
+      );
     return CapturedImage(src.path);
   }
 
@@ -61,18 +62,21 @@ void main() {
       );
 
       final doc = await r.createFromCapture(capture('cap.jpg'));
-      final before = await (db.select(db.documents)
-            ..where((d) => d.id.equals(doc.id)))
-          .getSingle();
+      final before = await (db.select(
+        db.documents,
+      )..where((d) => d.id.equals(doc.id))).getSingle();
 
       await r.markAsIdCard(doc.id);
 
-      final after = await (db.select(db.documents)
-            ..where((d) => d.id.equals(doc.id)))
-          .getSingle();
+      final after = await (db.select(
+        db.documents,
+      )..where((d) => d.id.equals(doc.id))).getSingle();
 
-      expect(after.isIdCard, isTrue,
-          reason: 'isIdCard must be set to true after markAsIdCard');
+      expect(
+        after.isIdCard,
+        isTrue,
+        reason: 'isIdCard must be set to true after markAsIdCard',
+      );
       expect(
         after.modifiedAt.isAfter(before.modifiedAt) ||
             after.modifiedAt == before.modifiedAt,
@@ -97,12 +101,15 @@ void main() {
       final doc = await r.createFromCapture(capture('cap2.jpg'));
       await r.markAsIdCard(doc.id);
 
-      final row = await (db.select(db.documents)
-            ..where((d) => d.id.equals(doc.id)))
-          .getSingle();
+      final row = await (db.select(
+        db.documents,
+      )..where((d) => d.id.equals(doc.id))).getSingle();
 
-      expect(row.modifiedAt, markedAt,
-          reason: 'modifiedAt must equal the clock value at markAsIdCard call');
+      expect(
+        row.modifiedAt,
+        markedAt,
+        reason: 'modifiedAt must equal the clock value at markAsIdCard call',
+      );
     });
 
     test('throws DocumentSaveException for a missing document', () async {

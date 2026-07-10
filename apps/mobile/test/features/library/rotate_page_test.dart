@@ -41,21 +41,41 @@ void main() {
 
   test('rotates the display image (dims swap) and the cached boxes', () async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     // 40x20 (non-square) JPEG so a dims-swap is observable.
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 40, height: 20), quality: 95));
+      img.encodeJpg(img.Image(width: 40, height: 20), quality: 95),
+    );
     final rel = 'documents/$id/page_1.jpg';
     await store.writeRelative(rel, jpeg);
-    const box = OcrWordBox(text: 'hi', left: 0.0, top: 0.0, right: 0.2, bottom: 0.1);
-    await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: id,
-          position: 1,
-          relativeImagePath: rel,
-          ocrText: const Value('hi'),
-          ocrBoxes: Value(const OcrResult(text: 'hi', words: [box]).encodeBoxes()),
-        ));
+    const box = OcrWordBox(
+      text: 'hi',
+      left: 0.0,
+      top: 0.0,
+      right: 0.2,
+      bottom: 0.1,
+    );
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+            ocrText: const Value('hi'),
+            ocrBoxes: Value(
+              const OcrResult(text: 'hi', words: [box]).encodeBoxes(),
+            ),
+          ),
+        );
 
     await repo.rotatePage(id, 1);
 
@@ -63,7 +83,9 @@ void main() {
     final page = pages.single;
     // Flat now exists and is the rotated (dims-swapped) image.
     expect(page.flatImagePath, isNotNull);
-    final decoded = img.decodeImage(File(page.flatImagePath!).readAsBytesSync())!;
+    final decoded = img.decodeImage(
+      File(page.flatImagePath!).readAsBytesSync(),
+    )!;
     expect(decoded.width, 20);
     expect(decoded.height, 40);
     // Box rotated CW: (0,0,0.2,0.1) -> (0.9, 0, 1.0, 0.2).
@@ -76,25 +98,36 @@ void main() {
   });
 
   test('throws when the page row is missing', () async {
-    expect(() => repo.rotatePage(999, 1), throwsA(isA<DocumentSaveException>()));
+    expect(
+      () => repo.rotatePage(999, 1),
+      throwsA(isA<DocumentSaveException>()),
+    );
   });
 
   test('throws when the image bytes are undecodable', () async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final rel = 'documents/$id/page_1.jpg';
     // Write non-image bytes — img.decodeImage will return null.
     await store.writeRelative(rel, Uint8List.fromList([0, 0, 0, 0]));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: id,
-          position: 1,
-          relativeImagePath: rel,
-        ));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+          ),
+        );
 
-    expect(
-      () => repo.rotatePage(id, 1),
-      throwsA(isA<DocumentSaveException>()),
-    );
+    expect(() => repo.rotatePage(id, 1), throwsA(isA<DocumentSaveException>()));
   });
 }

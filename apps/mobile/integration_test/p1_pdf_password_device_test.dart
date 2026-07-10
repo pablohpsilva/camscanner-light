@@ -23,8 +23,9 @@ String _ascii(List<int> b) {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('exportProtectedPdf produces an encrypted PDF on device',
-      (tester) async {
+  testWidgets('exportProtectedPdf produces an encrypted PDF on device', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('p1dev');
     final db = AppDatabase(NativeDatabase.memory());
     final store = DocumentFileStore(base);
@@ -38,13 +39,31 @@ void main() {
     );
 
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final rel = 'documents/$id/page_1.jpg';
-    await store.writeRelative(rel,
-        Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90)));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id, position: 1, relativeImagePath: rel));
+    await store.writeRelative(
+      rel,
+      Uint8List.fromList(
+        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+      ),
+    );
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+          ),
+        );
 
     final file = await repo.exportProtectedPdf(id, 'secret');
     final bytes = await file.readAsBytes();

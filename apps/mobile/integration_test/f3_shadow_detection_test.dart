@@ -46,8 +46,12 @@ void main() {
 
     test('localizes a soft-shadowed page rectangle', () async {
       final result = await detector.detect(_shadowedPage());
-      expect(result, isNotNull,
-          reason: 'segmentation must recover the shadowed page (page stays brighter than desk)');
+      expect(
+        result,
+        isNotNull,
+        reason:
+            'segmentation must recover the shadowed page (page stays brighter than desk)',
+      );
 
       final c = result!.corners;
       // Expected normalized rect bounds: x in [140/800, 660/800] = [0.175, 0.825],
@@ -56,8 +60,12 @@ void main() {
       const tol = 0.08;
       expect(c.topLeft.dx, closeTo(0.175, tol));
       expect(c.topLeft.dy, closeTo(0.183, tol));
-      expect(c.topRight.dx, closeTo(0.825, tol),
-          reason: 'the shadowed (dimmer) right side must still fall inside the page blob');
+      expect(
+        c.topRight.dx,
+        closeTo(0.825, tol),
+        reason:
+            'the shadowed (dimmer) right side must still fall inside the page blob',
+      );
       expect(c.bottomRight.dy, closeTo(0.817, tol));
       expect(c.bottomLeft.dx, closeTo(0.175, tol));
     });
@@ -66,15 +74,23 @@ void main() {
       // Same layout, uniform bright page — the easy case must stay accurate.
       final image = img.Image(width: 800, height: 600, numChannels: 3);
       img.fill(image, color: img.ColorRgb8(40, 40, 40));
-      img.fillRect(image,
-          x1: 140, y1: 110, x2: 660, y2: 490,
-          color: img.ColorRgb8(230, 230, 230));
+      img.fillRect(
+        image,
+        x1: 140,
+        y1: 110,
+        x2: 660,
+        y2: 490,
+        color: img.ColorRgb8(230, 230, 230),
+      );
       final bytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
 
       final result = await detector.detect(bytes);
       expect(result, isNotNull);
-      expect(result!.confidence, greaterThan(0.7),
-          reason: 'a clean rectangle should score high');
+      expect(
+        result!.confidence,
+        greaterThan(0.7),
+        reason: 'a clean rectangle should score high',
+      );
       const tol = 0.06;
       expect(result.corners.topLeft.dx, closeTo(0.175, tol));
       expect(result.corners.bottomRight.dx, closeTo(0.825, tol));

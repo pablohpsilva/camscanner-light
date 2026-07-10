@@ -22,30 +22,39 @@ void main() {
     return f;
   }
 
-  test('zips N files with the given entry names, round-tripping bytes', () async {
-    final a = await writeFile('a.pdf', [1, 2, 3]);
-    final b = await writeFile('b.pdf', [4, 5, 6, 7]);
+  test(
+    'zips N files with the given entry names, round-tripping bytes',
+    () async {
+      final a = await writeFile('a.pdf', [1, 2, 3]);
+      final b = await writeFile('b.pdf', [4, 5, 6, 7]);
 
-    final zip = await const SystemFileArchiver().zip(
-      [a, b],
-      archiveName: 'documents.zip',
-      entryNames: ['a.pdf', 'b.pdf'],
-    );
+      final zip = await const SystemFileArchiver().zip(
+        [a, b],
+        archiveName: 'documents.zip',
+        entryNames: ['a.pdf', 'b.pdf'],
+      );
 
-    // Output is a temp .zip, not inside the source dir.
-    expect(zip.path, endsWith('documents.zip'));
-    expect(p.isWithin(base.path, zip.path), isFalse);
+      // Output is a temp .zip, not inside the source dir.
+      expect(zip.path, endsWith('documents.zip'));
+      expect(p.isWithin(base.path, zip.path), isFalse);
 
-    final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
-    expect(archive.files.map((f) => f.name).toList(), ['a.pdf', 'b.pdf']);
-    expect(archive.files[0].content, equals(Uint8List.fromList([1, 2, 3])));
-    expect(archive.files[1].content, equals(Uint8List.fromList([4, 5, 6, 7])));
-  });
+      final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
+      expect(archive.files.map((f) => f.name).toList(), ['a.pdf', 'b.pdf']);
+      expect(archive.files[0].content, equals(Uint8List.fromList([1, 2, 3])));
+      expect(
+        archive.files[1].content,
+        equals(Uint8List.fromList([4, 5, 6, 7])),
+      );
+    },
+  );
 
   test('stores entries uncompressed (no deflate)', () async {
     final a = await writeFile('a.pdf', List<int>.filled(1024, 42));
-    final zip = await const SystemFileArchiver()
-        .zip([a], archiveName: 'x.zip', entryNames: ['a.pdf']);
+    final zip = await const SystemFileArchiver().zip(
+      [a],
+      archiveName: 'x.zip',
+      entryNames: ['a.pdf'],
+    );
     final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
     expect(archive.files.single.compression, CompressionType.none);
   });
@@ -59,6 +68,9 @@ void main() {
       entryNames: ['Doc.pdf', 'Doc.pdf'],
     );
     final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
-    expect(archive.files.map((f) => f.name).toList(), ['Doc.pdf', 'Doc (2).pdf']);
+    expect(archive.files.map((f) => f.name).toList(), [
+      'Doc.pdf',
+      'Doc (2).pdf',
+    ]);
   });
 }

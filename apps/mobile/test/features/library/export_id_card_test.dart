@@ -27,19 +27,20 @@ void main() {
   });
 
   DriftDocumentRepository repo() => DriftDocumentRepository(
-        db: db,
-        scrubber: const JpegExifScrubber(),
-        fileStore: DocumentFileStore(base),
-        clock: clock,
-        pdfBuilder: const PdfBuilder(),
-        warper: FakeImageWarper(),
-      );
+    db: db,
+    scrubber: const JpegExifScrubber(),
+    fileStore: DocumentFileStore(base),
+    clock: clock,
+    pdfBuilder: const PdfBuilder(),
+    warper: FakeImageWarper(),
+  );
 
   /// Returns a CapturedImage backed by a copy of the existing test fixture.
   CapturedImage capture(String filename) {
     final src = File('${base.path}/$filename')
       ..writeAsBytesSync(
-          File('test/fixtures/exif_sample.jpg').readAsBytesSync());
+        File('test/fixtures/exif_sample.jpg').readAsBytesSync(),
+      );
     return CapturedImage(src.path);
   }
 
@@ -54,23 +55,31 @@ void main() {
     final bytes = await file.readAsBytes();
     final s = String.fromCharCodes(bytes);
     final pageMatches = RegExp(r'/Type\s*/Page(?![s])').allMatches(s);
-    expect(pageMatches.length, 1,
-        reason: 'ID-card export must produce exactly one PDF page');
+    expect(
+      pageMatches.length,
+      1,
+      reason: 'ID-card export must produce exactly one PDF page',
+    );
   });
 
-  test('exportPdf of a non-ID-card 2-page document yields two PDF pages',
-      () async {
-    final r = repo();
-    final doc = await r.createFromCapture(capture('p1.jpg'));
-    await r.addPageToDocument(doc.id, capture('p2.jpg'));
-    // Do NOT markAsIdCard — ordinary doc.
+  test(
+    'exportPdf of a non-ID-card 2-page document yields two PDF pages',
+    () async {
+      final r = repo();
+      final doc = await r.createFromCapture(capture('p1.jpg'));
+      await r.addPageToDocument(doc.id, capture('p2.jpg'));
+      // Do NOT markAsIdCard — ordinary doc.
 
-    final file = await r.exportPdf(doc.id);
+      final file = await r.exportPdf(doc.id);
 
-    final bytes = await file.readAsBytes();
-    final s = String.fromCharCodes(bytes);
-    final pageMatches = RegExp(r'/Type\s*/Page(?![s])').allMatches(s);
-    expect(pageMatches.length, 2,
-        reason: 'Non-ID-card export must produce one page per document page');
-  });
+      final bytes = await file.readAsBytes();
+      final s = String.fromCharCodes(bytes);
+      final pageMatches = RegExp(r'/Type\s*/Page(?![s])').allMatches(s);
+      expect(
+        pageMatches.length,
+        2,
+        reason: 'Non-ID-card export must produce one page per document page',
+      );
+    },
+  );
 }

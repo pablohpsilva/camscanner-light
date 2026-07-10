@@ -100,20 +100,25 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     if (quality == null || !mounted) return;
     setState(() => _exporting = true);
     try {
-      final file =
-          await widget.repository.exportPdf(widget.documentId, quality: quality);
+      final file = await widget.repository.exportPdf(
+        widget.documentId,
+        quality: quality,
+      );
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => PdfPreviewScreen(
-              pdfPath: file.path, name: _name, share: widget.share),
+            pdfPath: file.path,
+            name: _name,
+            share: widget.share,
+          ),
         ),
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't export PDF")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't export PDF")));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -124,14 +129,17 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     if (newName == null) return;
     if (!mounted) return;
     try {
-      final updated = await widget.repository.rename(widget.documentId, newName);
+      final updated = await widget.repository.rename(
+        widget.documentId,
+        newName,
+      );
       if (!mounted) return;
       setState(() => _name = updated.name);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't rename")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't rename")));
     }
   }
 
@@ -158,12 +166,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     try {
       await widget.repository.deleteDocument(widget.documentId);
       if (!mounted) return;
-      Navigator.of(context).pop(); // leave the viewer -> Home._load() reflects it
+      Navigator.of(
+        context,
+      ).pop(); // leave the viewer -> Home._load() reflects it
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't delete")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't delete")));
     }
   }
 
@@ -175,9 +185,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: Text(isLast
-            ? 'This is the only page. Deleting it removes the whole document.'
-            : "Delete this page? This can't be undone."),
+        content: Text(
+          isLast
+              ? 'This is the only page. Deleting it removes the whole document.'
+              : "Delete this page? This can't be undone.",
+        ),
         actions: [
           TextButton(
             key: const Key('page-viewer-delete-page-cancel'),
@@ -194,8 +206,10 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     );
     if (ok != true) return;
     try {
-      final remaining =
-          await widget.repository.deletePage(widget.documentId, page.position);
+      final remaining = await widget.repository.deletePage(
+        widget.documentId,
+        page.position,
+      );
       if (!mounted) return;
       if (remaining == 0) {
         Navigator.of(context).pop(); // document gone → back to Home
@@ -206,9 +220,9 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (mounted && _controller.hasClients) _controller.jumpToPage(_current);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't delete page")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't delete page")));
     }
   }
 
@@ -220,14 +234,17 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     if (quality == null || !mounted) return;
     setState(() => _exporting = true);
     try {
-      final file = await widget.repository
-          .exportPageAsImage(widget.documentId, page.position, quality: quality);
+      final file = await widget.repository.exportPageAsImage(
+        widget.documentId,
+        page.position,
+        quality: quality,
+      );
       await widget.share.share([file.path], subject: _name);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't share image")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't share image")));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -238,15 +255,19 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     if (quality == null || !mounted) return;
     setState(() => _exporting = true);
     try {
-      final files = await widget.repository
-          .exportAllPagesAsImages(widget.documentId, quality: quality);
+      final files = await widget.repository.exportAllPagesAsImages(
+        widget.documentId,
+        quality: quality,
+      );
       await widget.share.share(
-          files.map((f) => f.path).toList(), subject: _name);
+        files.map((f) => f.path).toList(),
+        subject: _name,
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't share images")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't share images")));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -257,14 +278,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       final file = await widget.repository.exportPdf(widget.documentId);
       await widget.printer.printPdf(file, name: _name);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sent to printer')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sent to printer')));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't print")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't print")));
     }
   }
 
@@ -272,25 +293,29 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final password = await showPasswordDialog(context);
     if (password == null || password.isEmpty || !mounted) return;
     try {
-      final file =
-          await widget.repository.exportProtectedPdf(widget.documentId, password);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Protected PDF ready')),
+      final file = await widget.repository.exportProtectedPdf(
+        widget.documentId,
+        password,
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Protected PDF ready')));
       unawaited(_shareQuietly(file));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't protect PDF")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't protect PDF")));
     }
   }
 
   Future<void> _shareQuietly(File file) async {
     try {
       await widget.share.share([file.path], subject: _name);
-    } catch (_) {/* share unavailable (e.g. host test) — ignore */}
+    } catch (_) {
+      /* share unavailable (e.g. host test) — ignore */
+    }
   }
 
   void _viewText() {
@@ -323,8 +348,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           onCapture: (image, corners, enhancer) async {
             try {
               await widget.repository.replacePage(
-                  widget.documentId, page.position, image,
-                  corners: corners, enhancer: enhancer);
+                widget.documentId,
+                page.position,
+                image,
+                corners: corners,
+                enhancer: enhancer,
+              );
               return true;
             } catch (_) {
               return false;
@@ -350,12 +379,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   Future<void> _persistReorder(List<PageImage> ordered) async {
     try {
       await widget.repository.reorderPages(
-          widget.documentId, ordered.map((p) => p.position).toList());
+        widget.documentId,
+        ordered.map((p) => p.position).toList(),
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't reorder pages")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't reorder pages")));
       _load();
     }
   }
@@ -374,32 +405,33 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't rotate")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't rotate")));
     }
   }
 
   Future<void> _editCrop(PageImage pg) async {
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
-        builder: (_) => EditCropScreen(
-          imagePath: pg.imagePath,
-          initialCorners: pg.corners,
-        ),
+        builder: (_) =>
+            EditCropScreen(imagePath: pg.imagePath, initialCorners: pg.corners),
       ),
     );
     if (corners == null || !mounted) return;
     try {
       await widget.repository.updatePageCorners(
-          widget.documentId, pg.position, corners);
+        widget.documentId,
+        pg.position,
+        corners,
+      );
       if (!mounted) return;
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't update crop")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't update crop")));
     }
   }
 
@@ -409,7 +441,8 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     if (_current >= pages.length - 1) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('This is the last page — nothing to split after.')),
+          content: Text('This is the last page — nothing to split after.'),
+        ),
       );
       return;
     }
@@ -423,15 +456,18 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't split")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't split")));
     }
   }
 
   Future<void> _mergeAnother() async {
-    final sourceId =
-        await showMergePicker(context, widget.repository, widget.documentId);
+    final sourceId = await showMergePicker(
+      context,
+      widget.repository,
+      widget.documentId,
+    );
     if (sourceId == null || !mounted) return;
     try {
       await widget.repository.mergeInto(widget.documentId, sourceId);
@@ -439,9 +475,9 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't merge")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't merge")));
     }
   }
 
@@ -455,15 +491,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             key: const Key('page-viewer-rename'),
             tooltip: 'Rename',
             icon: const Icon(Icons.edit_outlined),
-            onPressed:
-                (_loading || _error || _exporting) ? null : _rename,
+            onPressed: (_loading || _error || _exporting) ? null : _rename,
           ),
           IconButton(
             key: const Key('page-viewer-edit'),
             tooltip: 'Edit crop',
             icon: const Icon(Icons.crop),
-            onPressed: (_loading || _error || _exporting ||
-                    (_pages?.isEmpty ?? true))
+            onPressed:
+                (_loading || _error || _exporting || (_pages?.isEmpty ?? true))
                 ? null
                 : () => _editCrop(_pages![_current]),
           ),
@@ -471,8 +506,8 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             key: const Key('page-viewer-export'),
             tooltip: 'Export PDF',
             icon: const Icon(Icons.picture_as_pdf),
-            onPressed: (_loading || _error || _exporting ||
-                    (_pages?.isEmpty ?? true))
+            onPressed:
+                (_loading || _error || _exporting || (_pages?.isEmpty ?? true))
                 ? null
                 : _exportPdf,
           ),
@@ -480,11 +515,17 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             key: const Key('page-viewer-delete'),
             tooltip: 'Delete',
             icon: const Icon(Icons.delete_outline),
-            onPressed: (_loading || _error || _exporting) ? null : _confirmAndDelete,
+            onPressed: (_loading || _error || _exporting)
+                ? null
+                : _confirmAndDelete,
           ),
           PopupMenuButton<String>(
             key: const Key('page-viewer-page-menu'),
-            enabled: !(_loading || _error || _exporting || (_pages?.isEmpty ?? true)),
+            enabled:
+                !(_loading ||
+                    _error ||
+                    _exporting ||
+                    (_pages?.isEmpty ?? true)),
             onSelected: (v) {
               if (v == 'view-text') _viewText();
               if (v == 'rotate') unawaited(_rotatePage());
@@ -559,36 +600,37 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       body: _loading
           ? const Center(
               key: Key('page-viewer-loading'),
-              child: CircularProgressIndicator())
+              child: CircularProgressIndicator(),
+            )
           : _error
-              ? _buildError()
-              : (_pages == null || _pages!.isEmpty)
-                  ? _buildEmpty()
-                  : _buildPages(_pages!),
+          ? _buildError()
+          : (_pages == null || _pages!.isEmpty)
+          ? _buildEmpty()
+          : _buildPages(_pages!),
       bottomNavigationBar: const DonationBanner(),
     );
   }
 
   Widget _buildError() => Center(
-        key: const Key('page-viewer-error'),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Couldn't load this document."),
-            const SizedBox(height: 8),
-            FilledButton(
-              key: const Key('page-viewer-retry'),
-              onPressed: _load,
-              child: const Text('Retry'),
-            ),
-          ],
+    key: const Key('page-viewer-error'),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text("Couldn't load this document."),
+        const SizedBox(height: 8),
+        FilledButton(
+          key: const Key('page-viewer-retry'),
+          onPressed: _load,
+          child: const Text('Retry'),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _buildEmpty() => const Center(
-        key: Key('page-viewer-empty'),
-        child: Text('This document has no pages.'),
-      );
+    key: Key('page-viewer-empty'),
+    child: Text('This document has no pages.'),
+  );
 
   Widget _buildPages(List<PageImage> pages) {
     return Column(

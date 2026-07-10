@@ -8,22 +8,24 @@ import '_fakes.dart';
 
 void main() {
   group('HttpFeedbackAvailability', () {
-    test('200 response → isAvailable() returns true and path is /health',
-        () async {
-      Uri? capturedUri;
-      final client = MockClient((req) async {
-        capturedUri = req.url;
-        return http.Response('{"ok":true}', 200);
-      });
+    test(
+      '200 response → isAvailable() returns true and path is /health',
+      () async {
+        Uri? capturedUri;
+        final client = MockClient((req) async {
+          capturedUri = req.url;
+          return http.Response('{"ok":true}', 200);
+        });
 
-      final availability = HttpFeedbackAvailability(
-        config: testFeedbackConfig,
-        httpClient: client,
-      );
+        final availability = HttpFeedbackAvailability(
+          config: testFeedbackConfig,
+          httpClient: client,
+        );
 
-      expect(await availability.isAvailable(), isTrue);
-      expect(capturedUri?.path, equals('/health'));
-    });
+        expect(await availability.isAvailable(), isTrue);
+        expect(capturedUri?.path, equals('/health'));
+      },
+    );
 
     test('503 response → isAvailable() returns false', () async {
       final client = MockClient(
@@ -76,14 +78,21 @@ void main() {
           return http.Response('{"ok":true}', 200);
         });
 
-        const unconfigured = FeedbackConfig(workerUrl: '', turnstileSiteKey: '');
+        const unconfigured = FeedbackConfig(
+          workerUrl: '',
+          turnstileSiteKey: '',
+        );
         final availability = HttpFeedbackAvailability(
           config: unconfigured,
           httpClient: client,
         );
 
         expect(await availability.isAvailable(), isFalse);
-        expect(requestMade, isFalse, reason: 'No HTTP request should be made when unconfigured');
+        expect(
+          requestMade,
+          isFalse,
+          reason: 'No HTTP request should be made when unconfigured',
+        );
       },
     );
   });

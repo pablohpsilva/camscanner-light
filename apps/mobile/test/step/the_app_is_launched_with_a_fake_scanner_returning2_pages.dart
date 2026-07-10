@@ -11,7 +11,8 @@ FakeDocumentRepository scanPlatformRepo = FakeDocumentRepository();
 
 /// Usage: the app is launched with a fake scanner returning 2 pages
 Future<void> theAppIsLaunchedWithAFakeScannerReturning2Pages(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   scanPlatformRepo = FakeDocumentRepository();
   app.runCamScannerApp(
     scanDependencies: ScanDependencies(

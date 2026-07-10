@@ -10,9 +10,11 @@ void main() {
     final repo = FakeDocumentRepository(
       pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
     );
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));

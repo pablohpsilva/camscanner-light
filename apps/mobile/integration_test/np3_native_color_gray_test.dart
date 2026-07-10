@@ -17,7 +17,11 @@ void main() {
   const p = NativePageProcessor();
 
   test('grayscale: output R==G==B', () async {
-    final out = await p.process(_color(300, 200), CropCorners.fullFrame, EnhancerMode.grayscale);
+    final out = await p.process(
+      _color(300, 200),
+      CropCorners.fullFrame,
+      EnhancerMode.grayscale,
+    );
     expect(out, isNotNull);
     final d = img.decodeImage(out!)!;
     final px = d.getPixel(150, 100);
@@ -25,7 +29,11 @@ void main() {
   });
 
   test('color: stays colored (R != B), decodable, same size', () async {
-    final out = await p.process(_color(300, 200), CropCorners.fullFrame, EnhancerMode.color);
+    final out = await p.process(
+      _color(300, 200),
+      CropCorners.fullFrame,
+      EnhancerMode.color,
+    );
     expect(out, isNotNull);
     final d = img.decodeImage(out!)!;
     expect(d.width, 300);

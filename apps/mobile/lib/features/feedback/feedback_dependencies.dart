@@ -26,8 +26,9 @@ class FeedbackDependencies {
     ),
     FeedbackServiceFactory? createService,
     FeedbackAvailabilityFactory? createAvailability,
-  })  : _createService = createService, // ignore: prefer_initializing_formals
-        _createAvailability = createAvailability; // ignore: prefer_initializing_formals
+  }) : _createService = createService, // ignore: prefer_initializing_formals
+       _createAvailability =
+           createAvailability; // ignore: prefer_initializing_formals
 
   FeedbackService service() =>
       _createService?.call() ??

@@ -30,7 +30,10 @@ class NativePageProcessor implements PageProcessor {
 
   @override
   Future<Uint8List?> process(
-      Uint8List bytes, CropCorners corners, EnhancerMode mode) async {
+    Uint8List bytes,
+    CropCorners corners,
+    EnhancerMode mode,
+  ) async {
     if (mode == EnhancerMode.none && corners == CropCorners.fullFrame) {
       return null; // nothing to do
     }
@@ -38,8 +41,10 @@ class NativePageProcessor implements PageProcessor {
       return null; // bent crop → defer to Dart Coons
     }
     try {
-      return await compute(_nativeFn, _NativeArgs(bytes, corners, mode))
-          .timeout(timeout);
+      return await compute(
+        _nativeFn,
+        _NativeArgs(bytes, corners, mode),
+      ).timeout(timeout);
     } catch (_) {
       return null; // TimeoutException or isolate error → fallback
     }
@@ -106,13 +111,24 @@ cv.Mat _autoFlatField(cv.Mat src) {
   final blurKernel = 2 * kAutoBlurRadius + 1;
   final blurSigma = kAutoBlurRadius * 2.0 / 3.0;
 
-  cv.Mat? proxy, kernel, dilated, blurred, bg, bgF, bgFloored, floorMat,
-      srcF, flatF, flat, lut;
+  cv.Mat? proxy,
+      kernel,
+      dilated,
+      blurred,
+      bg,
+      bgF,
+      bgFloored,
+      floorMat,
+      srcF,
+      flatF,
+      flat,
+      lut;
   try {
     // 1. Background estimate: resize to proxy → dilate(15×15) → blur.
     final longest = cols > rows ? cols : rows;
-    final scale =
-        longest > kAutoProxyLongSide ? kAutoProxyLongSide / longest : 1.0;
+    final scale = longest > kAutoProxyLongSide
+        ? kAutoProxyLongSide / longest
+        : 1.0;
     final pw = (cols * scale).round().clamp(1, cols);
     final ph = (rows * scale).round().clamp(1, rows);
     proxy = cv.resize(src, (pw, ph), interpolation: cv.INTER_AREA);
@@ -127,7 +143,11 @@ cv.Mat _autoFlatField(cv.Mat src) {
     final floorVal = 255.0 / kAutoMaxGain; // 42.5
     bgF = bg.convertTo(cv.MatType.CV_32FC3);
     floorMat = cv.Mat.fromScalar(
-        rows, cols, cv.MatType.CV_32FC3, cv.Scalar.all(floorVal));
+      rows,
+      cols,
+      cv.MatType.CV_32FC3,
+      cv.Scalar.all(floorVal),
+    );
     bgFloored = cv.max(bgF, floorMat);
     srcF = src.convertTo(cv.MatType.CV_32FC3);
     flatF = cv.divide(srcF, bgFloored, scale: 255); // srcF*255/bgFloored
@@ -138,8 +158,18 @@ cv.Mat _autoFlatField(cv.Mat src) {
     return cv.LUT(flat, lut);
   } finally {
     for (final m in [
-      proxy, kernel, dilated, blurred, bg, bgF, bgFloored, floorMat,
-      srcF, flatF, flat, lut,
+      proxy,
+      kernel,
+      dilated,
+      blurred,
+      bg,
+      bgF,
+      bgFloored,
+      floorMat,
+      srcF,
+      flatF,
+      flat,
+      lut,
     ]) {
       m?.dispose();
     }
@@ -228,6 +258,7 @@ cv.Mat _warpStraight(cv.Mat src, CropCorners c) {
     final dx = (a.dx - b.dx) * w, dy = (a.dy - b.dy) * h;
     return math.sqrt(dx * dx + dy * dy);
   }
+
   final topE = dist(c.topLeft, c.topRight);
   final botE = dist(c.bottomLeft, c.bottomRight);
   final leftE = dist(c.topLeft, c.bottomLeft);

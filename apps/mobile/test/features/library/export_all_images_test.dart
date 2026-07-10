@@ -40,15 +40,30 @@ void main() {
 
   Future<int> seedDoc(int pageCount) async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+      img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+    );
     for (var pos = 1; pos <= pageCount; pos++) {
       final rel = 'documents/$id/page_$pos.jpg';
       await store.writeRelative(rel, jpeg);
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: id, position: pos, relativeImagePath: rel));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: pos,
+              relativeImagePath: rel,
+            ),
+          );
     }
     return id;
   }
@@ -61,8 +76,12 @@ void main() {
     // Exports go to the OS temp/cache dir, never the persistent backed-up store.
     for (final f in files) {
       expect(f.path, endsWith('.jpg'));
-      expect(p.isWithin(base.path, f.path), isFalse,
-          reason: 'export must not be written into the persistent, backed-up store');
+      expect(
+        p.isWithin(base.path, f.path),
+        isFalse,
+        reason:
+            'export must not be written into the persistent, backed-up store',
+      );
       final bytes = await f.readAsBytes();
       expect(bytes.sublist(0, 2), [0xFF, 0xD8]); // JPEG magic
     }
@@ -70,9 +89,18 @@ void main() {
 
   test('throws when the document has no pages', () async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Empty', createdAt: now, modifiedAt: now));
-    expect(() => repo.exportAllPagesAsImages(id),
-        throwsA(isA<DocumentExportException>()));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Empty',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
+    expect(
+      () => repo.exportAllPagesAsImages(id),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 }

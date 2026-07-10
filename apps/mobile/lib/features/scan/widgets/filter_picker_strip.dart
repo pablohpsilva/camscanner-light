@@ -166,15 +166,16 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
                       child: thumb != null
                           ? Image.memory(thumb, fit: BoxFit.cover)
                           : _generating
-                              ? const Center(
-                                  child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  ),
-                                )
-                              : Icon(f.icon, size: 28, color: Colors.white54),
+                          ? const Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : Icon(f.icon, size: 28, color: Colors.white54),
                     ),
                   ),
                   const SizedBox(height: 2),

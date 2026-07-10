@@ -57,7 +57,7 @@ void main() {
   // 3. Self-crossing quad → WarpException.
   test('self-crossing quad → WarpException', () async {
     const crossed = CropCorners(
-      topLeft: Offset(0.9, 0.1),   // TL/TR swapped
+      topLeft: Offset(0.9, 0.1), // TL/TR swapped
       topRight: Offset(0.1, 0.1),
       bottomRight: Offset(0.9, 0.9),
       bottomLeft: Offset(0.1, 0.9),
@@ -99,16 +99,27 @@ void main() {
   //    _kRect in display frame: TL(8,4) TR(72,4) BR(72,36) BL(8,36).
   //    top=bottom=64 → outW=64; left=right=32 → outH=32.
   //    WITHOUT bakeOrientation (raw 40×80): outW=32, outH=64 — flipped.
-  test('EXIF Orientation 6: bakeOrientation applied before denormalization', () async {
-    final bytes = _jpeg(40, 80, orientation: 6);
-    final result = await warper.warp(bytes, _kRect);
-    expect(result, isNotNull);
-    final out = img.decodeImage(result!)!;
-    expect(out.width, 64,
-        reason: 'display-frame top edge = 0.8×80 = 64; '
-            'without bakeOrientation would be 32');
-    expect(out.height, 32,
-        reason: 'display-frame left edge = 0.8×40 = 32; '
-            'without bakeOrientation would be 64');
-  });
+  test(
+    'EXIF Orientation 6: bakeOrientation applied before denormalization',
+    () async {
+      final bytes = _jpeg(40, 80, orientation: 6);
+      final result = await warper.warp(bytes, _kRect);
+      expect(result, isNotNull);
+      final out = img.decodeImage(result!)!;
+      expect(
+        out.width,
+        64,
+        reason:
+            'display-frame top edge = 0.8×80 = 64; '
+            'without bakeOrientation would be 32',
+      );
+      expect(
+        out.height,
+        32,
+        reason:
+            'display-frame left edge = 0.8×40 = 32; '
+            'without bakeOrientation would be 64',
+      );
+    },
+  );
 }

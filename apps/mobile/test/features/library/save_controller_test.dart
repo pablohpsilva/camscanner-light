@@ -25,7 +25,9 @@ void main() {
   });
 
   test('save() goes to error and returns null on failure', () async {
-    final c = SaveController(repository: FakeDocumentRepository(throwOnCreate: true));
+    final c = SaveController(
+      repository: FakeDocumentRepository(throwOnCreate: true),
+    );
     final doc = await c.save(img);
     expect(doc, isNull);
     expect(c.status, SaveStatus.error);

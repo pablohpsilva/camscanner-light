@@ -5,7 +5,11 @@ import 'the_review_screen_is_open_with_a_captured_image.dart';
 
 /// Usage: the document is saved with grayscale enhancement
 Future<void> theDocumentIsSavedWithGrayscaleEnhancement(
-    WidgetTester tester) async {
-  expect(g1Repo.lastSavedEnhancer, isA<GrayscaleEnhancer>(),
-      reason: 'expected GrayscaleEnhancer to have been passed to onAccept');
+  WidgetTester tester,
+) async {
+  expect(
+    g1Repo.lastSavedEnhancer,
+    isA<GrayscaleEnhancer>(),
+    reason: 'expected GrayscaleEnhancer to have been passed to onAccept',
+  );
 }

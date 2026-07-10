@@ -25,49 +25,92 @@ void main() {
 
   tearDownAll(() => tmp.deleteSync(recursive: true));
 
-  PageImage pageWithWords(List<OcrWordBox> words) => PageImage(
-        position: 1,
-        imagePath: jpegPath,
-        ocrWords: words,
-      );
+  PageImage pageWithWords(List<OcrWordBox> words) =>
+      PageImage(position: 1, imagePath: jpegPath, ocrWords: words);
 
   test(
-      'OCR words embedded as invisible text: both words present in PDF bytes',
-      () async {
-    final words = [
-      const OcrWordBox(text: 'HELLO', left: 0.0, top: 0.0, right: 0.2, bottom: 0.1),
-      const OcrWordBox(text: 'WORLD', left: 0.0, top: 0.2, right: 0.2, bottom: 0.3),
-    ];
-    // compress:false so the invisible text is not deflated and is grep-able.
-    final pdf = await PdfBuilder(textLayer: const OcrPdfTextLayer())
-        .build([pageWithWords(words)], compress: false);
+    'OCR words embedded as invisible text: both words present in PDF bytes',
+    () async {
+      final words = [
+        const OcrWordBox(
+          text: 'HELLO',
+          left: 0.0,
+          top: 0.0,
+          right: 0.2,
+          bottom: 0.1,
+        ),
+        const OcrWordBox(
+          text: 'WORLD',
+          left: 0.0,
+          top: 0.2,
+          right: 0.2,
+          bottom: 0.3,
+        ),
+      ];
+      // compress:false so the invisible text is not deflated and is grep-able.
+      final pdf = await PdfBuilder(
+        textLayer: const OcrPdfTextLayer(),
+      ).build([pageWithWords(words)], compress: false);
 
-    final s = _dec(pdf);
-    expect(s.contains('HELLO'), isTrue, reason: 'HELLO must be embedded as invisible text');
-    expect(s.contains('WORLD'), isTrue, reason: 'WORLD must be embedded as invisible text');
-    // The image is also present.
-    expect(s.contains('/DCTDecode'), isTrue, reason: 'JPEG image must still be embedded');
-  });
+      final s = _dec(pdf);
+      expect(
+        s.contains('HELLO'),
+        isTrue,
+        reason: 'HELLO must be embedded as invisible text',
+      );
+      expect(
+        s.contains('WORLD'),
+        isTrue,
+        reason: 'WORLD must be embedded as invisible text',
+      );
+      // The image is also present.
+      expect(
+        s.contains('/DCTDecode'),
+        isTrue,
+        reason: 'JPEG image must still be embedded',
+      );
+    },
+  );
 
-  test('image-only page (no ocrWords) produces PDF with no word text', () async {
-    final pdf = await PdfBuilder(textLayer: const OcrPdfTextLayer())
-        .build([pageWithWords(const [])], compress: false);
+  test(
+    'image-only page (no ocrWords) produces PDF with no word text',
+    () async {
+      final pdf = await PdfBuilder(
+        textLayer: const OcrPdfTextLayer(),
+      ).build([pageWithWords(const [])], compress: false);
 
-    final s = _dec(pdf);
-    // No recognizable words — only the image.
-    expect(s.contains('HELLO'), isFalse);
-    expect(s.contains('WORLD'), isFalse);
-    expect(s.contains('/DCTDecode'), isTrue,
-        reason: 'image must still be embedded even without OCR words');
-  });
+      final s = _dec(pdf);
+      // No recognizable words — only the image.
+      expect(s.contains('HELLO'), isFalse);
+      expect(s.contains('WORLD'), isFalse);
+      expect(
+        s.contains('/DCTDecode'),
+        isTrue,
+        reason: 'image must still be embedded even without OCR words',
+      );
+    },
+  );
 
   test('blank-text words (whitespace only) are skipped', () async {
     final words = [
-      const OcrWordBox(text: '   ', left: 0.0, top: 0.0, right: 0.1, bottom: 0.1),
-      const OcrWordBox(text: 'VISIBLE', left: 0.1, top: 0.1, right: 0.3, bottom: 0.2),
+      const OcrWordBox(
+        text: '   ',
+        left: 0.0,
+        top: 0.0,
+        right: 0.1,
+        bottom: 0.1,
+      ),
+      const OcrWordBox(
+        text: 'VISIBLE',
+        left: 0.1,
+        top: 0.1,
+        right: 0.3,
+        bottom: 0.2,
+      ),
     ];
-    final pdf = await PdfBuilder(textLayer: const OcrPdfTextLayer())
-        .build([pageWithWords(words)], compress: false);
+    final pdf = await PdfBuilder(
+      textLayer: const OcrPdfTextLayer(),
+    ).build([pageWithWords(words)], compress: false);
 
     final s = _dec(pdf);
     expect(s.contains('VISIBLE'), isTrue);

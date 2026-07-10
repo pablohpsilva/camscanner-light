@@ -6,7 +6,8 @@ import '../support/fake_scan.dart';
 
 /// Usage: the app is launched with camera permission granted and empty storage
 Future<void> theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   app.runCamScannerApp(
     scanDependencies: grantedScanDependencies(),
     libraryDependencies: tempLibraryDependencies(),

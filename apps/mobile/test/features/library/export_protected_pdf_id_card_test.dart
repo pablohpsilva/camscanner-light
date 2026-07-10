@@ -21,10 +21,12 @@ class _RecordingPdfBuilder extends PdfBuilder {
   final List<({List<PageImage> pages, bool idCardLayout})> calls = [];
 
   @override
-  Future<Uint8List> build(List<PageImage> pages,
-      {bool compress = true,
-      ExportQuality quality = ExportQuality.original,
-      bool idCardLayout = false}) async {
+  Future<Uint8List> build(
+    List<PageImage> pages, {
+    bool compress = true,
+    ExportQuality quality = ExportQuality.original,
+    bool idCardLayout = false,
+  }) async {
     calls.add((pages: List<PageImage>.of(pages), idCardLayout: idCardLayout));
     // Return a minimal %PDF header so downstream code won't fail on an empty buf.
     return Uint8List.fromList(const [0x25, 0x50, 0x44, 0x46, 0x0A]); // %PDF\n
@@ -68,47 +70,70 @@ void main() {
     if (await base.exists()) await base.delete(recursive: true);
   });
 
-  Uint8List jpeg() =>
-      Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+  Uint8List jpeg() => Uint8List.fromList(
+    img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+  );
 
   Future<int> seedDoc(String name, int pageCount) async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: name,
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     for (var pos = 1; pos <= pageCount; pos++) {
       final rel = 'documents/$id/page_$pos.jpg';
       await store.writeRelative(rel, jpeg());
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: id, position: pos, relativeImagePath: rel));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: pos,
+              relativeImagePath: rel,
+            ),
+          );
     }
     return id;
   }
 
   test(
-      'exportProtectedPdf calls build with idCardLayout=true for an ID-card document',
-      () async {
-    final id = await seedDoc('My ID', 2);
-    await repo.markAsIdCard(id);
+    'exportProtectedPdf calls build with idCardLayout=true for an ID-card document',
+    () async {
+      final id = await seedDoc('My ID', 2);
+      await repo.markAsIdCard(id);
 
-    await repo.exportProtectedPdf(id, 'secret');
+      await repo.exportProtectedPdf(id, 'secret');
 
-    expect(pdf.calls, hasLength(1));
-    expect(pdf.calls.single.idCardLayout, isTrue,
+      expect(pdf.calls, hasLength(1));
+      expect(
+        pdf.calls.single.idCardLayout,
+        isTrue,
         reason:
-            'build() must be called with idCardLayout=true for an ID-card document');
-  });
+            'build() must be called with idCardLayout=true for an ID-card document',
+      );
+    },
+  );
 
   test(
-      'exportProtectedPdf calls build with idCardLayout=false for a non-ID-card document',
-      () async {
-    final id = await seedDoc('Regular doc', 2);
-    // Deliberately NOT calling markAsIdCard.
+    'exportProtectedPdf calls build with idCardLayout=false for a non-ID-card document',
+    () async {
+      final id = await seedDoc('Regular doc', 2);
+      // Deliberately NOT calling markAsIdCard.
 
-    await repo.exportProtectedPdf(id, 'secret');
+      await repo.exportProtectedPdf(id, 'secret');
 
-    expect(pdf.calls, hasLength(1));
-    expect(pdf.calls.single.idCardLayout, isFalse,
+      expect(pdf.calls, hasLength(1));
+      expect(
+        pdf.calls.single.idCardLayout,
+        isFalse,
         reason:
-            'build() must be called with idCardLayout=false for a non-ID-card document');
-  });
+            'build() must be called with idCardLayout=false for a non-ID-card document',
+      );
+    },
+  );
 }

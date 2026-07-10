@@ -43,8 +43,11 @@ void main() {
     expect(after['Image Software'], isNull);
     expect(after['Image DateTime'], isNull);
     expect(after.keys.where((k) => k.startsWith('GPS')), isEmpty);
-    expect(after['Image Orientation'].toString(), 'Rotated 90 CW',
-        reason: 'Orientation must survive (kept losslessly)');
+    expect(
+      after['Image Orientation'].toString(),
+      'Rotated 90 CW',
+      reason: 'Orientation must survive (kept losslessly)',
+    );
   });
 
   test('is lossless — main image scan data is byte-identical', () {
@@ -55,12 +58,16 @@ void main() {
   });
 
   test('throws MetadataScrubException on non-JPEG input', () {
-    expect(() => scrubber.scrub(Uint8List.fromList([0, 1, 2, 3])),
-        throwsA(isA<MetadataScrubException>()));
+    expect(
+      () => scrubber.scrub(Uint8List.fromList([0, 1, 2, 3])),
+      throwsA(isA<MetadataScrubException>()),
+    );
   });
 
   test('throws MetadataScrubException on a truncated JPEG (dangling 0xFF)', () {
-    expect(() => scrubber.scrub(Uint8List.fromList([0xFF, 0xD8, 0xFF])),
-        throwsA(isA<MetadataScrubException>()));
+    expect(
+      () => scrubber.scrub(Uint8List.fromList([0xFF, 0xD8, 0xFF])),
+      throwsA(isA<MetadataScrubException>()),
+    );
   });
 }

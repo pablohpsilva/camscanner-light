@@ -84,15 +84,17 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
       body: _loading
           ? const Center(
               key: Key('pdf-preview-loading'),
-              child: CircularProgressIndicator())
+              child: CircularProgressIndicator(),
+            )
           : _error
-              ? const Center(
-                  key: Key('pdf-preview-error'),
-                  child: Text("Couldn't open the PDF."))
-              : PdfViewPinch(
-                  key: const Key('pdf-preview-view'),
-                  controller: _controller!,
-                ),
+          ? const Center(
+              key: Key('pdf-preview-error'),
+              child: Text("Couldn't open the PDF."),
+            )
+          : PdfViewPinch(
+              key: const Key('pdf-preview-view'),
+              controller: _controller!,
+            ),
     );
   }
 }

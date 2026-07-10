@@ -8,35 +8,42 @@ import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
 
 Widget _host(IdScanScreen screen) => MaterialApp(
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute<void>(builder: (_) => screen)),
-              child: const Text('open'),
-            ),
-          ),
+  home: Builder(
+    builder: (context) => Scaffold(
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => screen)),
+          child: const Text('open'),
+        ),
+      ),
+    ),
+  ),
+);
+
+ScanDependencies _deps(List<List<String>> perCall) => ScanDependencies(
+  createDocumentScanner: () => FakeSequentialDocumentScannerService(
+    perCall.map((c) => c.map(CapturedImage.new).toList()).toList(),
+  ),
+);
+
+void main() {
+  testWidgets('front then back saves a 2-page id-card document', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository();
+    await tester.pumpWidget(
+      _host(
+        IdScanScreen(
+          dependencies: _deps(const [
+            ['/nonexistent/front.jpg'],
+            ['/nonexistent/back.jpg'],
+          ]),
+          repository: repo,
         ),
       ),
     );
-
-ScanDependencies _deps(List<List<String>> perCall) => ScanDependencies(
-      createDocumentScanner: () => FakeSequentialDocumentScannerService(
-          perCall.map((c) => c.map(CapturedImage.new).toList()).toList()),
-    );
-
-void main() {
-  testWidgets('front then back saves a 2-page id-card document',
-      (tester) async {
-    final repo = FakeDocumentRepository();
-    await tester.pumpWidget(_host(IdScanScreen(
-      dependencies: _deps(const [
-        ['/nonexistent/front.jpg'],
-        ['/nonexistent/back.jpg'],
-      ]),
-      repository: repo,
-    )));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -47,10 +54,14 @@ void main() {
 
   testWidgets('cancel on front saves nothing', (tester) async {
     final repo = FakeDocumentRepository();
-    await tester.pumpWidget(_host(IdScanScreen(
-      dependencies: _deps(const [<String>[]]), // front cancelled
-      repository: repo,
-    )));
+    await tester.pumpWidget(
+      _host(
+        IdScanScreen(
+          dependencies: _deps(const [<String>[]]), // front cancelled
+          repository: repo,
+        ),
+      ),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(repo.createCalls, 0);
@@ -59,13 +70,17 @@ void main() {
 
   testWidgets('cancel on back saves nothing', (tester) async {
     final repo = FakeDocumentRepository();
-    await tester.pumpWidget(_host(IdScanScreen(
-      dependencies: _deps(const [
-        ['/nonexistent/front.jpg'],
-        <String>[], // back cancelled
-      ]),
-      repository: repo,
-    )));
+    await tester.pumpWidget(
+      _host(
+        IdScanScreen(
+          dependencies: _deps(const [
+            ['/nonexistent/front.jpg'],
+            <String>[], // back cancelled
+          ]),
+          repository: repo,
+        ),
+      ),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(repo.createCalls, 0);

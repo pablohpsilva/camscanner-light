@@ -20,19 +20,29 @@ class _Fake implements PageProcessor {
 
 final _bytes = Uint8List.fromList([1, 2, 3]);
 const _crop = CropCorners(
-  topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.1),
-  bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.9));
+  topLeft: Offset(0.1, 0.1),
+  topRight: Offset(0.9, 0.1),
+  bottomRight: Offset(0.9, 0.9),
+  bottomLeft: Offset(0.1, 0.9),
+);
 
 void main() {
-  test('none + fullFrame short-circuits: neither engine called, returns null', () async {
-    final primary = _Fake(Uint8List.fromList([9]));
-    final fallback = _Fake(Uint8List.fromList([8]));
-    final fp = FallbackPageProcessor(primary: primary, fallback: fallback);
-    final out = await fp.process(_bytes, CropCorners.fullFrame, EnhancerMode.none);
-    expect(out, isNull);
-    expect(primary.calls, 0);
-    expect(fallback.calls, 0);
-  });
+  test(
+    'none + fullFrame short-circuits: neither engine called, returns null',
+    () async {
+      final primary = _Fake(Uint8List.fromList([9]));
+      final fallback = _Fake(Uint8List.fromList([8]));
+      final fp = FallbackPageProcessor(primary: primary, fallback: fallback);
+      final out = await fp.process(
+        _bytes,
+        CropCorners.fullFrame,
+        EnhancerMode.none,
+      );
+      expect(out, isNull);
+      expect(primary.calls, 0);
+      expect(fallback.calls, 0);
+    },
+  );
 
   test('primary succeeds → fallback not called', () async {
     final primary = _Fake(Uint8List.fromList([9]));

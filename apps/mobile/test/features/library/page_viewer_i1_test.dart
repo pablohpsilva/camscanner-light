@@ -6,24 +6,33 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import '../../support/fake_library.dart';
 
 void main() {
-  Future<void> pushViewer(WidgetTester tester, FakeDocumentRepository repo,
-      FakeShareChannel share) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => Center(
-          child: ElevatedButton(
-            key: const Key('open'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => PageViewerScreen(
-                    documentId: 1, name: 'Doc', repository: repo, share: share),
+  Future<void> pushViewer(
+    WidgetTester tester,
+    FakeDocumentRepository repo,
+    FakeShareChannel share,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: ElevatedButton(
+              key: const Key('open'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PageViewerScreen(
+                    documentId: 1,
+                    name: 'Doc',
+                    repository: repo,
+                    share: share,
+                  ),
+                ),
               ),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.byKey(const Key('open')));
     await tester.pumpAndSettle();
   }
@@ -45,8 +54,9 @@ void main() {
     expect(find.text('Share as image'), findsOneWidget);
   });
 
-  testWidgets('sharing the current page exports it then shares the JPG',
-      (tester) async {
+  testWidgets('sharing the current page exports it then shares the JPG', (
+    tester,
+  ) async {
     final repo = twoPageRepo();
     final share = FakeShareChannel();
     await pushViewer(tester, repo, share);
@@ -62,8 +72,9 @@ void main() {
     expect(share.lastSubject, 'Doc');
   });
 
-  testWidgets('export failure shows a share error and does not share',
-      (tester) async {
+  testWidgets('export failure shows a share error and does not share', (
+    tester,
+  ) async {
     final repo = twoPageRepo(throwOnExportImage: true);
     final share = FakeShareChannel();
     await pushViewer(tester, repo, share);
@@ -77,8 +88,9 @@ void main() {
     expect(find.text("Couldn't share image"), findsOneWidget);
   });
 
-  testWidgets('a share failure (not export) shows the share error',
-      (tester) async {
+  testWidgets('a share failure (not export) shows the share error', (
+    tester,
+  ) async {
     final repo = twoPageRepo();
     final share = FakeShareChannel(throwOnShare: true);
     await pushViewer(tester, repo, share);

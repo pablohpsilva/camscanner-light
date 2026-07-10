@@ -19,8 +19,11 @@ void main() {
       PageImage(position: 1, imagePath: front),
       PageImage(position: 2, imagePath: back),
     ];
-    final bytes =
-        await const PdfBuilder().build(pages, compress: false, idCardLayout: true);
+    final bytes = await const PdfBuilder().build(
+      pages,
+      compress: false,
+      idCardLayout: true,
+    );
     final s = String.fromCharCodes(bytes);
     expect(s.startsWith('%PDF-'), isTrue);
     // exactly one /Page (not /Pages)
@@ -29,14 +32,17 @@ void main() {
     expect(RegExp(r'/Subtype\s*/Image').allMatches(s).length, 2);
   });
 
-  test('default layout (idCardLayout false) still one page per image', () async {
-    final f1 = await _writeJpg('a', 300, 190);
-    final f2 = await _writeJpg('b', 300, 190);
-    final bytes = await const PdfBuilder().build([
-      PageImage(position: 1, imagePath: f1),
-      PageImage(position: 2, imagePath: f2),
-    ], compress: false);
-    final s = String.fromCharCodes(bytes);
-    expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 2);
-  });
+  test(
+    'default layout (idCardLayout false) still one page per image',
+    () async {
+      final f1 = await _writeJpg('a', 300, 190);
+      final f2 = await _writeJpg('b', 300, 190);
+      final bytes = await const PdfBuilder().build([
+        PageImage(position: 1, imagePath: f1),
+        PageImage(position: 2, imagePath: f2),
+      ], compress: false);
+      final s = String.fromCharCodes(bytes);
+      expect(RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length, 2);
+    },
+  );
 }

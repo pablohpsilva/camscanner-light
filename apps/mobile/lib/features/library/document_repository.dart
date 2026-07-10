@@ -41,8 +41,10 @@ abstract interface class DocumentRepository {
 
   /// Generates a PDF of [documentId] to on-device storage and returns the file.
   /// Throws [DocumentExportException] on any failure (e.g. a missing page file).
-  Future<File> exportPdf(int documentId,
-      {ExportQuality quality = ExportQuality.original});
+  Future<File> exportPdf(
+    int documentId, {
+    ExportQuality quality = ExportQuality.original,
+  });
 
   /// Exports each document in [documentIds] as its own PDF (delegating to
   /// [exportPdf] per id), returning the temp files in list order. Throws
@@ -63,15 +65,20 @@ abstract interface class DocumentRepository {
   /// export derivatives never accumulate in the persistent, backed-up store), and
   /// returns the file. Nothing leaves the device. Throws [DocumentExportException]
   /// when the page row/file is missing or the scrub fails.
-  Future<File> exportPageAsImage(int documentId, int position,
-      {ExportQuality quality = ExportQuality.original});
+  Future<File> exportPageAsImage(
+    int documentId,
+    int position, {
+    ExportQuality quality = ExportQuality.original,
+  });
 
   /// Exports EVERY page of [documentId] as a standalone scrubbed JPG (delegating
   /// to [exportPageAsImage] per page), returning the files in page order.
   /// Nothing leaves the device. Throws [DocumentExportException] when the
   /// document has no pages or any page fails to export.
-  Future<List<File>> exportAllPagesAsImages(int documentId,
-      {ExportQuality quality = ExportQuality.original});
+  Future<List<File>> exportAllPagesAsImages(
+    int documentId, {
+    ExportQuality quality = ExportQuality.original,
+  });
 
   /// Builds ONE PDF containing every page of every document in [documentIds]
   /// (documents in list order; pages in position order) and returns it as a
@@ -91,7 +98,10 @@ abstract interface class DocumentRepository {
   /// [DocumentSaveException] when the page row does not exist. Rethrows
   /// [WarpException] or IO errors on warp/write failure (DB unchanged).
   Future<void> updatePageCorners(
-      int documentId, int position, CropCorners corners);
+    int documentId,
+    int position,
+    CropCorners corners,
+  );
 
   /// Appends a new page to [documentId] at position MAX(current)+1.
   /// Returns the 1-based position of the newly created page.

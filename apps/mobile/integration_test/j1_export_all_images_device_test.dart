@@ -15,8 +15,9 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('exportAllPagesAsImages writes every page as a JPG on device',
-      (tester) async {
+  testWidgets('exportAllPagesAsImages writes every page as a JPG on device', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('j1dev');
     final db = AppDatabase(NativeDatabase.memory());
     final store = DocumentFileStore(base);
@@ -30,15 +31,30 @@ void main() {
     );
 
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final jpeg = Uint8List.fromList(
-        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90));
+      img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+    );
     for (var pos = 1; pos <= 2; pos++) {
       final rel = 'documents/$id/page_$pos.jpg';
       await store.writeRelative(rel, jpeg);
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: id, position: pos, relativeImagePath: rel));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: pos,
+              relativeImagePath: rel,
+            ),
+          );
     }
 
     final files = await repo.exportAllPagesAsImages(id);

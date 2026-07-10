@@ -9,19 +9,30 @@ import 'package:mobile/features/library/native_page_processor.dart';
 Uint8List _cap(int w, int h) {
   final p = img.Image(width: w, height: h, numChannels: 3);
   img.fill(p, color: img.ColorRgb8(70, 70, 70));
-  img.fillRect(p, x1: (w * .08).round(), y1: (h * .10).round(),
-      x2: (w * .92).round(), y2: (h * .90).round(),
-      color: img.ColorRgb8(220, 218, 210));
+  img.fillRect(
+    p,
+    x1: (w * .08).round(),
+    y1: (h * .10).round(),
+    x2: (w * .92).round(),
+    y2: (h * .90).round(),
+    color: img.ColorRgb8(220, 218, 210),
+  );
   return Uint8List.fromList(img.encodeJpg(p, quality: 92));
 }
 
 const _straight = CropCorners(
-  topLeft: Offset(0.08, 0.10), topRight: Offset(0.92, 0.10),
-  bottomRight: Offset(0.92, 0.90), bottomLeft: Offset(0.08, 0.90));
+  topLeft: Offset(0.08, 0.10),
+  topRight: Offset(0.92, 0.10),
+  bottomRight: Offset(0.92, 0.90),
+  bottomLeft: Offset(0.08, 0.90),
+);
 const _bent = CropCorners(
-  topLeft: Offset(0.08, 0.10), topRight: Offset(0.92, 0.10),
-  bottomRight: Offset(0.92, 0.90), bottomLeft: Offset(0.08, 0.90),
-  topMidDev: Offset(0, -0.05));
+  topLeft: Offset(0.08, 0.10),
+  topRight: Offset(0.92, 0.10),
+  bottomRight: Offset(0.92, 0.90),
+  bottomLeft: Offset(0.08, 0.90),
+  topMidDev: Offset(0, -0.05),
+);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +56,10 @@ void main() {
 
   test('corrupt bytes → null (defers to fallback)', () async {
     final out = await p.process(
-        Uint8List.fromList([0xFF, 0xD8, 0x00, 0x01]), _straight, EnhancerMode.none);
+      Uint8List.fromList([0xFF, 0xD8, 0x00, 0x01]),
+      _straight,
+      EnhancerMode.none,
+    );
     expect(out, isNull);
   });
 }

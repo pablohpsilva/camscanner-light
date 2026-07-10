@@ -6,8 +6,9 @@ Widget _host(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
   group('shareExtraMenuItems', () {
-    testWidgets('includes Share link + Fax by default with prefixed keys',
-        (tester) async {
+    testWidgets('includes Share link + Fax by default with prefixed keys', (
+      tester,
+    ) async {
       final items = shareExtraMenuItems(showFax: true, keyPrefix: 'p');
       expect(items.length, 2);
       expect((items[0] as PopupMenuItem).value, kShareLinkValue);
@@ -26,10 +27,11 @@ void main() {
   group('ShareMenuButton', () {
     testWidgets('Share item invokes onShare', (tester) async {
       var shared = 0;
-      await tester.pumpWidget(_host(ShareMenuButton(
-        buttonKey: const Key('btn'),
-        onShare: () => shared++,
-      )));
+      await tester.pumpWidget(
+        _host(
+          ShareMenuButton(buttonKey: const Key('btn'), onShare: () => shared++),
+        ),
+      );
       await tester.tap(find.byKey(const Key('btn')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('share-menu-share')));
@@ -37,13 +39,15 @@ void main() {
       expect(shared, 1);
     });
 
-    testWidgets('Fax while unavailable shows SnackBar, does not call onShare',
-        (tester) async {
+    testWidgets('Fax while unavailable shows SnackBar, does not call onShare', (
+      tester,
+    ) async {
       var shared = 0;
-      await tester.pumpWidget(_host(ShareMenuButton(
-        buttonKey: const Key('btn'),
-        onShare: () => shared++,
-      )));
+      await tester.pumpWidget(
+        _host(
+          ShareMenuButton(buttonKey: const Key('btn'), onShare: () => shared++),
+        ),
+      );
       await tester.tap(find.byKey(const Key('btn')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('share-menu-fax')));
@@ -53,10 +57,9 @@ void main() {
     });
 
     testWidgets('Share link while unavailable shows SnackBar', (tester) async {
-      await tester.pumpWidget(_host(ShareMenuButton(
-        buttonKey: const Key('btn'),
-        onShare: () {},
-      )));
+      await tester.pumpWidget(
+        _host(ShareMenuButton(buttonKey: const Key('btn'), onShare: () {})),
+      );
       await tester.tap(find.byKey(const Key('btn')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('share-menu-share-link')));
@@ -65,11 +68,15 @@ void main() {
     });
 
     testWidgets('showFax:false hides the Fax item', (tester) async {
-      await tester.pumpWidget(_host(ShareMenuButton(
-        buttonKey: const Key('btn'),
-        onShare: () {},
-        showFax: false,
-      )));
+      await tester.pumpWidget(
+        _host(
+          ShareMenuButton(
+            buttonKey: const Key('btn'),
+            onShare: () {},
+            showFax: false,
+          ),
+        ),
+      );
       await tester.tap(find.byKey(const Key('btn')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('share-menu-fax')), findsNothing);

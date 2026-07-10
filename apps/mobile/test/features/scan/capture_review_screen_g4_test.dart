@@ -15,22 +15,25 @@ Future<void> _pump(
   required void Function(CropCorners, ImageEnhancer) onAccept,
   bool saving = false,
 }) async {
-  await tester.pumpWidget(MaterialApp(
-    home: CaptureReviewScreen(
-      image: const CapturedImage('/nonexistent/g4.jpg'),
-      onRetake: () {},
-      onAccept: onAccept,
-      saving: saving,
-      decodeImageSize: (_) async => const Size(100, 100),
-      readBytes: (_) async => Uint8List(0),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: CaptureReviewScreen(
+        image: const CapturedImage('/nonexistent/g4.jpg'),
+        onRetake: () {},
+        onAccept: onAccept,
+        saving: saving,
+        decodeImageSize: (_) async => const Size(100, 100),
+        readBytes: (_) async => Uint8List(0),
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('filter-picker-strip is present in the review screen',
-      (tester) async {
+  testWidgets('filter-picker-strip is present in the review screen', (
+    tester,
+  ) async {
     await _pump(tester, onAccept: (_, e) {});
     expect(find.byKey(const Key('filter-picker-strip')), findsOneWidget);
   });
@@ -44,19 +47,24 @@ void main() {
   });
 
   testWidgets(
-      'default mode is Auto — Accept without tile tap passes AutoEnhancer',
-      (tester) async {
-    ImageEnhancer? captured;
-    await _pump(tester, onAccept: (_, e) => captured = e);
+    'default mode is Auto — Accept without tile tap passes AutoEnhancer',
+    (tester) async {
+      ImageEnhancer? captured;
+      await _pump(tester, onAccept: (_, e) => captured = e);
 
-    await tester.tap(find.byKey(const Key('review-accept')));
+      await tester.tap(find.byKey(const Key('review-accept')));
 
-    expect(captured, isA<AutoEnhancer>(),
-        reason: 'Auto is the default — no tile tap needed');
-  });
+      expect(
+        captured,
+        isA<AutoEnhancer>(),
+        reason: 'Auto is the default — no tile tap needed',
+      );
+    },
+  );
 
-  testWidgets('tapping Original tile then Accept passes NoneEnhancer',
-      (tester) async {
+  testWidgets('tapping Original tile then Accept passes NoneEnhancer', (
+    tester,
+  ) async {
     ImageEnhancer? captured;
     await _pump(tester, onAccept: (_, e) => captured = e);
 
@@ -67,8 +75,9 @@ void main() {
     expect(captured, isA<NoneEnhancer>());
   });
 
-  testWidgets('tapping Grayscale tile then Accept passes GrayscaleEnhancer',
-      (tester) async {
+  testWidgets('tapping Grayscale tile then Accept passes GrayscaleEnhancer', (
+    tester,
+  ) async {
     ImageEnhancer? captured;
     await _pump(tester, onAccept: (_, e) => captured = e);
 
@@ -84,8 +93,9 @@ void main() {
     expect(find.byKey(const Key('filter-tile-bw')), findsNothing);
   });
 
-  testWidgets('tapping Color tile then Accept passes ColorEnhancer',
-      (tester) async {
+  testWidgets('tapping Color tile then Accept passes ColorEnhancer', (
+    tester,
+  ) async {
     ImageEnhancer? captured;
     await _pump(tester, onAccept: (_, e) => captured = e);
 
@@ -96,8 +106,9 @@ void main() {
     expect(captured, isA<ColorEnhancer>());
   });
 
-  testWidgets('tapping Auto tile then Accept passes AutoEnhancer',
-      (tester) async {
+  testWidgets('tapping Auto tile then Accept passes AutoEnhancer', (
+    tester,
+  ) async {
     ImageEnhancer? captured;
     await _pump(tester, onAccept: (_, e) => captured = e);
 
@@ -113,22 +124,25 @@ void main() {
   testWidgets('saving: true shows spinner and disables Accept', (tester) async {
     // Use pump() not pumpAndSettle(): CircularProgressIndicator is indeterminate
     // and its animation controller never stops, so pumpAndSettle() always times out.
-    await tester.pumpWidget(MaterialApp(
-      home: CaptureReviewScreen(
-        image: const CapturedImage('/nonexistent/g4.jpg'),
-        onRetake: () {},
-        onAccept: (_, e) {},
-        saving: true,
-        decodeImageSize: (_) async => const Size(100, 100),
-        readBytes: (_) async => Uint8List(0),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CaptureReviewScreen(
+          image: const CapturedImage('/nonexistent/g4.jpg'),
+          onRetake: () {},
+          onAccept: (_, e) {},
+          saving: true,
+          decodeImageSize: (_) async => const Size(100, 100),
+          readBytes: (_) async => Uint8List(0),
+        ),
       ),
-    ));
+    );
     await tester.pump(); // schedule async callbacks
     await tester.pump(); // apply state updates
 
     expect(find.byKey(const Key('review-saving')), findsOneWidget);
-    final btn = tester
-        .widget<FilledButton>(find.byKey(const Key('review-accept')));
+    final btn = tester.widget<FilledButton>(
+      find.byKey(const Key('review-accept')),
+    );
     expect(btn.onPressed, isNull);
   });
 

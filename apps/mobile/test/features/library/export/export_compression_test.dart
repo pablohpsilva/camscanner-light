@@ -32,8 +32,11 @@ Future<(DriftDocumentRepository, int)> _seed({int pages = 1}) async {
     warper: const PerspectiveWarper(),
   );
   final now = DateTime.now();
-  final id = await db.into(db.documents).insert(
-      DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+  final id = await db
+      .into(db.documents)
+      .insert(
+        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now),
+      );
   final image = img.Image(width: 3000, height: 2000);
   for (var y = 0; y < 2000; y++) {
     for (var x = 0; x < 3000; x++) {
@@ -44,8 +47,15 @@ Future<(DriftDocumentRepository, int)> _seed({int pages = 1}) async {
   for (var pos = 1; pos <= pages; pos++) {
     final rel = 'documents/$id/page_$pos.jpg';
     await store.writeRelative(rel, jpeg);
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id, position: pos, relativeImagePath: rel));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: pos,
+            relativeImagePath: rel,
+          ),
+        );
   }
   return (repo, id);
 }
@@ -54,17 +64,21 @@ void main() {
   test('exportPdf at low is smaller than at original', () async {
     final (repo, id) = await _seed();
     final original = await (await repo.exportPdf(id)).readAsBytes();
-    final low = await (await repo.exportPdf(id, quality: ExportQuality.low))
-        .readAsBytes();
+    final low = await (await repo.exportPdf(
+      id,
+      quality: ExportQuality.low,
+    )).readAsBytes();
     expect(low.length, lessThan(original.length));
   });
 
   test('exportPageAsImage at low is smaller than at original', () async {
     final (repo, id) = await _seed();
     final original = await (await repo.exportPageAsImage(id, 1)).readAsBytes();
-    final low = await (await repo.exportPageAsImage(id, 1,
-            quality: ExportQuality.low))
-        .readAsBytes();
+    final low = await (await repo.exportPageAsImage(
+      id,
+      1,
+      quality: ExportQuality.low,
+    )).readAsBytes();
     expect(low.length, lessThan(original.length));
   });
 
@@ -74,16 +88,21 @@ void main() {
     // the per-page export files (both calls write to the same export paths).
     final originalFiles = await repo.exportAllPagesAsImages(id);
     final originalSizes = [
-      for (final f in originalFiles) (await f.readAsBytes()).length
+      for (final f in originalFiles) (await f.readAsBytes()).length,
     ];
-    final lowFiles =
-        await repo.exportAllPagesAsImages(id, quality: ExportQuality.low);
+    final lowFiles = await repo.exportAllPagesAsImages(
+      id,
+      quality: ExportQuality.low,
+    );
     final lowSizes = [for (final f in lowFiles) (await f.readAsBytes()).length];
 
     expect(lowFiles.length, 2);
     for (var i = 0; i < 2; i++) {
-      expect(lowSizes[i], lessThan(originalSizes[i]),
-          reason: 'page ${i + 1} should be smaller at low quality');
+      expect(
+        lowSizes[i],
+        lessThan(originalSizes[i]),
+        reason: 'page ${i + 1} should be smaller at low quality',
+      );
     }
   });
 }

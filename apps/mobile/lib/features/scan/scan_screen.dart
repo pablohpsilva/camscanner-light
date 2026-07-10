@@ -16,7 +16,7 @@ class ScanScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentRepository repository;
   final Future<bool> Function(CapturedImage, CropCorners, ImageEnhancer)?
-      onCapture;
+  onCapture;
 
   const ScanScreen({
     super.key,
@@ -62,13 +62,15 @@ class _ScanScreenState extends State<ScanScreen> {
     }
     if (retake) {
       final messenger = ScaffoldMessenger.of(context);
-      final success =
-          await widget.onCapture!(pages.first, CropCorners.fullFrame, enhancer);
+      final success = await widget.onCapture!(
+        pages.first,
+        CropCorners.fullFrame,
+        enhancer,
+      );
       if (!mounted) return;
       if (!success) {
         messenger.showSnackBar(
-          const SnackBar(
-              content: Text("Couldn't replace page. Try again.")),
+          const SnackBar(content: Text("Couldn't replace page. Try again.")),
         );
       }
       navigator.pop();
@@ -113,10 +115,15 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Future<void> _saveAll(
-      List<CapturedImage> pages, ImageEnhancer enhancer) async {
+    List<CapturedImage> pages,
+    ImageEnhancer enhancer,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final doc = await _saveController.save(pages.first,
-        corners: CropCorners.fullFrame, enhancer: enhancer);
+    final doc = await _saveController.save(
+      pages.first,
+      corners: CropCorners.fullFrame,
+      enhancer: enhancer,
+    );
     if (!mounted) return;
     if (doc == null) {
       setState(() => _saveFailed = true);
@@ -127,8 +134,12 @@ class _ScanScreenState extends State<ScanScreen> {
     }
     setState(() => _pageCount = 1);
     for (var i = 1; i < pages.length; i++) {
-      final pos = await _saveController.addPage(pages[i], doc.id,
-          corners: CropCorners.fullFrame, enhancer: enhancer);
+      final pos = await _saveController.addPage(
+        pages[i],
+        doc.id,
+        corners: CropCorners.fullFrame,
+        enhancer: enhancer,
+      );
       if (!mounted) return;
       if (pos != null) setState(() => _pageCount = pos);
     }

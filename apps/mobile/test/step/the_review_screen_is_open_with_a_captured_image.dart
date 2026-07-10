@@ -14,20 +14,23 @@ FakeDocumentRepository g1Repo = FakeDocumentRepository();
 
 /// Usage: the review screen is open with a captured image
 Future<void> theReviewScreenIsOpenWithACapturedImage(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   g1Repo = FakeDocumentRepository();
-  await tester.pumpWidget(MaterialApp(
-    home: CaptureReviewScreen(
-      image: const CapturedImage('/nonexistent/g1bdd.jpg'),
-      saving: false,
-      onRetake: () {},
-      // Record the enhancer the review screen passes to the save pipeline.
-      onAccept: (CropCorners corners, ImageEnhancer enhancer) {
-        g1Repo.lastSavedEnhancer = enhancer;
-      },
-      decodeImageSize: (_) async => const Size(100, 100),
-      readBytes: (_) async => Uint8List(0),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: CaptureReviewScreen(
+        image: const CapturedImage('/nonexistent/g1bdd.jpg'),
+        saving: false,
+        onRetake: () {},
+        // Record the enhancer the review screen passes to the save pipeline.
+        onAccept: (CropCorners corners, ImageEnhancer enhancer) {
+          g1Repo.lastSavedEnhancer = enhancer;
+        },
+        decodeImageSize: (_) async => const Size(100, 100),
+        readBytes: (_) async => Uint8List(0),
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }

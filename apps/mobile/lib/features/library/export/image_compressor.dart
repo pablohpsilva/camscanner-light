@@ -27,7 +27,8 @@ class ImageLibraryCompressor implements ImageCompressor {
     try {
       decoded = img.decodeImage(jpegBytes);
     } catch (_) {
-      decoded = null; // the image pkg can THROW on garbage, not just return null
+      decoded =
+          null; // the image pkg can THROW on garbage, not just return null
     }
     if (decoded == null) return jpegBytes; // fallback: never fail an export
 
@@ -41,14 +42,21 @@ class ImageLibraryCompressor implements ImageCompressor {
         // Pass only the long edge; the package derives the other side (aspect
         // preserved). Never upscale (guarded by longEdge > cap above).
         image = image.width >= image.height
-            ? img.copyResize(image,
-                width: cap, interpolation: img.Interpolation.average)
-            : img.copyResize(image,
-                height: cap, interpolation: img.Interpolation.average);
+            ? img.copyResize(
+                image,
+                width: cap,
+                interpolation: img.Interpolation.average,
+              )
+            : img.copyResize(
+                image,
+                height: cap,
+                interpolation: img.Interpolation.average,
+              );
       }
     }
 
     return Uint8List.fromList(
-        img.encodeJpg(image, quality: quality.jpegQuality!));
+      img.encodeJpg(image, quality: quality.jpegQuality!),
+    );
   }
 }

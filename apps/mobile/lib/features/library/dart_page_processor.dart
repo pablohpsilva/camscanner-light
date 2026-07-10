@@ -23,7 +23,10 @@ class DartPageProcessor implements PageProcessor {
 
   @override
   Future<Uint8List?> process(
-      Uint8List bytes, CropCorners corners, EnhancerMode mode) async {
+    Uint8List bytes,
+    CropCorners corners,
+    EnhancerMode mode,
+  ) async {
     final isFullFrame = corners == CropCorners.fullFrame;
     if (isFullFrame) {
       if (mode == EnhancerMode.none) return null; // nothing to do
@@ -65,9 +68,9 @@ class DartPageProcessor implements PageProcessor {
   }
 
   ImageEnhancer _enhancerFor(EnhancerMode mode) => switch (mode) {
-        EnhancerMode.auto => const AutoEnhancer(),
-        EnhancerMode.color => const ColorEnhancer(),
-        EnhancerMode.grayscale => const GrayscaleEnhancer(),
-        EnhancerMode.none => const NoneEnhancer(),
-      };
+    EnhancerMode.auto => const AutoEnhancer(),
+    EnhancerMode.color => const ColorEnhancer(),
+    EnhancerMode.grayscale => const GrayscaleEnhancer(),
+    EnhancerMode.none => const NoneEnhancer(),
+  };
 }

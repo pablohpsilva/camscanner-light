@@ -10,18 +10,20 @@ import 'package:mobile/features/scan/opencv_edge_detector.dart';
 /// real-OpenCV tests, which need libdartcv and can wedge the native isolate).
 void main() {
   group('OpenCvEdgeDetector timeout guard', () {
-    test('returns null (never hangs) when the pipeline exceeds the timeout',
-        () async {
-      // A runner that never completes — simulates a wedged native pipeline.
-      final detector = OpenCvEdgeDetector.withRunner(
-        (_) => Completer<List<double>?>().future,
-        timeout: const Duration(milliseconds: 50),
-      );
+    test(
+      'returns null (never hangs) when the pipeline exceeds the timeout',
+      () async {
+        // A runner that never completes — simulates a wedged native pipeline.
+        final detector = OpenCvEdgeDetector.withRunner(
+          (_) => Completer<List<double>?>().future,
+          timeout: const Duration(milliseconds: 50),
+        );
 
-      final result = await detector.detect(Uint8List(0));
+        final result = await detector.detect(Uint8List(0));
 
-      expect(result, isNull);
-    });
+        expect(result, isNull);
+      },
+    );
 
     test('maps a completed pipeline result to a DetectionResult', () async {
       final detector = OpenCvEdgeDetector.withRunner(

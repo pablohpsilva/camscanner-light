@@ -47,13 +47,31 @@ void main() {
 
   test('exports an encrypted PDF for a document', () async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final rel = 'documents/$id/page_1.jpg';
-    await store.writeRelative(rel,
-        Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 8), quality: 90)));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id, position: 1, relativeImagePath: rel));
+    await store.writeRelative(
+      rel,
+      Uint8List.fromList(
+        img.encodeJpg(img.Image(width: 8, height: 8), quality: 90),
+      ),
+    );
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+          ),
+        );
 
     final file = await repo.exportProtectedPdf(id, 'secret');
     final bytes = await file.readAsBytes();
@@ -63,9 +81,18 @@ void main() {
 
   test('throws when the document has no pages', () async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Empty', createdAt: now, modifiedAt: now));
-    await expectLater(repo.exportProtectedPdf(id, 'x'),
-        throwsA(isA<DocumentExportException>()));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Empty',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
+    await expectLater(
+      repo.exportProtectedPdf(id, 'x'),
+      throwsA(isA<DocumentExportException>()),
+    );
   });
 }

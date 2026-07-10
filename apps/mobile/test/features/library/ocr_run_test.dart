@@ -41,14 +41,14 @@ void main() {
   });
 
   DriftDocumentRepository repo({OcrEngine? ocr}) => DriftDocumentRepository(
-        db: db,
-        scrubber: const JpegExifScrubber(),
-        fileStore: DocumentFileStore(base),
-        clock: clock,
-        pdfBuilder: const PdfBuilder(),
-        warper: FakeImageWarper(),
-        ocrEngine: ocr ?? const NoOpOcrEngine(),
-      );
+    db: db,
+    scrubber: const JpegExifScrubber(),
+    fileStore: DocumentFileStore(base),
+    clock: clock,
+    pdfBuilder: const PdfBuilder(),
+    warper: FakeImageWarper(),
+    ocrEngine: ocr ?? const NoOpOcrEngine(),
+  );
 
   Uint8List fixture(String name) =>
       File('test/fixtures/$name').readAsBytesSync();
@@ -57,8 +57,15 @@ void main() {
   Future<int> seedDoc({required String image, String? flat}) async {
     final now = clock();
     final store = DocumentFileStore(base);
-    final docId = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: 'Doc', createdAt: now, modifiedAt: now));
+    final docId = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final rel = 'documents/$docId/page_1.jpg';
     await store.writeRelative(rel, fixture(image));
     String? flatRel;
@@ -66,9 +73,16 @@ void main() {
       flatRel = 'documents/$docId/page_1_flat.jpg';
       await store.writeRelative(flatRel, fixture(flat));
     }
-    await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: docId, position: 1, relativeImagePath: rel,
-          flatRelativePath: Value(flatRel)));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: docId,
+            position: 1,
+            relativeImagePath: rel,
+            flatRelativePath: Value(flatRel),
+          ),
+        );
     return docId;
   }
 
@@ -81,20 +95,24 @@ void main() {
     expect(OcrResult.decodeBoxes(row.ocrBoxes).length, 2);
   });
 
-  test('runOcr with NoOpOcrEngine caches empty text (ran, found nothing)',
-      () async {
-    final docId = await seedDoc(image: 'exif_sample.jpg');
-    await repo().runOcr(docId, 1);
+  test(
+    'runOcr with NoOpOcrEngine caches empty text (ran, found nothing)',
+    () async {
+      final docId = await seedDoc(image: 'exif_sample.jpg');
+      await repo().runOcr(docId, 1);
 
-    final row = (await db.select(db.pages).get()).single;
-    expect(row.ocrText, ''); // empty, NOT null
-    expect(row.ocrBoxes, '[]');
-  });
+      final row = (await db.select(db.pages).get()).single;
+      expect(row.ocrText, ''); // empty, NOT null
+      expect(row.ocrBoxes, '[]');
+    },
+  );
 
   test('runOcr on a missing page throws DocumentSaveException', () async {
     final docId = await seedDoc(image: 'exif_sample.jpg');
-    await expectLater(repo().runOcr(docId, 99),
-        throwsA(isA<DocumentSaveException>()));
+    await expectLater(
+      repo().runOcr(docId, 99),
+      throwsA(isA<DocumentSaveException>()),
+    );
   });
 
   test('getDocumentPages exposes ocrText after runOcr', () async {
@@ -105,11 +123,16 @@ void main() {
   });
 
   test('runOcr reads the FLAT image when present', () async {
-    final docId =
-        await seedDoc(image: 'exif_sample.jpg', flat: 'landscape_exif6.jpg');
+    final docId = await seedDoc(
+      image: 'exif_sample.jpg',
+      flat: 'landscape_exif6.jpg',
+    );
     final rec = _RecordingOcrEngine();
     await repo(ocr: rec).runOcr(docId, 1);
-    expect(rec.received, fixture('landscape_exif6.jpg'),
-        reason: 'runOcr recognizes the flat derivative, not the original');
+    expect(
+      rec.received,
+      fixture('landscape_exif6.jpg'),
+      reason: 'runOcr recognizes the flat derivative, not the original',
+    );
   });
 }

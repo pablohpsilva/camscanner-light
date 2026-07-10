@@ -10,13 +10,21 @@ void main() {
     final db = NativeDatabase.memory();
     await db.ensureOpen(_NoOpUser());
     await db.runCustom(
-        "CREATE VIRTUAL TABLE t USING fts5(x, tokenize = 'trigram')", const []);
-    await db.runCustom("INSERT INTO t(rowid, x) VALUES (1, 'rescanned page')",
-        const []);
-    final rows =
-        await db.runSelect("SELECT rowid FROM t WHERE t MATCH ?", ['scan']);
-    expect(rows, hasLength(1),
-        reason: 'trigram MATCH must find the mid-word substring "scan"');
+      "CREATE VIRTUAL TABLE t USING fts5(x, tokenize = 'trigram')",
+      const [],
+    );
+    await db.runCustom(
+      "INSERT INTO t(rowid, x) VALUES (1, 'rescanned page')",
+      const [],
+    );
+    final rows = await db.runSelect("SELECT rowid FROM t WHERE t MATCH ?", [
+      'scan',
+    ]);
+    expect(
+      rows,
+      hasLength(1),
+      reason: 'trigram MATCH must find the mid-word substring "scan"',
+    );
     await db.close();
   });
 }

@@ -16,8 +16,9 @@ import 'package:mobile/features/library/pdf/pdf_builder.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('exportPdf at low is smaller than at original on device',
-      (tester) async {
+  testWidgets('exportPdf at low is smaller than at original on device', (
+    tester,
+  ) async {
     final base = await Directory.systemTemp.createTemp('q1dev');
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
@@ -35,8 +36,15 @@ void main() {
     );
 
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: 'Doc', createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: 'Doc',
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     final image = img.Image(width: 3000, height: 2000);
     for (var y = 0; y < 2000; y++) {
       for (var x = 0; x < 3000; x++) {
@@ -45,13 +53,24 @@ void main() {
     }
     final rel = 'documents/$id/page_1.jpg';
     await store.writeRelative(
-        rel, Uint8List.fromList(img.encodeJpg(image, quality: 95)));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id, position: 1, relativeImagePath: rel));
+      rel,
+      Uint8List.fromList(img.encodeJpg(image, quality: 95)),
+    );
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+          ),
+        );
 
     final original = await (await repo.exportPdf(id)).readAsBytes();
-    final low = await (await repo.exportPdf(id, quality: ExportQuality.low))
-        .readAsBytes();
+    final low = await (await repo.exportPdf(
+      id,
+      quality: ExportQuality.low,
+    )).readAsBytes();
     expect(low.length, lessThan(original.length));
   });
 }

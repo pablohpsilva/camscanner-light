@@ -35,15 +35,26 @@ void main() {
   // Seeds a document with [pageCount] pages; the first page carries [ocrText].
   Future<int> seedDoc(String name, {String? ocrText, int pageCount = 1}) async {
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
-        DocumentsCompanion.insert(name: name, createdAt: now, modifiedAt: now));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: name,
+            createdAt: now,
+            modifiedAt: now,
+          ),
+        );
     for (var pos = 1; pos <= pageCount; pos++) {
-      await db.into(db.pages).insert(PagesCompanion.insert(
-            documentId: id,
-            position: pos,
-            relativeImagePath: 'documents/$id/page_$pos.jpg',
-            ocrText: Value(pos == 1 ? ocrText : null),
-          ));
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: pos,
+              relativeImagePath: 'documents/$id/page_$pos.jpg',
+              ocrText: Value(pos == 1 ? ocrText : null),
+            ),
+          );
     }
     return id;
   }
@@ -65,8 +76,9 @@ void main() {
   test('a document with two matching pages appears once', () async {
     final id = await seedDoc('Doc', pageCount: 2);
     // give BOTH pages the query text
-    await (db.update(db.pages)..where((t) => t.documentId.equals(id)))
-        .write(const PagesCompanion(ocrText: Value('SHARED KEYWORD')));
+    await (db.update(db.pages)..where((t) => t.documentId.equals(id))).write(
+      const PagesCompanion(ocrText: Value('SHARED KEYWORD')),
+    );
     final results = await repo.searchDocuments('keyword');
     expect(results.length, 1);
     expect(results.single.pageCount, 2); // counts ALL pages, not just matches
@@ -77,8 +89,10 @@ void main() {
     await seedDoc('B');
     final all = await repo.listDocumentSummaries();
     final blank = await repo.searchDocuments('   ');
-    expect(blank.map((s) => s.document.id).toSet(),
-        all.map((s) => s.document.id).toSet());
+    expect(
+      blank.map((s) => s.document.id).toSet(),
+      all.map((s) => s.document.id).toSet(),
+    );
   });
 
   test('a non-matching query returns empty', () async {

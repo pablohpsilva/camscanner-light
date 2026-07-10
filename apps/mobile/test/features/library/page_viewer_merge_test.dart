@@ -8,20 +8,24 @@ import '../../support/fake_library.dart';
 
 void main() {
   Document makeDoc(int id, String name) => Document(
-      id: id,
-      name: name,
-      createdAt: DateTime.utc(2026, 7, 1),
-      modifiedAt: DateTime.utc(2026, 7, 1));
+    id: id,
+    name: name,
+    createdAt: DateTime.utc(2026, 7, 1),
+    modifiedAt: DateTime.utc(2026, 7, 1),
+  );
 
-  testWidgets('Merge lists other documents and merges the chosen one',
-      (tester) async {
+  testWidgets('Merge lists other documents and merges the chosen one', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository(
       documents: [makeDoc(1, 'Alpha'), makeDoc(2, 'Beta')],
       pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
     );
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(documentId: 1, name: 'Alpha', repository: repo),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PageViewerScreen(documentId: 1, name: 'Alpha', repository: repo),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
@@ -55,22 +59,26 @@ void main() {
     expect(repo.lastMergeSource, 2);
   });
 
-  testWidgets('Merge shows an empty message when there are no other documents',
-      (tester) async {
-    final repo = FakeDocumentRepository(
-      documents: [makeDoc(1, 'Only')],
-      pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
-    );
-    await tester.pumpWidget(MaterialApp(
-      home: PageViewerScreen(documentId: 1, name: 'Only', repository: repo),
-    ));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'Merge shows an empty message when there are no other documents',
+    (tester) async {
+      final repo = FakeDocumentRepository(
+        documents: [makeDoc(1, 'Only')],
+        pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PageViewerScreen(documentId: 1, name: 'Only', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('page-viewer-merge')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('page-viewer-merge')));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('merge-picker-empty')), findsOneWidget);
-  });
+      expect(find.byKey(const Key('merge-picker-empty')), findsOneWidget);
+    },
+  );
 }

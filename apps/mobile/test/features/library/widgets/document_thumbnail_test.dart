@@ -4,11 +4,14 @@ import 'package:mobile/features/library/widgets/document_thumbnail.dart';
 
 void main() {
   Future<void> pump(WidgetTester tester, String? path) => tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: DocumentThumbnail(path: path))),
-      );
+    MaterialApp(
+      home: Scaffold(body: DocumentThumbnail(path: path)),
+    ),
+  );
 
-  testWidgets('null path renders the placeholder icon and no Image',
-      (tester) async {
+  testWidgets('null path renders the placeholder icon and no Image', (
+    tester,
+  ) async {
     await pump(tester, null);
     expect(find.byIcon(Icons.description_outlined), findsOneWidget);
     expect(find.byType(Image), findsNothing);
@@ -22,8 +25,9 @@ void main() {
   // errorBuilder); the missing-file→placeholder *rendering* is a Flutter
   // contract, verified on-device (REAL_DEVICE lane). cacheWidth wraps the
   // FileImage in a ResizeImage.
-  testWidgets('a non-null path builds a downsampled Image with errorBuilder',
-      (tester) async {
+  testWidgets('a non-null path builds a downsampled Image with errorBuilder', (
+    tester,
+  ) async {
     await pump(tester, '/nonexistent/missing-thumb.jpg');
     await tester.pump(); // single pump; no settle (and none needed)
     final img = tester.widget<Image>(find.byType(Image));

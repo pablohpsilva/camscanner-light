@@ -3,9 +3,10 @@ import 'package:mobile/features/library/ocr/ocr_result.dart';
 
 void main() {
   test('boxes round-trip through encode/decode', () {
-    const r = OcrResult(text: 'HI', words: [
-      OcrWordBox(text: 'HI', left: .1, top: .2, right: .3, bottom: .4),
-    ]);
+    const r = OcrResult(
+      text: 'HI',
+      words: [OcrWordBox(text: 'HI', left: .1, top: .2, right: .3, bottom: .4)],
+    );
     final decoded = OcrResult.decodeBoxes(r.encodeBoxes());
     expect(decoded, r.words);
   });

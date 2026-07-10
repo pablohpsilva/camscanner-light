@@ -62,7 +62,15 @@ class JpegExifScrubber implements ImageMetadataScrubber {
       (orientation >> 8) & 0xFF, orientation & 0xFF, 0x00, 0x00, // value
       0x00, 0x00, 0x00, 0x00, // next IFD = 0
     ];
-    final payload = <int>[0x45, 0x78, 0x69, 0x66, 0x00, 0x00, ...tiff]; // 'Exif\0\0'
+    final payload = <int>[
+      0x45,
+      0x78,
+      0x69,
+      0x66,
+      0x00,
+      0x00,
+      ...tiff,
+    ]; // 'Exif\0\0'
     final len = payload.length + 2;
     return <int>[0xFF, 0xE1, (len >> 8) & 0xFF, len & 0xFF, ...payload];
   }
@@ -80,8 +88,10 @@ class JpegExifScrubber implements ImageMetadataScrubber {
       if (segEnd > b.length) return 1;
       if (marker == 0xE1 &&
           len >= 8 &&
-          b[i + 4] == 0x45 && b[i + 5] == 0x78 &&
-          b[i + 6] == 0x69 && b[i + 7] == 0x66) {
+          b[i + 4] == 0x45 &&
+          b[i + 5] == 0x78 &&
+          b[i + 6] == 0x69 &&
+          b[i + 7] == 0x66) {
         return _orientationFromTiff(b, i + 4 + 6, segEnd) ?? 1;
       }
       i = segEnd;

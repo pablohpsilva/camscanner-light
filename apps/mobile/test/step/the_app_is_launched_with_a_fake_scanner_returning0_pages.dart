@@ -8,7 +8,8 @@ import 'the_app_is_launched_with_a_fake_scanner_returning2_pages.dart';
 
 /// Usage: the app is launched with a fake scanner returning 0 pages
 Future<void> theAppIsLaunchedWithAFakeScannerReturning0Pages(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   scanPlatformRepo = FakeDocumentRepository();
   app.runCamScannerApp(
     scanDependencies: ScanDependencies(

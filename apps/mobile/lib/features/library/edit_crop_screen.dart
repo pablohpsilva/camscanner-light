@@ -17,7 +17,8 @@ Future<Size> _resolveImageSize(String path) {
     (info, _) {
       if (!completer.isCompleted) {
         completer.complete(
-            Size(info.image.width.toDouble(), info.image.height.toDouble()));
+          Size(info.image.width.toDouble(), info.image.height.toDouble()),
+        );
       }
       stream.removeListener(listener);
     },
@@ -61,21 +62,25 @@ class _EditCropScreenState extends State<EditCropScreen> {
   void initState() {
     super.initState();
     _corners = widget.initialCorners;
-    widget.decodeImageSize(widget.imagePath).then((size) {
-      if (!mounted) return;
-      setState(() => _imageSize = size);
-    }).catchError((_) {/* leave _imageSize null — overlay skipped, image still shown */});
+    widget
+        .decodeImageSize(widget.imagePath)
+        .then((size) {
+          if (!mounted) return;
+          setState(() => _imageSize = size);
+        })
+        .catchError((_) {
+          /* leave _imageSize null — overlay skipped, image still shown */
+        });
   }
 
   Widget _imageWidget() => Image.file(
-        File(widget.imagePath),
-        key: const Key('edit-crop-image'),
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => const Center(
-          child: Icon(Icons.broken_image_outlined,
-              color: Colors.white54, size: 64),
-        ),
-      );
+    File(widget.imagePath),
+    key: const Key('edit-crop-image'),
+    fit: BoxFit.contain,
+    errorBuilder: (_, _, _) => const Center(
+      child: Icon(Icons.broken_image_outlined, color: Colors.white54, size: 64),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {

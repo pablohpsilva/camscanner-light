@@ -4,12 +4,15 @@ class FeedbackConfig {
   final String workerUrl;
   final String turnstileSiteKey;
 
-  const FeedbackConfig({required this.workerUrl, required this.turnstileSiteKey});
+  const FeedbackConfig({
+    required this.workerUrl,
+    required this.turnstileSiteKey,
+  });
 
   factory FeedbackConfig.fromEnvironment() => const FeedbackConfig(
-        workerUrl: String.fromEnvironment('FEEDBACK_WORKER_URL'),
-        turnstileSiteKey: String.fromEnvironment('TURNSTILE_SITE_KEY'),
-      );
+    workerUrl: String.fromEnvironment('FEEDBACK_WORKER_URL'),
+    turnstileSiteKey: String.fromEnvironment('TURNSTILE_SITE_KEY'),
+  );
 
   bool get isConfigured => workerUrl.isNotEmpty && turnstileSiteKey.isNotEmpty;
 }

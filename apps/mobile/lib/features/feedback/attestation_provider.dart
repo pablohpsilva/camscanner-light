@@ -14,11 +14,11 @@ class Attestation {
   });
 
   Map<String, dynamic> toJson() => {
-        'platform': platform,
-        'token': token,
-        'challenge': challenge,
-        if (keyId != null) 'keyId': keyId,
-      };
+    'platform': platform,
+    'token': token,
+    'challenge': challenge,
+    if (keyId != null) 'keyId': keyId,
+  };
 }
 
 abstract class AttestationProvider {
@@ -35,7 +35,9 @@ class PlatformAttestationProvider implements AttestationProvider {
   @override
   Future<Attestation?> attest(String challenge) async {
     try {
-      final res = await _channel.invokeMapMethod<String, dynamic>('attest', {'challenge': challenge});
+      final res = await _channel.invokeMapMethod<String, dynamic>('attest', {
+        'challenge': challenge,
+      });
       if (res == null || res['token'] == null) return null;
       return Attestation(
         platform: Platform.isIOS ? 'ios' : 'android',

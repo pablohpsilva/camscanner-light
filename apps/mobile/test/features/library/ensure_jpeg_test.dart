@@ -19,9 +19,11 @@ void main() {
     expect(identical(out, jpg), isTrue);
   });
 
-  test('non-image bytes are returned unchanged (scrubber fails closed later)',
-      () {
-    final garbage = Uint8List.fromList([1, 2, 3, 4]);
-    expect(ensureJpegBytes(garbage), same(garbage));
-  });
+  test(
+    'non-image bytes are returned unchanged (scrubber fails closed later)',
+    () {
+      final garbage = Uint8List.fromList([1, 2, 3, 4]);
+      expect(ensureJpegBytes(garbage), same(garbage));
+    },
+  );
 }

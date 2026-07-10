@@ -16,7 +16,10 @@ class FallbackPageProcessor implements PageProcessor {
 
   @override
   Future<Uint8List?> process(
-      Uint8List bytes, CropCorners corners, EnhancerMode mode) async {
+    Uint8List bytes,
+    CropCorners corners,
+    EnhancerMode mode,
+  ) async {
     if (mode == EnhancerMode.none && corners == CropCorners.fullFrame) {
       return null; // nothing to do — store scrubbed bytes verbatim
     }

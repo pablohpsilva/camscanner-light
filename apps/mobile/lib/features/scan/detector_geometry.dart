@@ -66,8 +66,7 @@ double detectionConfidence({
   required double areaScore,
   required double angleScore,
   required double rectScore,
-}) =>
-    (0.5 * areaScore + 0.3 * angleScore + 0.2 * rectScore).clamp(0.0, 1.0);
+}) => (0.5 * areaScore + 0.3 * angleScore + 0.2 * rectScore).clamp(0.0, 1.0);
 
 /// Accept predicate for a candidate page quad. Rejects the near-full-frame
 /// blob of a blank scene (or the background polarity), a too-small blob, and a
@@ -82,8 +81,7 @@ bool isPlausiblePage({
   double minAreaFrac = 0.05,
   double maxAreaFrac = 0.92,
   double minFill = 0.55,
-}) =>
-    areaFrac >= minAreaFrac && areaFrac <= maxAreaFrac && fill >= minFill;
+}) => areaFrac >= minAreaFrac && areaFrac <= maxAreaFrac && fill >= minFill;
 
 /// True iff [quad] is a strictly convex quadrilateral, for either winding.
 /// The signed cross product at every consecutive vertex triple must share one

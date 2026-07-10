@@ -14,7 +14,8 @@ import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/file_archiver.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
-import 'package:mobile/features/library/drift/app_database.dart' show AppDatabase;
+import 'package:mobile/features/library/drift/app_database.dart'
+    show AppDatabase;
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/document_printer.dart';
@@ -95,12 +96,16 @@ class FakeDocumentRepository implements DocumentRepository {
     this.pages,
   }) : documents = documents ?? <Document>[];
 
-  late final List<PageImage>? _working =
-      pages == null ? null : List<PageImage>.from(pages!);
+  late final List<PageImage>? _working = pages == null
+      ? null
+      : List<PageImage>.from(pages!);
 
   @override
-  Future<Document> createFromCapture(CapturedImage capture,
-      {CropCorners? corners, ImageEnhancer? enhancer}) async {
+  Future<Document> createFromCapture(
+    CapturedImage capture, {
+    CropCorners? corners,
+    ImageEnhancer? enhancer,
+  }) async {
     createCalls++;
     lastSavedCorners = corners;
     lastSavedEnhancer = enhancer;
@@ -123,7 +128,12 @@ class FakeDocumentRepository implements DocumentRepository {
     if (throwOnGetPages) throw StateError('fake: getDocumentPages failed');
     final w = _working;
     return w == null
-        ? [PageImage(position: 1, imagePath: '/nonexistent/page-$documentId-1.jpg')]
+        ? [
+            PageImage(
+              position: 1,
+              imagePath: '/nonexistent/page-$documentId-1.jpg',
+            ),
+          ]
         : List<PageImage>.from(w);
   }
 
@@ -135,8 +145,10 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<File> exportPdf(int documentId,
-      {ExportQuality quality = ExportQuality.original}) async {
+  Future<File> exportPdf(
+    int documentId, {
+    ExportQuality quality = ExportQuality.original,
+  }) async {
     if (throwOnExport) {
       throw const DocumentExportException('fake: export failed');
     }
@@ -181,25 +193,31 @@ class FakeDocumentRepository implements DocumentRepository {
     final byId = {for (final d in documents) d.id: d.name};
     return [
       for (final id in documentIds)
-        File('${Directory.systemTemp.path}/${byId[id] ?? 'document'}.pdf')
+        File('${Directory.systemTemp.path}/${byId[id] ?? 'document'}.pdf'),
     ];
   }
 
   @override
-  Future<File> exportPageAsImage(int documentId, int position,
-      {ExportQuality quality = ExportQuality.original}) async {
+  Future<File> exportPageAsImage(
+    int documentId,
+    int position, {
+    ExportQuality quality = ExportQuality.original,
+  }) async {
     if (throwOnExportImage) {
       throw const DocumentExportException('fake: exportImage failed');
     }
     lastExportedImagePosition = position;
     lastImageExportQuality = quality;
     return File(
-        '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg');
+      '${Directory.systemTemp.path}/fake-export-$documentId-$position.jpg',
+    );
   }
 
   @override
-  Future<List<File>> exportAllPagesAsImages(int documentId,
-      {ExportQuality quality = ExportQuality.original}) async {
+  Future<List<File>> exportAllPagesAsImages(
+    int documentId, {
+    ExportQuality quality = ExportQuality.original,
+  }) async {
     if (throwOnExportImage) {
       throw const DocumentExportException('fake: exportAll failed');
     }
@@ -207,7 +225,9 @@ class FakeDocumentRepository implements DocumentRepository {
     final pages = await getDocumentPages(documentId);
     return [
       for (final p in pages)
-        File('${Directory.systemTemp.path}/fake-all-$documentId-${p.position}.jpg')
+        File(
+          '${Directory.systemTemp.path}/fake-all-$documentId-${p.position}.jpg',
+        ),
     ];
   }
 
@@ -220,7 +240,8 @@ class FakeDocumentRepository implements DocumentRepository {
     // Return a synthetic path without real I/O — the share channel only cares
     // about the path (ending in .txt), not the file existence or content.
     return File(
-        '${Directory.systemTemp.path}/fake-text-$documentId-$position.txt');
+      '${Directory.systemTemp.path}/fake-text-$documentId-$position.txt',
+    );
   }
 
   @override
@@ -232,21 +253,28 @@ class FakeDocumentRepository implements DocumentRepository {
     }
     // Synthesize: every fake document has one page and a deliberately
     // NON-LOADABLE thumbnail path (host tests must not load a real Image.file).
-    return List<DocumentSummary>.unmodifiable(documents.map((d) =>
-        DocumentSummary(
-            document: d,
-            pageCount: 1,
-            thumbnailPath: '/nonexistent/thumb-${d.id}.jpg')));
+    return List<DocumentSummary>.unmodifiable(
+      documents.map(
+        (d) => DocumentSummary(
+          document: d,
+          pageCount: 1,
+          thumbnailPath: '/nonexistent/thumb-${d.id}.jpg',
+        ),
+      ),
+    );
   }
 
   @override
   Future<List<DocumentSummary>> searchDocuments(String query) async {
     if (throwOnList) throw StateError('fake: search failed');
     final summaries = documents
-        .map((d) => DocumentSummary(
+        .map(
+          (d) => DocumentSummary(
             document: d,
             pageCount: 1,
-            thumbnailPath: '/nonexistent/thumb-${d.id}.jpg'))
+            thumbnailPath: '/nonexistent/thumb-${d.id}.jpg',
+          ),
+        )
         .toList();
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return summaries;
@@ -271,7 +299,8 @@ class FakeDocumentRepository implements DocumentRepository {
             id: documentId,
             name: trimmed,
             createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
-            modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42));
+            modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+          );
     final updated = Document(
       id: base.id,
       name: trimmed,
@@ -284,7 +313,10 @@ class FakeDocumentRepository implements DocumentRepository {
 
   @override
   Future<void> updatePageCorners(
-      int documentId, int position, CropCorners corners) async {
+    int documentId,
+    int position,
+    CropCorners corners,
+  ) async {
     if (throwOnUpdate) {
       throw DocumentSaveException('fake: update failed');
     }
@@ -464,8 +496,11 @@ class FakeFileArchiver implements FileArchiver {
   FakeFileArchiver({this.throwOnZip = false});
 
   @override
-  Future<File> zip(List<File> files,
-      {required String archiveName, required List<String> entryNames}) async {
+  Future<File> zip(
+    List<File> files, {
+    required String archiveName,
+    required List<String> entryNames,
+  }) async {
     if (throwOnZip) throw Exception('fake: zip failed');
     calls++;
     lastFiles = files;
@@ -486,8 +521,11 @@ class FakeShareChannel implements ShareChannel {
   FakeShareChannel({this.throwOnShare = false});
 
   @override
-  Future<void> share(List<String> filePaths,
-      {String? subject, String? mimeType}) async {
+  Future<void> share(
+    List<String> filePaths, {
+    String? subject,
+    String? mimeType,
+  }) async {
     if (throwOnShare) throw Exception('fake: share failed');
     calls++;
     lastFilePaths = filePaths;
@@ -511,8 +549,7 @@ class FakeImageWarper implements ImageWarper {
   int calls = 0;
 
   FakeImageWarper({this.throws = false, Uint8List? returnValue})
-      : returnValue =
-            returnValue ?? Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xD9]);
+    : returnValue = returnValue ?? Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xD9]);
 
   @override
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) async {
@@ -536,8 +573,9 @@ LibraryDependencies tempLibraryDependencies() {
     createRepository: () async => DriftDocumentRepository(
       db: AppDatabase(NativeDatabase.memory()),
       scrubber: const JpegExifScrubber(),
-      fileStore:
-          DocumentFileStore(await Directory.systemTemp.createTemp('b1bdd')),
+      fileStore: DocumentFileStore(
+        await Directory.systemTemp.createTemp('b1bdd'),
+      ),
       clock: DateTime.now,
       pdfBuilder: const PdfBuilder(),
       warper: const PerspectiveWarper(),
@@ -555,10 +593,13 @@ LibraryDependencies failingLibraryDependencies() =>
 class FakeOcrEngine implements OcrEngine {
   final OcrResult result;
   const FakeOcrEngine([
-    this.result = const OcrResult(text: 'HELLO WORLD', words: [
-      OcrWordBox(text: 'HELLO', left: .1, top: .1, right: .4, bottom: .2),
-      OcrWordBox(text: 'WORLD', left: .5, top: .1, right: .9, bottom: .2),
-    ]),
+    this.result = const OcrResult(
+      text: 'HELLO WORLD',
+      words: [
+        OcrWordBox(text: 'HELLO', left: .1, top: .1, right: .4, bottom: .2),
+        OcrWordBox(text: 'WORLD', left: .5, top: .1, right: .9, bottom: .2),
+      ],
+    ),
   ]);
   @override
   Future<OcrResult> recognize(Uint8List imageBytes) async => result;

@@ -25,15 +25,17 @@ void main() {
     expect(out, equals(input)); // element-wise: same bytes, no re-encode
   });
 
-  test('low yields fewer bytes and a smaller long edge for a large image',
-      () async {
-    final input = _jpeg(3000, 2000);
-    final out = await compressor.compress(input, ExportQuality.low);
-    expect(out.length, lessThan(input.length));
-    final decoded = img.decodeImage(out)!;
-    expect(decoded.width, 1600); // long edge capped at low.maxDimension
-    expect(decoded.height, lessThan(2000));
-  });
+  test(
+    'low yields fewer bytes and a smaller long edge for a large image',
+    () async {
+      final input = _jpeg(3000, 2000);
+      final out = await compressor.compress(input, ExportQuality.low);
+      expect(out.length, lessThan(input.length));
+      final decoded = img.decodeImage(out)!;
+      expect(decoded.width, 1600); // long edge capped at low.maxDimension
+      expect(decoded.height, lessThan(2000));
+    },
+  );
 
   test('never upscales a small image', () async {
     final input = _jpeg(800, 600); // long edge 800 < low cap 1600

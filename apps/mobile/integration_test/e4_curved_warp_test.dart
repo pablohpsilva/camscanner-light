@@ -8,8 +8,14 @@ import 'package:mobile/features/library/hybrid_warper.dart';
 Uint8List _rectJpeg(int w, int h) {
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(10, 10, 10));
-  img.fillRect(image, x1: w ~/ 5, y1: h ~/ 5, x2: 4 * w ~/ 5, y2: 4 * h ~/ 5,
-      color: img.ColorRgb8(230, 230, 230));
+  img.fillRect(
+    image,
+    x1: w ~/ 5,
+    y1: h ~/ 5,
+    x2: 4 * w ~/ 5,
+    y2: 4 * h ~/ 5,
+    color: img.ColorRgb8(230, 230, 230),
+  );
   return Uint8List.fromList(img.encodeJpg(image, quality: 90));
 }
 
@@ -17,12 +23,17 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const warper = HybridWarper();
 
-  testWidgets('bent-edge crop flattens to a decodable image on-device',
-      (tester) async {
+  testWidgets('bent-edge crop flattens to a decodable image on-device', (
+    tester,
+  ) async {
     const bent = CropCorners(
-      topLeft: Offset(0.1, 0.12), topRight: Offset(0.9, 0.1),
-      bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.88),
-      topMidDev: Offset(0, -0.06), bottomMidDev: Offset(0, 0.05));
+      topLeft: Offset(0.1, 0.12),
+      topRight: Offset(0.9, 0.1),
+      bottomRight: Offset(0.9, 0.9),
+      bottomLeft: Offset(0.1, 0.88),
+      topMidDev: Offset(0, -0.06),
+      bottomMidDev: Offset(0, 0.05),
+    );
     final out = await warper.warp(_rectJpeg(1200, 900), bent);
     expect(out, isNotNull);
     expect(img.decodeImage(out!), isNotNull);
@@ -30,9 +41,12 @@ void main() {
 
   testWidgets('large curved image flattens within budget', (tester) async {
     const bent = CropCorners(
-      topLeft: Offset(0.05, 0.05), topRight: Offset(0.95, 0.05),
-      bottomRight: Offset(0.95, 0.95), bottomLeft: Offset(0.05, 0.95),
-      leftMidDev: Offset(-0.04, 0));
+      topLeft: Offset(0.05, 0.05),
+      topRight: Offset(0.95, 0.05),
+      bottomRight: Offset(0.95, 0.95),
+      bottomLeft: Offset(0.05, 0.95),
+      leftMidDev: Offset(-0.04, 0),
+    );
     final bytes = _rectJpeg(3000, 2000);
     final start = DateTime.now();
     final out = await warper.warp(bytes, bent);
@@ -43,8 +57,11 @@ void main() {
 
   testWidgets('straight crop still routes through homography', (tester) async {
     const straight = CropCorners(
-      topLeft: Offset(0.1, 0.1), topRight: Offset(0.9, 0.1),
-      bottomRight: Offset(0.9, 0.9), bottomLeft: Offset(0.1, 0.9));
+      topLeft: Offset(0.1, 0.1),
+      topRight: Offset(0.9, 0.1),
+      bottomRight: Offset(0.9, 0.9),
+      bottomLeft: Offset(0.1, 0.9),
+    );
     final out = await warper.warp(_rectJpeg(800, 600), straight);
     expect(out, isNotNull); // non-null flat; perspective path exercised
   });

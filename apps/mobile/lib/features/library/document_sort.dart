@@ -13,8 +13,10 @@ class DocumentSort {
   final SortDirection direction;
   const DocumentSort(this.criterion, this.direction);
 
-  static const DocumentSort initial =
-      DocumentSort(SortCriterion.created, SortDirection.desc);
+  static const DocumentSort initial = DocumentSort(
+    SortCriterion.created,
+    SortDirection.desc,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -36,15 +38,17 @@ class DocumentSort {
 /// order). Ties resolve deterministically and direction-independently:
 /// newest createdAt first, then id ascending — so the list never jitters.
 List<DocumentSummary> sortDocuments(
-    List<DocumentSummary> docs, DocumentSort sort) {
+  List<DocumentSummary> docs,
+  DocumentSort sort,
+) {
   final copy = [...docs];
   copy.sort((a, b) {
     int primary;
     switch (sort.criterion) {
       case SortCriterion.name:
-        primary = a.document.name
-            .toLowerCase()
-            .compareTo(b.document.name.toLowerCase());
+        primary = a.document.name.toLowerCase().compareTo(
+          b.document.name.toLowerCase(),
+        );
         break;
       case SortCriterion.created:
         primary = a.document.createdAt.compareTo(b.document.createdAt);
@@ -56,8 +60,7 @@ List<DocumentSummary> sortDocuments(
     if (sort.direction == SortDirection.desc) primary = -primary;
     if (primary != 0) return primary;
     // Deterministic, direction-independent tie-break.
-    final byCreatedDesc =
-        b.document.createdAt.compareTo(a.document.createdAt);
+    final byCreatedDesc = b.document.createdAt.compareTo(a.document.createdAt);
     if (byCreatedDesc != 0) return byCreatedDesc;
     return a.document.id.compareTo(b.document.id);
   });

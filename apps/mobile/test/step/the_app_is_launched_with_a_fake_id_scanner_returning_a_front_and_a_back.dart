@@ -11,7 +11,8 @@ FakeDocumentRepository idScanRepo = FakeDocumentRepository();
 
 /// Usage: the app is launched with a fake ID scanner returning a front and a back
 Future<void> theAppIsLaunchedWithAFakeIdScannerReturningAFrontAndABack(
-    WidgetTester tester) async {
+  WidgetTester tester,
+) async {
   idScanRepo = FakeDocumentRepository();
   app.runCamScannerApp(
     scanDependencies: ScanDependencies(

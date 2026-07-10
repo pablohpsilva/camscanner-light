@@ -16,12 +16,12 @@ class Diagnostics {
   });
 
   Map<String, dynamic> toJson() => {
-        'appVersion': appVersion,
-        'build': build,
-        'os': os,
-        'device': device,
-        'locale': locale,
-      };
+    'appVersion': appVersion,
+    'build': build,
+    'os': os,
+    'device': device,
+    'locale': locale,
+  };
 }
 
 abstract class DiagnosticsCollector {

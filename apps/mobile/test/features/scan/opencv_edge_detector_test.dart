@@ -22,7 +22,10 @@ Uint8List _rectImage({
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
   img.fillRect(
     image,
-    x1: rx1, y1: ry1, x2: rx2, y2: ry2,
+    x1: rx1,
+    y1: ry1,
+    x2: rx2,
+    y2: ry2,
     color: img.ColorRgb8(255, 255, 255),
   );
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
@@ -98,10 +101,10 @@ Uint8List _concaveQuadImage(int w, int h) {
   final half = math.min(w, h) * 0.35;
   // Dart shape: top, right, center-indented, left — one inward point.
   final verts = [
-    (x: cx, y: cy - half),          // top
-    (x: cx + half, y: cy + half),   // bottom-right
-    (x: cx, y: cy),                 // center (inward — makes non-convex)
-    (x: cx - half, y: cy + half),   // bottom-left
+    (x: cx, y: cy - half), // top
+    (x: cx + half, y: cy + half), // bottom-right
+    (x: cx, y: cy), // center (inward — makes non-convex)
+    (x: cx - half, y: cy + half), // bottom-left
   ];
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
@@ -117,10 +120,10 @@ Uint8List _chevronImage(int w, int h) {
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
   // Chevron ">": left-top, right-tip, left-bottom, left-center (indented inward).
   final verts = [
-    (x: w * 0.15, y: h * 0.20),  // left-top
-    (x: w * 0.85, y: h * 0.50),  // right tip (arrow point)
-    (x: w * 0.15, y: h * 0.80),  // left-bottom
-    (x: w * 0.45, y: h * 0.50),  // left-center indent (makes non-convex)
+    (x: w * 0.15, y: h * 0.20), // left-top
+    (x: w * 0.85, y: h * 0.50), // right tip (arrow point)
+    (x: w * 0.15, y: h * 0.80), // left-bottom
+    (x: w * 0.45, y: h * 0.50), // left-center indent (makes non-convex)
   ];
   _fillPolygonPixels(image, verts);
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
@@ -151,10 +154,10 @@ Uint8List _tiltedRectImage(int w, int h, double angleDeg) {
 Uint8List _perspectiveRectImage(int w, int h) {
   // Slight keystone: top edge narrower than bottom.
   final verts = [
-    (x: w * 0.20, y: h * 0.15),  // top-left (slightly right)
-    (x: w * 0.80, y: h * 0.15),  // top-right (slightly left)
-    (x: w * 0.85, y: h * 0.85),  // bottom-right
-    (x: w * 0.15, y: h * 0.85),  // bottom-left
+    (x: w * 0.20, y: h * 0.15), // top-left (slightly right)
+    (x: w * 0.80, y: h * 0.15), // top-right (slightly left)
+    (x: w * 0.85, y: h * 0.85), // bottom-right
+    (x: w * 0.15, y: h * 0.85), // bottom-left
   ];
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
@@ -167,12 +170,24 @@ Uint8List _twoRectsImage(int w, int h) {
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
   // Large rect (left side): 270×320 = 86,400px / 307,200 = 28.1% — well above 5% gate
-  img.fillRect(image, x1: 50, y1: 80, x2: 320, y2: 400,
-      color: img.ColorRgb8(255, 255, 255));
+  img.fillRect(
+    image,
+    x1: 50,
+    y1: 80,
+    x2: 320,
+    y2: 400,
+    color: img.ColorRgb8(255, 255, 255),
+  );
   // Small rect (right side): 170×100 = 17,000px / 307,200 = 5.5% — clears 5% gate
   // so both quads reach the area>bestArea comparison; large wins.
-  img.fillRect(image, x1: 380, y1: 200, x2: 550, y2: 300,
-      color: img.ColorRgb8(255, 255, 255));
+  img.fillRect(
+    image,
+    x1: 380,
+    y1: 200,
+    x2: 550,
+    y2: 300,
+    color: img.ColorRgb8(255, 255, 255),
+  );
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
@@ -181,8 +196,14 @@ Uint8List _tinyRectImage(int w, int h) {
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
   // Very small rect: 30×20 = 600 pixels out of 307200 = 0.2%
-  img.fillRect(image, x1: 300, y1: 230, x2: 330, y2: 250,
-      color: img.ColorRgb8(255, 255, 255));
+  img.fillRect(
+    image,
+    x1: 300,
+    y1: 230,
+    x2: 330,
+    y2: 250,
+    color: img.ColorRgb8(255, 255, 255),
+  );
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
@@ -191,13 +212,31 @@ Uint8List _edgeTouchingRectImage(int w, int h) {
   final image = img.Image(width: w, height: h, numChannels: 3);
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
   // Rect that starts at pixel 0 and ends at the edge
-  img.fillRect(image, x1: 0, y1: 0, x2: w - 1, y2: h - 1,
-      color: img.ColorRgb8(255, 255, 255));
+  img.fillRect(
+    image,
+    x1: 0,
+    y1: 0,
+    x2: w - 1,
+    y2: h - 1,
+    color: img.ColorRgb8(255, 255, 255),
+  );
   // Add black inset so inner border creates a detectable quad
-  img.fillRect(image, x1: 10, y1: 10, x2: w - 11, y2: h - 11,
-      color: img.ColorRgb8(0, 0, 0));
-  img.fillRect(image, x1: 20, y1: 20, x2: w - 21, y2: h - 21,
-      color: img.ColorRgb8(255, 255, 255));
+  img.fillRect(
+    image,
+    x1: 10,
+    y1: 10,
+    x2: w - 11,
+    y2: h - 11,
+    color: img.ColorRgb8(0, 0, 0),
+  );
+  img.fillRect(
+    image,
+    x1: 20,
+    y1: 20,
+    x2: w - 21,
+    y2: h - 21,
+    color: img.ColorRgb8(255, 255, 255),
+  );
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
@@ -208,20 +247,17 @@ Uint8List _skewedQuadImage(int w, int h) {
   img.fill(image, color: img.ColorRgb8(0, 0, 0));
   // A severe parallelogram: top edge shifted far right relative to bottom.
   final verts = [
-    (x: w * 0.50, y: h * 0.10),  // top-left (shifted right = skewed)
-    (x: w * 0.90, y: h * 0.10),  // top-right
-    (x: w * 0.50, y: h * 0.90),  // bottom-right (back to centre)
-    (x: w * 0.10, y: h * 0.90),  // bottom-left
+    (x: w * 0.50, y: h * 0.10), // top-left (shifted right = skewed)
+    (x: w * 0.90, y: h * 0.10), // top-right
+    (x: w * 0.50, y: h * 0.90), // bottom-right (back to centre)
+    (x: w * 0.10, y: h * 0.90), // bottom-left
   ];
   _fillPolygonPixels(image, verts.map((p) => (x: p.x, y: p.y)).toList());
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
 /// Scan-line polygon fill (pure Dart, no image-package-specific API).
-void _fillPolygonPixels(
-  img.Image image,
-  List<({double x, double y})> verts,
-) {
+void _fillPolygonPixels(img.Image image, List<({double x, double y})> verts) {
   if (verts.length < 3) return;
   final minY = verts.map((v) => v.y).reduce(math.min).ceil();
   final maxY = verts.map((v) => v.y).reduce(math.max).floor();
@@ -260,7 +296,8 @@ Future<void> main() async {
   // OpenCvEdgeDetector's own detect() timeout, so it can never hang.
   final opencvAvailable =
       (await const OpenCvEdgeDetector().detect(_rectImage())) != null;
-  const skipReason = 'native OpenCV (libdartcv) unavailable on host — covered '
+  const skipReason =
+      'native OpenCV (libdartcv) unavailable on host — covered '
       'on-device by integration_test/f1_edge_detection_test.dart';
 
   // ── DetectionResult ──────────────────────────────────────────────────────
@@ -313,13 +350,16 @@ Future<void> main() async {
     setUp(() => detector = const OpenCvEdgeDetector());
 
     // ── Algorithm correctness ─────────────────────────────────────────────
-    test('white rect on dark background → non-null, confidence > 0.6', () async {
-      final bytes = _rectImage();
-      final result = await detector.detect(bytes);
-      expect(result, isNotNull);
-      expect(result!.confidence, greaterThan(0.6));
-      expect(result.confidence, lessThanOrEqualTo(1.0));
-    });
+    test(
+      'white rect on dark background → non-null, confidence > 0.6',
+      () async {
+        final bytes = _rectImage();
+        final result = await detector.detect(bytes);
+        expect(result, isNotNull);
+        expect(result!.confidence, greaterThan(0.6));
+        expect(result.confidence, lessThanOrEqualTo(1.0));
+      },
+    );
 
     test('uniform white image → null', () async {
       final bytes = _uniformImage(640, 480, 255);
@@ -337,14 +377,21 @@ Future<void> main() async {
       if (result != null) expect(result.confidence, lessThan(0.3));
     });
 
-    test('circle-only shape → non-null best-guess (blob fill ≈ π/4 ≥ 0.55)', () async {
-      // A circle's blob fills ≈ π/4 ≈ 0.79 of its bounding quad, above the 0.55
-      // page-plausibility floor, so segmentation keeps it as a best-guess.
-      final result = await detector.detect(_circleImage(640, 480));
-      expect(result, isNotNull);
-      expect(result!.confidence, lessThan(0.9),
-          reason: 'a circle is not a clean rectangle — confidence must not be high');
-    });
+    test(
+      'circle-only shape → non-null best-guess (blob fill ≈ π/4 ≥ 0.55)',
+      () async {
+        // A circle's blob fills ≈ π/4 ≈ 0.79 of its bounding quad, above the 0.55
+        // page-plausibility floor, so segmentation keeps it as a best-guess.
+        final result = await detector.detect(_circleImage(640, 480));
+        expect(result, isNotNull);
+        expect(
+          result!.confidence,
+          lessThan(0.9),
+          reason:
+              'a circle is not a clean rectangle — confidence must not be high',
+        );
+      },
+    );
 
     test('triangle shape → null (fill below the page guard)', () async {
       // A triangle fills only ~half its bounding rect (fill ≈ 0.5), below the
@@ -353,28 +400,39 @@ Future<void> main() async {
       expect(result, isNull);
     });
 
-    test('pentagon shape → non-null best-guess (regular-pentagon fill ≈ 0.69 ≥ 0.55)', () async {
-      // A regular pentagon fills ≈ 0.69 of its bounding quad, above the 0.55
-      // page-plausibility floor, so segmentation keeps it as a best-guess.
-      final result = await detector.detect(_pentagonImage(640, 480));
-      expect(result, isNotNull);
-      expect(result!.confidence, lessThan(0.9),
-          reason: 'a pentagon is not a clean rectangle — confidence must not be high');
-    });
+    test(
+      'pentagon shape → non-null best-guess (regular-pentagon fill ≈ 0.69 ≥ 0.55)',
+      () async {
+        // A regular pentagon fills ≈ 0.69 of its bounding quad, above the 0.55
+        // page-plausibility floor, so segmentation keeps it as a best-guess.
+        final result = await detector.detect(_pentagonImage(640, 480));
+        expect(result, isNotNull);
+        expect(
+          result!.confidence,
+          lessThan(0.9),
+          reason:
+              'a pentagon is not a clean rectangle — confidence must not be high',
+        );
+      },
+    );
 
-    test('concave quad (dart/arrowhead) → null (fill below the page guard)',
-        () async {
-      // A concave dart fills little of its bounding rect (low fill), so the
-      // segmentation isPlausiblePage guard rejects it.
-      expect(await detector.detect(_concaveQuadImage(640, 480)), isNull);
-    });
+    test(
+      'concave quad (dart/arrowhead) → null (fill below the page guard)',
+      () async {
+        // A concave dart fills little of its bounding rect (low fill), so the
+        // segmentation isPlausiblePage guard rejects it.
+        expect(await detector.detect(_concaveQuadImage(640, 480)), isNull);
+      },
+    );
 
-    test('non-convex quad (arrow/chevron ">") → null (fill below the page guard)',
-        () async {
-      // A chevron fills little of its bounding rect (low fill), so the
-      // segmentation isPlausiblePage guard rejects it.
-      expect(await detector.detect(_chevronImage(640, 480)), isNull);
-    });
+    test(
+      'non-convex quad (arrow/chevron ">") → null (fill below the page guard)',
+      () async {
+        // A chevron fills little of its bounding rect (low fill), so the
+        // segmentation isPlausiblePage guard rejects it.
+        expect(await detector.detect(_chevronImage(640, 480)), isNull);
+      },
+    );
 
     test('two rects present → largest selected', () async {
       final bytes = _twoRectsImage(640, 480);
@@ -386,14 +444,26 @@ Future<void> main() async {
     });
 
     test('portrait-oriented image with rect → detected', () async {
-      final bytes = _rectImage(w: 480, h: 640, rx1: 80, ry1: 120,
-          rx2: 400, ry2: 520);
+      final bytes = _rectImage(
+        w: 480,
+        h: 640,
+        rx1: 80,
+        ry1: 120,
+        rx2: 400,
+        ry2: 520,
+      );
       expect(await detector.detect(bytes), isNotNull);
     });
 
     test('landscape-oriented image with rect → detected', () async {
-      final bytes = _rectImage(w: 800, h: 450, rx1: 100, ry1: 80,
-          rx2: 700, ry2: 370);
+      final bytes = _rectImage(
+        w: 800,
+        h: 450,
+        rx1: 100,
+        ry1: 80,
+        rx2: 700,
+        ry2: 370,
+      );
       expect(await detector.detect(bytes), isNotNull);
     });
 
@@ -414,7 +484,10 @@ Future<void> main() async {
     });
 
     test('rect touching image edges → detected', () async {
-      expect(await detector.detect(_edgeTouchingRectImage(640, 480)), isNotNull);
+      expect(
+        await detector.detect(_edgeTouchingRectImage(640, 480)),
+        isNotNull,
+      );
     });
 
     test('tiny rect (< 5% image area) → null', () async {
@@ -427,7 +500,12 @@ Future<void> main() async {
       late DetectionResult result;
       setUp(() async {
         final bytes = _rectImage(
-          w: 640, h: 480, rx1: 120, ry1: 100, rx2: 520, ry2: 380,
+          w: 640,
+          h: 480,
+          rx1: 120,
+          ry1: 100,
+          rx2: 520,
+          ry2: 380,
         );
         result = (await detector.detect(bytes))!;
       });
@@ -461,47 +539,73 @@ Future<void> main() async {
         final diffBl = c.bottomLeft.dy - c.bottomLeft.dx;
         expect(diffBl, greaterThanOrEqualTo(c.topLeft.dy - c.topLeft.dx));
         expect(diffBl, greaterThanOrEqualTo(c.topRight.dy - c.topRight.dx));
-        expect(diffBl, greaterThanOrEqualTo(c.bottomRight.dy - c.bottomRight.dx));
+        expect(
+          diffBl,
+          greaterThanOrEqualTo(c.bottomRight.dy - c.bottomRight.dx),
+        );
       });
 
       test('all normalized values in [0.0, 1.0]', () {
         final c = result.corners;
-        for (final corner in [c.topLeft, c.topRight, c.bottomRight, c.bottomLeft]) {
+        for (final corner in [
+          c.topLeft,
+          c.topRight,
+          c.bottomRight,
+          c.bottomLeft,
+        ]) {
           expect(corner.dx, inInclusiveRange(0.0, 1.0));
           expect(corner.dy, inInclusiveRange(0.0, 1.0));
         }
       });
 
-      test('normalization proportional to image dimensions (non-square)', () async {
-        // 800×400: rect at (160,80)..(640,320); expected x ≈ 0.2..0.8, y ≈ 0.2..0.8
-        final bytes = _rectImage(w: 800, h: 400, rx1: 160, ry1: 80,
-            rx2: 640, ry2: 320);
-        final r = await detector.detect(bytes);
-        expect(r, isNotNull);
-        expect(r!.corners.topLeft.dx, closeTo(160 / 800, 0.1));
-        expect(r.corners.topLeft.dy, closeTo(80 / 400, 0.1));
-        expect(r.corners.bottomRight.dx, closeTo(640 / 800, 0.1));
-        expect(r.corners.bottomRight.dy, closeTo(320 / 400, 0.1));
-      });
+      test(
+        'normalization proportional to image dimensions (non-square)',
+        () async {
+          // 800×400: rect at (160,80)..(640,320); expected x ≈ 0.2..0.8, y ≈ 0.2..0.8
+          final bytes = _rectImage(
+            w: 800,
+            h: 400,
+            rx1: 160,
+            ry1: 80,
+            rx2: 640,
+            ry2: 320,
+          );
+          final r = await detector.detect(bytes);
+          expect(r, isNotNull);
+          expect(r!.corners.topLeft.dx, closeTo(160 / 800, 0.1));
+          expect(r.corners.topLeft.dy, closeTo(80 / 400, 0.1));
+          expect(r.corners.bottomRight.dx, closeTo(640 / 800, 0.1));
+          expect(r.corners.bottomRight.dy, closeTo(320 / 400, 0.1));
+        },
+      );
     });
 
     // ── Confidence scoring ────────────────────────────────────────────────
     group('confidence scoring', () {
-      test('perfect axis-aligned rect → angleScore ≈ 1.0 (high confidence)', () async {
-        // Large rect → high area score too; combined confidence should be high.
-        // Rect 480×360 in 640×480: areaScore ≈ 0.5625; with angleScore ≈ 1.0
-        // formula gives 0.6*0.5625 + 0.4*1.0 = 0.7375. Threshold widened
-        // slightly per tolerance allowance (brief: ±0.1 for numeric assertions).
-        final bytes = _rectImage(rx1: 80, ry1: 60, rx2: 560, ry2: 420);
-        final r = await detector.detect(bytes);
-        expect(r, isNotNull);
-        expect(r!.confidence, greaterThan(0.70));
-      });
+      test(
+        'perfect axis-aligned rect → angleScore ≈ 1.0 (high confidence)',
+        () async {
+          // Large rect → high area score too; combined confidence should be high.
+          // Rect 480×360 in 640×480: areaScore ≈ 0.5625; with angleScore ≈ 1.0
+          // formula gives 0.6*0.5625 + 0.4*1.0 = 0.7375. Threshold widened
+          // slightly per tolerance allowance (brief: ±0.1 for numeric assertions).
+          final bytes = _rectImage(rx1: 80, ry1: 60, rx2: 560, ry2: 420);
+          final r = await detector.detect(bytes);
+          expect(r, isNotNull);
+          expect(r!.confidence, greaterThan(0.70));
+        },
+      );
 
       test('area score correct for known rect pixel dimensions', () async {
         // Rect: 400×280 = 112000px / (640×480) = 307200px → areaScore ≈ 0.365
         final bytes = _rectImage(
-            w: 640, h: 480, rx1: 120, ry1: 100, rx2: 520, ry2: 380);
+          w: 640,
+          h: 480,
+          rx1: 120,
+          ry1: 100,
+          rx2: 520,
+          ry2: 380,
+        );
         final r = await detector.detect(bytes);
         expect(r, isNotNull);
         // New formula: 0.5·area + 0.3·angle + 0.2·rect
@@ -565,13 +669,16 @@ Future<void> main() async {
         expect(await detector.detect(bytes), isNull);
       });
 
-      test('10× repeated calls do not crash or OOM (Mat disposal verified)', () async {
-        final bytes = _rectImage();
-        for (int i = 0; i < 10; i++) {
-          await detector.detect(bytes);
-        }
-        // Reaching here without an error/crash proves no native heap runaway.
-      });
+      test(
+        '10× repeated calls do not crash or OOM (Mat disposal verified)',
+        () async {
+          final bytes = _rectImage();
+          for (int i = 0; i < 10; i++) {
+            await detector.detect(bytes);
+          }
+          // Reaching here without an error/crash proves no native heap runaway.
+        },
+      );
 
       test('detect() runs off the UI thread via compute()', () async {
         // No direct way to assert isolate use from a test, but asserting the

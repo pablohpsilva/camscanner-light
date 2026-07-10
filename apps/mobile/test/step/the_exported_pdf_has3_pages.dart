@@ -17,8 +17,7 @@ import 'package:mobile/features/library/pdf_preview_screen.dart';
 /// read has no such conflict and still proves the written PDF's page count
 /// end-to-end.
 Future<void> theExportedPdfHas3Pages(WidgetTester tester) async {
-  final screen =
-      tester.widget<PdfPreviewScreen>(find.byType(PdfPreviewScreen));
+  final screen = tester.widget<PdfPreviewScreen>(find.byType(PdfPreviewScreen));
   final bytes = await File(screen.pdfPath).readAsBytes();
   final s = latin1.decode(bytes, allowInvalid: true);
   final pageCount = RegExp(r'/Type\s*/Page(?![s])').allMatches(s).length;

@@ -22,7 +22,10 @@ import 'perspective_warper.dart';
 /// and, per the never-throws contract, for ANY failure — the caller falls back
 /// to enhancing the un-warped frame so a failed crop still de-shadows.
 Future<Uint8List?> warpAndEnhance(
-    Uint8List bytes, CropCorners corners, EnhancerMode mode) {
+  Uint8List bytes,
+  CropCorners corners,
+  EnhancerMode mode,
+) {
   if (corners == CropCorners.fullFrame) return Future.value(null);
   return compute(_warpEnhanceFn, _WarpEnhanceArgs(bytes, corners, mode));
 }
@@ -31,11 +34,11 @@ Future<Uint8List?> warpAndEnhance(
 /// [ImageEnhancer], so the cropped path can drive it by [EnhancerMode] without
 /// threading a second parameter through the repository.
 EnhancerMode enhancerModeOf(ImageEnhancer? enhancer) => switch (enhancer) {
-      AutoEnhancer() => EnhancerMode.auto,
-      ColorEnhancer() => EnhancerMode.color,
-      GrayscaleEnhancer() => EnhancerMode.grayscale,
-      _ => EnhancerMode.none,
-    };
+  AutoEnhancer() => EnhancerMode.auto,
+  ColorEnhancer() => EnhancerMode.color,
+  GrayscaleEnhancer() => EnhancerMode.grayscale,
+  _ => EnhancerMode.none,
+};
 
 class _WarpEnhanceArgs {
   final Uint8List bytes;
@@ -53,7 +56,10 @@ Uint8List? _warpEnhanceFn(_WarpEnhanceArgs a) {
     final src = img.bakeOrientation(decoded);
     final warped = a.corners.isStraight
         ? warpPerspectiveToImage(
-            src, a.corners, const PerspectiveWarper().maxDimension)
+            src,
+            a.corners,
+            const PerspectiveWarper().maxDimension,
+          )
         : warpCoonsToImage(src, a.corners, const CoonsWarper().maxDimension);
 
     // Auto finishes at q95 (matches AutoEnhancer); the others at q92.

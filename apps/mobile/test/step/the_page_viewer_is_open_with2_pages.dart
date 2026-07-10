@@ -16,8 +16,10 @@ Future<void> thePageViewerIsOpenWith2Pages(WidgetTester tester) async {
       const PageImage(position: 2, imagePath: '/nonexistent/h2bdd2.jpg'),
     ],
   );
-  await tester.pumpWidget(MaterialApp(
-    home: PageViewerScreen(documentId: 1, name: 'H2 Doc', repository: h2Repo),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      home: PageViewerScreen(documentId: 1, name: 'H2 Doc', repository: h2Repo),
+    ),
+  );
   await tester.pumpAndSettle();
 }

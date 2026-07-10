@@ -10,7 +10,7 @@ class CropOverlay extends StatelessWidget {
   final CropCorners corners;
   final ValueChanged<CropCorners> onCornersChanged;
   final bool enabled;
-  final Color highlightColor;   // NEW
+  final Color highlightColor; // NEW
   const CropOverlay({
     super.key,
     required this.imageSize,
@@ -18,7 +18,8 @@ class CropOverlay extends StatelessWidget {
     required this.corners,
     required this.onCornersChanged,
     this.enabled = true,
-    this.highlightColor = Colors.blue,   // NEW — default preserves all existing callers
+    this.highlightColor =
+        Colors.blue, // NEW — default preserves all existing callers
   });
 
   @override
@@ -31,11 +32,15 @@ class CropOverlay extends StatelessWidget {
         }
         final box = Size(constraints.maxWidth, constraints.maxHeight);
         final scale = math.min(
-            box.width / imageSize.width, box.height / imageSize.height);
+          box.width / imageSize.width,
+          box.height / imageSize.height,
+        );
         final display = imageSize * scale;
         final rect =
-            Offset((box.width - display.width) / 2,
-                (box.height - display.height) / 2) &
+            Offset(
+              (box.width - display.width) / 2,
+              (box.height - display.height) / 2,
+            ) &
             display;
 
         Offset posOf(Offset n) =>
@@ -53,16 +58,20 @@ class CropOverlay extends StatelessWidget {
               onCornersChanged(corners.copyWith(bottomLeft: newNorm));
             case 'top':
               onCornersChanged(
-                  corners.copyWith(topMidDev: newNorm - corners.topCenter));
+                corners.copyWith(topMidDev: newNorm - corners.topCenter),
+              );
             case 'right':
               onCornersChanged(
-                  corners.copyWith(rightMidDev: newNorm - corners.rightCenter));
+                corners.copyWith(rightMidDev: newNorm - corners.rightCenter),
+              );
             case 'bottom':
-              onCornersChanged(corners.copyWith(
-                  bottomMidDev: newNorm - corners.bottomCenter));
+              onCornersChanged(
+                corners.copyWith(bottomMidDev: newNorm - corners.bottomCenter),
+              );
             case 'left':
               onCornersChanged(
-                  corners.copyWith(leftMidDev: newNorm - corners.leftCenter));
+                corners.copyWith(leftMidDev: newNorm - corners.leftCenter),
+              );
           }
         }
 
@@ -80,7 +89,7 @@ class CropOverlay extends StatelessWidget {
                 enabled: enabled,
                 cornerNorm: cornerNorm,
                 rectSize: rect.size,
-                highlightColor: highlightColor,   // NEW
+                highlightColor: highlightColor, // NEW
                 onNewNorm: (n) => emitNew(role, n),
               ),
             ),
@@ -96,7 +105,7 @@ class CropOverlay extends StatelessWidget {
                   painter: _QuadPainter(
                     rect: rect,
                     corners: corners,
-                    highlightColor: highlightColor,   // NEW
+                    highlightColor: highlightColor, // NEW
                   ),
                 ),
               ),
@@ -124,14 +133,14 @@ class _DragHandle extends StatefulWidget {
     required this.cornerNorm,
     required this.rectSize,
     required this.onNewNorm,
-    required this.highlightColor,   // NEW
+    required this.highlightColor, // NEW
   });
 
   final bool enabled;
   final Offset cornerNorm;
   final Size rectSize;
   final void Function(Offset) onNewNorm;
-  final Color highlightColor;   // NEW
+  final Color highlightColor; // NEW
 
   @override
   State<_DragHandle> createState() => _DragHandleState();
@@ -152,10 +161,12 @@ class _DragHandleState extends State<_DragHandle> {
     final sn = _startNorm;
     if (sn == null) return;
     _accumulated += d.delta;
-    widget.onNewNorm(Offset(
-      (sn.dx + _accumulated.dx / widget.rectSize.width).clamp(0.0, 1.0),
-      (sn.dy + _accumulated.dy / widget.rectSize.height).clamp(0.0, 1.0),
-    ));
+    widget.onNewNorm(
+      Offset(
+        (sn.dx + _accumulated.dx / widget.rectSize.width).clamp(0.0, 1.0),
+        (sn.dy + _accumulated.dy / widget.rectSize.height).clamp(0.0, 1.0),
+      ),
+    );
   }
 
   void _onPanEnd(DragEndDetails _) => _startNorm = null;
@@ -180,7 +191,10 @@ class _DragHandleState extends State<_DragHandle> {
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(color: widget.highlightColor, width: 2),   // was Colors.blue
+            border: Border.all(
+              color: widget.highlightColor,
+              width: 2,
+            ), // was Colors.blue
           ),
         ),
       ),
@@ -202,9 +216,16 @@ Path cropQuadPath(Rect rect, CropCorners corners) {
   final tl = p(corners.topLeft), tr = p(corners.topRight);
   final br = p(corners.bottomRight), bl = p(corners.bottomLeft);
   final cTop = ctrl(corners.topLeft, corners.topRight, corners.topMidDev);
-  final cRight = ctrl(corners.topRight, corners.bottomRight, corners.rightMidDev);
-  final cBottom =
-      ctrl(corners.bottomRight, corners.bottomLeft, corners.bottomMidDev);
+  final cRight = ctrl(
+    corners.topRight,
+    corners.bottomRight,
+    corners.rightMidDev,
+  );
+  final cBottom = ctrl(
+    corners.bottomRight,
+    corners.bottomLeft,
+    corners.bottomMidDev,
+  );
   final cLeft = ctrl(corners.bottomLeft, corners.topLeft, corners.leftMidDev);
 
   return Path()
@@ -219,30 +240,34 @@ Path cropQuadPath(Rect rect, CropCorners corners) {
 class _QuadPainter extends CustomPainter {
   final Rect rect;
   final CropCorners corners;
-  final Color highlightColor;   // NEW
+  final Color highlightColor; // NEW
   _QuadPainter({
     required this.rect,
     required this.corners,
-    required this.highlightColor,   // NEW
+    required this.highlightColor, // NEW
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final quad = cropQuadPath(rect, corners);
     final outside = Path.combine(
-        PathOperation.difference, Path()..addRect(Offset.zero & size), quad);
+      PathOperation.difference,
+      Path()..addRect(Offset.zero & size),
+      quad,
+    );
     canvas.drawPath(outside, Paint()..color = Colors.black54);
     canvas.drawPath(
-        quad,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = highlightColor);
+      quad,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = highlightColor,
+    );
   }
 
   @override
   bool shouldRepaint(_QuadPainter old) =>
       old.rect != rect ||
       old.corners != corners ||
-      old.highlightColor != highlightColor;   // NEW
+      old.highlightColor != highlightColor; // NEW
 }

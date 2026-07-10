@@ -5,24 +5,28 @@ import 'package:mobile/features/library/password_dialog.dart';
 void main() {
   testWidgets('returns the entered password on Protect', (tester) async {
     String? result = 'unset';
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: ElevatedButton(
-              onPressed: () async => result = await showPasswordDialog(context),
-              child: const Text('open'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () async =>
+                    result = await showPasswordDialog(context),
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     // Protect is disabled until text is entered.
     final btn = tester.widget<TextButton>(
-        find.byKey(const Key('password-confirm')));
+      find.byKey(const Key('password-confirm')),
+    );
     expect(btn.onPressed, isNull);
 
     await tester.enterText(find.byKey(const Key('password-field')), 'secret');
@@ -35,18 +39,21 @@ void main() {
 
   testWidgets('returns null on Cancel', (tester) async {
     String? result = 'unset';
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: ElevatedButton(
-              onPressed: () async => result = await showPasswordDialog(context),
-              child: const Text('open'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () async =>
+                    result = await showPasswordDialog(context),
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('password-cancel')));
