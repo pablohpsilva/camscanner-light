@@ -26,14 +26,18 @@ class DocumentThumbnail extends StatelessWidget {
     if (path == null) return placeholder;
 
     final dpr = MediaQuery.of(context).devicePixelRatio;
+    // [size] may be double.infinity (e.g. the grid card fills its cell); in
+    // that case the decode target is unknown, so skip cacheWidth rather than
+    // feed Image.file a non-finite value (Infinity.toInt() throws).
+    final targetWidth = size.isFinite ? (size * dpr).round() : null;
     return ClipRRect(
       borderRadius: BorderRadius.circular(6),
       child: Image.file(
         File(path),
-        width: size,
-        height: size,
+        width: size.isFinite ? size : null,
+        height: size.isFinite ? size : null,
         fit: BoxFit.cover,
-        cacheWidth: (size * dpr).round(),
+        cacheWidth: targetWidth,
         errorBuilder: (context, error, stack) => placeholder,
       ),
     );

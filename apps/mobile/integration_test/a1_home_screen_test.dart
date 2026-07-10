@@ -11,18 +11,23 @@ import 'package:mobile/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('A1: app renders the Documents home (empty state + Scan) on device',
-      (tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+  testWidgets(
+    'A1: app renders the Documents home (empty state + Scan) on device',
+    (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(AppBar, 'Documents'), findsOneWidget);
-    expect(find.text('No documents yet'), findsOneWidget);
-    expect(find.text('Tap Scan to create your first document'), findsOneWidget);
-    expect(find.widgetWithText(FloatingActionButton, 'Scan'), findsOneWidget);
+      expect(find.text('Documents'), findsOneWidget);
+      expect(find.text('No documents yet'), findsOneWidget);
+      expect(
+        find.text('Tap Scan to create your first document'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('home-scan')), findsOneWidget);
 
-    // Sanity: the old generated counter demo must be gone.
-    expect(find.text('Flutter Demo Home Page'), findsNothing);
-    expect(find.textContaining('You have pushed the button'), findsNothing);
-  });
+      // Sanity: the old generated counter demo must be gone.
+      expect(find.text('Flutter Demo Home Page'), findsNothing);
+      expect(find.textContaining('You have pushed the button'), findsNothing);
+    },
+  );
 }

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/home_screen.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
+import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
@@ -27,17 +28,21 @@ void main() {
     required FakeDocumentRepository repo,
     ScanDependencies? deps,
   }) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomeScreen(
-        dependencies: deps ?? _deps(),
-        libraryDependencies: fakeLibraryDependencies(repo),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.light(),
+        home: HomeScreen(
+          dependencies: deps ?? _deps(),
+          libraryDependencies: fakeLibraryDependencies(repo),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('home-import button is present in the normal app bar',
-      (tester) async {
+  testWidgets('home-import button is present in the action row', (
+    tester,
+  ) async {
     await pumpHome(tester, repo: FakeDocumentRepository());
     expect(find.byKey(const Key('home-import')), findsOneWidget);
   });
@@ -51,22 +56,30 @@ void main() {
   });
 
   testWidgets(
-      'accepting in review calls createFromCapture once and returns to home',
-      (tester) async {
-    final repo = FakeDocumentRepository();
-    await pumpHome(tester, repo: repo);
-    await tester.tap(find.byKey(const Key('home-import')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('review-accept')));
-    await tester.pumpAndSettle();
-    expect(repo.createCalls, 1,
-        reason: 'createFromCapture must be called exactly once on accept');
-    expect(find.byType(CaptureReviewScreen), findsNothing,
-        reason: 'review screen is popped after save');
-  });
+    'accepting in review calls createFromCapture once and returns to home',
+    (tester) async {
+      final repo = FakeDocumentRepository();
+      await pumpHome(tester, repo: repo);
+      await tester.tap(find.byKey(const Key('home-import')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('review-accept')));
+      await tester.pumpAndSettle();
+      expect(
+        repo.createCalls,
+        1,
+        reason: 'createFromCapture must be called exactly once on accept',
+      );
+      expect(
+        find.byType(CaptureReviewScreen),
+        findsNothing,
+        reason: 'review screen is popped after save',
+      );
+    },
+  );
 
-  testWidgets('cancelling the picker stays on home — no review, no save',
-      (tester) async {
+  testWidgets('cancelling the picker stays on home — no review, no save', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await pumpHome(tester, repo: repo, deps: _deps(cancel: true));
     await tester.tap(find.byKey(const Key('home-import')));
@@ -75,7 +88,9 @@ void main() {
     expect(repo.createCalls, 0);
   });
 
-  testWidgets('picker error shows a SnackBar and stays on home', (tester) async {
+  testWidgets('picker error shows a SnackBar and stays on home', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await pumpHome(tester, repo: repo, deps: _deps(throwOnPick: true));
     await tester.tap(find.byKey(const Key('home-import')));

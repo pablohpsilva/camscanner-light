@@ -29,10 +29,7 @@ void main() {
           .byKey(const Key('documents-loading'))
           .evaluate()
           .isNotEmpty;
-      final homeReady = find
-          .widgetWithText(AppBar, 'Documents')
-          .evaluate()
-          .isNotEmpty;
+      final homeReady = find.text('Documents').evaluate().isNotEmpty;
       if (!stillLoading && homeReady) {
         loaded = true;
         break;

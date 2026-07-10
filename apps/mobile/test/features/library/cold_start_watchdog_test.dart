@@ -71,7 +71,7 @@ void main() {
     // Reached a usable home: no spinner, no timeout error, empty-state visible.
     expect(find.byKey(const Key('documents-loading')), findsNothing);
     expect(find.byKey(const Key('documents-error')), findsNothing);
-    expect(find.widgetWithText(AppBar, 'Documents'), findsOneWidget);
+    expect(find.text('Documents'), findsOneWidget);
     expect(find.text('No documents yet'), findsOneWidget);
   });
 }

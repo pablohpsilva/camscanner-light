@@ -41,15 +41,24 @@ class _Doc {
 }
 
 const _docs = <_Doc>[
-  _Doc('Acme Corporation Invoice', 'invoice',
-      'ACME CORPORATION INVOICE INV-2048 brand identity design website UI '
-          'mockups printed brochure layout photography licensing total 4000'),
-  _Doc('Q2 Final Report', 'report',
-      'ACME CORPORATION Q2 Final Report quarterly revenue grew 24 percent '
-          'highlights outlook finance retention'),
-  _Doc('Oak Cafe Receipt', 'receipt',
-      'Oak Cafe receipt order flat white almond croissant sparkling water '
-          'total 16.50'),
+  _Doc(
+    'Acme Corporation Invoice',
+    'invoice',
+    'ACME CORPORATION INVOICE INV-2048 brand identity design website UI '
+        'mockups printed brochure layout photography licensing total 4000',
+  ),
+  _Doc(
+    'Q2 Final Report',
+    'report',
+    'ACME CORPORATION Q2 Final Report quarterly revenue grew 24 percent '
+        'highlights outlook finance retention',
+  ),
+  _Doc(
+    'Oak Cafe Receipt',
+    'receipt',
+    'Oak Cafe receipt order flat white almond croissant sparkling water '
+        'total 16.50',
+  ),
 ];
 
 /// Seeds a real on-device SQLite file + file store: three documents, each with
@@ -62,16 +71,30 @@ Future<(File, Directory)> _seed() async {
   // Oldest first so "Created" desc sort shows Invoice at the top.
   var when = DateTime.now().subtract(const Duration(minutes: 30));
   for (final d in _docs) {
-    final id = await db.into(db.documents).insert(DocumentsCompanion.insert(
-        name: d.name, createdAt: when, modifiedAt: when));
+    final id = await db
+        .into(db.documents)
+        .insert(
+          DocumentsCompanion.insert(
+            name: d.name,
+            createdAt: when,
+            modifiedAt: when,
+          ),
+        );
     final rel = 'documents/$id/page_1.jpg';
     await File('${baseDir.path}/$rel').create(recursive: true);
-    await File('${baseDir.path}/$rel').writeAsBytes(storeFixtureBytes(d.fixture));
-    await db.into(db.pages).insert(PagesCompanion.insert(
-        documentId: id,
-        position: 1,
-        relativeImagePath: rel,
-        ocrText: Value(d.ocr)));
+    await File(
+      '${baseDir.path}/$rel',
+    ).writeAsBytes(storeFixtureBytes(d.fixture));
+    await db
+        .into(db.pages)
+        .insert(
+          PagesCompanion.insert(
+            documentId: id,
+            position: 1,
+            relativeImagePath: rel,
+            ocrText: Value(d.ocr),
+          ),
+        );
     when = when.add(const Duration(minutes: 10));
   }
   await db.close();
@@ -104,8 +127,10 @@ void main() {
     final (dbFile, baseDir) = await _seed();
     app.runCamScannerApp(
       scanDependencies: grantedScanDependencies(),
-      libraryDependencies:
-          persistentLibraryDependencies(dbFile: dbFile, baseDir: baseDir),
+      libraryDependencies: persistentLibraryDependencies(
+        dbFile: dbFile,
+        baseDir: baseDir,
+      ),
     );
     await _hold(tester, 'library');
   });
@@ -114,14 +139,17 @@ void main() {
     final (dbFile, baseDir) = await _seed();
     app.runCamScannerApp(
       scanDependencies: grantedScanDependencies(),
-      libraryDependencies:
-          persistentLibraryDependencies(dbFile: dbFile, baseDir: baseDir),
+      libraryDependencies: persistentLibraryDependencies(
+        dbFile: dbFile,
+        baseDir: baseDir,
+      ),
     );
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
-    await tester.tap(find.byKey(const Key('documents-search')));
-    await tester.pumpAndSettle(const Duration(milliseconds: 400));
+    // The Ream search field is always visible in the header (no icon to open).
     await tester.enterText(
-        find.byKey(const Key('documents-search-field')), 'acme');
+      find.byKey(const Key('documents-search-field')),
+      'acme',
+    );
     await tester.pump(const Duration(milliseconds: 300));
     // Drop focus so the Android soft keyboard + floating edit toolbar dismiss,
     // leaving the query text and results cleanly visible (iOS is already clean).
@@ -131,27 +159,31 @@ void main() {
 
   testWidgets('scan — capture review with edge detection', (tester) async {
     final capture = await _invoiceCapture();
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: CaptureReviewScreen(
-        image: capture,
-        onRetake: () {},
-        onAccept: (CropCorners _, ImageEnhancer _) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: CaptureReviewScreen(
+          image: capture,
+          onRetake: () {},
+          onAccept: (CropCorners _, ImageEnhancer _) {},
+        ),
       ),
-    ));
+    );
     await _hold(tester, 'scan');
   });
 
   testWidgets('filters — grayscale filter selected', (tester) async {
     final capture = await _invoiceCapture();
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: CaptureReviewScreen(
-        image: capture,
-        onRetake: () {},
-        onAccept: (CropCorners _, ImageEnhancer _) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: CaptureReviewScreen(
+          image: capture,
+          onRetake: () {},
+          onAccept: (CropCorners _, ImageEnhancer _) {},
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
     final grayscale = find.byKey(const Key('filter-tile-grayscale'));
     if (grayscale.evaluate().isNotEmpty) {
@@ -162,29 +194,44 @@ void main() {
 
   testWidgets('pdf — export preview', (tester) async {
     final (dbFile, baseDir) = await _seed();
-    final repo = await persistentLibraryDependencies(
-            dbFile: dbFile, baseDir: baseDir)
-        .createRepository() as DriftDocumentRepository;
+    final repo =
+        await persistentLibraryDependencies(
+              dbFile: dbFile,
+              baseDir: baseDir,
+            ).createRepository()
+            as DriftDocumentRepository;
     // Newest-first list puts the receipt id highest; export the invoice (id 1).
     final pdf = await repo.exportPdf(1);
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: PdfPreviewScreen(
-          pdfPath: pdf.path, name: 'Acme Corporation Invoice'),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: PdfPreviewScreen(
+          pdfPath: pdf.path,
+          name: 'Acme Corporation Invoice',
+        ),
+      ),
+    );
     await _hold(tester, 'pdf');
   });
 
   testWidgets('viewer — full page, on-device OCR', (tester) async {
     final (dbFile, baseDir) = await _seed();
-    final repo = await persistentLibraryDependencies(
-            dbFile: dbFile, baseDir: baseDir)
-        .createRepository() as DriftDocumentRepository;
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: PageViewerScreen(
-          documentId: 1, name: 'Acme Corporation Invoice', repository: repo),
-    ));
+    final repo =
+        await persistentLibraryDependencies(
+              dbFile: dbFile,
+              baseDir: baseDir,
+            ).createRepository()
+            as DriftDocumentRepository;
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: PageViewerScreen(
+          documentId: 1,
+          name: 'Acme Corporation Invoice',
+          repository: repo,
+        ),
+      ),
+    );
     await _hold(tester, 'privacy');
   });
 }

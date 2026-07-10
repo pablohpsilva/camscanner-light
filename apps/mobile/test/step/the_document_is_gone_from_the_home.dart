@@ -5,6 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> theDocumentIsGoneFromTheHome(WidgetTester tester) async {
   await tester.pumpAndSettle();
   // Back on the home, and the only document is gone.
-  expect(find.widgetWithText(AppBar, 'Documents'), findsOneWidget);
+  expect(find.text('Documents'), findsOneWidget);
   expect(find.byKey(const Key('document-tile-1')), findsNothing);
 }

@@ -21,9 +21,9 @@ import '../test/support/fake_scan.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
-      'multi-word search spanning pages finds "Report" and excludes "Decoy"',
-      (tester) async {
+  testWidgets('multi-word search spanning pages finds "Report" and excludes "Decoy"', (
+    tester,
+  ) async {
     // --- SEED ----------------------------------------------------------------
     // Write two documents to a real on-device SQLite file so the v5 migration
     // (FTS5 trigram table + triggers) runs before the app opens the same file.
@@ -40,29 +40,56 @@ void main() {
       // "Report": two pages on different positions — the FTS trigger rebuilds
       // a single doc_fts row with both pages' text concatenated, so the AND
       // query "acme AND invoice" matches across pages.
-      final reportId = await db.into(db.documents).insert(
-          DocumentsCompanion.insert(
-              name: 'Report', createdAt: now, modifiedAt: now));
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: reportId,
-          position: 1,
-          relativeImagePath: 'documents/$reportId/page_1.jpg',
-          ocrText: const Value('ACME corporation')));
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: reportId,
-          position: 3,
-          relativeImagePath: 'documents/$reportId/page_3.jpg',
-          ocrText: const Value('final INVOICE')));
+      final reportId = await db
+          .into(db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: 'Report',
+              createdAt: now,
+              modifiedAt: now,
+            ),
+          );
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: reportId,
+              position: 1,
+              relativeImagePath: 'documents/$reportId/page_1.jpg',
+              ocrText: const Value('ACME corporation'),
+            ),
+          );
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: reportId,
+              position: 3,
+              relativeImagePath: 'documents/$reportId/page_3.jpg',
+              ocrText: const Value('final INVOICE'),
+            ),
+          );
 
       // "Decoy": only one of the query words — must not appear in results.
-      final decoyId = await db.into(db.documents).insert(
-          DocumentsCompanion.insert(
-              name: 'Decoy', createdAt: now, modifiedAt: now));
-      await db.into(db.pages).insert(PagesCompanion.insert(
-          documentId: decoyId,
-          position: 1,
-          relativeImagePath: 'documents/$decoyId/page_1.jpg',
-          ocrText: const Value('acme only, nothing else')));
+      final decoyId = await db
+          .into(db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: 'Decoy',
+              createdAt: now,
+              modifiedAt: now,
+            ),
+          );
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: decoyId,
+              position: 1,
+              relativeImagePath: 'documents/$decoyId/page_1.jpg',
+              ocrText: const Value('acme only, nothing else'),
+            ),
+          );
 
       await db.close();
     }
@@ -83,13 +110,11 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
     // --- SEARCH --------------------------------------------------------------
-    await tester.tap(find.byKey(const Key('documents-search')));
-    // Bounded settle: wait for the search field to appear.
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
-
+    // The Ream search field is always visible in the header (no icon to open).
     await tester.enterText(
-        find.byKey(const Key('documents-search-field')), 'acme invoice');
+      find.byKey(const Key('documents-search-field')),
+      'acme invoice',
+    );
     // Bounded settle: wait for FTS query results to render.
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle(const Duration(milliseconds: 500));

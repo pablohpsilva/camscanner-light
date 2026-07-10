@@ -6,16 +6,22 @@ import '../scan/captured_image.dart';
 import '../scan/id_scan_screen.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
+import '../../theme/ream_colors.dart';
+import '../../theme/widgets/ream_action_button.dart';
+import '../../theme/widgets/ream_search_field.dart';
+import '../../theme/widgets/ream_segmented.dart';
 import 'document_repository.dart';
 import 'document_sort.dart';
 import 'document_summary.dart';
 import 'library_dependencies.dart';
+import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
 import 'save_controller.dart';
+import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
 import 'widgets/rename_dialog.dart';
-import 'widgets/sort_control_bar.dart';
+import 'widgets/sort_pill.dart';
 import '../donation/donation_banner.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../feedback/feedback_screen.dart';
@@ -52,13 +58,18 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _error = false;
   DocumentSort _sort = DocumentSort.initial;
   bool _feedbackAvailable = false;
+  LibraryViewMode _viewMode = LibraryViewMode.list;
 
   final TextEditingController _searchController = TextEditingController();
-  bool _searching = false;
   String _query = '';
+  // The FTS results for the current non-empty query. Kept separate from
+  // [_summaries] (the full list) so clearing the query restores the full list
+  // without a re-query.
+  List<DocumentSummary> _searchResults = const [];
   bool _sharing = false;
   final Set<int> _selectedIds = <int>{};
   bool get _selectionMode => _selectedIds.isNotEmpty;
+  bool get _searching => _query.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -68,8 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _probeFeedback() async {
-    final available =
-        await widget.feedbackDependencies.availability().isAvailable();
+    final available = await widget.feedbackDependencies
+        .availability()
+        .isAvailable();
     if (mounted) setState(() => _feedbackAvailable = available);
   }
 
@@ -199,7 +211,8 @@ class _HomeScreenState extends State<HomeScreen> {
               if (doc == null) {
                 messenger.showSnackBar(
                   const SnackBar(
-                      content: Text("Couldn't save document. Try again.")),
+                    content: Text("Couldn't save document. Try again."),
+                  ),
                 );
                 return;
               }
@@ -231,28 +244,19 @@ class _HomeScreenState extends State<HomeScreen> {
     await _refresh(); // a delete may have happened in the viewer
   }
 
-  void _openSearch() => setState(() {
-    _selectedIds.clear();
-    _searching = true;
-  });
-
-  void _closeSearch() {
-    _searchController.clear();
-    setState(() {
-      _searching = false;
-      _query = '';
-    });
-    _load(); // restore the full list
-  }
-
   Future<void> _onQueryChanged(String value) async {
     final repo = _repository;
     setState(() => _query = value);
+    if (value.trim().isEmpty) {
+      // Empty query restores the full (sorted) list; no re-query needed.
+      setState(() => _searchResults = const []);
+      return;
+    }
     if (repo == null) return;
     try {
       final results = await repo.searchDocuments(value);
       if (!mounted || value != _query) return; // race guard: newer query wins
-      setState(() => _summaries = results);
+      setState(() => _searchResults = results);
     } catch (_) {
       if (mounted) setState(() => _error = true);
     }
@@ -263,6 +267,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onSortCriterion(SortCriterion c) =>
       setState(() => _sort = nextSort(_sort, c));
+
+  void _onViewModeChanged(LibraryViewMode mode) =>
+      setState(() => _viewMode = mode);
 
   Future<void> _renameDocument(DocumentSummary s) async {
     final repo = _repository;
@@ -316,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // The documents currently on screen, in display order (search order when
   // searching, else the active sort). Selection export follows this order.
   List<DocumentSummary> get _displayed =>
-      _searching ? _summaries : sortDocuments(_summaries, _sort);
+      _searching ? _searchResults : sortDocuments(_summaries, _sort);
 
   Future<void> _exportSelected() async {
     final repo = _repository;
@@ -358,133 +365,237 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _selectionMode
-          ? _buildSelectionAppBar()
-          : _searching
-          ? _buildSearchAppBar()
-          : _buildNormalAppBar(),
-      body: _loading
-          ? const Center(
-              key: Key('documents-loading'),
-              child: CircularProgressIndicator(),
-            )
-          : _error
-          ? _buildError()
-          : _buildBody(),
-      floatingActionButton: (_searching || _selectionMode)
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _repository == null ? null : _openScan,
-              icon: const Icon(Icons.document_scanner_outlined),
-              label: const Text('Scan'),
-            ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildHeader(context),
+            Expanded(child: _buildBody()),
+            if (!_selectionMode) _buildActionRow(context),
+          ],
+        ),
+      ),
       bottomNavigationBar: const DonationBanner(),
     );
   }
 
-  AppBar _buildSelectionAppBar() => AppBar(
-    leading: IconButton(
-      key: const Key('selection-close'),
-      tooltip: 'Cancel selection',
-      icon: const Icon(Icons.close),
-      onPressed: _clearSelection,
-    ),
-    title: Text('${_selectedIds.length} selected'),
-    actions: [
-      IconButton(
-        key: const Key('selection-export'),
-        tooltip: 'Export',
-        icon: const Icon(Icons.ios_share),
-        onPressed: _exportSelected,
-      ),
-    ],
-  );
+  // Whether the sort/view controls should show: a non-empty, loaded, non-error
+  // library that isn't in selection mode.
+  bool get _showControls =>
+      !_loading &&
+      !_error &&
+      !_selectionMode &&
+      (_searching ? _searchResults.isNotEmpty : _summaries.isNotEmpty);
 
-  AppBar _buildNormalAppBar() => AppBar(
-    title: const Text('Documents'),
-    actions: [
-      IconButton(
-        key: const Key('home-scan-id'),
-        tooltip: 'Scan ID card',
-        icon: const Icon(Icons.badge_outlined),
-        onPressed: _repository == null ? null : _openIdScan,
-      ),
-      IconButton(
-        key: const Key('home-import'),
-        tooltip: 'Import from gallery',
-        icon: const Icon(Icons.photo_library_outlined),
-        onPressed: _repository == null ? null : _onImport,
-      ),
-      IconButton(
-        key: const Key('documents-search'),
-        tooltip: 'Search',
-        icon: const Icon(Icons.search),
-        onPressed: _repository == null ? null : _openSearch,
-      ),
-      if (_feedbackAvailable)
-        PopupMenuButton<String>(
-          key: const Key('home-overflow-menu'),
-          onSelected: (v) {
-            if (v == 'feedback') {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) =>
-                    FeedbackScreen(dependencies: widget.feedbackDependencies),
-              ));
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              key: Key('home-menu-feedback'),
-              value: 'feedback',
-              child: Text('Send feedback'),
+  Widget _buildHeader(BuildContext context) {
+    final r = context.ream;
+    return Container(
+      color: r.paper,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _selectionMode
+              ? _buildSelectionBar(context)
+              : _buildTitleRow(context),
+          if (!_selectionMode) ...[
+            const SizedBox(height: 14),
+            ReamSearchField(
+              controller: _searchController,
+              onChanged: _onQueryChanged,
             ),
           ],
-        ),
-    ],
-  );
+          if (_showControls) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SortPill(sort: _sort, onCriterionSelected: _onSortCriterion),
+                ReamSegmented<LibraryViewMode>(
+                  key: const Key('library-view-toggle'),
+                  value: _viewMode,
+                  onChanged: _onViewModeChanged,
+                  segments: const [
+                    ReamSegment(value: LibraryViewMode.list, label: 'List'),
+                    ReamSegment(value: LibraryViewMode.grid, label: 'Grid'),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
-  AppBar _buildSearchAppBar() => AppBar(
-    leading: IconButton(
-      key: const Key('documents-search-close'),
-      tooltip: 'Close search',
-      icon: const Icon(Icons.arrow_back),
-      onPressed: _closeSearch,
-    ),
-    title: TextField(
-      key: const Key('documents-search-field'),
-      controller: _searchController,
-      autofocus: true,
-      textInputAction: TextInputAction.search,
-      decoration: const InputDecoration(
-        hintText: 'Search documents',
-        border: InputBorder.none,
+  Widget _buildTitleRow(BuildContext context) {
+    final r = context.ream;
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Documents', style: theme.textTheme.headlineMedium),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_outline, size: 12, color: r.muted),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Private · on this device',
+                    style: TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: r.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        _buildSettingsMenu(context),
+      ],
+    );
+  }
+
+  Widget _buildSettingsMenu(BuildContext context) {
+    final r = context.ream;
+    return PopupMenuButton<String>(
+      key: const Key('home-settings'),
+      tooltip: 'Settings',
+      onSelected: (v) {
+        if (v == 'feedback') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  FeedbackScreen(dependencies: widget.feedbackDependencies),
+            ),
+          );
+        }
+      },
+      itemBuilder: (_) => [
+        if (_feedbackAvailable)
+          const PopupMenuItem(
+            key: Key('home-menu-feedback'),
+            value: 'feedback',
+            child: Text('Send feedback'),
+          ),
+      ],
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: r.surface,
+          shape: BoxShape.circle,
+          border: Border.all(color: r.line),
+        ),
+        alignment: Alignment.center,
+        child: Icon(Icons.settings_outlined, size: 18, color: r.ink2),
       ),
-      onChanged: _onQueryChanged,
-    ),
-    actions: [
-      IconButton(
-        key: const Key('documents-search-clear'),
-        tooltip: 'Clear',
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          _searchController.clear();
-          _onQueryChanged('');
-        },
+    );
+  }
+
+  Widget _buildSelectionBar(BuildContext context) {
+    final r = context.ream;
+    return Row(
+      key: const Key('selection-bar'),
+      children: [
+        IconButton(
+          key: const Key('selection-close'),
+          tooltip: 'Cancel selection',
+          icon: Icon(Icons.close, color: r.ink),
+          onPressed: _clearSelection,
+        ),
+        Expanded(
+          child: Text(
+            '${_selectedIds.length} selected',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        IconButton(
+          key: const Key('selection-export'),
+          tooltip: 'Export',
+          icon: Icon(Icons.ios_share, color: r.ink),
+          onPressed: _exportSelected,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionRow(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: ReamActionButton(
+              key: const Key('home-scan'),
+              label: 'Scan',
+              icon: Icons.add,
+              primary: true,
+              onPressed: _repository == null ? null : _openScan,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: ReamActionButton(
+              key: const Key('home-scan-id'),
+              label: 'ID card',
+              icon: Icons.badge_outlined,
+              onPressed: _repository == null ? null : _openIdScan,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: ReamActionButton(
+              key: const Key('home-import'),
+              label: 'Import',
+              icon: Icons.download_outlined,
+              onPressed: _repository == null ? null : _onImport,
+            ),
+          ),
+        ],
       ),
-    ],
-  );
+    );
+  }
 
   Widget _buildBody() {
+    if (_loading) {
+      return const Center(
+        key: Key('documents-loading'),
+        child: CircularProgressIndicator(),
+      );
+    }
+    if (_error) return _buildError();
+
     if (_searching) {
-      if (_summaries.isEmpty && _query.trim().isNotEmpty) {
+      if (_searchResults.isEmpty) {
         return Center(
           key: const Key('documents-search-empty'),
           child: Text('No documents match "$_query".'),
         );
       }
-      if (_summaries.isEmpty) return const EmptyDocumentsView();
-      return DocumentsListView(
-        summaries: _summaries,
+      return _buildDocuments(_searchResults);
+    }
+
+    if (_summaries.isEmpty) return const EmptyDocumentsView();
+    return _buildDocuments(sortDocuments(_summaries, _sort));
+  }
+
+  Widget _buildDocuments(List<DocumentSummary> docs) {
+    if (_viewMode == LibraryViewMode.grid) {
+      return DocumentsGridView(
+        summaries: docs,
         onOpen: _openDocument,
         onRename: _renameDocument,
         onShare: _shareDocument,
@@ -494,23 +605,15 @@ class _HomeScreenState extends State<HomeScreen> {
         onLongPress: _startSelection,
       );
     }
-    if (_summaries.isEmpty) return const EmptyDocumentsView();
-    return Column(
-      children: [
-        SortControlBar(sort: _sort, onCriterionTapped: _onSortCriterion),
-        Expanded(
-          child: DocumentsListView(
-            summaries: sortDocuments(_summaries, _sort),
-            onOpen: _openDocument,
-            onRename: _renameDocument,
-            onShare: _shareDocument,
-            selectionMode: _selectionMode,
-            selectedIds: _selectedIds,
-            onToggleSelect: _toggleSelect,
-            onLongPress: _startSelection,
-          ),
-        ),
-      ],
+    return DocumentsListView(
+      summaries: docs,
+      onOpen: _openDocument,
+      onRename: _renameDocument,
+      onShare: _shareDocument,
+      selectionMode: _selectionMode,
+      selectedIds: _selectedIds,
+      onToggleSelect: _toggleSelect,
+      onLongPress: _startSelection,
     );
   }
 
