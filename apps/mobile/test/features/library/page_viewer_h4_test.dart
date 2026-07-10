@@ -47,12 +47,8 @@ void main() {
     ],
   );
 
-  testWidgets('overflow menu exposes Retake page and Delete page', (
-    tester,
-  ) async {
+  testWidgets('toolbar exposes Retake page and Delete page', (tester) async {
     await pushViewer(tester, twoPageRepo());
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
     expect(find.byKey(const Key('page-viewer-retake')), findsOneWidget);
     expect(find.byKey(const Key('page-viewer-delete-page')), findsOneWidget);
   });
@@ -60,8 +56,6 @@ void main() {
   testWidgets('Delete page: confirm calls deletePage', (tester) async {
     final repo = twoPageRepo();
     await pushViewer(tester, repo);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page-confirm')));
@@ -72,8 +66,6 @@ void main() {
   testWidgets('Delete page: cancel does NOT call deletePage', (tester) async {
     final repo = twoPageRepo();
     await pushViewer(tester, repo);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page-cancel')));
@@ -88,8 +80,6 @@ void main() {
       pages: [const PageImage(position: 1, imagePath: '/nonexistent/p1.jpg')],
     );
     await pushViewer(tester, repo);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
     await tester.pumpAndSettle();
     expect(
@@ -116,8 +106,6 @@ void main() {
       ],
     );
     await pushViewer(tester, repo);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-page-confirm')));
@@ -135,8 +123,6 @@ void main() {
       createDocumentScanner: HangingDocumentScannerService.new,
     );
     await pushViewer(tester, repo, deps: deps);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-retake')));
     await tester
         .pump(); // dispatch tap, push ScanScreen, post-frame _run() starts

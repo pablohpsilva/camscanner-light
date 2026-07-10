@@ -46,9 +46,9 @@ void main() {
         ],
       );
 
-  testWidgets('overflow menu exposes Share as image', (tester) async {
+  testWidgets('share menu exposes Share as image', (tester) async {
     await pushViewer(tester, twoPageRepo(), FakeShareChannel());
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('page-viewer-export-image')), findsOneWidget);
     expect(find.text('Share as image'), findsOneWidget);
@@ -60,7 +60,7 @@ void main() {
     final repo = twoPageRepo();
     final share = FakeShareChannel();
     await pushViewer(tester, repo, share);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();
@@ -78,7 +78,7 @@ void main() {
     final repo = twoPageRepo(throwOnExportImage: true);
     final share = FakeShareChannel();
     await pushViewer(tester, repo, share);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();
@@ -94,7 +94,7 @@ void main() {
     final repo = twoPageRepo();
     final share = FakeShareChannel(throwOnShare: true);
     await pushViewer(tester, repo, share);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();

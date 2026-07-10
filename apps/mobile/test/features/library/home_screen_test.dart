@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/home_screen.dart';
+import 'package:mobile/features/library/page_viewer_screen.dart';
+import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/scan_screen.dart';
 import 'package:mobile/theme/ream_theme.dart';
@@ -115,9 +117,9 @@ void main() {
     await tester.tap(find.byKey(const Key('document-tile-1')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('page-viewer-delete')), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
     expect(
-      find.widgetWithText(AppBar, 'Scan 2026-06-27 20.26.42'),
+      find.widgetWithText(EditorTopBar, 'Scan 2026-06-27 20.26.42'),
       findsOneWidget,
     );
   });
