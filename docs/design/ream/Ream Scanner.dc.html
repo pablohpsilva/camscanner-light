@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4f1ea; --surface:#fffdf8; --surface2:#faf7f0;
+  --ink:#33302a; --ink2:#5c574d; --muted:#928c80; --line:#e6e1d6; --line2:#efebe2;
+  --green:oklch(0.66 0.13 150); --amber:oklch(0.70 0.13 78); --blue:oklch(0.66 0.12 245);
+  --green-deep:oklch(0.52 0.115 150); --green-soft:oklch(0.94 0.03 150);
+  --amber-soft:oklch(0.95 0.045 82); --blue-soft:oklch(0.95 0.03 245);
+}
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#e7e3d9;color:var(--ink);-webkit-font-smoothing:antialiased}
+a{color:var(--green-deep)}a:hover{color:var(--ink)}
+.dv-turn{padding:44px 48px 40px;border-bottom:1px solid rgba(0,0,0,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.dv-tid{font:700 10px 'IBM Plex Mono',monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.3 'Figtree';color:var(--ink)}
+.dv-tsub{font:400 12.5px/1.5 'Figtree';color:var(--ink2);max-width:640px;margin:0 0 24px}
+.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:14px;scroll-margin-top:16px}
+.dv-olabel{display:flex;align-items:baseline;gap:9px;font:500 12px/1.4 'Figtree';color:var(--ink2)}
+.dv-oid{font:700 10.5px 'IBM Plex Mono',monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:var(--ink);border-radius:5px;text-decoration:none}
+.dv-opt:target .dv-oid{background:var(--green);color:#fff}
+.dv-next{margin:26px 0 0;font:400 12px/1.6 'Figtree';color:var(--ink2)}
+.screens{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start;max-width:1420px}
+.cap{font:600 11px/1 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
+.ph{width:308px;flex:none;display:flex;flex-direction:column;gap:9px}
+.frame{width:308px;height:648px;background:#111013;border-radius:44px;padding:10px;box-shadow:0 24px 48px -16px rgba(40,35,20,.34),0 0 0 1px rgba(0,0,0,.05);flex:none}
+.scr{width:100%;height:100%;border-radius:35px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:var(--paper)}
+.island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:82px;height:25px;background:#111013;border-radius:15px;z-index:30}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Ream — full app, warm &amp; clean direction + confidence-cue motif</span></div>
+  <p class="dv-tsub">One cohesive iOS direction across the whole app. Warm paper neutrals, Figtree + a monospace for technical readouts, and the green / amber / blue <em>confidence trio</em> running through every capture surface. <a class="dv-oid" href="#1b">1b</a> re-skins the hero screens in a darker, more technical HUD style so you can feel an alternative personality.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Warm &amp; clean · the complete core loop + editor + support screens</div>
+      <div class="screens">
+<!-- ============ 01 LIBRARY (LIST) ============ -->
+<div class="ph">
+  <div class="cap">01 · Library — list</div>
+  <div class="frame"><div class="scr">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:var(--ink)"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:var(--ink);border-radius:1px"></span></span></div>
+    <!-- header -->
+    <div style="padding:14px 20px 12px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between">
+        <div>
+          <div style="font:800 26px/1 'Figtree';letter-spacing:-.02em">Documents</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font:500 12px/1 'Figtree';color:var(--muted)"><span style="width:9px;height:11px;border:1.3px solid var(--muted);border-radius:2px;position:relative;display:inline-block;top:1px"></span>Private · on this device</div>
+        </div>
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:16px">⚙</div>
+      </div>
+      <!-- search -->
+      <div style="margin-top:14px;display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 13px;color:var(--muted);font:500 13.5px/1 'Figtree'">
+        <span style="width:13px;height:13px;border:1.6px solid var(--muted);border-radius:50%;position:relative;display:inline-block"><span style="position:absolute;width:5px;height:1.6px;background:var(--muted);transform:rotate(45deg);bottom:-2px;right:-3px;border-radius:1px"></span></span>
+        Search titles &amp; text inside pages
+      </div>
+      <!-- sort + toggle -->
+      <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:6px;font:600 12px/1 'Figtree';color:var(--ink2);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 10px">Modified <span style="font-size:10px">↓</span></div>
+        <div style="display:flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:2px">
+          <span style="font:600 11.5px/1 'Figtree';padding:6px 11px;border-radius:7px;background:var(--ink);color:var(--surface)">List</span>
+          <span style="font:600 11.5px/1 'Figtree';padding:6px 11px;border-radius:7px;color:var(--muted)">Grid</span>
+        </div>
+      </div>
+    </div>
+    <!-- list -->
+    <div style="flex:1;overflow:hidden;padding:0 12px">
+      <!-- row -->
+      <div style="display:flex;align-items:center;gap:13px;padding:11px 8px;border-radius:14px">
+        <div style="width:42px;height:54px;border-radius:6px;background:var(--surface);border:1px solid var(--line);flex:none;padding:7px 6px;display:flex;flex-direction:column;gap:3.5px;box-shadow:0 1px 2px rgba(0,0,0,.04)"><span style="height:2px;width:80%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:100%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:60%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:90%;background:var(--line2);border-radius:2px"></span></div>
+        <div style="flex:1;min-width:0"><div style="font:600 14.5px/1.2 'Figtree'">Lease Agreement 2026</div><div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:5px">6 pages · Jul 8</div></div>
+        <span style="color:var(--line);font-size:20px">⋯</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:13px;padding:11px 8px;border-radius:14px;background:var(--surface)">
+        <div style="width:42px;height:54px;border-radius:6px;background:#fff;border:1px solid var(--line);flex:none;padding:7px 6px;display:flex;flex-direction:column;gap:3.5px;box-shadow:0 1px 2px rgba(0,0,0,.04)"><span style="height:2px;width:50%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:70%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:40%;background:var(--line2);border-radius:2px"></span></div>
+        <div style="flex:1;min-width:0"><div style="font:600 14.5px/1.2 'Figtree'">Costco Receipt</div><div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:5px">1 page · Jul 6</div></div>
+        <span style="color:var(--line);font-size:20px">⋯</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:13px;padding:11px 8px;border-radius:14px">
+        <div style="width:42px;height:54px;border-radius:6px;background:var(--surface);border:1px solid var(--line);flex:none;padding:7px 6px;display:flex;flex-direction:column;gap:3.5px;box-shadow:0 1px 2px rgba(0,0,0,.04)"><span style="height:2px;width:70%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:100%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:80%;background:var(--line2);border-radius:2px"></span></div>
+        <div style="flex:1;min-width:0"><div style="font:600 14.5px/1.2 'Figtree'">Passport &amp; ID</div><div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:5px">2 pages · Jul 2</div></div>
+        <span style="color:var(--line);font-size:20px">⋯</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:13px;padding:11px 8px;border-radius:14px">
+        <div style="width:42px;height:54px;border-radius:6px;background:var(--surface);border:1px solid var(--line);flex:none;padding:7px 6px;display:flex;flex-direction:column;gap:3.5px;box-shadow:0 1px 2px rgba(0,0,0,.04)"><span style="height:2px;width:90%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:60%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:100%;background:var(--line2);border-radius:2px"></span></div>
+        <div style="flex:1;min-width:0"><div style="font:600 14.5px/1.2 'Figtree'">Utility Bill — Feb</div><div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:5px">1 page · Jun 28</div></div>
+        <span style="color:var(--line);font-size:20px">⋯</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:13px;padding:11px 8px;border-radius:14px">
+        <div style="width:42px;height:54px;border-radius:6px;background:var(--surface);border:1px solid var(--line);flex:none;padding:7px 6px;display:flex;flex-direction:column;gap:3.5px;box-shadow:0 1px 2px rgba(0,0,0,.04)"><span style="height:2px;width:65%;background:var(--line2);border-radius:2px"></span><span style="height:2px;width:85%;background:var(--line2);border-radius:2px"></span></div>
+        <div style="flex:1;min-width:0"><div style="font:600 14.5px/1.2 'Figtree'">Meeting Notes</div><div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:5px">3 pages · Jun 21</div></div>
+        <span style="color:var(--line);font-size:20px">⋯</span>
+      </div>
+    </div>
+    <!-- bottom actions -->
+    <div style="padding:10px 16px 0;background:linear-gradient(transparent,var(--paper) 22%)">
+      <div style="display:flex;gap:8px">
+        <div style="flex:1.5;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green-deep);color:#fff;border-radius:15px;padding:15px 0;font:700 15px/1 'Figtree';box-shadow:0 8px 18px -6px oklch(0.52 0.115 150 / .5)"><span style="font-size:17px;font-weight:400">＋</span>Scan</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:9px 0;font:600 11px/1 'Figtree';color:var(--ink2)"><span style="width:20px;height:14px;border:1.6px solid var(--ink2);border-radius:3px;display:inline-block"></span>ID card</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:9px 0;font:600 11px/1 'Figtree';color:var(--ink2)"><span style="font-size:15px">↧</span>Import</div>
+      </div>
+      <!-- donation banner -->
+      <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between;background:var(--amber-soft);border:1px solid oklch(0.85 0.06 82);border-radius:13px;padding:10px 13px">
+        <div style="font:500 11.5px/1.3 'Figtree';color:oklch(0.42 0.07 62)">Ream is free &amp; donation-funded.<br><span style="font-weight:700">Support the app →</span></div>
+        <div style="font-size:16px">♥</div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============ 02 LIBRARY (GRID) ============ -->
+<div class="ph">
+  <div class="cap">02 · Library — grid</div>
+  <div class="frame"><div class="scr">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:var(--ink)"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:var(--ink);border-radius:1px"></span></span></div>
+    <div style="padding:14px 20px 12px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between">
+        <div><div style="font:800 26px/1 'Figtree';letter-spacing:-.02em">Documents</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px;font:500 12px/1 'Figtree';color:var(--muted)"><span style="width:9px;height:11px;border:1.3px solid var(--muted);border-radius:2px;position:relative;display:inline-block;top:1px"></span>Private · on this device</div></div>
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:16px">⚙</div>
+      </div>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 13px;color:var(--muted);font:500 13.5px/1 'Figtree'">
+        <span style="width:13px;height:13px;border:1.6px solid var(--muted);border-radius:50%;position:relative;display:inline-block"><span style="position:absolute;width:5px;height:1.6px;background:var(--muted);transform:rotate(45deg);bottom:-2px;right:-3px;border-radius:1px"></span></span>Search titles &amp; text inside pages
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:6px;font:600 12px/1 'Figtree';color:var(--ink2);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 10px">Modified <span style="font-size:10px">↓</span></div>
+        <div style="display:flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:2px">
+          <span style="font:600 11.5px/1 'Figtree';padding:6px 11px;border-radius:7px;color:var(--muted)">List</span>
+          <span style="font:600 11.5px/1 'Figtree';padding:6px 11px;border-radius:7px;background:var(--ink);color:var(--surface)">Grid</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;overflow:hidden;padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start">
+      <div style="display:flex;flex-direction:column;gap:7px"><div style="aspect-ratio:.77;background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 6px rgba(0,0,0,.05)"><span style="height:2.5px;width:80%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:100%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:60%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:92%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:74%;background:var(--line2);border-radius:2px"></span></div><div><div style="font:600 12.5px/1.2 'Figtree'">Lease Agreement</div><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:4px">6p · Jul 8</div></div></div>
+      <div style="display:flex;flex-direction:column;gap:7px"><div style="aspect-ratio:.77;background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 6px rgba(0,0,0,.05)"><span style="height:2.5px;width:50%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:70%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:40%;background:var(--line2);border-radius:2px"></span></div><div><div style="font:600 12.5px/1.2 'Figtree'">Costco Receipt</div><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:4px">1p · Jul 6</div></div></div>
+      <div style="display:flex;flex-direction:column;gap:7px"><div style="aspect-ratio:.77;background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 6px rgba(0,0,0,.05)"><span style="height:2.5px;width:70%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:100%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:80%;background:var(--line2);border-radius:2px"></span></div><div><div style="font:600 12.5px/1.2 'Figtree'">Passport &amp; ID</div><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:4px">2p · Jul 2</div></div></div>
+      <div style="display:flex;flex-direction:column;gap:7px"><div style="aspect-ratio:.77;background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 6px rgba(0,0,0,.05)"><span style="height:2.5px;width:90%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:60%;background:var(--line2);border-radius:2px"></span><span style="height:2.5px;width:100%;background:var(--line2);border-radius:2px"></span></div><div><div style="font:600 12.5px/1.2 'Figtree'">Utility Bill</div><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:var(--muted);margin-top:4px">1p · Jun 28</div></div></div>
+    </div>
+    <div style="padding:10px 16px 0;background:linear-gradient(transparent,var(--paper) 22%)">
+      <div style="display:flex;gap:8px">
+        <div style="flex:1.5;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green-deep);color:#fff;border-radius:15px;padding:15px 0;font:700 15px/1 'Figtree';box-shadow:0 8px 18px -6px oklch(0.52 0.115 150 / .5)"><span style="font-size:17px;font-weight:400">＋</span>Scan</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:9px 0;font:600 11px/1 'Figtree';color:var(--ink2)"><span style="width:20px;height:14px;border:1.6px solid var(--ink2);border-radius:3px;display:inline-block"></span>ID card</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:9px 0;font:600 11px/1 'Figtree';color:var(--ink2)"><span style="font-size:15px">↧</span>Import</div>
+      </div>
+      <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between;background:var(--amber-soft);border:1px solid oklch(0.85 0.06 82);border-radius:13px;padding:10px 13px"><div style="font:500 11.5px/1.3 'Figtree';color:oklch(0.42 0.07 62)">Ream is free &amp; donation-funded.<br><span style="font-weight:700">Support the app →</span></div><div style="font-size:16px">♥</div></div>
+      <div style="height:8px"></div>
+    </div>
+  </div></div>
+</div>
+<!-- ============ 03 CAPTURE ============ -->
+<div class="ph">
+  <div class="cap">03 · Capture — live edges</div>
+  <div class="frame"><div class="scr" style="background:#17140f">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#fff"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #fff;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#fff;border-radius:1px"></span></span></div>
+    <!-- top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;color:#fff">
+      <span style="font-size:18px">✕</span>
+      <span style="font:600 12.5px/1 'IBM Plex Mono',monospace;letter-spacing:.04em;opacity:.85">1 CAPTURED</span>
+      <span style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:14px">⚡</span>
+    </div>
+    <!-- viewfinder -->
+    <div style="flex:1;position:relative;margin:6px 0;background:radial-gradient(120% 90% at 50% 40%,#2a251c,#141109);overflow:hidden">
+      <!-- confidence chip -->
+      <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:7px;background:oklch(0.66 0.13 150 / .16);border:1px solid var(--green);color:oklch(0.86 0.09 150);border-radius:20px;padding:7px 13px;font:600 12px/1 'Figtree';backdrop-filter:blur(4px)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span>Edges detected — hold steady</div>
+      <!-- detected quad -->
+      <div style="position:absolute;top:80px;bottom:70px;left:38px;right:38px;border:2px solid var(--green);border-radius:4px;transform:perspective(600px) rotateX(3deg) rotateZ(-1.2deg);box-shadow:0 0 0 100vmax rgba(15,12,8,.42);background:rgba(255,255,255,.05)">
+        <span style="position:absolute;top:-2px;left:-2px;width:22px;height:22px;border-top:3px solid var(--green);border-left:3px solid var(--green);border-radius:5px 0 0 0"></span>
+        <span style="position:absolute;top:-2px;right:-2px;width:22px;height:22px;border-top:3px solid var(--green);border-right:3px solid var(--green);border-radius:0 5px 0 0"></span>
+        <span style="position:absolute;bottom:-2px;left:-2px;width:22px;height:22px;border-bottom:3px solid var(--green);border-left:3px solid var(--green);border-radius:0 0 0 5px"></span>
+        <span style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-bottom:3px solid var(--green);border-right:3px solid var(--green);border-radius:0 0 5px 0"></span>
+      </div>
+    </div>
+    <!-- mode selector -->
+    <div style="display:flex;justify-content:center;gap:22px;padding:10px 0 4px;font:600 12px/1 'Figtree';color:rgba(255,255,255,.5)"><span>ID card</span><span style="color:#fff;position:relative">Document<span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--green)"></span></span><span>Batch</span></div>
+    <!-- shutter row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 34px 26px">
+      <div style="width:44px;height:44px;border-radius:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18)"></div>
+      <div style="width:70px;height:70px;border-radius:50%;border:4px solid #fff;padding:4px"><div style="width:100%;height:100%;border-radius:50%;background:#fff"></div></div>
+      <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:#fff;font:600 12px 'IBM Plex Mono',monospace">1</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============ 04 REVIEW & CLEAN ============ -->
+<div class="ph">
+  <div class="cap">04 · Review &amp; clean</div>
+  <div class="frame"><div class="scr" style="background:#201c16">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#fff"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #fff;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#fff;border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;color:#fff;font:600 13px/1 'Figtree'"><span style="opacity:.8">Retake</span><span style="font-weight:700;font-size:15px">Review</span><span style="opacity:.4">Save</span></div>
+    <!-- confidence chip -->
+    <div style="margin:2px auto 0;display:flex;align-items:center;gap:7px;background:oklch(0.66 0.13 150 / .16);border:1px solid var(--green);color:oklch(0.88 0.08 150);border-radius:20px;padding:6px 13px;font:600 11.5px/1 'Figtree'"><span style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span>High confidence — corners look right</div>
+    <!-- page with handles -->
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:22px 30px">
+      <div style="position:relative;width:100%;aspect-ratio:.74;background:#fff;border-radius:3px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:22px 18px;display:flex;flex-direction:column;gap:8px">
+        <span style="height:9px;width:60%;background:#e9e5db;border-radius:2px"></span>
+        <span style="height:4px;width:100%;background:#eee9df;border-radius:2px;margin-top:6px"></span><span style="height:4px;width:96%;background:#eee9df;border-radius:2px"></span><span style="height:4px;width:100%;background:#eee9df;border-radius:2px"></span><span style="height:4px;width:70%;background:#eee9df;border-radius:2px"></span>
+        <span style="height:4px;width:100%;background:#eee9df;border-radius:2px;margin-top:10px"></span><span style="height:4px;width:88%;background:#eee9df;border-radius:2px"></span><span style="height:4px;width:100%;background:#eee9df;border-radius:2px"></span><span style="height:4px;width:54%;background:#eee9df;border-radius:2px"></span>
+        <!-- corner handles -->
+        <span style="position:absolute;top:-7px;left:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></span>
+        <span style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></span>
+        <span style="position:absolute;bottom:-7px;left:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></span>
+        <span style="position:absolute;bottom:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></span>
+      </div>
+    </div>
+    <!-- filter strip -->
+    <div style="padding:6px 16px 10px;display:flex;gap:10px;justify-content:center">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:6px;background:#fff;border:2px solid var(--green);box-shadow:0 0 0 2px oklch(0.66 0.13 150 / .3)"></div><span style="font:700 10px/1 'Figtree';color:#fff">Auto</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:6px;background:#e9e2d4;border:1px solid rgba(255,255,255,.2)"></div><span style="font:500 10px/1 'Figtree';color:rgba(255,255,255,.6)">Original</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:6px;background:#fffef9;border:1px solid rgba(255,255,255,.2)"></div><span style="font:500 10px/1 'Figtree';color:rgba(255,255,255,.6)">Color</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:6px;background:linear-gradient(#fff,#d9d9d9);border:1px solid rgba(255,255,255,.2)"></div><span style="font:500 10px/1 'Figtree';color:rgba(255,255,255,.6)">B&amp;W</span></div>
+    </div>
+    <!-- footer -->
+    <div style="display:flex;gap:9px;padding:4px 18px 26px">
+      <div style="flex:1;text-align:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:14px;padding:14px 0;font:600 14px/1 'Figtree'">＋ Add page</div>
+      <div style="flex:1;text-align:center;background:var(--green);color:#0e2416;border-radius:14px;padding:14px 0;font:700 14px/1 'Figtree'">Save document</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============ 05 ID CARD MODE ============ -->
+<div class="ph">
+  <div class="cap">05 · ID card — guided</div>
+  <div class="frame"><div class="scr" style="background:#17140f">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#fff"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #fff;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#fff;border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;color:#fff"><span style="font-size:18px">✕</span><span style="font:700 14px/1 'Figtree'">Scan ID card</span><span style="width:18px"></span></div>
+    <!-- step indicator -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 0 2px;font:600 11.5px/1 'Figtree'">
+      <span style="display:flex;align-items:center;gap:6px;color:#fff"><span style="width:20px;height:20px;border-radius:50%;background:var(--green);color:#0e2416;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">1</span>Front</span>
+      <span style="width:26px;height:1.5px;background:rgba(255,255,255,.25)"></span>
+      <span style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.4)"><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">2</span>Back</span>
+    </div>
+    <div style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(120% 90% at 50% 45%,#2a251c,#141109);gap:20px">
+      <div style="font:600 15px/1.4 'Figtree';color:#fff;text-align:center">Scan the <span style="color:var(--green)">front</span> of the card</div>
+      <!-- card guide frame (amber = align) -->
+      <div style="width:76%;aspect-ratio:1.586;border:2px solid var(--amber);border-radius:12px;position:relative;background:rgba(255,255,255,.04)">
+        <span style="position:absolute;top:-2px;left:-2px;width:24px;height:24px;border-top:3px solid var(--amber);border-left:3px solid var(--amber);border-radius:12px 0 0 0"></span>
+        <span style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-bottom:3px solid var(--amber);border-right:3px solid var(--amber);border-radius:0 0 12px 0"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;background:oklch(0.70 0.13 78 / .16);border:1px solid var(--amber);color:oklch(0.86 0.1 82);border-radius:20px;padding:6px 13px;font:600 11.5px/1 'Figtree'"><span style="width:7px;height:7px;border-radius:50%;background:var(--amber)"></span>Align card within frame — please verify</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;padding:16px 0 28px"><div style="width:70px;height:70px;border-radius:50%;border:4px solid #fff;padding:4px"><div style="width:100%;height:100%;border-radius:50%;background:#fff"></div></div></div>
+  </div></div>
+</div>
+<!-- ============ 06 DOCUMENT EDITOR ============ -->
+<div class="ph">
+  <div class="cap">06 · Document editor</div>
+  <div class="frame"><div class="scr" style="background:#26221b">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#fff"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #fff;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#fff;border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;color:#fff"><span style="font-size:17px">‹</span><div style="text-align:center"><div style="font:700 13.5px/1.1 'Figtree'">Lease Agreement 2026</div></div><span style="font-size:19px">⋯</span></div>
+    <!-- viewer -->
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:14px 26px;overflow:hidden">
+      <div style="width:100%;aspect-ratio:.74;background:#fff;border-radius:3px;box-shadow:0 8px 26px rgba(0,0,0,.4);padding:24px 20px;display:flex;flex-direction:column;gap:7px">
+        <span style="height:9px;width:55%;background:#e6e1d6;border-radius:2px"></span>
+        <span style="height:4px;width:100%;background:#efeae0;border-radius:2px;margin-top:8px"></span><span style="height:4px;width:94%;background:#efeae0;border-radius:2px"></span><span style="height:4px;width:100%;background:#efeae0;border-radius:2px"></span><span style="height:4px;width:80%;background:#efeae0;border-radius:2px"></span><span style="height:4px;width:100%;background:#efeae0;border-radius:2px"></span><span style="height:4px;width:66%;background:#efeae0;border-radius:2px"></span>
+        <span style="height:4px;width:100%;background:#efeae0;border-radius:2px;margin-top:10px"></span><span style="height:4px;width:90%;background:#efeae0;border-radius:2px"></span><span style="height:4px;width:72%;background:#efeae0;border-radius:2px"></span>
+      </div>
+      <!-- page counter -->
+      <div style="position:absolute;top:22px;right:32px;background:rgba(0,0,0,.55);color:#fff;border-radius:20px;padding:5px 11px;font:600 11px/1 'IBM Plex Mono',monospace;backdrop-filter:blur(3px)">2 / 6</div>
+    </div>
+    <!-- thumbnail strip -->
+    <div style="display:flex;gap:8px;padding:8px 16px;overflow:hidden;align-items:center">
+      <div style="width:34px;height:44px;border-radius:4px;background:#efeae0;opacity:.55;flex:none"></div>
+      <div style="width:38px;height:48px;border-radius:5px;background:#fff;border:2px solid var(--green);flex:none;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>
+      <div style="width:34px;height:44px;border-radius:4px;background:#efeae0;opacity:.55;flex:none"></div>
+      <div style="width:34px;height:44px;border-radius:4px;background:#efeae0;opacity:.55;flex:none"></div>
+      <div style="width:34px;height:44px;border-radius:4px;background:#efeae0;opacity:.55;flex:none"></div>
+      <div style="width:34px;height:44px;border-radius:4px;border:1.5px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:16px;flex:none">＋</div>
+    </div>
+    <!-- toolbar -->
+    <div style="display:flex;justify-content:space-between;padding:10px 20px 26px;color:#fff">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font:600 9.5px/1 'Figtree'"><span style="width:22px;height:22px;border:1.7px solid #fff;border-radius:3px;display:inline-block"></span>Crop</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font:600 9.5px/1 'Figtree'"><span style="font-size:18px;line-height:22px">↻</span>Rotate</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font:600 9.5px/1 'Figtree'"><span style="font-size:15px;line-height:22px;font-family:'IBM Plex Mono'">T</span>Text</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font:600 9.5px/1 'Figtree'"><span style="font-size:16px;line-height:22px">↺</span>Retake</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font:600 9.5px/1 'Figtree'"><span style="font-size:18px;line-height:22px">↑</span>Share</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font:600 9.5px/1 'Figtree';color:oklch(0.72 0.15 25)"><span style="font-size:16px;line-height:22px">🗑</span>Delete</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============ 07 TEXT (OCR) ============ -->
+<div class="ph">
+  <div class="cap">07 · Recognized text (OCR)</div>
+  <div class="frame"><div class="scr">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:var(--ink)"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:var(--ink);border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px"><span style="font-size:17px;color:var(--ink2)">‹</span><span style="font:700 15px/1 'Figtree'">Recognized text</span><span style="width:16px"></span></div>
+    <div style="padding:0 20px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px;font:500 11px/1 'IBM Plex Mono',monospace;color:var(--green-deep);background:var(--green-soft);border:1px solid oklch(0.82 0.07 150);border-radius:8px;padding:7px 10px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>Text layer ready · powers search</div></div>
+    <div style="flex:1;overflow:hidden;padding:4px 22px;font:400 13px/1.7 'Figtree';color:var(--ink2)">
+      <p style="margin:0 0 12px"><span style="font-weight:700;color:var(--ink)">RESIDENTIAL LEASE AGREEMENT</span></p>
+      <p style="margin:0 0 12px">This Lease Agreement is made and entered into on <span style="background:var(--green-soft);border-radius:3px;padding:0 2px">July 1, 2026</span>, by and between the Landlord and the Tenant identified below.</p>
+      <p style="margin:0 0 12px">1. PREMISES. The Landlord agrees to rent to the Tenant the residential property located at 428 Alder Street, Unit 3, for use as a private residence only.</p>
+      <p style="margin:0">2. TERM. The term of this lease shall be twelve (12) months, commencing on the date first written above and continuing until…</p>
+    </div>
+    <div style="display:flex;gap:9px;padding:12px 18px 26px">
+      <div style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 0;font:600 13.5px/1 'Figtree';color:var(--ink)">Copy text</div>
+      <div style="flex:1;text-align:center;background:var(--ink);color:var(--surface);border-radius:13px;padding:13px 0;font:600 13.5px/1 'Figtree'">Share .txt</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============ 08 EXPORT PDF ============ -->
+<div class="ph">
+  <div class="cap">08 · Export PDF</div>
+  <div class="frame"><div class="scr">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:var(--ink)"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:var(--ink);border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px"><span style="font-size:17px;color:var(--ink2)">‹</span><span style="font:700 15px/1 'Figtree'">Export as PDF</span><span style="width:16px"></span></div>
+    <!-- preview -->
+    <div style="display:flex;justify-content:center;padding:8px 0 14px"><div style="width:96px;height:124px;background:#fff;border:1px solid var(--line);border-radius:5px;box-shadow:0 6px 18px rgba(0,0,0,.1);position:relative;padding:14px 12px;display:flex;flex-direction:column;gap:5px"><span style="height:5px;width:60%;background:var(--line2);border-radius:2px"></span><span style="height:3px;width:100%;background:var(--line2);border-radius:2px"></span><span style="height:3px;width:90%;background:var(--line2);border-radius:2px"></span><span style="height:3px;width:100%;background:var(--line2);border-radius:2px"></span><span style="position:absolute;bottom:-8px;right:-8px;background:var(--ink);color:#fff;font:600 9px/1 'IBM Plex Mono';border-radius:6px;padding:4px 6px">6 pp</span></div></div>
+    <div style="padding:0 20px;font:600 11px/1 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.03em;margin-bottom:8px">QUALITY</div>
+    <div style="flex:1;overflow:hidden;padding:0 18px;display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px"><div><div style="font:600 13.5px/1.2 'Figtree'">Original</div><div style="font:500 11px/1 'Figtree';color:var(--muted);margin-top:3px">Full resolution · largest file</div></div><span style="width:19px;height:19px;border-radius:50%;border:1.6px solid var(--line)"></span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px"><div><div style="font:600 13.5px/1.2 'Figtree'">High</div><div style="font:500 11px/1 'Figtree';color:var(--muted);margin-top:3px">Crisp for printing</div></div><span style="width:19px;height:19px;border-radius:50%;border:1.6px solid var(--line)"></span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--green-soft);border:1.5px solid var(--green);border-radius:13px;padding:12px 14px"><div><div style="font:700 13.5px/1.2 'Figtree';color:var(--green-deep)">Medium</div><div style="font:600 11px/1 'Figtree';color:var(--green-deep);margin-top:3px">Good for email &amp; messaging</div></div><span style="width:19px;height:19px;border-radius:50%;background:var(--green);border:1.6px solid var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px">✓</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px"><div><div style="font:600 13.5px/1.2 'Figtree'">Low</div><div style="font:500 11px/1 'Figtree';color:var(--muted);margin-top:3px">Smallest · quick to send</div></div><span style="width:19px;height:19px;border-radius:50%;border:1.6px solid var(--line)"></span></div>
+      <!-- password toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px;margin-top:2px"><div style="display:flex;align-items:center;gap:8px;font:600 13px/1 'Figtree'"><span style="width:11px;height:13px;border:1.5px solid var(--ink);border-radius:2px;position:relative;display:inline-block"></span>Password-protect</div><div style="width:40px;height:24px;border-radius:12px;background:var(--line);position:relative"><span style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></div></div>
+    </div>
+    <div style="padding:8px 18px 26px"><div style="text-align:center;background:var(--green-deep);color:#fff;border-radius:14px;padding:15px 0;font:700 15px/1 'Figtree';box-shadow:0 8px 18px -6px oklch(0.52 0.115 150 / .5)">Preview &amp; share PDF</div></div>
+  </div></div>
+</div>
+<!-- ============ 09 FEEDBACK ============ -->
+<div class="ph">
+  <div class="cap">09 · Send feedback</div>
+  <div class="frame"><div class="scr">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:var(--ink)"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:var(--ink);border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px"><span style="font-size:17px;color:var(--ink2)">‹</span><span style="font:700 15px/1 'Figtree'">Send feedback</span><span style="width:16px"></span></div>
+    <div style="flex:1;overflow:hidden;padding:8px 20px;display:flex;flex-direction:column;gap:16px">
+      <div>
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.03em;margin-bottom:8px">TYPE</div>
+        <div style="display:flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:3px">
+          <span style="flex:1;text-align:center;font:600 12.5px/1 'Figtree';padding:9px 0;border-radius:8px;background:var(--ink);color:var(--surface)">Bug</span>
+          <span style="flex:1;text-align:center;font:600 12.5px/1 'Figtree';padding:9px 0;border-radius:8px;color:var(--muted)">Idea</span>
+          <span style="flex:1;text-align:center;font:600 12.5px/1 'Figtree';padding:9px 0;border-radius:8px;color:var(--muted)">Question</span>
+        </div>
+      </div>
+      <div>
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.03em;margin-bottom:8px">MESSAGE</div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px;min-height:96px;font:400 13px/1.5 'Figtree';color:var(--ink2)">The crop frame didn't grab the bottom edge of my receipt on the first try…</div>
+      </div>
+      <div>
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.03em;margin-bottom:8px">EMAIL <span style="color:var(--line);font-weight:400">— optional, for a reply</span></div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px;font:400 13px/1 'Figtree';color:var(--muted)">you@example.com</div>
+      </div>
+      <!-- diagnostics disclosure -->
+      <div style="background:var(--blue-soft);border:1px solid oklch(0.85 0.05 245);border-radius:12px;padding:12px 13px">
+        <div style="display:flex;align-items:center;gap:7px;font:600 12px/1 'Figtree';color:oklch(0.42 0.09 245)"><span style="width:7px;height:7px;border-radius:50%;background:var(--blue)"></span>What we include</div>
+        <div style="font:500 11.5px/1.5 'Figtree';color:oklch(0.46 0.06 245);margin-top:6px">App version, iOS version, device model. <span style="font-weight:700">Your scanned documents are never sent.</span></div>
+      </div>
+    </div>
+    <div style="padding:6px 18px 26px"><div style="text-align:center;background:var(--ink);color:var(--surface);border-radius:14px;padding:15px 0;font:700 15px/1 'Figtree'">Send report</div></div>
+  </div></div>
+</div>
+
+<!-- ============ 10 DONATION ============ -->
+<div class="ph">
+  <div class="cap">10 · Support Ream</div>
+  <div class="frame"><div class="scr">
+    <div class="island"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:var(--ink)"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid var(--ink);border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:var(--ink);border-radius:1px"></span></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px"><span style="font-size:17px;color:var(--ink2)">‹</span><span style="font:700 15px/1 'Figtree'">Support Ream</span><span style="width:16px"></span></div>
+    <div style="flex:1;overflow:hidden;padding:8px 22px;display:flex;flex-direction:column;gap:18px">
+      <div style="text-align:center;margin-top:4px">
+        <div style="font-size:34px">♥</div>
+        <div style="font:800 21px/1.25 'Figtree';letter-spacing:-.01em;margin-top:8px">No accounts. No cloud.<br>No subscription.</div>
+        <div style="font:400 13px/1.55 'Figtree';color:var(--ink2);margin-top:10px">Ream is built by one person and given away. If it saved you a trip to the copier, you can chip in.</div>
+      </div>
+      <!-- honest disclaimer -->
+      <div style="background:var(--amber-soft);border:1px solid oklch(0.85 0.06 82);border-radius:12px;padding:12px 14px;font:500 12px/1.55 'Figtree';color:oklch(0.42 0.07 62);text-align:center">Donating unlocks <span style="font-weight:700">nothing</span> — every feature is already yours. This is genuinely optional.</div>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <div style="text-align:center;background:oklch(0.62 0.16 20);color:#fff;border-radius:13px;padding:14px 0;font:700 14.5px/1 'Figtree'">☕ Buy me a coffee — Ko-fi</div>
+        <!-- bitcoin -->
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px;display:flex;gap:13px;align-items:center">
+          <div style="width:60px;height:60px;flex:none;border-radius:7px;background-image:conic-gradient(from 45deg,#2c2820 0 25%,transparent 0 50%,#2c2820 0 75%,transparent 0);background-size:12px 12px;background-color:#fff;border:1px solid var(--line);position:relative"><span style="position:absolute;inset:0;margin:auto;width:16px;height:16px;background:#fff;border:2px solid #2c2820"></span></div>
+          <div style="min-width:0"><div style="font:600 12.5px/1.2 'Figtree'">Bitcoin</div><div style="font:500 10.5px/1.4 'IBM Plex Mono',monospace;color:var(--muted);margin-top:5px;word-break:break-all">bc1q9x4…k2m7 <span style="color:var(--green-deep);font-weight:600">copy</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div style="height:26px"></div>
+  </div></div>
+</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Alternate personality · dark, technical &quot;scanner HUD&quot; — same palette, more instrument-like</div>
+      <div class="screens">
+        <!-- 1b LIBRARY (dark) -->
+        <div class="ph">
+          <div class="cap">Library — dark</div>
+          <div class="frame"><div class="scr" style="background:#16130e">
+            <div class="island"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#f4f1ea"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #f4f1ea;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#f4f1ea;border-radius:1px"></span></span></div>
+            <div style="padding:14px 20px 10px">
+              <div style="font:600 10px/1 'IBM Plex Mono',monospace;color:var(--green);letter-spacing:.12em">REAM · LOCAL</div>
+              <div style="font:800 27px/1 'Figtree';letter-spacing:-.02em;color:#f4f1ea;margin-top:8px">Documents</div>
+              <div style="margin-top:14px;display:flex;align-items:center;gap:9px;background:#211d16;border:1px solid #322c22;border-radius:12px;padding:11px 13px;color:#8f887a;font:500 12.5px/1 'IBM Plex Mono',monospace"><span style="width:12px;height:12px;border:1.6px solid #8f887a;border-radius:50%;display:inline-block"></span>search titles &amp; text</div>
+              <div style="margin-top:11px;display:flex;justify-content:space-between;align-items:center;font:600 11px/1 'IBM Plex Mono',monospace;color:#6f695d"><span>12 DOCS · 41 PAGES</span><span style="color:var(--green)">MODIFIED ↓</span></div>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:2px 16px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;gap:12px;background:#211d16;border:1px solid #322c22;border-radius:14px;padding:12px">
+                <div style="width:40px;height:50px;border-radius:5px;background:#f4f1ea;flex:none;padding:6px 5px;display:flex;flex-direction:column;gap:3px"><span style="height:2px;width:80%;background:#d8d2c4;border-radius:2px"></span><span style="height:2px;width:100%;background:#d8d2c4;border-radius:2px"></span><span style="height:2px;width:60%;background:#d8d2c4;border-radius:2px"></span></div>
+                <div style="flex:1"><div style="font:600 14px/1.2 'Figtree';color:#f4f1ea">Lease Agreement 2026</div><div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#7f786b;margin-top:5px">6p · JUL 8</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;background:#211d16;border:1px solid #322c22;border-radius:14px;padding:12px">
+                <div style="width:40px;height:50px;border-radius:5px;background:#f4f1ea;flex:none;padding:6px 5px;display:flex;flex-direction:column;gap:3px"><span style="height:2px;width:50%;background:#d8d2c4;border-radius:2px"></span><span style="height:2px;width:70%;background:#d8d2c4;border-radius:2px"></span></div>
+                <div style="flex:1"><div style="font:600 14px/1.2 'Figtree';color:#f4f1ea">Costco Receipt</div><div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#7f786b;margin-top:5px">1p · JUL 6</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;background:#211d16;border:1px solid #322c22;border-radius:14px;padding:12px">
+                <div style="width:40px;height:50px;border-radius:5px;background:#f4f1ea;flex:none;padding:6px 5px;display:flex;flex-direction:column;gap:3px"><span style="height:2px;width:70%;background:#d8d2c4;border-radius:2px"></span><span style="height:2px;width:90%;background:#d8d2c4;border-radius:2px"></span><span style="height:2px;width:60%;background:#d8d2c4;border-radius:2px"></span></div>
+                <div style="flex:1"><div style="font:600 14px/1.2 'Figtree';color:#f4f1ea">Passport &amp; ID</div><div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#7f786b;margin-top:5px">2p · JUL 2</div></div>
+              </div>
+            </div>
+            <div style="padding:10px 16px 0;background:linear-gradient(transparent,#16130e 28%)">
+              <div style="display:flex;gap:8px">
+                <div style="flex:1.5;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green);color:#0e2416;border-radius:15px;padding:15px 0;font:700 15px/1 'Figtree';box-shadow:0 0 22px -4px oklch(0.66 0.13 150 / .6)"><span style="font-size:17px;font-weight:400">＋</span>Scan</div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#211d16;border:1px solid #322c22;border-radius:15px;padding:9px 0;font:600 11px/1 'Figtree';color:#c9c2b4"><span style="width:20px;height:14px;border:1.6px solid #c9c2b4;border-radius:3px;display:inline-block"></span>ID card</div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#211d16;border:1px solid #322c22;border-radius:15px;padding:9px 0;font:600 11px/1 'Figtree';color:#c9c2b4"><span style="font-size:15px">↧</span>Import</div>
+              </div>
+              <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between;background:#211d16;border:1px solid #322c22;border-radius:13px;padding:10px 13px"><div style="font:500 11.5px/1.3 'Figtree';color:#b9b2a4">Free &amp; donation-funded. <span style="color:var(--green);font-weight:700">Support →</span></div><div style="font-size:15px;color:var(--green)">♥</div></div>
+              <div style="height:8px"></div>
+            </div>
+          </div></div>
+        </div>
+        <!-- 1b CAPTURE (dark HUD) -->
+        <div class="ph">
+          <div class="cap">Capture — HUD</div>
+          <div class="frame"><div class="scr" style="background:#0f0d09">
+            <div class="island"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#fff"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #fff;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#fff;border-radius:1px"></span></span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;color:#fff;font:600 11px/1 'IBM Plex Mono',monospace"><span style="font-size:18px;font-family:'Figtree'">✕</span><span style="opacity:.75;letter-spacing:.06em">DOC · AUTO</span><span style="opacity:.75">⚡ OFF</span></div>
+            <div style="flex:1;position:relative;margin:6px 0;background:radial-gradient(120% 90% at 50% 40%,#241f16,#0c0a06);overflow:hidden;background-image:linear-gradient(#ffffff0a 1px,transparent 1px),linear-gradient(90deg,#ffffff0a 1px,transparent 1px);background-size:100% 100%,26px 26px,26px 26px">
+              <div style="position:absolute;top:14px;left:14px;font:600 10px/1.6 'IBM Plex Mono',monospace;color:oklch(0.86 0.09 150)">CONF 0.94<br>SKEW 1.2°<br>2480×3508</div>
+              <div style="position:absolute;top:16px;right:14px;display:flex;align-items:center;gap:6px;background:oklch(0.66 0.13 150 / .16);border:1px solid var(--green);color:oklch(0.86 0.09 150);border-radius:16px;padding:5px 10px;font:600 10.5px/1 'IBM Plex Mono',monospace"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>LOCKED</div>
+              <div style="position:absolute;top:74px;bottom:64px;left:36px;right:36px;border:2px solid var(--green);border-radius:3px;transform:perspective(600px) rotateX(3deg) rotateZ(-1.2deg);box-shadow:0 0 0 100vmax rgba(8,6,3,.5),0 0 20px oklch(0.66 0.13 150 / .4);background:rgba(255,255,255,.04)">
+                <span style="position:absolute;top:-2px;left:-2px;width:22px;height:22px;border-top:3px solid var(--green);border-left:3px solid var(--green)"></span>
+                <span style="position:absolute;top:-2px;right:-2px;width:22px;height:22px;border-top:3px solid var(--green);border-right:3px solid var(--green)"></span>
+                <span style="position:absolute;bottom:-2px;left:-2px;width:22px;height:22px;border-bottom:3px solid var(--green);border-left:3px solid var(--green)"></span>
+                <span style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-bottom:3px solid var(--green);border-right:3px solid var(--green)"></span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:center;gap:22px;padding:10px 0 4px;font:600 11px/1 'IBM Plex Mono',monospace;color:rgba(255,255,255,.45)"><span>ID</span><span style="color:var(--green)">DOCUMENT</span><span>BATCH</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 34px 26px">
+              <div style="width:44px;height:44px;border-radius:9px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16)"></div>
+              <div style="width:70px;height:70px;border-radius:50%;border:4px solid var(--green);padding:4px;box-shadow:0 0 22px -2px oklch(0.66 0.13 150 / .55)"><div style="width:100%;height:100%;border-radius:50%;background:var(--green)"></div></div>
+              <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;font:600 12px 'IBM Plex Mono',monospace">1</div>
+            </div>
+          </div></div>
+        </div>
+        <!-- 1b REVIEW (dark) -->
+        <div class="ph">
+          <div class="cap">Review — dark</div>
+          <div class="frame"><div class="scr" style="background:#1a1712">
+            <div class="island"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 24px 2px;font:600 14px/1 'Figtree';color:#fff"><span>9:41</span><span style="width:18px;height:11px;border:1.4px solid #fff;border-radius:3px;position:relative;display:inline-block"><span style="position:absolute;top:1.6px;left:1.6px;bottom:1.6px;right:4px;background:#fff;border-radius:1px"></span></span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;color:#fff;font:600 12px/1 'IBM Plex Mono',monospace"><span style="opacity:.75;letter-spacing:.04em">RETAKE</span><span style="font:700 14px/1 'Figtree'">Review</span><span style="opacity:.35;letter-spacing:.04em">SAVE</span></div>
+            <div style="margin:2px auto 0;display:flex;align-items:center;gap:7px;background:oklch(0.66 0.13 150 / .16);border:1px solid var(--green);color:oklch(0.88 0.08 150);border-radius:18px;padding:6px 12px;font:600 10.5px/1 'IBM Plex Mono',monospace"><span style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span>CONFIDENCE HIGH · 0.94</div>
+            <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:20px 30px">
+              <div style="position:relative;width:100%;aspect-ratio:.74;background:#f6f2ea;border-radius:2px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:20px 16px;display:flex;flex-direction:column;gap:7px">
+                <span style="height:8px;width:60%;background:#ddd6c8;border-radius:2px"></span><span style="height:4px;width:100%;background:#e6e0d2;border-radius:2px;margin-top:6px"></span><span style="height:4px;width:92%;background:#e6e0d2;border-radius:2px"></span><span style="height:4px;width:100%;background:#e6e0d2;border-radius:2px"></span><span style="height:4px;width:66%;background:#e6e0d2;border-radius:2px"></span><span style="height:4px;width:100%;background:#e6e0d2;border-radius:2px;margin-top:9px"></span><span style="height:4px;width:84%;background:#e6e0d2;border-radius:2px"></span>
+                <span style="position:absolute;top:-7px;left:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #1a1712"></span>
+                <span style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #1a1712"></span>
+                <span style="position:absolute;bottom:-7px;left:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #1a1712"></span>
+                <span style="position:absolute;bottom:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:var(--green);border:2.5px solid #1a1712"></span>
+              </div>
+            </div>
+            <div style="padding:4px 16px 10px;display:flex;gap:9px;justify-content:center">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:5px;background:#fff;border:2px solid var(--green);box-shadow:0 0 12px -2px oklch(0.66 0.13 150 / .6)"></div><span style="font:600 9.5px/1 'IBM Plex Mono';color:#fff">AUTO</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:5px;background:#e5ddcd"></div><span style="font:500 9.5px/1 'IBM Plex Mono';color:rgba(255,255,255,.55)">ORIG</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:5px;background:#fffef9"></div><span style="font:500 9.5px/1 'IBM Plex Mono';color:rgba(255,255,255,.55)">COLOR</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:56px;border-radius:5px;background:linear-gradient(#fff,#d5d5d5)"></div><span style="font:500 9.5px/1 'IBM Plex Mono';color:rgba(255,255,255,.55)">B&amp;W</span></div>
+            </div>
+            <div style="display:flex;gap:9px;padding:2px 18px 26px">
+              <div style="flex:1;text-align:center;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:14px;padding:14px 0;font:600 14px/1 'Figtree'">＋ Add page</div>
+              <div style="flex:1;text-align:center;background:var(--green);color:#0e2416;border-radius:14px;padding:14px 0;font:700 14px/1 'Figtree';box-shadow:0 0 20px -4px oklch(0.66 0.13 150 / .5)">Save</div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "expand <a class="dv-oid" href="#1b">1b</a> into the full app" · "make <a class="dv-oid" href="#1a">1a</a> a clickable prototype of the core loop" · "try an Android/Material version" · "lean the confidence cue harder — animate the crop frame"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

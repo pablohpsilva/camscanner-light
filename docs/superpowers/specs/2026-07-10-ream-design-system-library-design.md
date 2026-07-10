@@ -6,6 +6,11 @@
 **Scope of this spec:** the themable design system + the Library (Home) screen
 re-skin, list **and** grid. Other screens are later cycles (see Roadmap).
 
+**Implementer reference (read first):** `docs/design/ream/README.md` — committed
+design markup (`Ream Scanner.dc.html`), the exact oklch→sRGB color-token table,
+type rules, screen→file index, and the per-task definition of done. Subagents
+must consult it before writing code.
+
 ## Decisions (locked with the user)
 
 - **Themable, light-first.** Build a theme that supports light + dark; implement
