@@ -1,0 +1,151 @@
+import 'package:flutter/material.dart';
+
+/// Semantic color tokens for the Ream design system, carried on [ThemeData]
+/// as a [ThemeExtension]. Values are the approved sRGB constants from
+/// docs/design/ream/README.md (oklch converted to hex; ±1/channel tolerance).
+@immutable
+class ReamColors extends ThemeExtension<ReamColors> {
+  final Color paper, surface, surface2, ink, ink2, muted, line, line2, appBg;
+  final Color green, greenDeep, greenSoft, amber, amberSoft, blue, blueSoft;
+  final Color kofiRed, deleteRed;
+
+  const ReamColors({
+    required this.paper,
+    required this.surface,
+    required this.surface2,
+    required this.ink,
+    required this.ink2,
+    required this.muted,
+    required this.line,
+    required this.line2,
+    required this.appBg,
+    required this.green,
+    required this.greenDeep,
+    required this.greenSoft,
+    required this.amber,
+    required this.amberSoft,
+    required this.blue,
+    required this.blueSoft,
+    required this.kofiRed,
+    required this.deleteRed,
+  });
+
+  static const ReamColors light = ReamColors(
+    paper: Color(0xFFF4F1EA),
+    surface: Color(0xFFFFFDF8),
+    surface2: Color(0xFFFAF7F0),
+    ink: Color(0xFF33302A),
+    ink2: Color(0xFF5C574D),
+    muted: Color(0xFF928C80),
+    line: Color(0xFFE6E1D6),
+    line2: Color(0xFFEFEBE2),
+    appBg: Color(0xFFE7E3D9),
+    green: Color(0xFF4FA866),
+    greenDeep: Color(0xFF2D7B44),
+    greenSoft: Color(0xFFDEF1E1),
+    amber: Color(0xFFCA932E),
+    amberSoft: Color(0xFFFEECCD),
+    blue: Color(0xFF4B99D7),
+    blueSoft: Color(0xFFDFF1FF),
+    kofiRed: Color(0xFFD5565D),
+    deleteRed: Color(0xFFF47B74),
+  );
+
+  // Extrapolated from the 1b HUD screens (paper->#16130e ground, #211d16
+  // surfaces, #322c22 lines, #f4f1ea ink; confidence hues unchanged). Real
+  // values so the token is usable, but NOT verified live this phase.
+  static const ReamColors dark = ReamColors(
+    paper: Color(0xFF16130E),
+    surface: Color(0xFF211D16),
+    surface2: Color(0xFF1B1811),
+    ink: Color(0xFFF4F1EA),
+    ink2: Color(0xFFC9C2B4),
+    muted: Color(0xFF8F887A),
+    line: Color(0xFF322C22),
+    line2: Color(0xFF2A251C),
+    appBg: Color(0xFF0F0D09),
+    green: Color(0xFF4FA866),
+    greenDeep: Color(0xFF2D7B44),
+    greenSoft: Color(0xFF1E3325),
+    amber: Color(0xFFCA932E),
+    amberSoft: Color(0xFF3A2F17),
+    blue: Color(0xFF4B99D7),
+    blueSoft: Color(0xFF17293A),
+    kofiRed: Color(0xFFD5565D),
+    deleteRed: Color(0xFFF47B74),
+  );
+
+  @override
+  ReamColors copyWith({
+    Color? paper,
+    Color? surface,
+    Color? surface2,
+    Color? ink,
+    Color? ink2,
+    Color? muted,
+    Color? line,
+    Color? line2,
+    Color? appBg,
+    Color? green,
+    Color? greenDeep,
+    Color? greenSoft,
+    Color? amber,
+    Color? amberSoft,
+    Color? blue,
+    Color? blueSoft,
+    Color? kofiRed,
+    Color? deleteRed,
+  }) {
+    return ReamColors(
+      paper: paper ?? this.paper,
+      surface: surface ?? this.surface,
+      surface2: surface2 ?? this.surface2,
+      ink: ink ?? this.ink,
+      ink2: ink2 ?? this.ink2,
+      muted: muted ?? this.muted,
+      line: line ?? this.line,
+      line2: line2 ?? this.line2,
+      appBg: appBg ?? this.appBg,
+      green: green ?? this.green,
+      greenDeep: greenDeep ?? this.greenDeep,
+      greenSoft: greenSoft ?? this.greenSoft,
+      amber: amber ?? this.amber,
+      amberSoft: amberSoft ?? this.amberSoft,
+      blue: blue ?? this.blue,
+      blueSoft: blueSoft ?? this.blueSoft,
+      kofiRed: kofiRed ?? this.kofiRed,
+      deleteRed: deleteRed ?? this.deleteRed,
+    );
+  }
+
+  @override
+  ReamColors lerp(ThemeExtension<ReamColors>? other, double t) {
+    if (other is! ReamColors) return this;
+    Color l(Color a, Color b) => Color.lerp(a, b, t)!;
+    return ReamColors(
+      paper: l(paper, other.paper),
+      surface: l(surface, other.surface),
+      surface2: l(surface2, other.surface2),
+      ink: l(ink, other.ink),
+      ink2: l(ink2, other.ink2),
+      muted: l(muted, other.muted),
+      line: l(line, other.line),
+      line2: l(line2, other.line2),
+      appBg: l(appBg, other.appBg),
+      green: l(green, other.green),
+      greenDeep: l(greenDeep, other.greenDeep),
+      greenSoft: l(greenSoft, other.greenSoft),
+      amber: l(amber, other.amber),
+      amberSoft: l(amberSoft, other.amberSoft),
+      blue: l(blue, other.blue),
+      blueSoft: l(blueSoft, other.blueSoft),
+      kofiRed: l(kofiRed, other.kofiRed),
+      deleteRed: l(deleteRed, other.deleteRed),
+    );
+  }
+}
+
+/// Terse access: `context.ream.green`.
+extension ReamColorsX on BuildContext {
+  ReamColors get ream => Theme.of(this).extension<ReamColors>()!;
+}
