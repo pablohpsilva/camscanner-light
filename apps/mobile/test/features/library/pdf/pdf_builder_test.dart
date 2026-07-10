@@ -12,11 +12,18 @@ import 'package:pdf/widgets.dart' as pw;
 // A spy text layer: records the pages it was asked about and returns a fixed overlay.
 class _SpyTextLayer implements PdfTextLayer {
   final List<PageImage> calls = [];
+  final List<pw.Font?> fonts = [];
   final List<pw.Widget> overlay;
   _SpyTextLayer({this.overlay = const []});
   @override
-  List<pw.Widget> overlayFor(PageImage page, double width, double height) {
+  List<pw.Widget> overlayFor(
+    PageImage page,
+    double width,
+    double height, {
+    pw.Font? font,
+  }) {
     calls.add(page);
+    fonts.add(font);
     return overlay;
   }
 }

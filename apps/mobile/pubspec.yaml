@@ -101,6 +101,9 @@ flutter:
 
   assets:
     - assets/icons/
+    # Loaded at runtime (rootBundle) for the searchable PDF text layer so
+    # dart_pdf can encode non-Latin-1 OCR characters — see loadOcrPdfFont.
+    - fonts/IBMPlexMono-Regular.ttf
 
   fonts:
     - family: Figtree

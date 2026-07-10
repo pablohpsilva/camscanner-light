@@ -17,9 +17,16 @@ import 'pdf_text_layer.dart';
 class PdfBuilder {
   final PdfTextLayer textLayer;
   final ImageCompressor compressor;
+
+  /// Loads the Unicode font for the searchable text overlay. Called once per
+  /// build; null (or a null result) keeps dart_pdf's Latin-1 default. Injected
+  /// so the pure builder never touches the asset bundle directly.
+  final Future<pw.Font?> Function()? ocrFontLoader;
+
   const PdfBuilder({
     this.textLayer = const ImageOnlyTextLayer(),
     this.compressor = const ImageLibraryCompressor(),
+    this.ocrFontLoader,
   });
 
   /// [compress] is the PDF-structure deflate flag (tests pass false to grep the
@@ -57,6 +64,8 @@ class PdfBuilder {
       );
       return doc.save();
     }
+    // Loaded once (not per page) — the overlay font is shared across pages.
+    final ocrFont = ocrFontLoader == null ? null : await ocrFontLoader!.call();
     for (final page in pages) {
       final raw = await File(page.displayPath).readAsBytes();
       final bytes = await compressor.compress(raw, quality);
@@ -67,6 +76,7 @@ class PdfBuilder {
         page,
         image.width!.toDouble(),
         image.height!.toDouble(),
+        font: ocrFont,
       );
       doc.addPage(
         pw.Page(

@@ -52,7 +52,10 @@ Future<DocumentRepository> _defaultCreateRepository() async {
     scrubber: const JpegExifScrubber(),
     fileStore: DocumentFileStore(docsDir),
     clock: DateTime.now,
-    pdfBuilder: const PdfBuilder(textLayer: OcrPdfTextLayer()),
+    pdfBuilder: const PdfBuilder(
+      textLayer: OcrPdfTextLayer(),
+      ocrFontLoader: loadOcrPdfFont,
+    ),
     warper: const HybridWarper(),
     pageProcessor: const FallbackPageProcessor(
       primary: NativePageProcessor(),
