@@ -4,9 +4,12 @@ import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
 import '../library/image_enhancer.dart';
 import '../library/save_controller.dart';
+import 'camera_permission.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
 import 'document_scanner_service.dart';
+import 'edge_detector.dart';
+import 'photo_camera.dart';
 import 'scan_dependencies.dart';
 
 /// Launches the OS document scanner, applies one filter to the whole batch,
@@ -16,7 +19,7 @@ class ScanScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentRepository repository;
   final Future<bool> Function(CapturedImage, CropCorners, ImageEnhancer)?
-      onCapture;
+  onCapture;
 
   const ScanScreen({
     super.key,
@@ -32,6 +35,9 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   late final DocumentScannerService _scanner;
   late final SaveController _saveController;
+  late final PhotoCamera _camera;
+  late final CameraPermission _permission;
+  late final EdgeDetector _detector;
   int _pageCount = 0;
   List<CapturedImage>? _pages;
   ImageEnhancer? _enhancer;
@@ -42,13 +48,19 @@ class _ScanScreenState extends State<ScanScreen> {
     super.initState();
     _scanner = widget.dependencies.createDocumentScanner();
     _saveController = SaveController(repository: widget.repository);
+    _camera = widget.dependencies.createPhotoCamera();
+    _permission = widget.dependencies.createCameraPermission();
+    _detector = widget.dependencies.createEdgeDetector();
     WidgetsBinding.instance.addPostFrameCallback((_) => _run());
   }
 
   Future<void> _run() async {
+    if (widget.onCapture != null) {
+      await _runRetake();
+      return;
+    }
     final navigator = Navigator.of(context);
-    final retake = widget.onCapture != null;
-    final pages = await _scanner.scan(pageLimit: retake ? 1 : null);
+    final pages = await _scanner.scan(pageLimit: null);
     if (!mounted) return;
     if (pages.isEmpty) {
       navigator.pop();
@@ -60,26 +72,77 @@ class _ScanScreenState extends State<ScanScreen> {
       navigator.pop(); // review cancelled → discard batch
       return;
     }
-    if (retake) {
-      final messenger = ScaffoldMessenger.of(context);
-      final success =
-          await widget.onCapture!(pages.first, CropCorners.fullFrame, enhancer);
-      if (!mounted) return;
-      if (!success) {
-        messenger.showSnackBar(
-          const SnackBar(
-              content: Text("Couldn't replace page. Try again.")),
-        );
-      }
-      navigator.pop();
-      return;
-    }
     setState(() {
       _pages = pages;
       _enhancer = enhancer;
     });
     await _saveAll(pages, enhancer);
     if (mounted && !_saveFailed) navigator.pop();
+  }
+
+  /// Single-shot camera + crop-enabled review, looping on Retake, then hands the
+  /// reviewed page to [onCapture].
+  Future<void> _runRetake() async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await _permission.ensure()) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Camera permission is needed to retake a page.'),
+        ),
+      );
+      navigator.pop();
+      return;
+    }
+    while (true) {
+      final photo = await _camera.capture();
+      if (!mounted) return;
+      if (photo == null) {
+        navigator.pop();
+        return;
+      }
+      final outcome = await _reviewRetake(photo);
+      if (!mounted) return;
+      if (outcome == null) {
+        navigator.pop(); // system back → cancel
+        return;
+      }
+      if (outcome is _RetakeAgain) {
+        continue;
+      }
+      final accepted = outcome as _AcceptedPage;
+      final success = await widget.onCapture!(
+        photo,
+        accepted.corners,
+        accepted.enhancer,
+      );
+      if (!mounted) return;
+      if (!success) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't replace page. Try again.")),
+        );
+      }
+      navigator.pop();
+      return;
+    }
+  }
+
+  Future<_RetakeReview?> _reviewRetake(CapturedImage photo) {
+    return Navigator.of(context).push<_RetakeReview>(
+      MaterialPageRoute<_RetakeReview>(
+        builder: (context) => CaptureReviewScreen(
+          image: photo,
+          title: 'Retake page',
+          acceptLabel: 'Use',
+          enableCrop: true,
+          edgeDetector: _detector,
+          onRetake: () => Navigator.of(context).pop(_RetakeAgain()),
+          onAccept: (corners, enhancer) =>
+              Navigator.of(context).pop(_AcceptedPage(corners, enhancer)),
+        ),
+      ),
+    );
   }
 
   Future<void> _retry() async {
@@ -113,10 +176,15 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Future<void> _saveAll(
-      List<CapturedImage> pages, ImageEnhancer enhancer) async {
+    List<CapturedImage> pages,
+    ImageEnhancer enhancer,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final doc = await _saveController.save(pages.first,
-        corners: CropCorners.fullFrame, enhancer: enhancer);
+    final doc = await _saveController.save(
+      pages.first,
+      corners: CropCorners.fullFrame,
+      enhancer: enhancer,
+    );
     if (!mounted) return;
     if (doc == null) {
       setState(() => _saveFailed = true);
@@ -127,8 +195,12 @@ class _ScanScreenState extends State<ScanScreen> {
     }
     setState(() => _pageCount = 1);
     for (var i = 1; i < pages.length; i++) {
-      final pos = await _saveController.addPage(pages[i], doc.id,
-          corners: CropCorners.fullFrame, enhancer: enhancer);
+      final pos = await _saveController.addPage(
+        pages[i],
+        doc.id,
+        corners: CropCorners.fullFrame,
+        enhancer: enhancer,
+      );
       if (!mounted) return;
       if (pos != null) setState(() => _pageCount = pos);
     }
@@ -176,3 +248,13 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 }
+
+sealed class _RetakeReview {}
+
+class _AcceptedPage extends _RetakeReview {
+  final CropCorners corners;
+  final ImageEnhancer enhancer;
+  _AcceptedPage(this.corners, this.enhancer);
+}
+
+class _RetakeAgain extends _RetakeReview {}
