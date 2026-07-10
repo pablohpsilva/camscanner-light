@@ -4,6 +4,7 @@ import 'features/feedback/feedback_dependencies.dart';
 import 'features/library/home_screen.dart';
 import 'features/library/library_dependencies.dart';
 import 'features/scan/scan_dependencies.dart';
+import 'theme/ream_theme.dart';
 
 void main() => runCamScannerApp();
 
@@ -14,11 +15,13 @@ void runCamScannerApp({
   LibraryDependencies libraryDependencies = const LibraryDependencies(),
   FeedbackDependencies feedbackDependencies = const FeedbackDependencies(),
 }) {
-  runApp(CamScannerApp(
-    scanDependencies: scanDependencies,
-    libraryDependencies: libraryDependencies,
-    feedbackDependencies: feedbackDependencies,
-  ));
+  runApp(
+    CamScannerApp(
+      scanDependencies: scanDependencies,
+      libraryDependencies: libraryDependencies,
+      feedbackDependencies: feedbackDependencies,
+    ),
+  );
 }
 
 class CamScannerApp extends StatelessWidget {
@@ -38,7 +41,10 @@ class CamScannerApp extends StatelessWidget {
     return MaterialApp(
       title: 'CamScanner-light',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      theme: ReamTheme.light(),
+      darkTheme: ReamTheme.dark(),
+      themeMode:
+          ThemeMode.light, // light-first; dark verified in the final phase
       home: HomeScreen(
         dependencies: scanDependencies,
         libraryDependencies: libraryDependencies,
