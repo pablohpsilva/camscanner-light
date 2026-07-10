@@ -3,12 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:mobile/features/scan/camera_permission.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/document_scanner_service.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/scan/gallery_picker.dart';
-import 'package:mobile/features/scan/photo_camera.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 /// A minimal valid 1×1 JPEG (SOI … EOI). The fake writes this so the review
@@ -53,9 +51,9 @@ class FakeGalleryPicker implements GalleryPicker {
 /// and a [FakeGalleryPicker]. Used by surviving launch steps and widget tests
 /// that need the Home import/scan entry points wired without hardware.
 ScanDependencies grantedScanDependencies() => ScanDependencies(
-  createGalleryPicker: () => const FakeGalleryPicker(),
-  createDocumentScanner: () => FakeDocumentScannerService(const []),
-);
+      createGalleryPicker: () => const FakeGalleryPicker(),
+      createDocumentScanner: () => FakeDocumentScannerService(const []),
+    );
 
 /// Fake [EdgeDetector] for host tests. Returns a fixed [DetectionResult] or
 /// null; counts calls.
@@ -109,42 +107,8 @@ class FakeSequentialDocumentScannerService implements DocumentScannerService {
 
   @override
   Future<List<CapturedImage>> scan({int? pageLimit}) async {
-    final out = calls < results.length
-        ? results[calls]
-        : const <CapturedImage>[];
+    final out = calls < results.length ? results[calls] : const <CapturedImage>[];
     calls++;
     return out;
-  }
-}
-
-/// Fake [PhotoCamera] for host tests. The i-th `capture()` returns
-/// `paths[i]` wrapped in a [CapturedImage] (a null entry = user cancelled);
-/// returns null once exhausted. Pass NON-LOADABLE paths in host widget tests so
-/// the review screen's FilterPickerStrip does not generate thumbnails. Exposes
-/// [captureCount] to assert exactly one photo per side (and retake = one more).
-class FakePhotoCamera implements PhotoCamera {
-  final List<String?> paths;
-  int captureCount = 0;
-  FakePhotoCamera(this.paths);
-
-  @override
-  Future<CapturedImage?> capture() async {
-    final i = captureCount;
-    captureCount++;
-    final p = i < paths.length ? paths[i] : null;
-    return p == null ? null : CapturedImage(p);
-  }
-}
-
-/// Fake [CameraPermission] for host tests. Returns [granted] and counts calls.
-class FakeCameraPermission implements CameraPermission {
-  final bool granted;
-  int calls = 0;
-  FakeCameraPermission({this.granted = true});
-
-  @override
-  Future<bool> ensure() async {
-    calls++;
-    return granted;
   }
 }

@@ -19,20 +19,16 @@ Future<Size> _resolveImageSize(String path) {
   final completer = Completer<Size>();
   final stream = FileImage(File(path)).resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
-  listener = ImageStreamListener(
-    (info, _) {
-      if (!completer.isCompleted) {
-        completer.complete(
-          Size(info.image.width.toDouble(), info.image.height.toDouble()),
-        );
-      }
-      stream.removeListener(listener);
-    },
-    onError: (e, st) {
-      if (!completer.isCompleted) completer.completeError(e);
-      stream.removeListener(listener);
-    },
-  );
+  listener = ImageStreamListener((info, _) {
+    if (!completer.isCompleted) {
+      completer.complete(Size(
+          info.image.width.toDouble(), info.image.height.toDouble()));
+    }
+    stream.removeListener(listener);
+  }, onError: (e, st) {
+    if (!completer.isCompleted) completer.completeError(e);
+    stream.removeListener(listener);
+  });
   stream.addListener(listener);
   return completer.future;
 }
@@ -44,14 +40,10 @@ class CaptureReviewScreen extends StatefulWidget {
   final VoidCallback onRetake;
   final void Function(CropCorners corners, ImageEnhancer enhancer) onAccept;
   final bool saving;
-  final bool
-  enableCrop; // NEW: false = filter-only (already-cropped scanner page)
+  final bool enableCrop; // NEW: false = filter-only (already-cropped scanner page)
   final Future<Size> Function(String path) decodeImageSize;
-  final Future<Uint8List> Function(String path) readBytes; // NEW
-  final EdgeDetector? edgeDetector; // NEW
-  final String title; // NEW
-  final String acceptLabel; // NEW
-  final EnhancerMode initialMode; // NEW
+  final Future<Uint8List> Function(String path) readBytes;   // NEW
+  final EdgeDetector? edgeDetector;                          // NEW
 
   const CaptureReviewScreen({
     super.key,
@@ -61,11 +53,8 @@ class CaptureReviewScreen extends StatefulWidget {
     this.saving = false,
     this.enableCrop = true,
     this.decodeImageSize = _resolveImageSize,
-    this.readBytes = _defaultReadBytes, // NEW
-    this.edgeDetector, // NEW
-    this.title = 'Review',
-    this.acceptLabel = 'Accept',
-    this.initialMode = EnhancerMode.auto,
+    this.readBytes = _defaultReadBytes,     // NEW
+    this.edgeDetector,                      // NEW
   });
 
   @override
@@ -75,11 +64,9 @@ class CaptureReviewScreen extends StatefulWidget {
 class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   CropCorners _corners = CropCorners.fullFrame;
   Size? _imageSize;
-  double?
-  _detectionConfidence; // NEW: null = pending/failed; ≥0 = result received
-  bool _userInteracted =
-      false; // NEW: true once user touches a handle or taps Reset
-  late EnhancerMode _mode;
+  double? _detectionConfidence;   // NEW: null = pending/failed; ≥0 = result received
+  bool _userInteracted = false;   // NEW: true once user touches a handle or taps Reset
+  EnhancerMode _mode = EnhancerMode.auto;
   Uint8List? _sourceBytes;
 
   // Three tiers: confident (green), best-guess-please-check (amber), and
@@ -95,22 +82,15 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _mode = widget.initialMode;
-    widget
-        .decodeImageSize(widget.image.path)
-        .then((size) {
-          if (!mounted) return;
-          setState(() => _imageSize = size);
-        })
-        .catchError((_) {});
-    _runDetection(); // NEW — concurrent with decodeImageSize
-    widget
-        .readBytes(widget.image.path)
-        .then((b) {
-          if (!mounted) return;
-          setState(() => _sourceBytes = b);
-        })
-        .catchError((_) {});
+    widget.decodeImageSize(widget.image.path).then((size) {
+      if (!mounted) return;
+      setState(() => _imageSize = size);
+    }).catchError((_) {});
+    _runDetection();   // NEW — concurrent with decodeImageSize
+    widget.readBytes(widget.image.path).then((b) {
+      if (!mounted) return;
+      setState(() => _sourceBytes = b);
+    }).catchError((_) {});
   }
 
   Future<void> _runDetection() async {
@@ -133,23 +113,25 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   }
 
   Widget _imageWidget() => Image.file(
-    File(widget.image.path),
-    key: const Key('review-image'),
-    fit: BoxFit.contain,
-    errorBuilder: (context, error, stack) => const Icon(
-      Icons.broken_image_outlined,
-      key: Key('review-image-error'),
-      color: Colors.white54,
-      size: 64,
-    ),
-  );
+        File(widget.image.path),
+        key: const Key('review-image'),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stack) => const Icon(
+          Icons.broken_image_outlined,
+          key: Key('review-image-error'),
+          color: Colors.white54,
+          size: 64,
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
     final size = _imageSize;
     final canCrop = size != null && !widget.saving;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: const Text('Review'),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -178,10 +160,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                     child: ColoredBox(
                       color: Colors.black54,
                       child: Center(
-                        child: CircularProgressIndicator(
-                          key: Key('review-saving'),
-                        ),
-                      ),
+                          child: CircularProgressIndicator(key: Key('review-saving'))),
                     ),
                   ),
               ],
@@ -212,10 +191,9 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                   key: const Key('crop-reset'),
                   onPressed: canCrop
                       ? () => setState(() {
-                          _userInteracted =
-                              true; // NEW — block in-flight detection
-                          _corners = CropCorners.fullFrame;
-                        })
+                            _userInteracted = true;           // NEW — block in-flight detection
+                            _corners = CropCorners.fullFrame;
+                          })
                       : null,
                   child: const Text('Reset'),
                 ),
@@ -223,14 +201,17 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                 key: const Key('review-accept'),
                 onPressed: widget.saving
                     ? null
-                    : () => widget.onAccept(_corners, switch (_mode) {
-                        EnhancerMode.grayscale => const GrayscaleEnhancer(),
-                        EnhancerMode.auto => const AutoEnhancer(),
-                        EnhancerMode.color => const ColorEnhancer(),
-                        EnhancerMode.none => const NoneEnhancer(),
-                      }),
+                    : () => widget.onAccept(
+                          _corners,
+                          switch (_mode) {
+                            EnhancerMode.grayscale => const GrayscaleEnhancer(),
+                            EnhancerMode.auto      => const AutoEnhancer(),
+                            EnhancerMode.color     => const ColorEnhancer(),
+                            EnhancerMode.none      => const NoneEnhancer(),
+                          },
+                        ),
                 icon: const Icon(Icons.check),
-                label: Text(widget.acceptLabel),
+                label: const Text('Accept'),
               ),
             ],
           ),
