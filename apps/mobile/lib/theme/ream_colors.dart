@@ -146,6 +146,13 @@ class ReamColors extends ThemeExtension<ReamColors> {
 }
 
 /// Terse access: `context.ream.green`.
+///
+/// Falls back to [ReamColors.light] when no [ReamColors] extension is
+/// registered on the theme. Production always registers it (light or dark) via
+/// `ReamTheme` in `main.dart`, so the fallback only applies in widget tests that
+/// pump a component under a bare `MaterialApp` — those render with the light
+/// palette instead of crashing, which keeps the token usable everywhere.
 extension ReamColorsX on BuildContext {
-  ReamColors get ream => Theme.of(this).extension<ReamColors>()!;
+  ReamColors get ream =>
+      Theme.of(this).extension<ReamColors>() ?? ReamColors.light;
 }

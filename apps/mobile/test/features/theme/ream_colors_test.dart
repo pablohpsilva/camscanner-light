@@ -31,4 +31,23 @@ void main() {
     );
     expect(seen.paper, const Color(0xFFF4F1EA));
   });
+
+  testWidgets('context.ream falls back to light when no extension is present',
+      (tester) async {
+    late ReamColors seen;
+    await tester.pumpWidget(
+      MaterialApp(
+        // No ReamColors extension registered (bare theme) — as in isolated
+        // widget tests. context.ream must degrade to light, not crash.
+        home: Builder(
+          builder: (context) {
+            seen = context.ream;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    expect(seen.paper, ReamColors.light.paper);
+    expect(seen.green, ReamColors.light.green);
+  });
 }
