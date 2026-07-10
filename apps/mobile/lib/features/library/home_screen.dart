@@ -380,12 +380,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Whether the sort/view controls should show: a non-empty, loaded, non-error
-  // library that isn't in selection mode.
+  // library that isn't in selection mode and isn't in active search. During
+  // search the list is in FTS relevance order and the sort pill is inert, so
+  // it is hidden to avoid confusion.
   bool get _showControls =>
       !_loading &&
       !_error &&
       !_selectionMode &&
-      (_searching ? _searchResults.isNotEmpty : _summaries.isNotEmpty);
+      !_searching &&
+      _summaries.isNotEmpty;
 
   Widget _buildHeader(BuildContext context) {
     final r = context.ream;

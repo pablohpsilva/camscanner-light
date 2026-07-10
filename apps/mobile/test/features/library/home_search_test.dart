@@ -77,6 +77,25 @@ void main() {
     expect(find.byKey(const Key('documents-search-empty')), findsOneWidget);
   });
 
+  testWidgets('sort pill and view toggle are hidden while search is active', (
+    tester,
+  ) async {
+    await pumpHome(tester, twoDocs());
+    // Controls are visible before searching.
+    expect(find.byKey(const Key('sort-pill')), findsOneWidget);
+    expect(find.byKey(const Key('library-view-toggle')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('documents-search-field')),
+      'invoice',
+    );
+    await tester.pumpAndSettle();
+
+    // Controls must be hidden during an active search.
+    expect(find.byKey(const Key('sort-pill')), findsNothing);
+    expect(find.byKey(const Key('library-view-toggle')), findsNothing);
+  });
+
   testWidgets('clearing the query restores the sort pill', (tester) async {
     await pumpHome(tester, twoDocs());
     // Sort pill shows in the normal (non-search) list.
