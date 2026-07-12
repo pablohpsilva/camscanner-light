@@ -37,6 +37,12 @@ class Pages extends Table {
   /// null until the flatten step has been run for this page.
   TextColumn get flatRelativePath => text().nullable()();
 
+  /// Number of 90° clockwise quarter-turns applied to the DISPLAY image (0..3).
+  /// Rotation is metadata re-applied during flat regeneration — never baked
+  /// destructively into the base image. See DriftDocumentRepository._writeFlat.
+  IntColumn get rotationQuarterTurns =>
+      integer().withDefault(const Constant(0))();
+
   /// Recognized OCR text for this page (O1); null until OCR has run.
   TextColumn get ocrText => text().nullable()();
 
@@ -49,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -69,6 +75,9 @@ class AppDatabase extends _$AppDatabase {
         await _backfillFts();
       }
       if (from < 6) await m.addColumn(documents, documents.isIdCard);
+      if (from < 7) {
+        await m.addColumn(pages, pages.rotationQuarterTurns);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

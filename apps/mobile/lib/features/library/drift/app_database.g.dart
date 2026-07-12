@@ -436,6 +436,17 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _rotationQuarterTurnsMeta =
+      const VerificationMeta('rotationQuarterTurns');
+  @override
+  late final GeneratedColumn<int> rotationQuarterTurns = GeneratedColumn<int>(
+    'rotation_quarter_turns',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _ocrTextMeta = const VerificationMeta(
     'ocrText',
   );
@@ -466,6 +477,7 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     relativeImagePath,
     corners,
     flatRelativePath,
+    rotationQuarterTurns,
     ocrText,
     ocrBoxes,
   ];
@@ -526,6 +538,15 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         ),
       );
     }
+    if (data.containsKey('rotation_quarter_turns')) {
+      context.handle(
+        _rotationQuarterTurnsMeta,
+        rotationQuarterTurns.isAcceptableOrUnknown(
+          data['rotation_quarter_turns']!,
+          _rotationQuarterTurnsMeta,
+        ),
+      );
+    }
     if (data.containsKey('ocr_text')) {
       context.handle(
         _ocrTextMeta,
@@ -571,6 +592,10 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         DriftSqlType.string,
         data['${effectivePrefix}flat_relative_path'],
       ),
+      rotationQuarterTurns: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rotation_quarter_turns'],
+      )!,
       ocrText: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}ocr_text'],
@@ -602,6 +627,11 @@ class Page extends DataClass implements Insertable<Page> {
   /// null until the flatten step has been run for this page.
   final String? flatRelativePath;
 
+  /// Number of 90° clockwise quarter-turns applied to the DISPLAY image (0..3).
+  /// Rotation is metadata re-applied during flat regeneration — never baked
+  /// destructively into the base image. See DriftDocumentRepository._writeFlat.
+  final int rotationQuarterTurns;
+
   /// Recognized OCR text for this page (O1); null until OCR has run.
   final String? ocrText;
 
@@ -614,6 +644,7 @@ class Page extends DataClass implements Insertable<Page> {
     required this.relativeImagePath,
     this.corners,
     this.flatRelativePath,
+    required this.rotationQuarterTurns,
     this.ocrText,
     this.ocrBoxes,
   });
@@ -630,6 +661,7 @@ class Page extends DataClass implements Insertable<Page> {
     if (!nullToAbsent || flatRelativePath != null) {
       map['flat_relative_path'] = Variable<String>(flatRelativePath);
     }
+    map['rotation_quarter_turns'] = Variable<int>(rotationQuarterTurns);
     if (!nullToAbsent || ocrText != null) {
       map['ocr_text'] = Variable<String>(ocrText);
     }
@@ -651,6 +683,7 @@ class Page extends DataClass implements Insertable<Page> {
       flatRelativePath: flatRelativePath == null && nullToAbsent
           ? const Value.absent()
           : Value(flatRelativePath),
+      rotationQuarterTurns: Value(rotationQuarterTurns),
       ocrText: ocrText == null && nullToAbsent
           ? const Value.absent()
           : Value(ocrText),
@@ -672,6 +705,9 @@ class Page extends DataClass implements Insertable<Page> {
       relativeImagePath: serializer.fromJson<String>(json['relativeImagePath']),
       corners: serializer.fromJson<String?>(json['corners']),
       flatRelativePath: serializer.fromJson<String?>(json['flatRelativePath']),
+      rotationQuarterTurns: serializer.fromJson<int>(
+        json['rotationQuarterTurns'],
+      ),
       ocrText: serializer.fromJson<String?>(json['ocrText']),
       ocrBoxes: serializer.fromJson<String?>(json['ocrBoxes']),
     );
@@ -686,6 +722,7 @@ class Page extends DataClass implements Insertable<Page> {
       'relativeImagePath': serializer.toJson<String>(relativeImagePath),
       'corners': serializer.toJson<String?>(corners),
       'flatRelativePath': serializer.toJson<String?>(flatRelativePath),
+      'rotationQuarterTurns': serializer.toJson<int>(rotationQuarterTurns),
       'ocrText': serializer.toJson<String?>(ocrText),
       'ocrBoxes': serializer.toJson<String?>(ocrBoxes),
     };
@@ -698,6 +735,7 @@ class Page extends DataClass implements Insertable<Page> {
     String? relativeImagePath,
     Value<String?> corners = const Value.absent(),
     Value<String?> flatRelativePath = const Value.absent(),
+    int? rotationQuarterTurns,
     Value<String?> ocrText = const Value.absent(),
     Value<String?> ocrBoxes = const Value.absent(),
   }) => Page(
@@ -709,6 +747,7 @@ class Page extends DataClass implements Insertable<Page> {
     flatRelativePath: flatRelativePath.present
         ? flatRelativePath.value
         : this.flatRelativePath,
+    rotationQuarterTurns: rotationQuarterTurns ?? this.rotationQuarterTurns,
     ocrText: ocrText.present ? ocrText.value : this.ocrText,
     ocrBoxes: ocrBoxes.present ? ocrBoxes.value : this.ocrBoxes,
   );
@@ -726,6 +765,9 @@ class Page extends DataClass implements Insertable<Page> {
       flatRelativePath: data.flatRelativePath.present
           ? data.flatRelativePath.value
           : this.flatRelativePath,
+      rotationQuarterTurns: data.rotationQuarterTurns.present
+          ? data.rotationQuarterTurns.value
+          : this.rotationQuarterTurns,
       ocrText: data.ocrText.present ? data.ocrText.value : this.ocrText,
       ocrBoxes: data.ocrBoxes.present ? data.ocrBoxes.value : this.ocrBoxes,
     );
@@ -740,6 +782,7 @@ class Page extends DataClass implements Insertable<Page> {
           ..write('relativeImagePath: $relativeImagePath, ')
           ..write('corners: $corners, ')
           ..write('flatRelativePath: $flatRelativePath, ')
+          ..write('rotationQuarterTurns: $rotationQuarterTurns, ')
           ..write('ocrText: $ocrText, ')
           ..write('ocrBoxes: $ocrBoxes')
           ..write(')'))
@@ -754,6 +797,7 @@ class Page extends DataClass implements Insertable<Page> {
     relativeImagePath,
     corners,
     flatRelativePath,
+    rotationQuarterTurns,
     ocrText,
     ocrBoxes,
   );
@@ -767,6 +811,7 @@ class Page extends DataClass implements Insertable<Page> {
           other.relativeImagePath == this.relativeImagePath &&
           other.corners == this.corners &&
           other.flatRelativePath == this.flatRelativePath &&
+          other.rotationQuarterTurns == this.rotationQuarterTurns &&
           other.ocrText == this.ocrText &&
           other.ocrBoxes == this.ocrBoxes);
 }
@@ -778,6 +823,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
   final Value<String> relativeImagePath;
   final Value<String?> corners;
   final Value<String?> flatRelativePath;
+  final Value<int> rotationQuarterTurns;
   final Value<String?> ocrText;
   final Value<String?> ocrBoxes;
   const PagesCompanion({
@@ -787,6 +833,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     this.relativeImagePath = const Value.absent(),
     this.corners = const Value.absent(),
     this.flatRelativePath = const Value.absent(),
+    this.rotationQuarterTurns = const Value.absent(),
     this.ocrText = const Value.absent(),
     this.ocrBoxes = const Value.absent(),
   });
@@ -797,6 +844,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     required String relativeImagePath,
     this.corners = const Value.absent(),
     this.flatRelativePath = const Value.absent(),
+    this.rotationQuarterTurns = const Value.absent(),
     this.ocrText = const Value.absent(),
     this.ocrBoxes = const Value.absent(),
   }) : documentId = Value(documentId),
@@ -809,6 +857,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Expression<String>? relativeImagePath,
     Expression<String>? corners,
     Expression<String>? flatRelativePath,
+    Expression<int>? rotationQuarterTurns,
     Expression<String>? ocrText,
     Expression<String>? ocrBoxes,
   }) {
@@ -819,6 +868,8 @@ class PagesCompanion extends UpdateCompanion<Page> {
       if (relativeImagePath != null) 'relative_image_path': relativeImagePath,
       if (corners != null) 'corners': corners,
       if (flatRelativePath != null) 'flat_relative_path': flatRelativePath,
+      if (rotationQuarterTurns != null)
+        'rotation_quarter_turns': rotationQuarterTurns,
       if (ocrText != null) 'ocr_text': ocrText,
       if (ocrBoxes != null) 'ocr_boxes': ocrBoxes,
     });
@@ -831,6 +882,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Value<String>? relativeImagePath,
     Value<String?>? corners,
     Value<String?>? flatRelativePath,
+    Value<int>? rotationQuarterTurns,
     Value<String?>? ocrText,
     Value<String?>? ocrBoxes,
   }) {
@@ -841,6 +893,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
       relativeImagePath: relativeImagePath ?? this.relativeImagePath,
       corners: corners ?? this.corners,
       flatRelativePath: flatRelativePath ?? this.flatRelativePath,
+      rotationQuarterTurns: rotationQuarterTurns ?? this.rotationQuarterTurns,
       ocrText: ocrText ?? this.ocrText,
       ocrBoxes: ocrBoxes ?? this.ocrBoxes,
     );
@@ -867,6 +920,9 @@ class PagesCompanion extends UpdateCompanion<Page> {
     if (flatRelativePath.present) {
       map['flat_relative_path'] = Variable<String>(flatRelativePath.value);
     }
+    if (rotationQuarterTurns.present) {
+      map['rotation_quarter_turns'] = Variable<int>(rotationQuarterTurns.value);
+    }
     if (ocrText.present) {
       map['ocr_text'] = Variable<String>(ocrText.value);
     }
@@ -885,6 +941,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
           ..write('relativeImagePath: $relativeImagePath, ')
           ..write('corners: $corners, ')
           ..write('flatRelativePath: $flatRelativePath, ')
+          ..write('rotationQuarterTurns: $rotationQuarterTurns, ')
           ..write('ocrText: $ocrText, ')
           ..write('ocrBoxes: $ocrBoxes')
           ..write(')'))
@@ -1215,6 +1272,7 @@ typedef $$PagesTableCreateCompanionBuilder =
       required String relativeImagePath,
       Value<String?> corners,
       Value<String?> flatRelativePath,
+      Value<int> rotationQuarterTurns,
       Value<String?> ocrText,
       Value<String?> ocrBoxes,
     });
@@ -1226,6 +1284,7 @@ typedef $$PagesTableUpdateCompanionBuilder =
       Value<String> relativeImagePath,
       Value<String?> corners,
       Value<String?> flatRelativePath,
+      Value<int> rotationQuarterTurns,
       Value<String?> ocrText,
       Value<String?> ocrBoxes,
     });
@@ -1282,6 +1341,11 @@ class $$PagesTableFilterComposer extends Composer<_$AppDatabase, $PagesTable> {
 
   ColumnFilters<String> get flatRelativePath => $composableBuilder(
     column: $table.flatRelativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rotationQuarterTurns => $composableBuilder(
+    column: $table.rotationQuarterTurns,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1353,6 +1417,11 @@ class $$PagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get rotationQuarterTurns => $composableBuilder(
+    column: $table.rotationQuarterTurns,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get ocrText => $composableBuilder(
     column: $table.ocrText,
     builder: (column) => ColumnOrderings(column),
@@ -1412,6 +1481,11 @@ class $$PagesTableAnnotationComposer
 
   GeneratedColumn<String> get flatRelativePath => $composableBuilder(
     column: $table.flatRelativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rotationQuarterTurns => $composableBuilder(
+    column: $table.rotationQuarterTurns,
     builder: (column) => column,
   );
 
@@ -1479,6 +1553,7 @@ class $$PagesTableTableManager
                 Value<String> relativeImagePath = const Value.absent(),
                 Value<String?> corners = const Value.absent(),
                 Value<String?> flatRelativePath = const Value.absent(),
+                Value<int> rotationQuarterTurns = const Value.absent(),
                 Value<String?> ocrText = const Value.absent(),
                 Value<String?> ocrBoxes = const Value.absent(),
               }) => PagesCompanion(
@@ -1488,6 +1563,7 @@ class $$PagesTableTableManager
                 relativeImagePath: relativeImagePath,
                 corners: corners,
                 flatRelativePath: flatRelativePath,
+                rotationQuarterTurns: rotationQuarterTurns,
                 ocrText: ocrText,
                 ocrBoxes: ocrBoxes,
               ),
@@ -1499,6 +1575,7 @@ class $$PagesTableTableManager
                 required String relativeImagePath,
                 Value<String?> corners = const Value.absent(),
                 Value<String?> flatRelativePath = const Value.absent(),
+                Value<int> rotationQuarterTurns = const Value.absent(),
                 Value<String?> ocrText = const Value.absent(),
                 Value<String?> ocrBoxes = const Value.absent(),
               }) => PagesCompanion.insert(
@@ -1508,6 +1585,7 @@ class $$PagesTableTableManager
                 relativeImagePath: relativeImagePath,
                 corners: corners,
                 flatRelativePath: flatRelativePath,
+                rotationQuarterTurns: rotationQuarterTurns,
                 ocrText: ocrText,
                 ocrBoxes: ocrBoxes,
               ),
