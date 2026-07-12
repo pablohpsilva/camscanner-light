@@ -294,4 +294,76 @@ void main() {
       await dir.delete(recursive: true);
     },
   );
+
+  // ---------------------------------------------------------------------------
+  // v6 → v7 : Pages.rotationQuarterTurns column
+  // ---------------------------------------------------------------------------
+
+  test(
+    'v6→v7: upgrading an EDITED page adds rotation_quarter_turns defaulting to 0',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('rotmig_v6v7');
+      final file = File('${dir.path}/app.db');
+
+      // 1) Build a v6-shaped DB (v5 tables + Documents.is_id_card, no
+      //    rotation_quarter_turns) holding an EDITED page (corners set).
+      final raw = sqlite.sqlite3.open(file.path);
+      raw.execute('''
+        CREATE TABLE documents (
+          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          modified_at TEXT NOT NULL,
+          is_id_card INTEGER NOT NULL DEFAULT 0
+        );
+      ''');
+      raw.execute('''
+        CREATE TABLE pages (
+          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          document_id INTEGER NOT NULL REFERENCES documents (id) ON DELETE CASCADE,
+          position INTEGER NOT NULL,
+          relative_image_path TEXT NOT NULL,
+          corners TEXT,
+          flat_relative_path TEXT,
+          ocr_text TEXT,
+          ocr_boxes TEXT
+        );
+      ''');
+      raw.execute(
+        "INSERT INTO documents (id, name, created_at, modified_at, is_id_card) "
+        "VALUES (1, 'Old Doc', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 0);",
+      );
+      // An edited page: cropped (corners) with a flat derivative.
+      raw.execute(
+        "INSERT INTO pages (id, document_id, position, relative_image_path, corners, flat_relative_path) "
+        "VALUES (1, 1, 1, 'documents/1/page_1.jpg', "
+        "'0.100000,0.100000,0.900000,0.100000,0.900000,0.900000,0.100000,0.900000', "
+        "'documents/1/page_1_flat.jpg');",
+      );
+      raw.execute('PRAGMA user_version = 6;');
+      raw.close();
+
+      // 2) Open at v7 → triggers onUpgrade (from=6, adds rotation_quarter_turns).
+      final db = AppDatabase(NativeDatabase(file));
+
+      // 3a) Legacy edited row still loads; new column defaults to 0.
+      final rows = await db.select(db.pages).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.rotationQuarterTurns, 0);
+      expect(rows.single.corners != null, isTrue); // crop preserved
+      expect(rows.single.flatRelativePath, 'documents/1/page_1_flat.jpg');
+
+      // 3b) A fresh rotationQuarterTurns write round-trips.
+      await (db.update(db.pages)..where((t) => t.id.equals(1))).write(
+        const PagesCompanion(rotationQuarterTurns: Value(3)),
+      );
+      final updated = await (db.select(
+        db.pages,
+      )..where((t) => t.id.equals(1))).getSingle();
+      expect(updated.rotationQuarterTurns, 3);
+
+      await db.close();
+      await dir.delete(recursive: true);
+    },
+  );
 }
