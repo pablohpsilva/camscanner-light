@@ -131,7 +131,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Support Ream'), findsOneWidget);
+    expect(find.text('Support the app'), findsOneWidget);
+    expect(find.textContaining('Ream'), findsNothing);
     expect(find.byKey(const Key('donation-kofi-button')), findsOneWidget);
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
     expect(scaffold.backgroundColor, ReamColors.light.paper);

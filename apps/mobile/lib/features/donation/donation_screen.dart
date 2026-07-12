@@ -53,7 +53,7 @@ class DonationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
-        title: 'Support Ream',
+        title: 'Support the app',
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: ListView(
