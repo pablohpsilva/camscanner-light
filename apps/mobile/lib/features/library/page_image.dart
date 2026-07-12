@@ -9,6 +9,7 @@ class PageImage {
   final int position;
   final String imagePath;
   final CropCorners corners;
+  final int rotationQuarterTurns;
   final String? flatImagePath;
   final String? ocrText;
   final List<OcrWordBox> ocrWords;
@@ -17,6 +18,7 @@ class PageImage {
     required this.position,
     required this.imagePath,
     this.corners = CropCorners.fullFrame,
+    this.rotationQuarterTurns = 0,
     this.flatImagePath,
     this.ocrText,
     this.ocrWords = const [],

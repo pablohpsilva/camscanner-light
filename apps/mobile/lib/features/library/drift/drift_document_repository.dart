@@ -339,6 +339,7 @@ class DriftDocumentRepository implements DocumentRepository {
             position: pg.position,
             imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
             corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
+            rotationQuarterTurns: pg.rotationQuarterTurns,
             flatImagePath: pg.flatRelativePath == null
                 ? null
                 : _fileStore.absoluteFor(pg.flatRelativePath!).path,
