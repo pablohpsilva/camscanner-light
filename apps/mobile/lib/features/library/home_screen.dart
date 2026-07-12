@@ -26,7 +26,7 @@ import 'widgets/rename_dialog.dart';
 import 'widgets/sort_pill.dart';
 import '../donation/donation_banner.dart';
 import '../feedback/feedback_dependencies.dart';
-import '../feedback/feedback_screen.dart';
+import '../settings/settings_screen.dart';
 
 /// The app's home: the document library. Builds the repository, lists saved
 /// documents (name + date), and opens the camera. Reloads the list whenever the
@@ -63,8 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentSort _sort = DocumentSort.initial;
   bool _feedbackAvailable = false;
   LibraryViewMode _viewMode = LibraryViewMode.list;
-  // Used by the Settings push in Task 4.
-  // ignore: unused_field
   late final ThemeController _themeController =
       widget.themeController ??
       ThemeController(store: InMemoryThemeModeStore());
@@ -479,27 +477,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSettingsMenu(BuildContext context) {
     final r = context.ream;
-    return PopupMenuButton<String>(
+    return GestureDetector(
       key: const Key('home-settings'),
-      tooltip: 'Settings',
-      onSelected: (v) {
-        if (v == 'feedback') {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  FeedbackScreen(dependencies: widget.feedbackDependencies),
-            ),
-          );
-        }
-      },
-      itemBuilder: (_) => [
-        if (_feedbackAvailable)
-          const PopupMenuItem(
-            key: Key('home-menu-feedback'),
-            value: 'feedback',
-            child: Text('Send feedback'),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SettingsScreen(
+            themeController: _themeController,
+            feedbackDependencies: widget.feedbackDependencies,
+            feedbackAvailable: _feedbackAvailable,
           ),
-      ],
+        ),
+      ),
       child: Container(
         width: 34,
         height: 34,

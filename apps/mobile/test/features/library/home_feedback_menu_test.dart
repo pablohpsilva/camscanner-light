@@ -12,46 +12,35 @@ class _StubAvailability implements FeedbackAvailability {
   Future<bool> isAvailable() async => v;
 }
 
+Widget _host(bool healthy) => MaterialApp(
+  theme: ReamTheme.light(),
+  home: HomeScreen(
+    feedbackDependencies: FeedbackDependencies(
+      createAvailability: () => _StubAvailability(healthy),
+    ),
+  ),
+);
+
 void main() {
   testWidgets(
-    'settings gear opens the feedback screen when worker is healthy',
+    'settings gear opens settings, and feedback from there when healthy',
     (t) async {
-      await t.pumpWidget(
-        MaterialApp(
-          theme: ReamTheme.light(),
-          home: HomeScreen(
-            feedbackDependencies: FeedbackDependencies(
-              createAvailability: () => const _StubAvailability(true),
-            ),
-          ),
-        ),
-      );
-      // Let cold-start settle AND allow _probeFeedback to complete.
+      await t.pumpWidget(_host(true));
       await t.pumpAndSettle();
       await t.tap(find.byKey(const Key('home-settings')));
       await t.pumpAndSettle();
-      await t.tap(find.byKey(const Key('home-menu-feedback')));
+      expect(find.text('Settings'), findsOneWidget);
+      await t.tap(find.byKey(const Key('settings-feedback')));
       await t.pumpAndSettle();
       expect(find.text('Send feedback'), findsOneWidget);
     },
   );
 
-  testWidgets('feedback item is absent from the gear menu when unhealthy', (
-    t,
-  ) async {
-    await t.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
-        home: HomeScreen(
-          feedbackDependencies: FeedbackDependencies(
-            createAvailability: () => const _StubAvailability(false),
-          ),
-        ),
-      ),
-    );
+  testWidgets('feedback row is absent in settings when unhealthy', (t) async {
+    await t.pumpWidget(_host(false));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const Key('home-settings')));
     await t.pumpAndSettle();
-    expect(find.byKey(const Key('home-menu-feedback')), findsNothing);
+    expect(find.byKey(const Key('settings-feedback')), findsNothing);
   });
 }
