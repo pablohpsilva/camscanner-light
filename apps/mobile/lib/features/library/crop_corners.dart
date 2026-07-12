@@ -138,6 +138,27 @@ class CropCorners {
   static Offset _clamp(Offset o) =>
       Offset(o.dx.clamp(0.0, 1.0), o.dy.clamp(0.0, 1.0));
 
+  /// This crop quad after the page image is rotated 90° CLOCKWISE, in
+  /// normalized coords. Matches `image.copyRotate(angle: 90)` and mirrors
+  /// [OcrWordBox.rotate90Cw]: a point `(x, y)` maps to `(1 - y, x)`, and each
+  /// role is relabeled to its new visual position so the SAME physical region
+  /// is described in the rotated frame. Mid-edge deviations rotate with their
+  /// edges (deviation vector `(dx, dy)` maps to `(-dy, dx)`).
+  CropCorners rotate90Cw() {
+    Offset rot(Offset p) => Offset(1 - p.dy, p.dx);
+    Offset rotVec(Offset d) => Offset(-d.dy, d.dx);
+    return CropCorners(
+      topLeft: rot(bottomLeft),
+      topRight: rot(topLeft),
+      bottomRight: rot(topRight),
+      bottomLeft: rot(bottomRight),
+      topMidDev: rotVec(leftMidDev),
+      rightMidDev: rotVec(topMidDev),
+      bottomMidDev: rotVec(rightMidDev),
+      leftMidDev: rotVec(bottomMidDev),
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is CropCorners &&
