@@ -3,9 +3,33 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/pdf_preview_screen.dart';
+import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/ream_theme.dart';
 import 'package:pdfx/pdfx.dart';
 
 void main() {
+  testWidgets('PDF viewer uses Ream chrome (header title + paper bg)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.light(),
+        home: PdfPreviewScreen(
+          pdfPath: '/nonexistent.pdf',
+          name: 'Lease Agreement',
+          opener: (_) async => throw Exception('no native in host'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Lease Agreement'), findsOneWidget);
+    expect(find.byKey(const Key('ream-back')), findsOneWidget);
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, ReamColors.light.paper);
+    // error branch still reachable + keyed
+    expect(find.byKey(const Key('pdf-preview-error')), findsOneWidget);
+  });
+
   // A loaded/render path needs the native plugin + a real PdfDocument that
   // cannot be faked, so it is covered on-device. Host tests drive the two
   // states reachable with an injected opener: loading and error.

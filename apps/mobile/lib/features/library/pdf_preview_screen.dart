@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
+import '../../theme/ream_colors.dart';
+import '../../theme/widgets/ream_back_header.dart';
 import 'share_channel.dart';
 import 'widgets/share_menu_button.dart';
 
@@ -69,17 +71,18 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.ream;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.name),
-        actions: [
-          ShareMenuButton(
-            buttonKey: const Key('pdf-preview-share'),
-            onShare: () => unawaited(
-              widget.share.share([widget.pdfPath], subject: widget.name),
-            ),
+      backgroundColor: r.paper,
+      appBar: ReamBackHeader(
+        title: widget.name,
+        onBack: () => Navigator.of(context).maybePop(),
+        trailing: ShareMenuButton(
+          buttonKey: const Key('pdf-preview-share'),
+          onShare: () => unawaited(
+            widget.share.share([widget.pdfPath], subject: widget.name),
           ),
-        ],
+        ),
       ),
       body: _loading
           ? const Center(
@@ -87,9 +90,12 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
               child: CircularProgressIndicator(),
             )
           : _error
-          ? const Center(
-              key: Key('pdf-preview-error'),
-              child: Text("Couldn't open the PDF."),
+          ? Center(
+              key: const Key('pdf-preview-error'),
+              child: Text(
+                "Couldn't open the PDF.",
+                style: TextStyle(fontFamily: 'Figtree', color: r.ink2),
+              ),
             )
           : PdfViewPinch(
               key: const Key('pdf-preview-view'),
