@@ -255,14 +255,17 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       child: Material(
                         color: r.ink,
                         borderRadius: BorderRadius.circular(15),
-                        child: const Center(
+                        child: Center(
                           child: SizedBox(
                             height: 18,
                             width: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                ThemeData.estimateBrightnessForColor(r.ink) ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : const Color(0xFF201C16),
                               ),
                             ),
                           ),

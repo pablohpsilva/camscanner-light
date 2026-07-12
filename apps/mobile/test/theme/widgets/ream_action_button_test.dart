@@ -55,4 +55,49 @@ void main() {
     );
     expect(material.color, ReamColors.light.ink);
   });
+
+  testWidgets('primary label is white when fill is dark (light theme ink)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.light(),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ReamActionButton(
+              label: 'Send report',
+              primary: true,
+              fillColor: context.ream.ink,
+              onPressed: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final style = tester.widget<Text>(find.text('Send report')).style!;
+    expect(style.color, Colors.white);
+  });
+
+  testWidgets(
+    'primary label is dark on-fill color when fill is light (dark theme ink)',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ReamTheme.dark(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ReamActionButton(
+                label: 'Send report',
+                primary: true,
+                fillColor: context.ream.ink,
+                onPressed: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      final style = tester.widget<Text>(find.text('Send report')).style!;
+      expect(style.color, const Color(0xFF201C16));
+    },
+  );
 }

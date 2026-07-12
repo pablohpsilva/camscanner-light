@@ -24,21 +24,26 @@ class ReamActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = context.ream;
     final enabled = onPressed != null;
+    final fill = primary ? (fillColor ?? r.greenDeep) : r.surface;
+    final onPrimary =
+        ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF201C16); // warm near-black for light fills
     final child = primary
         ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: Colors.white),
+                Icon(icon, size: 18, color: onPrimary),
                 const SizedBox(width: 8),
               ],
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Figtree',
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: onPrimary,
                 ),
               ),
             ],
@@ -64,7 +69,7 @@ class ReamActionButton extends StatelessWidget {
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Material(
-        color: primary ? (fillColor ?? r.greenDeep) : r.surface,
+        color: fill,
         borderRadius: BorderRadius.circular(15),
         child: InkWell(
           onTap: onPressed,

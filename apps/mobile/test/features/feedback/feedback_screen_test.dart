@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/feedback/attestation_provider.dart';
@@ -28,6 +30,22 @@ class _StubService extends FeedbackService {
     lastDraft = draft;
     return result;
   }
+}
+
+/// A [FeedbackService] whose [submit] never resolves on its own, so tests can
+/// pump a single frame and observe the `_submitting` spinner state.
+class _PendingService extends FeedbackService {
+  _PendingService()
+    : super(
+        config: testFeedbackConfig,
+        collector: const FakeDiagnosticsCollector(),
+        attestation: const NoAttestationProvider(),
+        httpClient: fakeHttpClient(),
+      );
+
+  @override
+  Future<FeedbackResult> submit(FeedbackDraft draft) =>
+      Completer<FeedbackResult>().future;
 }
 
 Widget _host(FeedbackService service) => MaterialApp(
@@ -115,4 +133,32 @@ void main() {
     await t.pumpAndSettle();
     expect(s.lastDraft!.category, 'idea');
   });
+
+  testWidgets(
+    'submit spinner uses dark on-fill color under dark theme (not white)',
+    (t) async {
+      final s = _PendingService();
+      await t.pumpWidget(
+        MaterialApp(
+          theme: ReamTheme.dark(),
+          home: FeedbackScreen(
+            dependencies: FeedbackDependencies(createService: () => s),
+          ),
+        ),
+      );
+      await t.enterText(
+        find.byKey(const Key('feedback-message')),
+        'Spinner check',
+      );
+      await t.tap(find.byKey(const Key('feedback-submit')));
+      await t.pump(); // enter _submitting state; submit() never resolves
+      final indicator = t.widget<CircularProgressIndicator>(
+        find.byType(CircularProgressIndicator),
+      );
+      final color =
+          (indicator.valueColor as AlwaysStoppedAnimation<Color>).value;
+      expect(color, const Color(0xFF201C16));
+      expect(color, isNot(Colors.white));
+    },
+  );
 }
