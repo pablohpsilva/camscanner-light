@@ -64,9 +64,7 @@ void main() {
 
       await tester.tap(
         find.byKey(const Key('recognized-text-share')),
-      ); // opens the menu
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('share-menu-share')));
+      ); // direct-share button; fires _share() on a single tap
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
