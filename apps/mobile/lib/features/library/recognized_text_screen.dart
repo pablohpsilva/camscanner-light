@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'share_channel.dart';
 
+import '../../theme/ream_colors.dart';
+import '../../theme/widgets/confidence_chip.dart';
+import '../../theme/widgets/ream_action_button.dart';
+import '../../theme/widgets/ream_back_header.dart';
 import 'document_repository.dart';
 import 'page_image.dart';
-import 'widgets/share_menu_button.dart';
 
 /// Shows a single page's cached OCR text: selectable, copyable, exportable as a
 /// temporary `.txt` via the share sheet. Loads the text authoritatively from
@@ -108,25 +111,15 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.ream;
     final text = _text;
     final hasText = text != null && text.trim().isNotEmpty;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Text'),
-        actions: [
-          IconButton(
-            key: const Key('recognized-text-copy'),
-            tooltip: 'Copy',
-            icon: const Icon(Icons.copy),
-            onPressed: (_busy || !hasText) ? null : _copy,
-          ),
-          ShareMenuButton(
-            buttonKey: const Key('recognized-text-share'),
-            onShare: () => unawaited(_share()),
-            showFax: false,
-            enabled: !(_busy || !hasText),
-          ),
-        ],
+      backgroundColor: r.paper,
+      appBar: ReamBackHeader(
+        title: 'Recognized text',
+        onBack: () => Navigator.of(context).maybePop(),
+        backKey: const Key('recognized-text-back'),
       ),
       body: _busy && text == null
           ? const Center(
@@ -134,19 +127,74 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
               child: CircularProgressIndicator(),
             )
           : hasText
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(
-                text,
-                key: const Key('recognized-text-body'),
-              ),
+          ? Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ConfidenceChip(
+                      level: ConfidenceLevel.high,
+                      label: 'Text layer ready · powers search',
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SelectableText(
+                      text,
+                      key: const Key('recognized-text-body'),
+                      style: TextStyle(
+                        fontFamily: 'Figtree',
+                        fontSize: 13,
+                        height: 1.7,
+                        color: r.ink2,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ReamActionButton(
+                          key: const Key('recognized-text-copy'),
+                          label: 'Copy text',
+                          onPressed: (_busy || !hasText) ? null : _copy,
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: ReamActionButton(
+                          key: const Key('recognized-text-share'),
+                          label: 'Share .txt',
+                          primary: true,
+                          fillColor: r.ink,
+                          onPressed: (_busy || !hasText)
+                              ? null
+                              : () => unawaited(_share()),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             )
           : Center(
               key: const Key('recognized-text-empty'),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('No text recognized on this page yet.'),
+                  Text(
+                    'No text recognized on this page yet.',
+                    style: TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 14,
+                      color: r.ink2,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   FilledButton(
                     key: const Key('recognized-text-run'),

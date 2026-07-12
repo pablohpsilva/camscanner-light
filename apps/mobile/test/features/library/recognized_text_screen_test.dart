@@ -3,12 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/recognized_text_screen.dart';
+import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/widgets/confidence_chip.dart';
 
 import '../../support/fake_library.dart';
 
 void main() {
   Widget host(FakeDocumentRepository repo, {String? initialText}) =>
       MaterialApp(
+        theme: ReamTheme.light(),
         home: RecognizedTextScreen(
           documentId: 1,
           position: 1,
@@ -75,6 +79,26 @@ void main() {
       expect(repo.ranOcr, isTrue);
       expect(find.byKey(const Key('recognized-text-body')), findsOneWidget);
       expect(find.text('RECOGNIZED NOW'), findsWidgets);
+    },
+  );
+
+  testWidgets(
+    'OCR screen uses Ream chrome: paper bg, header, confidence chip',
+    (tester) async {
+      final repo = FakeDocumentRepository(
+        pages: const [
+          PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD'),
+        ],
+      );
+      await tester.pumpWidget(host(repo, initialText: 'HELLO WORLD'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recognized text'), findsOneWidget);
+      expect(find.byType(ConfidenceChip), findsOneWidget);
+      expect(find.byKey(const Key('recognized-text-copy')), findsOneWidget);
+      expect(find.byKey(const Key('recognized-text-share')), findsOneWidget);
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.backgroundColor, ReamColors.light.paper);
     },
   );
 }
