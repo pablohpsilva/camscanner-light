@@ -7,6 +7,8 @@ import '../scan/id_scan_screen.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
 import '../../theme/ream_colors.dart';
+import '../../theme/theme_controller.dart';
+import '../../theme/theme_mode_store.dart';
 import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_search_field.dart';
 import '../../theme/widgets/ream_segmented.dart';
@@ -33,12 +35,14 @@ class HomeScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final LibraryDependencies libraryDependencies;
   final FeedbackDependencies feedbackDependencies;
+  final ThemeController? themeController;
 
   const HomeScreen({
     super.key,
     this.dependencies = const ScanDependencies(),
     this.libraryDependencies = const LibraryDependencies(),
     this.feedbackDependencies = const FeedbackDependencies(),
+    this.themeController,
   });
 
   // Aggressive cold-start watchdog budget. Every startup step must finish within
@@ -59,6 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentSort _sort = DocumentSort.initial;
   bool _feedbackAvailable = false;
   LibraryViewMode _viewMode = LibraryViewMode.list;
+  // Used by the Settings push in Task 4.
+  // ignore: unused_field
+  late final ThemeController _themeController =
+      widget.themeController ??
+      ThemeController(store: InMemoryThemeModeStore());
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
