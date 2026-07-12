@@ -2,7 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../theme/ream_colors.dart';
+import '../../theme/ream_theme.dart';
+import '../../theme/widgets/ream_back_header.dart';
 import '../scan/widgets/crop_overlay.dart';
 import 'crop_corners.dart';
 
@@ -73,40 +77,52 @@ class _EditCropScreenState extends State<EditCropScreen> {
         });
   }
 
-  Widget _imageWidget() => Image.file(
+  Widget _imageWidget(ReamColors r) => Image.file(
     File(widget.imagePath),
     key: const Key('edit-crop-image'),
     fit: BoxFit.contain,
-    errorBuilder: (_, _, _) => const Center(
-      child: Icon(Icons.broken_image_outlined, color: Colors.white54, size: 64),
+    errorBuilder: (_, _, _) => Center(
+      child: Icon(Icons.broken_image_outlined, color: r.muted, size: 64),
     ),
   );
 
   @override
   Widget build(BuildContext context) {
     final size = _imageSize;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit crop'),
-        actions: [
-          TextButton(
-            key: const Key('edit-crop-accept'),
-            onPressed: () => Navigator.of(context).pop(_corners),
-            child: const Text('Accept'),
-          ),
-        ],
-      ),
-      body: ColoredBox(
-        color: Colors.black,
-        child: SizedBox.expand(
-          child: size == null
-              ? Center(child: _imageWidget())
-              : CropOverlay(
-                  imageSize: size,
-                  image: _imageWidget(),
-                  corners: _corners,
-                  onCornersChanged: (c) => setState(() => _corners = c),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Theme(
+        data: ReamTheme.dark(),
+        child: Builder(
+          builder: (context) {
+            final r = context.ream;
+            return Scaffold(
+              appBar: ReamBackHeader(
+                title: 'Review & clean',
+                backKey: const Key('edit-crop-back'),
+                onBack: () => Navigator.of(context).pop(),
+                trailing: IconButton(
+                  key: const Key('edit-crop-accept'),
+                  onPressed: () => Navigator.of(context).pop(_corners),
+                  icon: Icon(Icons.check, color: r.green),
+                  tooltip: 'Save',
                 ),
+              ),
+              body: ColoredBox(
+                color: r.paper,
+                child: SizedBox.expand(
+                  child: size == null
+                      ? Center(child: _imageWidget(r))
+                      : CropOverlay(
+                          imageSize: size,
+                          image: _imageWidget(r),
+                          corners: _corners,
+                          onCornersChanged: (c) => setState(() => _corners = c),
+                        ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
