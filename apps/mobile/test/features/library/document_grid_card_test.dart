@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/document_grid_card.dart';
+import 'package:mobile/theme/ream_colors.dart';
 import '../../support/ream_pump.dart';
 
 DocumentSummary _summary() => DocumentSummary(
@@ -52,5 +53,13 @@ void main() {
     );
     await tester.longPress(find.byKey(const Key('document-card-7')));
     expect(longPressed, true);
+  });
+
+  testWidgets('placeholder thumbnail icon uses the Ream muted token', (
+    tester,
+  ) async {
+    await pumpReam(tester, DocumentGridCard(summary: _summary()));
+    final icon = tester.widget<Icon>(find.byIcon(Icons.description_outlined));
+    expect(icon.color, ReamColors.light.muted);
   });
 }

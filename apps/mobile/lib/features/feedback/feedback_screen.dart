@@ -80,6 +80,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   InputDecoration _fieldDecoration(ReamColors r, String label) {
+    // border and enabledBorder are intentionally identical: this app has no
+    // error/focus border style yet, so both fall back to the same neutral
+    // r.line outline. border is kept explicit (rather than omitted) so a
+    // future error/disabled style has a defined base to diverge from.
     return InputDecoration(
       labelText: label,
       filled: true,

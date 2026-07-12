@@ -48,8 +48,9 @@ void main() {
       final requests = <http.Request>[];
       final client = MockClient((req) async {
         requests.add(req);
-        if (req.url.path == '/challenge')
+        if (req.url.path == '/challenge') {
           return http.Response(jsonEncode({'challenge': 'CHAL'}), 200);
+        }
         final body = jsonDecode(req.body) as Map<String, dynamic>;
         expect(body['category'], 'bug');
         expect(body['turnstileToken'], 'ts');
@@ -73,8 +74,9 @@ void main() {
   test('includes attestation when the provider returns one', () async {
     Map<String, dynamic>? posted;
     final client = MockClient((req) async {
-      if (req.url.path == '/challenge')
+      if (req.url.path == '/challenge') {
         return http.Response(jsonEncode({'challenge': 'CHAL'}), 200);
+      }
       posted = jsonDecode(req.body) as Map<String, dynamic>;
       return http.Response(jsonEncode({'ok': true, 'issueUrl': 'u'}), 201);
     });
@@ -94,8 +96,9 @@ void main() {
   test('maps status codes to results', () async {
     Future<FeedbackResult> withStatus(int code, String body) {
       final client = MockClient((req) async {
-        if (req.url.path == '/challenge')
+        if (req.url.path == '/challenge') {
           return http.Response(jsonEncode({'challenge': 'C'}), 200);
+        }
         return http.Response(body, code);
       });
       return _service(client).submit(_draft);

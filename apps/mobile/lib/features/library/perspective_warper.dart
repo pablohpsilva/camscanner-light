@@ -68,8 +68,9 @@ img.Image warpPerspectiveToImage(
 
   var outW = _maxEdge(tl, tr, bl, br).round();
   var outH = _maxEdge(tl, bl, tr, br).round();
-  if (outW < 2 || outH < 2)
+  if (outW < 2 || outH < 2) {
     throw WarpException('degenerate quad: output too small');
+  }
 
   // Cap the long side: solving the homography to the reduced rectangle makes
   // the warp sample fewer points (and enhance/encode run smaller) with no loss
@@ -182,8 +183,9 @@ List<double> _gaussElim(List<List<double>> m) {
     final tmp = m[col];
     m[col] = m[maxRow];
     m[maxRow] = tmp;
-    if (m[col][col].abs() < 1e-12)
+    if (m[col][col].abs() < 1e-12) {
       throw WarpException('singular homography system');
+    }
     for (int row = 0; row < n; row++) {
       if (row == col) continue;
       final factor = m[row][col] / m[col][col];

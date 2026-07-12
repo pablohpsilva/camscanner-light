@@ -38,11 +38,12 @@ void main() {
     expect(find.byKey(const Key('document-thumb-1')), findsOneWidget);
     expect(find.byKey(const Key('document-thumb-2')), findsOneWidget);
     expect(find.text('Scan 2026-06-27 20.26.42'), findsNWidgets(2));
-    expect(find.textContaining('· 1 page'), findsOneWidget);
-    expect(find.textContaining('· 3 pages'), findsOneWidget);
+    expect(find.textContaining('1 page ·'), findsOneWidget);
+    expect(find.textContaining('3 pages ·'), findsOneWidget);
 
-    // Ream restyle: the meta line ("… · N pages") is a mono readout.
-    final meta = tester.widget<Text>(find.textContaining('· 1 page'));
+    // Ream restyle: the meta line ("N pages · date") is a mono readout,
+    // matching the grid's "N pages · date" order.
+    final meta = tester.widget<Text>(find.textContaining('1 page ·'));
     expect(
       meta.style?.fontFamily,
       'IBMPlexMono',

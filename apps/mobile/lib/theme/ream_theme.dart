@@ -5,6 +5,8 @@ import 'ream_typography.dart';
 /// Builds the Ream [ThemeData] for light and dark, mapping [ReamColors] onto a
 /// Material [ColorScheme] so stock widgets inherit sensible colors.
 class ReamTheme {
+  ReamTheme._();
+
   static ThemeData light() => _build(ReamColors.light, Brightness.light);
   static ThemeData dark() => _build(ReamColors.dark, Brightness.dark);
 

@@ -141,8 +141,8 @@ class DocumentsListView extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        '${_formatLocal(d.createdAt.toLocal())} · '
-                        '${_pages(s.pageCount)}',
+                        '${_pages(s.pageCount)} · '
+                        '${_formatLocal(d.createdAt.toLocal())}',
                         style: ReamTypography.mono(size: 11.5, color: r.muted),
                       ),
                     ],

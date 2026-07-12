@@ -159,7 +159,7 @@ class _ThumbnailArea extends StatelessWidget {
         child: Center(
           child: Icon(
             Icons.description_outlined,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: context.ream.muted,
             size: 36,
           ),
         ),

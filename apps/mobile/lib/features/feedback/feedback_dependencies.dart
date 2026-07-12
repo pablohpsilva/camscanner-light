@@ -24,11 +24,14 @@ class FeedbackDependencies {
       workerUrl: String.fromEnvironment('FEEDBACK_WORKER_URL'),
       turnstileSiteKey: String.fromEnvironment('TURNSTILE_SITE_KEY'),
     ),
+    // Named createService/createAvailability (not this._createService) so the
+    // public constructor API keeps those names; the fields are deliberately
+    // private (only service()/availability() expose the built collaborator).
     FeedbackServiceFactory? createService,
     FeedbackAvailabilityFactory? createAvailability,
   }) : _createService = createService, // ignore: prefer_initializing_formals
-       _createAvailability =
-           createAvailability; // ignore: prefer_initializing_formals
+       // ignore: prefer_initializing_formals
+       _createAvailability = createAvailability;
 
   FeedbackService service() =>
       _createService?.call() ??
