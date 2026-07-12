@@ -101,4 +101,30 @@ void main() {
       expect(scaffold.backgroundColor, ReamColors.light.paper);
     },
   );
+
+  testWidgets('OCR screen uses dark paper under the dark theme', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository(
+      pages: const [
+        PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD'),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.dark(),
+        home: RecognizedTextScreen(
+          documentId: 1,
+          position: 1,
+          name: 'My Report',
+          initialText: 'HELLO WORLD',
+          repository: repo,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, ReamColors.dark.paper);
+  });
 }

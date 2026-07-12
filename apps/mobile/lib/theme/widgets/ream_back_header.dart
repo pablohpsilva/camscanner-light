@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../ream_colors.dart';
 
 /// Shared back-header for Ream screens: leading chevron, centered Figtree-700
@@ -24,44 +25,54 @@ class ReamBackHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final r = context.ream;
     const double sideWidth = kMinInteractiveDimension;
-    return SafeArea(
-      bottom: false,
-      child: SizedBox(
-        height: kToolbarHeight,
-        child: ColoredBox(
-          color: r.paper,
-          child: Row(
-            children: [
-              SizedBox(
-                width: sideWidth,
-                child: IconButton(
-                  key: backKey ?? const Key('ream-back'),
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  color: r.ink,
-                  onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Figtree',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17,
+    final overlay = Theme.of(context).brightness == Brightness.dark
+        ? SystemUiOverlayStyle.light.copyWith(
+            statusBarColor: Colors.transparent,
+          )
+        : SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.transparent,
+          );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlay,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: ColoredBox(
+            color: r.paper,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: sideWidth,
+                  child: IconButton(
+                    key: backKey ?? const Key('ream-back'),
+                    icon: const Icon(Icons.arrow_back_ios_new),
                     color: r.ink,
+                    onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                   ),
                 ),
-              ),
-              SizedBox(
-                width: sideWidth,
-                child: trailing != null
-                    ? Center(child: trailing)
-                    : const SizedBox.shrink(),
-              ),
-            ],
+                Expanded(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Figtree',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 17,
+                      color: r.ink,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: sideWidth,
+                  child: trailing != null
+                      ? Center(child: trailing)
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ),
         ),
       ),

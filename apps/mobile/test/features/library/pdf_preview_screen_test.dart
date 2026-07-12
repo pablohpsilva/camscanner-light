@@ -30,6 +30,24 @@ void main() {
     expect(find.byKey(const Key('pdf-preview-error')), findsOneWidget);
   });
 
+  testWidgets('PDF viewer uses dark paper under the dark theme', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.dark(),
+        home: PdfPreviewScreen(
+          pdfPath: '/nonexistent.pdf',
+          name: 'Lease Agreement',
+          opener: (_) async => throw Exception('no native in host'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, ReamColors.dark.paper);
+  });
+
   // A loaded/render path needs the native plugin + a real PdfDocument that
   // cannot be faked, so it is covered on-device. Host tests drive the two
   // states reachable with an injected opener: loading and error.

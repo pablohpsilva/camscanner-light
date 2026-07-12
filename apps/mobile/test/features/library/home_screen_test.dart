@@ -8,6 +8,7 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/scan_screen.dart';
+import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
@@ -353,4 +354,30 @@ void main() {
       expect(find.text('Scan 2026-06-27 20.26.42'), findsOneWidget);
     },
   );
+
+  testWidgets('HomeScreen uses dark paper under the dark theme', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.dark(),
+        home: HomeScreen(
+          dependencies: grantedScanDependencies(),
+          libraryDependencies: fakeLibraryDependencies(
+            FakeDocumentRepository(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // HomeScreen's Scaffold doesn't set an explicit backgroundColor; it
+    // inherits ThemeData.scaffoldBackgroundColor (set from ReamColors.paper
+    // in ReamTheme._build), so assert that resolved value instead.
+    expect(
+      Theme.of(
+        tester.element(find.byType(Scaffold).first),
+      ).scaffoldBackgroundColor,
+      ReamColors.dark.paper,
+    );
+  });
 }

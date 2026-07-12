@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
 import '../scan/capture_review_screen.dart';
@@ -399,41 +400,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeader(BuildContext context) {
     final r = context.ream;
-    return Container(
-      color: r.paper,
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _selectionMode
-              ? _buildSelectionBar(context)
-              : _buildTitleRow(context),
-          if (!_selectionMode) ...[
-            const SizedBox(height: 14),
-            ReamSearchField(
-              controller: _searchController,
-              onChanged: _onQueryChanged,
-            ),
+    final overlay = Theme.of(context).brightness == Brightness.dark
+        ? SystemUiOverlayStyle.light.copyWith(
+            statusBarColor: Colors.transparent,
+          )
+        : SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.transparent,
+          );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlay,
+      child: Container(
+        color: r.paper,
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _selectionMode
+                ? _buildSelectionBar(context)
+                : _buildTitleRow(context),
+            if (!_selectionMode) ...[
+              const SizedBox(height: 14),
+              ReamSearchField(
+                controller: _searchController,
+                onChanged: _onQueryChanged,
+              ),
+            ],
+            if (_showControls) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SortPill(sort: _sort, onCriterionSelected: _onSortCriterion),
+                  ReamSegmented<LibraryViewMode>(
+                    key: const Key('library-view-toggle'),
+                    value: _viewMode,
+                    onChanged: _onViewModeChanged,
+                    segments: const [
+                      ReamSegment(value: LibraryViewMode.list, label: 'List'),
+                      ReamSegment(value: LibraryViewMode.grid, label: 'Grid'),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ],
-          if (_showControls) ...[
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SortPill(sort: _sort, onCriterionSelected: _onSortCriterion),
-                ReamSegmented<LibraryViewMode>(
-                  key: const Key('library-view-toggle'),
-                  value: _viewMode,
-                  onChanged: _onViewModeChanged,
-                  segments: const [
-                    ReamSegment(value: LibraryViewMode.list, label: 'List'),
-                    ReamSegment(value: LibraryViewMode.grid, label: 'Grid'),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
