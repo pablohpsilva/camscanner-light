@@ -163,4 +163,63 @@ void main() {
       throwsA(isA<DocumentSaveException>()),
     );
   });
+
+  test(
+    'regenerates from the EXIF-applied (baked) frame, not raw pixels',
+    () async {
+      // A base whose STORED pixels are 60x40 but whose EXIF Orientation=6 means
+      // the DISPLAY frame (what the crop editor + framework show) is 40x60. The
+      // JpegExifScrubber preserves this tag in production. This guards the
+      // invariant that regeneration happens in the EXIF-applied frame (matching
+      // the editor), so a rotate/crop of an oriented base lands correctly.
+      final src = img.Image(width: 60, height: 40);
+      src.exif.imageIfd['Orientation'] = 6;
+      final jpeg = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+
+      // Setup guard: the orientation tag must survive encoding, else the test
+      // would prove nothing (baked dims must differ from raw dims).
+      final baked = img.bakeOrientation(img.decodeImage(jpeg)!);
+      expect(
+        [baked.width, baked.height],
+        [40, 60],
+        reason: 'setup: base must carry a non-identity EXIF Orientation',
+      );
+
+      final now = DateTime.now();
+      final id = await db
+          .into(db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: 'D',
+              createdAt: now,
+              modifiedAt: now,
+            ),
+          );
+      final rel = 'documents/$id/page_1.jpg';
+      await store.writeRelative(rel, jpeg);
+      await db
+          .into(db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: id,
+              position: 1,
+              relativeImagePath: rel,
+            ),
+          );
+
+      await repo.rotatePage(
+        id,
+        1,
+      ); // one 90 CW turn from the DISPLAY (40x60) frame
+
+      final d = await display(id);
+      // Correct: bake(60x40, orient6)=40x60, then rotate 90 CW => 60x40.
+      // Bug (no bake): rotate 90 CW of raw 60x40 => 40x60.
+      expect(
+        [d.width, d.height],
+        [60, 40],
+        reason: 'flat must regenerate from the EXIF-applied frame',
+      );
+    },
+  );
 }

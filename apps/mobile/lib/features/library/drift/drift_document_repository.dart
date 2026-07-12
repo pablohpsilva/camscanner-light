@@ -643,9 +643,15 @@ class DriftDocumentRepository implements DocumentRepository {
     if (decoded == null) {
       throw const DocumentSaveException('regenerate: undecodable base image');
     }
+    // Work in the EXIF-applied (upright) frame — the same frame the crop editor
+    // shows and stores corners in. `img.decodeImage` already auto-orients in
+    // image 4.x, so this is a no-op at runtime, but we bake explicitly to match
+    // every other pixel path in the app (perspective_warper, coons_warper,
+    // warp_enhancer) and to stay correct if the decode path ever changes.
+    final upright = img.bakeOrientation(decoded);
     final rotated = quarterTurns == 0
-        ? decoded
-        : img.copyRotate(decoded, angle: 90 * quarterTurns);
+        ? upright
+        : img.copyRotate(upright, angle: 90 * quarterTurns);
     final isFullFrame = corners == CropCorners.fullFrame;
 
     Uint8List? flatBytes;
