@@ -621,6 +621,64 @@ class DriftDocumentRepository implements DocumentRepository {
     );
   }
 
+  /// Regenerates the display ("flat") derivative from the PRISTINE base by
+  /// applying rotate-then-crop, and returns the new flat's relative path (or
+  /// null when the display equals the base: no rotation and no crop). NEVER
+  /// writes the base. [corners] are in the display frame (post-rotation).
+  Future<String?> _writeFlat({
+    required String relativeImagePath,
+    required int quarterTurns,
+    required CropCorners corners,
+    required String? existingFlatRel,
+  }) async {
+    final baseBytes = await _fileStore
+        .absoluteFor(relativeImagePath)
+        .readAsBytes();
+    img.Image? decoded;
+    try {
+      decoded = img.decodeImage(baseBytes);
+    } catch (_) {
+      decoded = null;
+    }
+    if (decoded == null) {
+      throw const DocumentSaveException('regenerate: undecodable base image');
+    }
+    final rotated = quarterTurns == 0
+        ? decoded
+        : img.copyRotate(decoded, angle: 90 * quarterTurns);
+    final isFullFrame = corners == CropCorners.fullFrame;
+
+    Uint8List? flatBytes;
+    if (isFullFrame) {
+      flatBytes = quarterTurns == 0
+          ? null // display == base
+          : Uint8List.fromList(img.encodeJpg(rotated, quality: 95));
+    } else {
+      final rotatedBytes = Uint8List.fromList(
+        img.encodeJpg(rotated, quality: 95),
+      );
+      final warped = await _warper.warp(rotatedBytes, corners);
+      // A null warp means "crop not applied" — fall back to the rotated-only
+      // image (or the base when there is no rotation either).
+      flatBytes = warped ?? (quarterTurns == 0 ? null : rotatedBytes);
+    }
+
+    if (flatBytes == null) {
+      if (existingFlatRel != null) {
+        try {
+          await _fileStore.absoluteFor(existingFlatRel).delete();
+        } on FileSystemException {
+          /* already gone — fine */
+        }
+      }
+      return null;
+    }
+    final flatRel =
+        existingFlatRel ?? _fileStore.flatForImage(relativeImagePath);
+    await _fileStore.writeRelative(flatRel, flatBytes);
+    return flatRel;
+  }
+
   @override
   Future<void> updatePageCorners(
     int documentId,
@@ -638,45 +696,21 @@ class DriftDocumentRepository implements DocumentRepository {
         'updatePageCorners: no page ($documentId, $position)',
       );
     }
-
-    if (corners == CropCorners.fullFrame) {
-      final flatRel = page.flatRelativePath;
-      if (flatRel != null) {
-        try {
-          await _fileStore.absoluteFor(flatRel).delete();
-        } on FileSystemException {
-          /* already gone — fine */
-        }
-      }
-      await (_db.update(_db.pages)..where(
-            (t) =>
-                t.documentId.equals(documentId) & t.position.equals(position),
-          ))
-          .write(
-            PagesCompanion(
-              corners: const Value<String?>(null),
-              flatRelativePath: const Value<String?>(null),
-            ),
-          );
-      return;
-    }
-
-    // Non-fullFrame: read original JPEG, warp, write flat, update row.
-    final bytes = await _fileStore
-        .absoluteFor(page.relativeImagePath)
-        .readAsBytes();
-    final flat = await _warper.warp(bytes, corners);
-    if (flat == null) return; // warper returned null — no-op here
-    // Derive the flat name from the page's own image path so it remains stable
-    // under reorder (unlike a position-derived name which can collide).
-    final flatRel = _fileStore.flatForImage(page.relativeImagePath);
-    await _fileStore.writeRelative(flatRel, flat);
+    // Corners arrive already in the DISPLAY frame (post-rotation) from the
+    // editor; rotation is unchanged by a crop.
+    final flatRel = await _writeFlat(
+      relativeImagePath: page.relativeImagePath,
+      quarterTurns: page.rotationQuarterTurns,
+      corners: corners,
+      existingFlatRel: page.flatRelativePath,
+    );
+    final isFullFrame = corners == CropCorners.fullFrame;
     await (_db.update(_db.pages)..where(
           (t) => t.documentId.equals(documentId) & t.position.equals(position),
         ))
         .write(
           PagesCompanion(
-            corners: Value(corners.toStorage()),
+            corners: Value(isFullFrame ? null : corners.toStorage()),
             flatRelativePath: Value(flatRel),
           ),
         );
@@ -695,26 +729,19 @@ class DriftDocumentRepository implements DocumentRepository {
         'rotatePage: no page ($documentId, $position)',
       );
     }
-    // Rotate the DISPLAY image (flat if present, else original) 90° CW.
-    final displayRel = row.flatRelativePath ?? row.relativeImagePath;
-    final bytes = await _fileStore.absoluteFor(displayRel).readAsBytes();
-    img.Image? decoded;
-    try {
-      decoded = img.decodeImage(bytes);
-    } catch (_) {
-      decoded = null;
-    }
-    if (decoded == null) {
-      throw const DocumentSaveException('rotatePage: undecodable image');
-    }
-    final rotated = img.copyRotate(decoded, angle: 90); // 90° clockwise
-    final out = img.encodeJpg(rotated, quality: 95);
-    // Bake into the flat derivative (create it if this page had none).
-    final flatRel =
-        row.flatRelativePath ?? _fileStore.flatForImage(row.relativeImagePath);
-    await _fileStore.writeRelative(flatRel, out);
+    final turns = (row.rotationQuarterTurns + 1) % 4;
+    // Keep the same physical crop in the newly-rotated display frame.
+    final corners = (CropCorners.tryParse(row.corners) ?? CropCorners.fullFrame)
+        .rotate90Cw();
+    final isFullFrame = corners == CropCorners.fullFrame;
+    final flatRel = await _writeFlat(
+      relativeImagePath: row.relativeImagePath,
+      quarterTurns: turns,
+      corners: corners,
+      existingFlatRel: row.flatRelativePath,
+    );
 
-    // Rotate the cached OCR boxes CW to stay aligned; text is unchanged.
+    // Rotate cached OCR boxes CW to stay aligned; text is unchanged.
     final boxes = OcrResult.decodeBoxes(row.ocrBoxes);
     final String? newBoxes = boxes.isEmpty
         ? row.ocrBoxes
@@ -728,6 +755,8 @@ class DriftDocumentRepository implements DocumentRepository {
         ))
         .write(
           PagesCompanion(
+            rotationQuarterTurns: Value(turns),
+            corners: Value(isFullFrame ? null : corners.toStorage()),
             flatRelativePath: Value(flatRel),
             ocrBoxes: Value(newBoxes),
           ),

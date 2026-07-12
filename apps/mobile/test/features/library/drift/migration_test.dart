@@ -234,10 +234,10 @@ void main() {
   // v5 → v6 : Documents.isIdCard column
   // ---------------------------------------------------------------------------
 
-  test('schemaVersion is 6', () {
+  test('schemaVersion is 7', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 6);
+    expect(db.schemaVersion, 7);
   });
 
   test('fresh DB has the isIdCard column defaulting to false', () async {
