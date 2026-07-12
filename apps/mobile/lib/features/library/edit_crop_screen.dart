@@ -45,12 +45,14 @@ Future<Size> _resolveImageSize(String path) {
 class EditCropScreen extends StatefulWidget {
   final String imagePath;
   final CropCorners initialCorners;
+  final int quarterTurns;
   final Future<Size> Function(String) decodeImageSize;
 
   const EditCropScreen({
     super.key,
     required this.imagePath,
     required this.initialCorners,
+    this.quarterTurns = 0,
     this.decodeImageSize = _resolveImageSize,
   });
 
@@ -70,19 +72,25 @@ class _EditCropScreenState extends State<EditCropScreen> {
         .decodeImageSize(widget.imagePath)
         .then((size) {
           if (!mounted) return;
-          setState(() => _imageSize = size);
+          final oddTurn = widget.quarterTurns.isOdd;
+          setState(
+            () => _imageSize = oddTurn ? Size(size.height, size.width) : size,
+          );
         })
         .catchError((_) {
           /* leave _imageSize null — overlay skipped, image still shown */
         });
   }
 
-  Widget _imageWidget(ReamColors r) => Image.file(
-    File(widget.imagePath),
-    key: const Key('edit-crop-image'),
-    fit: BoxFit.contain,
-    errorBuilder: (_, _, _) => Center(
-      child: Icon(Icons.broken_image_outlined, color: r.muted, size: 64),
+  Widget _imageWidget(ReamColors r) => RotatedBox(
+    quarterTurns: widget.quarterTurns,
+    child: Image.file(
+      File(widget.imagePath),
+      key: const Key('edit-crop-image'),
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => Center(
+        child: Icon(Icons.broken_image_outlined, color: r.muted, size: 64),
+      ),
     ),
   );
 
