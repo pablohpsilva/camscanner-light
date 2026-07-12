@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_screen.dart';
+import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/ream_theme.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
@@ -117,5 +119,21 @@ void main() {
 
     expect(mock.capturedMode, PreferredLaunchMode.externalApplication);
     expect(mock.capturedUrl, 'https://ko-fi.com/example');
+  });
+
+  testWidgets('donation uses Ream chrome (header + paper bg)', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ReamTheme.light(),
+        home: const DonationScreen(
+          kofiUrl: 'https://ko-fi.com/x',
+          bitcoinAddress: 'bc1qtest',
+        ),
+      ),
+    );
+    expect(find.text('Support Ream'), findsOneWidget);
+    expect(find.byKey(const Key('donation-kofi-button')), findsOneWidget);
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, ReamColors.light.paper);
   });
 }
