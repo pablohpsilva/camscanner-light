@@ -30,7 +30,7 @@ void main() {
     final repo = FakeDocumentRepository();
     final share = FakeShareChannel();
     await _pumpViewer(tester, repo, share);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();
@@ -44,7 +44,7 @@ void main() {
     final repo = FakeDocumentRepository();
     final share = FakeShareChannel();
     await _pumpViewer(tester, repo, share);
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export-image')));
     await tester.pumpAndSettle();
@@ -59,6 +59,8 @@ void main() {
   ) async {
     final repo = FakeDocumentRepository();
     await _pumpViewer(tester, repo, FakeShareChannel());
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export')));
     await tester.pumpAndSettle(); // dialog animates in
     await tester.tap(find.byKey(const Key('export-quality-low')));

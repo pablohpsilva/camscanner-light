@@ -7,7 +7,7 @@ import 'package:mobile/features/library/widgets/share_menu_button.dart';
 import '../../support/fake_library.dart';
 
 void main() {
-  testWidgets('page menu shows Fax → not available', (tester) async {
+  testWidgets('share menu shows Fax → not available', (tester) async {
     final repo = FakeDocumentRepository(
       pages: const [PageImage(position: 1, imagePath: '/nonexistent/p.jpg')],
     );
@@ -19,7 +19,7 @@ void main() {
     // Safe to settle: page image paths are NON-LOADABLE, which does not hang.
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('page-viewer-share-link')), findsOneWidget);
     await tester.tap(find.byKey(const Key('page-viewer-fax')));

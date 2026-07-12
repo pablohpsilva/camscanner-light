@@ -7,6 +7,8 @@ import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/pdf_preview_screen.dart';
+import 'package:mobile/features/library/widgets/editor_toolbar_button.dart';
+import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 
 import '../../support/fake_library.dart';
 
@@ -118,6 +120,8 @@ void main() {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo, id: 7);
 
+    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-confirm')));
@@ -134,6 +138,8 @@ void main() {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo);
 
+    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-delete-cancel')));
@@ -146,10 +152,11 @@ void main() {
   testWidgets('delete is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
-    final btn = tester.widget<IconButton>(
-      find.byKey(const Key('page-viewer-delete')),
+    // Delete-document now lives in the overflow menu, disabled when the menu is.
+    final menu = tester.widget<PopupMenuButton<String>>(
+      find.byKey(const Key('page-viewer-page-menu')),
     );
-    expect(btn.onPressed, isNull);
+    expect(menu.enabled, isFalse);
   });
 
   testWidgets(
@@ -158,6 +165,8 @@ void main() {
       final repo = FakeDocumentRepository(throwOnDelete: true);
       await pushViewer(tester, repo);
 
+      await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('page-viewer-delete')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('page-viewer-delete-confirm')));
@@ -174,6 +183,8 @@ void main() {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo, id: 4);
 
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export')));
     await tester.pumpAndSettle(); // export-quality dialog animates in
     await tester.tap(find.byKey(const Key('export-quality-original')));
@@ -191,6 +202,8 @@ void main() {
     final repo = FakeDocumentRepository(throwOnExport: true);
     await pushViewer(tester, repo);
 
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export')));
     await tester.pumpAndSettle(); // export-quality dialog animates in
     await tester.tap(find.byKey(const Key('export-quality-original')));
@@ -203,8 +216,9 @@ void main() {
   testWidgets('export is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
-    final btn = tester.widget<IconButton>(
-      find.byKey(const Key('page-viewer-export')),
+    // Export PDF now lives behind the Share toolbar action, disabled with it.
+    final btn = tester.widget<EditorToolbarButton>(
+      find.byKey(const Key('page-viewer-share')),
     );
     expect(btn.onPressed, isNull);
   });
@@ -212,28 +226,35 @@ void main() {
   testWidgets('export is disabled in the empty state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(pages: const []));
     expect(find.byKey(const Key('page-viewer-empty')), findsOneWidget);
-    final btn = tester.widget<IconButton>(
-      find.byKey(const Key('page-viewer-export')),
+    final btn = tester.widget<EditorToolbarButton>(
+      find.byKey(const Key('page-viewer-share')),
     );
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('all AppBar actions are disabled while an export is in flight', (
+  testWidgets('all editor actions are disabled while an export is in flight', (
     tester,
   ) async {
     final gate = Completer<void>();
     final repo = FakeDocumentRepository(exportGate: gate);
     await pushViewer(tester, repo);
 
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-export')));
     await tester.pumpAndSettle(); // export-quality dialog animates in
     await tester.tap(find.byKey(const Key('export-quality-original')));
     await tester.pump(); // start the export; gate holds it open
-    IconButton btn(String k) => tester.widget<IconButton>(find.byKey(Key(k)));
-    expect(btn('page-viewer-rename').onPressed, isNull);
-    expect(btn('page-viewer-edit').onPressed, isNull);
-    expect(btn('page-viewer-export').onPressed, isNull);
-    expect(btn('page-viewer-delete').onPressed, isNull);
+    EditorToolbarButton toolBtn(String k) =>
+        tester.widget<EditorToolbarButton>(find.byKey(Key(k)));
+    // Rename + delete-document sit in the overflow menu (disabled with it).
+    final menu = tester.widget<PopupMenuButton<String>>(
+      find.byKey(const Key('page-viewer-page-menu')),
+    );
+    expect(menu.enabled, isFalse);
+    // Crop + Share (which fronts export) are toolbar actions.
+    expect(toolBtn('page-viewer-edit').onPressed, isNull);
+    expect(toolBtn('page-viewer-share').onPressed, isNull);
 
     gate.complete();
     await tester
@@ -248,6 +269,8 @@ void main() {
     final repo = FakeDocumentRepository();
     await pushViewer(tester, repo, id: 3);
 
+    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-rename')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('rename-field')), 'Receipts');
@@ -256,17 +279,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.renamedTo, contains('Receipts'));
-    expect(find.widgetWithText(AppBar, 'Receipts'), findsOneWidget);
-    expect(find.widgetWithText(AppBar, 'Scan X'), findsNothing);
+    expect(find.widgetWithText(EditorTopBar, 'Receipts'), findsOneWidget);
+    expect(find.widgetWithText(EditorTopBar, 'Scan X'), findsNothing);
   });
 
   testWidgets('rename is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
     expect(find.byKey(const Key('page-viewer-error')), findsOneWidget);
-    final btn = tester.widget<IconButton>(
-      find.byKey(const Key('page-viewer-rename')),
+    // Rename now lives in the overflow menu, disabled when the menu is.
+    final menu = tester.widget<PopupMenuButton<String>>(
+      find.byKey(const Key('page-viewer-page-menu')),
     );
-    expect(btn.onPressed, isNull);
+    expect(menu.enabled, isFalse);
   });
 
   testWidgets('rename failure shows an error SnackBar and stays', (
@@ -275,6 +299,8 @@ void main() {
     final repo = FakeDocumentRepository(throwOnRename: true);
     await pushViewer(tester, repo);
 
+    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-rename')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('rename-field')), 'New');
@@ -309,29 +335,29 @@ void main() {
     expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
   });
 
-  testWidgets('the AppBar actions carry screen-reader tooltips', (
-    tester,
-  ) async {
+  testWidgets('the editor actions carry accessible labels', (tester) async {
     await pushViewer(tester, FakeDocumentRepository());
-    String? tip(String key) =>
-        tester.widget<IconButton>(find.byKey(Key(key))).tooltip;
-    expect(tip('page-viewer-rename'), 'Rename');
-    expect(tip('page-viewer-edit'), 'Edit crop');
-    expect(tip('page-viewer-export'), 'Export PDF');
-    expect(tip('page-viewer-delete'), 'Delete');
+    // The toolbar actions expose visible text labels (no tooltips in Ream).
+    expect(find.text('Crop'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget);
+    // The overflow menu exposes Rename + Delete document as labeled items.
+    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('page-viewer-rename')), findsOneWidget);
+    expect(find.byKey(const Key('page-viewer-delete')), findsOneWidget);
   });
 
   // ── E3 — re-edit crop corners ──────────────────────────────────────────
 
   testWidgets(
-    'edit crop: button is present, enabled, and has correct tooltip',
+    'edit crop: toolbar button is present, enabled, and labeled Crop',
     (tester) async {
       await pushViewer(tester, FakeDocumentRepository());
-      final btn = tester.widget<IconButton>(
+      final btn = tester.widget<EditorToolbarButton>(
         find.byKey(const Key('page-viewer-edit')),
       );
       expect(btn.onPressed, isNotNull);
-      expect(btn.tooltip, 'Edit crop');
+      expect(btn.label, 'Crop');
     },
   );
 
@@ -387,7 +413,7 @@ void main() {
 
   testWidgets('edit crop is disabled in the error state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(throwOnGetPages: true));
-    final btn = tester.widget<IconButton>(
+    final btn = tester.widget<EditorToolbarButton>(
       find.byKey(const Key('page-viewer-edit')),
     );
     expect(btn.onPressed, isNull);
@@ -395,7 +421,7 @@ void main() {
 
   testWidgets('edit crop is disabled in the empty state', (tester) async {
     await pushViewer(tester, FakeDocumentRepository(pages: const []));
-    final btn = tester.widget<IconButton>(
+    final btn = tester.widget<EditorToolbarButton>(
       find.byKey(const Key('page-viewer-edit')),
     );
     expect(btn.onPressed, isNull);

@@ -17,7 +17,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-protect')));
     await tester.pumpAndSettle();

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/widgets/page_thumbnail_strip.dart';
+import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/ream_theme.dart';
+import '../../../support/ream_pump.dart';
 
 void main() {
   final pages = [
@@ -129,4 +132,27 @@ void main() {
     expect(find.byType(ListView), findsOneWidget);
     expect(find.byType(ReorderableListView), findsNothing);
   });
+
+  testWidgets(
+    'selected tile border color is ReamColors.dark.green under ReamTheme.dark()',
+    (tester) async {
+      await pumpReam(
+        tester,
+        PageThumbnailStrip(pages: pages, currentIndex: 1, onTap: (_) {}),
+        theme: ReamTheme.dark(),
+      );
+      await tester.pump();
+
+      final selected = tester.widget<Container>(
+        find.byKey(const Key('page-thumb-1')),
+      );
+      final decoration = selected.foregroundDecoration as BoxDecoration?;
+      final border = decoration?.border as Border?;
+      expect(
+        border?.top.color,
+        ReamColors.dark.green,
+        reason: 'active tile border must use ReamColors.dark.green',
+      );
+    },
+  );
 }

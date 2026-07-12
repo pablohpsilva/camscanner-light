@@ -7,7 +7,7 @@ import '../../support/fake_library.dart';
 
 void main() {
   Future<void> tapPrint(WidgetTester tester) async {
-    await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+    await tester.tap(find.byKey(const Key('page-viewer-share')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('page-viewer-print')));
     await tester.pump();

@@ -2,10 +2,12 @@ import 'dart:async'; // unawaited
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'share_channel.dart';
 
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
+import '../../theme/ream_theme.dart';
 import 'crop_corners.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
@@ -16,10 +18,12 @@ import 'page_image.dart';
 import 'password_dialog.dart';
 import 'pdf_preview_screen.dart';
 import 'recognized_text_screen.dart';
+import 'widgets/editor_toolbar.dart';
+import 'widgets/editor_top_bar.dart';
+import 'widgets/page_counter_pill.dart';
 import 'widgets/page_thumbnail_strip.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/share_menu_button.dart';
-import '../donation/donation_banner.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
 /// Multi-page-ready (PageView; one page today). Loads pages on init and shows
@@ -481,133 +485,164 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  /// True when page-scoped actions (crop, share, delete-page, overflow…) should
+  /// be disabled: while loading, in the error state, mid-export, or with no
+  /// pages. Mirrors the guard the old AppBar controls used.
+  bool get _actionsDisabled =>
+      _loading || _error || _exporting || (_pages?.isEmpty ?? true);
+
+  /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document.
+  Widget _buildOverflowMenu() {
+    return PopupMenuButton<String>(
+      key: const Key('page-viewer-page-menu'),
+      enabled: !_actionsDisabled,
+      onSelected: (v) {
+        if (v == 'rename') unawaited(_rename());
+        if (v == 'merge') unawaited(_mergeAnother());
+        if (v == 'split') unawaited(_splitAfter());
+        if (v == 'delete') unawaited(_confirmAndDelete());
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem<String>(
+          value: 'rename',
+          key: Key('page-viewer-rename'),
+          child: Text('Rename'),
+        ),
+        PopupMenuItem<String>(
+          value: 'merge',
+          key: Key('page-viewer-merge'),
+          child: Text('Merge another document…'),
+        ),
+        PopupMenuItem<String>(
+          value: 'split',
+          key: Key('page-viewer-split'),
+          child: Text('Split after this page'),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          key: Key('page-viewer-delete'),
+          child: Text('Delete document'),
+        ),
+      ],
+    );
+  }
+
+  /// The share/export family, shown from the toolbar's Share action: Export PDF,
+  /// Share as image, Share all as images, Print, Protect, plus the shared
+  /// link/fax "extras". Item keys match the old overflow menu so behavior tests
+  /// only change which control opens the menu.
+  Future<void> _openShareMenu() async {
+    final value = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              key: const Key('page-viewer-export'),
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('Export PDF'),
+              onTap: () => Navigator.of(ctx).pop('export-pdf'),
+            ),
+            ListTile(
+              key: const Key('page-viewer-export-image'),
+              leading: const Icon(Icons.image_outlined),
+              title: const Text('Share as image'),
+              onTap: () => Navigator.of(ctx).pop('export-image'),
+            ),
+            ListTile(
+              key: const Key('page-viewer-export-all-images'),
+              leading: const Icon(Icons.collections_outlined),
+              title: const Text('Share all as images'),
+              onTap: () => Navigator.of(ctx).pop('export-all-images'),
+            ),
+            ListTile(
+              key: const Key('page-viewer-print'),
+              leading: const Icon(Icons.print_outlined),
+              title: const Text('Print'),
+              onTap: () => Navigator.of(ctx).pop('print'),
+            ),
+            ListTile(
+              key: const Key('page-viewer-protect'),
+              leading: const Icon(Icons.lock_outline),
+              title: const Text('Protect with password'),
+              onTap: () => Navigator.of(ctx).pop('protect'),
+            ),
+            ListTile(
+              key: const Key('page-viewer-share-link'),
+              leading: const Icon(Icons.link),
+              title: const Text('Share link'),
+              onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
+            ),
+            ListTile(
+              key: const Key('page-viewer-fax'),
+              leading: const Icon(Icons.print),
+              title: const Text('Fax'),
+              onTap: () => Navigator.of(ctx).pop(kFaxValue),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (value == null || !mounted) return;
+    switch (value) {
+      case 'export-pdf':
+        await _exportPdf();
+      case 'export-image':
+        await _exportPageAsImage();
+      case 'export-all-images':
+        await _exportAllImages();
+      case 'print':
+        await _print();
+      case 'protect':
+        await _protect();
+      case kShareLinkValue:
+      case kFaxValue:
+        if (mounted) handleShareExtra(context, value);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_name),
-        actions: [
-          IconButton(
-            key: const Key('page-viewer-rename'),
-            tooltip: 'Rename',
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: (_loading || _error || _exporting) ? null : _rename,
+    final pages = _pages;
+    final hasPages = pages != null && pages.isNotEmpty;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Theme(
+        data: ReamTheme.dark(),
+        child: Scaffold(
+          appBar: EditorTopBar(
+            title: _name,
+            onBack: () => Navigator.of(context).pop(),
+            trailing: _buildOverflowMenu(),
           ),
-          IconButton(
-            key: const Key('page-viewer-edit'),
-            tooltip: 'Edit crop',
-            icon: const Icon(Icons.crop),
-            onPressed:
-                (_loading || _error || _exporting || (_pages?.isEmpty ?? true))
+          body: _loading
+              ? const Center(
+                  key: Key('page-viewer-loading'),
+                  child: CircularProgressIndicator(),
+                )
+              : _error
+              ? _buildError()
+              : !hasPages
+              ? _buildEmpty()
+              : _buildPages(pages),
+          bottomNavigationBar: EditorToolbar(
+            onCrop: _actionsDisabled
                 ? null
                 : () => _editCrop(_pages![_current]),
-          ),
-          IconButton(
-            key: const Key('page-viewer-export'),
-            tooltip: 'Export PDF',
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed:
-                (_loading || _error || _exporting || (_pages?.isEmpty ?? true))
+            onRotate: _actionsDisabled ? null : () => unawaited(_rotatePage()),
+            onText: _actionsDisabled ? null : _viewText,
+            onRetake: _actionsDisabled ? null : () => unawaited(_retakePage()),
+            onShare: _actionsDisabled
                 ? null
-                : _exportPdf,
-          ),
-          IconButton(
-            key: const Key('page-viewer-delete'),
-            tooltip: 'Delete',
-            icon: const Icon(Icons.delete_outline),
-            onPressed: (_loading || _error || _exporting)
+                : () => unawaited(_openShareMenu()),
+            onDelete: _actionsDisabled
                 ? null
-                : _confirmAndDelete,
+                : () => unawaited(_confirmAndDeletePage()),
           ),
-          PopupMenuButton<String>(
-            key: const Key('page-viewer-page-menu'),
-            enabled:
-                !(_loading ||
-                    _error ||
-                    _exporting ||
-                    (_pages?.isEmpty ?? true)),
-            onSelected: (v) {
-              if (v == 'view-text') _viewText();
-              if (v == 'rotate') unawaited(_rotatePage());
-              if (v == 'merge') unawaited(_mergeAnother());
-              if (v == 'split') unawaited(_splitAfter());
-              if (v == 'retake') unawaited(_retakePage());
-              if (v == 'delete') unawaited(_confirmAndDeletePage());
-              if (v == 'export-image') unawaited(_exportPageAsImage());
-              if (v == 'export-all-images') unawaited(_exportAllImages());
-              if (v == 'print') unawaited(_print());
-              if (v == 'protect') unawaited(_protect());
-              if (v == kShareLinkValue || v == kFaxValue) {
-                handleShareExtra(context, v);
-              }
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem<String>(
-                value: 'view-text',
-                key: Key('page-viewer-view-text'),
-                child: Text('View text'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'rotate',
-                key: Key('page-viewer-rotate'),
-                child: Text('Rotate'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'merge',
-                key: Key('page-viewer-merge'),
-                child: Text('Merge another document…'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'split',
-                key: Key('page-viewer-split'),
-                child: Text('Split after this page'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'retake',
-                key: Key('page-viewer-retake'),
-                child: Text('Retake page'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                key: Key('page-viewer-delete-page'),
-                child: Text('Delete page'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'export-image',
-                key: Key('page-viewer-export-image'),
-                child: Text('Share as image'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'export-all-images',
-                key: Key('page-viewer-export-all-images'),
-                child: Text('Share all as images'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'print',
-                key: Key('page-viewer-print'),
-                child: Text('Print'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'protect',
-                key: Key('page-viewer-protect'),
-                child: Text('Protect with password'),
-              ),
-              ...shareExtraMenuItems(showFax: true, keyPrefix: 'page-viewer'),
-            ],
-          ),
-        ],
+        ),
       ),
-      body: _loading
-          ? const Center(
-              key: Key('page-viewer-loading'),
-              child: CircularProgressIndicator(),
-            )
-          : _error
-          ? _buildError()
-          : (_pages == null || _pages!.isEmpty)
-          ? _buildEmpty()
-          : _buildPages(_pages!),
-      bottomNavigationBar: const DonationBanner(),
     );
   }
 
@@ -636,23 +671,37 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     return Column(
       children: [
         Expanded(
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: pages.length,
-            onPageChanged: (i) => setState(() => _current = i),
-            itemBuilder: (context, i) {
-              final pg = pages[i];
-              return InteractiveViewer(
-                key: Key('page-viewer-page-${pg.position}'),
-                child: Image.file(
-                  File(pg.displayPath),
-                  fit: BoxFit.contain,
-                  errorBuilder: (c, e, s) => const Center(
-                    child: Icon(Icons.broken_image_outlined, size: 64),
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _controller,
+                itemCount: pages.length,
+                onPageChanged: (i) => setState(() => _current = i),
+                itemBuilder: (context, i) {
+                  final pg = pages[i];
+                  return InteractiveViewer(
+                    key: Key('page-viewer-page-${pg.position}'),
+                    child: Image.file(
+                      File(pg.displayPath),
+                      fit: BoxFit.contain,
+                      errorBuilder: (c, e, s) => const Center(
+                        child: Icon(Icons.broken_image_outlined, size: 64),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              if (pages.length > 1)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: PageCounterPill(
+                    key: const Key('page-viewer-page-counter'),
+                    current: _current + 1,
+                    total: pages.length,
                   ),
                 ),
-              );
-            },
+            ],
           ),
         ),
         PageThumbnailStrip(
