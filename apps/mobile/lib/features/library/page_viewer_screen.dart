@@ -99,6 +99,15 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
+  Future<void> _reloadAfterEdit() async {
+    // The regenerated flat reuses its file path; FileImage caches by path, so
+    // clear the cache before reloading or the stale image would show.
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    if (!mounted) return;
+    await _load();
+  }
+
   Future<void> _exportPdf() async {
     final quality = await showExportQualityDialog(context);
     if (quality == null || !mounted) return;
@@ -367,7 +376,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ),
     );
     if (!mounted) return;
-    await _load();
+    await _reloadAfterEdit();
   }
 
   void _reorderPages(int oldIndex, int newIndex) {
@@ -401,12 +410,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final page = pages[_current];
     try {
       await widget.repository.rotatePage(widget.documentId, page.position);
-      // FileImage caches by path; the rotated bytes reuse the flat path, so
-      // clear the cache before reloading or the stale image would show.
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
-      if (!mounted) return;
-      await _load();
+      await _reloadAfterEdit();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -418,8 +422,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   Future<void> _editCrop(PageImage pg) async {
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
-        builder: (_) =>
-            EditCropScreen(imagePath: pg.imagePath, initialCorners: pg.corners),
+        builder: (_) => EditCropScreen(
+          imagePath: pg.imagePath,
+          initialCorners: pg.corners,
+          quarterTurns: pg.rotationQuarterTurns,
+        ),
       ),
     );
     if (corners == null || !mounted) return;
@@ -430,7 +437,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         corners,
       );
       if (!mounted) return;
-      await _load();
+      await _reloadAfterEdit();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
