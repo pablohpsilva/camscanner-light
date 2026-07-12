@@ -923,10 +923,10 @@ class DriftDocumentRepository implements DocumentRepository {
 
       final raw = await File(capture.path).readAsBytes();
       final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
-      final isFullFrame = corners == null || corners == CropCorners.fullFrame;
 
+      // Base is the enhanced full-frame canvas; edits re-derive from it.
       Uint8List bytesToStore = scrubbed;
-      if (enhancer != null && isFullFrame) {
+      if (enhancer != null) {
         final enhanced = await _processor.process(
           scrubbed,
           CropCorners.fullFrame,
@@ -940,45 +940,28 @@ class DriftDocumentRepository implements DocumentRepository {
           } catch (_) {}
         }
       }
-      // Overwrite the original image in place (same stored relative path).
+      // Overwrite the base in place (same stored relative path).
       await _fileStore.writeRelative(row.relativeImagePath, bytesToStore);
 
-      String? flatRel;
-      if (!isFullFrame) {
-        try {
-          final Uint8List? flat = await _warper.warp(scrubbed, corners);
-          if (flat != null) {
-            Uint8List flatBytes = flat;
-            if (enhancer != null) {
-              try {
-                flatBytes = await enhancer.enhance(flat);
-              } catch (_) {}
-            }
-            // Reuse the existing flat path when present → overwrite in place,
-            // never orphan a stale derivative (positions can drift after reorders).
-            // For a new flat, derive the name from the page's own image path
-            // (stable under reorder) rather than from position (collision-prone).
-            flatRel =
-                row.flatRelativePath ??
-                _fileStore.flatForImage(row.relativeImagePath);
-            await _fileStore.writeRelative(flatRel, flatBytes);
-          }
-        } catch (_) {}
-      }
-
-      // Corners now full-frame (or warp produced nothing) → drop the old flat.
-      if (flatRel == null && row.flatRelativePath != null) {
-        try {
-          await _fileStore.absoluteFor(row.flatRelativePath!).delete();
-        } on FileSystemException {
-          /* already gone — fine */
-        }
-      }
+      // Retake = a fresh image: reset the transform chain to identity, then
+      // regenerate the flat from the (new) base via the shared pipeline.
+      final CropCorners effective = corners ?? CropCorners.fullFrame;
+      final flatRel = await _writeFlat(
+        relativeImagePath: row.relativeImagePath,
+        quarterTurns: 0,
+        corners: effective,
+        existingFlatRel: row.flatRelativePath,
+      );
 
       await _db.transaction(() async {
         await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
           PagesCompanion(
-            corners: Value(corners?.toStorage()),
+            rotationQuarterTurns: const Value(0),
+            corners: Value(
+              (corners == null || corners == CropCorners.fullFrame)
+                  ? null
+                  : corners.toStorage(),
+            ),
             flatRelativePath: Value(flatRel),
           ),
         );
