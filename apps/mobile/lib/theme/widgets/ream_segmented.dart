@@ -52,7 +52,10 @@ class ReamSegmented<T> extends StatelessWidget {
       key: Key('segment-${s.value}'),
       onTap: () => onChanged(s.value),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: 11,
+          vertical: expanded ? 8 : 6,
+        ),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? r.ink : Colors.transparent,
