@@ -13,11 +13,13 @@ class ReamSegmented<T> extends StatelessWidget {
   final List<ReamSegment<T>> segments;
   final T value;
   final ValueChanged<T> onChanged;
+  final bool expanded;
   const ReamSegmented({
     super.key,
     required this.segments,
     required this.value,
     required this.onChanged,
+    this.expanded = false,
   });
 
   @override
@@ -31,33 +33,40 @@ class ReamSegmented<T> extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(2),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
         children: [
           for (final s in segments)
-            GestureDetector(
-              key: Key('segment-${s.value}'),
-              onTap: () => onChanged(s.value),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: s.value == value ? r.ink : Colors.transparent,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Text(
-                  s.label,
-                  style: TextStyle(
-                    fontFamily: 'Figtree',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: s.value == value ? r.surface : r.muted,
-                  ),
-                ),
-              ),
-            ),
+            if (expanded)
+              Expanded(child: _segment(context, s))
+            else
+              _segment(context, s),
         ],
+      ),
+    );
+  }
+
+  Widget _segment(BuildContext context, ReamSegment<T> s) {
+    final r = context.ream;
+    final selected = s.value == value;
+    return GestureDetector(
+      key: Key('segment-${s.value}'),
+      onTap: () => onChanged(s.value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? r.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(
+          s.label,
+          style: TextStyle(
+            fontFamily: 'Figtree',
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: selected ? r.surface : r.muted,
+          ),
+        ),
       ),
     );
   }

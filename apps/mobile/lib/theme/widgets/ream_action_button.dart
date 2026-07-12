@@ -8,12 +8,16 @@ class ReamActionButton extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool primary;
+
+  /// Overrides the primary fill (default = greenDeep). No effect when secondary.
+  final Color? fillColor;
   const ReamActionButton({
     super.key,
     required this.label,
     this.icon,
     this.onPressed,
     this.primary = false,
+    this.fillColor,
   });
 
   @override
@@ -60,7 +64,7 @@ class ReamActionButton extends StatelessWidget {
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Material(
-        color: primary ? r.greenDeep : r.surface,
+        color: primary ? (fillColor ?? r.greenDeep) : r.surface,
         borderRadius: BorderRadius.circular(15),
         child: InkWell(
           onTap: onPressed,
