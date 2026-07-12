@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/ream_colors.dart';
+import '../../theme/widgets/ream_action_button.dart';
+import '../../theme/widgets/ream_back_header.dart';
+import '../../theme/widgets/ream_section_label.dart';
+import '../../theme/widgets/ream_segmented.dart';
 import 'feedback_dependencies.dart';
 import 'feedback_result.dart';
 import 'feedback_service.dart';
@@ -74,10 +79,31 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
+  InputDecoration _fieldDecoration(ReamColors r, String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: r.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: r.line),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: r.line),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final r = context.ream;
     return Scaffold(
-      appBar: AppBar(title: const Text('Send feedback')),
+      backgroundColor: r.paper,
+      appBar: ReamBackHeader(
+        title: 'Send feedback',
+        onBack: () => Navigator.of(context).maybePop(),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -85,40 +111,41 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButtonFormField<String>(
-                key: const Key('feedback-category'),
-                initialValue: _category,
-                decoration: const InputDecoration(labelText: 'Type'),
-                items: const [
-                  DropdownMenuItem(value: 'bug', child: Text('Bug')),
-                  DropdownMenuItem(value: 'idea', child: Text('Idea')),
-                  DropdownMenuItem(value: 'question', child: Text('Question')),
+              const ReamSectionLabel('Type'),
+              const SizedBox(height: 8),
+              ReamSegmented<String>(
+                expanded: true,
+                value: _category,
+                segments: const [
+                  ReamSegment(value: 'bug', label: 'Bug'),
+                  ReamSegment(value: 'idea', label: 'Idea'),
+                  ReamSegment(value: 'question', label: 'Question'),
                 ],
-                onChanged: (v) => setState(() => _category = v ?? 'bug'),
+                onChanged: (v) => setState(() => _category = v),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              const ReamSectionLabel('Message'),
+              const SizedBox(height: 8),
               TextFormField(
                 key: const Key('feedback-message'),
                 controller: _message,
                 maxLines: 5,
                 maxLength: 4000,
-                decoration: const InputDecoration(
-                  labelText: 'Your feedback',
-                  border: OutlineInputBorder(),
-                ),
+                style: TextStyle(fontFamily: 'Figtree', color: r.ink),
+                decoration: _fieldDecoration(r, 'Your feedback'),
                 validator: (v) => (v == null || v.trim().isEmpty)
                     ? 'Please enter a message'
                     : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              const ReamSectionLabel('Email — optional'),
+              const SizedBox(height: 8),
               TextFormField(
                 key: const Key('feedback-email'),
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email (optional)',
-                  border: OutlineInputBorder(),
-                ),
+                style: TextStyle(fontFamily: 'Figtree', color: r.ink),
+                decoration: _fieldDecoration(r, 'you@example.com'),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null;
                   final ok = RegExp(
@@ -127,12 +154,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   return ok ? null : 'Enter a valid email or leave it blank';
                 },
               ),
-              const Padding(
-                key: Key('feedback-email-warning'),
-                padding: EdgeInsets.only(top: 4),
+              Padding(
+                key: const Key('feedback-email-warning'),
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   'Optional. This will be publicly visible on GitHub.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: r.muted),
                 ),
               ),
               const SizedBox(height: 12),
@@ -147,12 +174,54 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
               ),
               if (_showDiagnostics)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'Diagnostics attached: app version, OS version, device model, and language. '
-                    'No scanned documents or their contents are ever sent.',
-                    style: TextStyle(fontSize: 12),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: r.blueSoft,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: r.blue.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: r.blue,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          const Text(
+                            'What we include',
+                            style: TextStyle(
+                              fontFamily: 'Figtree',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Diagnostics attached: app version, OS version, device model, and language. '
+                        'No scanned documents or their contents are ever sent.',
+                        style: TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 11.5,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               const SizedBox(height: 12),
@@ -174,17 +243,35 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
               if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
                 const SizedBox(height: 12),
-              FilledButton(
-                key: const Key('feedback-submit'),
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Send'),
-              ),
+              _submitting
+                  ? SizedBox(
+                      key: const Key('feedback-submit'),
+                      width: double.infinity,
+                      height: 52,
+                      child: Material(
+                        color: r.ink,
+                        borderRadius: BorderRadius.circular(15),
+                        child: const Center(
+                          child: SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : ReamActionButton(
+                      key: const Key('feedback-submit'),
+                      label: 'Send report',
+                      primary: true,
+                      fillColor: r.ink,
+                      onPressed: _submit,
+                    ),
             ],
           ),
         ),

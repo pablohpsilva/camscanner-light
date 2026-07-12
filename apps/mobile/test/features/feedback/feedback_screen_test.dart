@@ -5,6 +5,9 @@ import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/feedback/feedback_result.dart';
 import 'package:mobile/features/feedback/feedback_screen.dart';
 import 'package:mobile/features/feedback/feedback_service.dart';
+import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/widgets/ream_segmented.dart';
 
 import '_fakes.dart';
 
@@ -84,5 +87,32 @@ void main() {
     await t.tap(find.byKey(const Key('feedback-diagnostics-toggle')));
     await t.pumpAndSettle();
     expect(find.textContaining('Diagnostics attached'), findsOneWidget);
+  });
+
+  testWidgets('feedback uses Ream chrome + segmented category', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(theme: ReamTheme.light(), home: const FeedbackScreen()),
+    );
+    expect(find.text('Send feedback'), findsOneWidget);
+    expect(find.byType(ReamSegmented<String>), findsOneWidget);
+    await tester.tap(find.byKey(const Key('segment-idea')));
+    await tester.pump();
+    // Category state now 'idea' — assert via the segmented selection styling or a
+    // submit round-trip using the existing FeedbackService fake in this file.
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, ReamColors.light.paper);
+  });
+
+  testWidgets('submits the category chosen via the segmented control', (
+    t,
+  ) async {
+    final s = _StubService(const FeedbackSuccess('u'));
+    await t.pumpWidget(_host(s));
+    await t.enterText(find.byKey(const Key('feedback-message')), 'Idea time');
+    await t.tap(find.byKey(const Key('segment-idea')));
+    await t.pump();
+    await t.tap(find.byKey(const Key('feedback-submit')));
+    await t.pumpAndSettle();
+    expect(s.lastDraft!.category, 'idea');
   });
 }
