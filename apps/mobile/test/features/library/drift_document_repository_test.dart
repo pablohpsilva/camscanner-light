@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/enhancer_mode.dart';
+import 'package:mobile/features/library/grayscale_enhancer.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
@@ -24,17 +25,6 @@ class _ThrowingScrubber implements ImageMetadataScrubber {
   @override
   Uint8List scrub(Uint8List bytes) =>
       throw const MetadataScrubException('boom');
-}
-
-/// Records enhance() calls for assertions; returns bytes unchanged.
-class _RecordingEnhancer implements ImageEnhancer {
-  int calls = 0;
-
-  @override
-  Future<Uint8List> enhance(Uint8List bytes) async {
-    calls++;
-    return bytes;
-  }
 }
 
 /// Always throws — tests that enhancement failure is silent.
@@ -553,8 +543,8 @@ void main() {
       expect(pages.single.flatImagePath, isNull);
     });
 
-    test('warper throws WarpException: save succeeds and the displayed page '
-        'still falls back to an (enhanced) full frame', () async {
+    test('warper throws WarpException: save succeeds, falls back (no flat), '
+        'mode none', () async {
       final warper = FakeImageWarper(throws: true);
       const corners = CropCorners(
         topLeft: Offset(0.1, 0.1),
@@ -568,15 +558,15 @@ void main() {
       ).createFromCapture(capture, corners: corners);
       expect(doc.id, greaterThan(0));
 
-      // A failed crop must NOT drop back to the raw capture as the displayed
-      // page: a flat is still written (full-frame fallback) so the enhancer's
-      // result — de-shadowed page — is what the user sees.
+      // Mirrors `E3 — updatePageCorners warp fails`: with no enhancer (mode
+      // none), _writeFlat's cropped branch routes through _processor, which
+      // falls back to the un-warped bytes and (for mode == none) yields no
+      // flat — "never lose a page", but no full-frame de-shadow fallback
+      // either (that was the old _enhancedFlat escape hatch, now removed).
       final pages = await repo(warper: warper).getDocumentPages(doc.id);
-      expect(pages.single.flatImagePath, isNotNull);
-      expect(pages.single.displayPath, pages.single.flatImagePath);
-      final flatFile = File('${base.path}/documents/${doc.id}/page_1_flat.jpg');
-      expect(flatFile.existsSync(), isTrue);
-      // Original (pristine, for re-crop) still written too.
+      expect(pages.single.flatImagePath, isNull);
+      expect(pages.single.displayPath, pages.single.imagePath);
+      // Pristine base still written.
       final origFile = File('${base.path}/documents/${doc.id}/page_1.jpg');
       expect(origFile.existsSync(), isTrue);
     });
@@ -703,41 +693,29 @@ void main() {
     bottomLeft: Offset(0.1, 0.9),
   );
 
-  test(
-    'createFromCapture applies enhancer to flat bytes on cropped capture',
-    () async {
-      final enhancer = _RecordingEnhancer();
-      // FakeImageWarper with a non-null returnValue simulates a successful warp.
-      final r = repo(
-        warper: FakeImageWarper(returnValue: Uint8List.fromList([1, 2, 3])),
-      );
-      await r.createFromCapture(
-        capture,
-        corners: testCorners,
-        enhancer: enhancer,
-      );
-      expect(
-        enhancer.calls,
-        1,
-        reason: 'enhancer must be called once on the flat bytes',
-      );
-    },
-  );
+  test('createFromCapture stores the enhancer mode and keeps the base '
+      'unfiltered (full-frame)', () async {
+    final r = repo(warper: FakeImageWarper());
+    final doc =
+        await r.createFromCapture(capture, enhancer: const GrayscaleEnhancer());
+    final pages = await r.getDocumentPages(doc.id);
+    // Mode persisted; a grayscale flat exists; base is NOT the flat.
+    expect(pages.single.enhancerMode, EnhancerMode.grayscale);
+    expect(pages.single.flatImagePath, isNotNull);
+    expect(pages.single.displayPath, pages.single.flatImagePath);
+    final baseBytes = File(pages.single.imagePath).readAsBytesSync();
+    final flatBytes = File(pages.single.flatImagePath!).readAsBytesSync();
+    expect(baseBytes, isNot(flatBytes));
+  });
 
-  test(
-    'createFromCapture applies enhancer to original bytes on full-frame capture',
-    () async {
-      final enhancer = _RecordingEnhancer();
-      // No corners → full-frame path; warp is skipped regardless of FakeImageWarper's return value.
-      final r = repo(warper: FakeImageWarper());
-      await r.createFromCapture(capture, enhancer: enhancer);
-      expect(
-        enhancer.calls,
-        1,
-        reason: 'enhancer must be called once on the scrubbed original',
-      );
-    },
-  );
+  test('createFromCapture with no enhancer keeps a null flat (full-frame, '
+      'mode none)', () async {
+    final r = repo(warper: FakeImageWarper());
+    final doc = await r.createFromCapture(capture);
+    final pages = await r.getDocumentPages(doc.id);
+    expect(pages.single.enhancerMode, EnhancerMode.none);
+    expect(pages.single.flatImagePath, isNull);
+  });
 
   test('createFromCapture proceeds silently when enhancer throws', () async {
     final r = repo(

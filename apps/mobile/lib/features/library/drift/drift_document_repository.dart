@@ -87,43 +87,26 @@ class DriftDocumentRepository implements DocumentRepository {
         try {
           final raw = await File(capture.path).readAsBytes();
           scrubbed = _scrubber.scrub(ensureJpegBytes(Uint8List.fromList(raw)));
-          // G1: for full-frame (no warp), apply enhancement to the original
-          // before writing. Each ImageEnhancer is responsible for baking EXIF
-          // orientation before encoding (encodeJpg strips EXIF).
-          final isFullFrame =
-              corners == null || corners == CropCorners.fullFrame;
-          Uint8List bytesToStore = scrubbed;
-          if (enhancer != null && isFullFrame) {
-            final enhanced = await _processor.process(
-              scrubbed,
-              CropCorners.fullFrame,
-              enhancerModeOf(enhancer),
-            );
-            if (enhanced != null) {
-              bytesToStore = enhanced;
-            } else {
-              try {
-                bytesToStore = await enhancer.enhance(scrubbed);
-              } catch (_) {} // silent: use unenhanced scrubbed bytes
-            }
-          }
-          await _fileStore.writeRelative(rel, bytesToStore);
+          // Base is PRISTINE and unfiltered — the filter is metadata, applied
+          // when regenerating the flat. Never bake enhancement into the base.
+          await _fileStore.writeRelative(rel, scrubbed);
         } catch (e) {
           await _fileStore.deleteDocumentDir(docId); // best-effort cleanup
           rethrow; // rolls back the inserted document row
         }
-        // E2 + G1: the displayed page (flat ?? original) must ALWAYS be
-        // enhanced. Perspective-flatten the crop when possible, else fall back
-        // to the enhanced full frame so a failed crop still de-shadows.
+        final mode = enhancerModeOf(enhancer);
+        final effective = corners ?? CropCorners.fullFrame;
         String? flatRel;
-        final flatBytes = await _enhancedFlat(scrubbed, corners, enhancer);
-        if (flatBytes != null) {
-          flatRel = _fileStore.flatRelativeFor(docId, 1);
-          try {
-            await _fileStore.writeRelative(flatRel, flatBytes);
-          } catch (_) {
-            flatRel = null; // IO failure — save proceeds with the original only
-          }
+        try {
+          flatRel = await _writeFlat(
+            relativeImagePath: rel,
+            quarterTurns: 0,
+            corners: effective,
+            mode: mode,
+            existingFlatRel: null,
+          );
+        } catch (_) {
+          flatRel = null; // IO/regen failure — save proceeds with base only
         }
         await _db
             .into(_db.pages)
@@ -132,8 +115,13 @@ class DriftDocumentRepository implements DocumentRepository {
                 documentId: docId,
                 position: 1,
                 relativeImagePath: rel,
-                corners: Value(corners?.toStorage()),
+                corners: Value(
+                  effective == CropCorners.fullFrame
+                      ? null
+                      : effective.toStorage(),
+                ),
                 flatRelativePath: Value(flatRel),
+                enhancerMode: Value(mode.index),
               ),
             );
         return Document(
@@ -148,44 +136,6 @@ class DriftDocumentRepository implements DocumentRepository {
       return doc;
     } catch (e) {
       throw DocumentSaveException('save failed: $e');
-    }
-  }
-
-  /// Bytes for the flattened/displayed page, or null for the full-frame path
-  /// (where the original itself is the displayed, enhanced image).
-  ///
-  /// The displayed page is `flat ?? original`, so it must ALWAYS be enhanced:
-  /// perspective-warp the crop when possible, otherwise fall back to the full
-  /// frame — so a failed/degenerate crop still yields a de-shadowed page rather
-  /// than the raw capture. Warp and enhancement failures are both silent.
-  Future<Uint8List?> _enhancedFlat(
-    Uint8List scrubbed,
-    CropCorners? corners,
-    ImageEnhancer? enhancer,
-  ) async {
-    if (corners == null || corners == CropCorners.fullFrame) return null;
-    final mode = enhancerModeOf(enhancer);
-    final out = await _processor.process(scrubbed, corners, mode);
-    if (out != null) {
-      // Processor succeeded. For mode=none (enhancer not recognized by the
-      // processor), still invoke the enhancer directly on the warp result so
-      // existing callers that pass an unrecognized enhancer see it called.
-      if (enhancer != null && mode == EnhancerMode.none) {
-        try {
-          return await enhancer.enhance(out);
-        } catch (_) {
-          return out;
-        }
-      }
-      return out;
-    }
-    // Both native and Dart failed → last-ditch: de-shadow the un-warped frame
-    // so a failed crop still yields a clean page rather than the raw capture.
-    if (enhancer == null) return scrubbed;
-    try {
-      return await enhancer.enhance(scrubbed);
-    } catch (_) {
-      return scrubbed;
     }
   }
 
@@ -851,32 +801,20 @@ class DriftDocumentRepository implements DocumentRepository {
         final rel = _fileStore.relativeFor(documentId, newPosition);
         final raw = await File(capture.path).readAsBytes();
         final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
-        final isFullFrame = corners == null || corners == CropCorners.fullFrame;
-        Uint8List bytesToStore = scrubbed;
-        if (enhancer != null && isFullFrame) {
-          final enhanced = await _processor.process(
-            scrubbed,
-            CropCorners.fullFrame,
-            enhancerModeOf(enhancer),
-          );
-          if (enhanced != null) {
-            bytesToStore = enhanced;
-          } else {
-            try {
-              bytesToStore = await enhancer.enhance(scrubbed);
-            } catch (_) {}
-          }
-        }
-        await _fileStore.writeRelative(rel, bytesToStore);
+        await _fileStore.writeRelative(rel, scrubbed); // pristine, unfiltered
+        final mode = enhancerModeOf(enhancer);
+        final effective = corners ?? CropCorners.fullFrame;
         String? flatRel;
-        final flatBytes = await _enhancedFlat(scrubbed, corners, enhancer);
-        if (flatBytes != null) {
-          flatRel = _fileStore.flatRelativeFor(documentId, newPosition);
-          try {
-            await _fileStore.writeRelative(flatRel, flatBytes);
-          } catch (_) {
-            flatRel = null;
-          }
+        try {
+          flatRel = await _writeFlat(
+            relativeImagePath: rel,
+            quarterTurns: 0,
+            corners: effective,
+            mode: mode,
+            existingFlatRel: null,
+          );
+        } catch (_) {
+          flatRel = null;
         }
         await _db
             .into(_db.pages)
@@ -885,8 +823,13 @@ class DriftDocumentRepository implements DocumentRepository {
                 documentId: documentId,
                 position: newPosition,
                 relativeImagePath: rel,
-                corners: Value(corners?.toStorage()),
+                corners: Value(
+                  effective == CropCorners.fullFrame
+                      ? null
+                      : effective.toStorage(),
+                ),
                 flatRelativePath: Value(flatRel),
+                enhancerMode: Value(mode.index),
               ),
             );
         await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
@@ -987,25 +930,8 @@ class DriftDocumentRepository implements DocumentRepository {
 
       final raw = await File(capture.path).readAsBytes();
       final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
-
-      // Base is the enhanced full-frame canvas; edits re-derive from it.
-      Uint8List bytesToStore = scrubbed;
-      if (enhancer != null) {
-        final enhanced = await _processor.process(
-          scrubbed,
-          CropCorners.fullFrame,
-          enhancerModeOf(enhancer),
-        );
-        if (enhanced != null) {
-          bytesToStore = enhanced;
-        } else {
-          try {
-            bytesToStore = await enhancer.enhance(scrubbed);
-          } catch (_) {}
-        }
-      }
-      // Overwrite the base in place (same stored relative path).
-      await _fileStore.writeRelative(row.relativeImagePath, bytesToStore);
+      // Retake resets the chain; base is pristine and unfiltered.
+      await _fileStore.writeRelative(row.relativeImagePath, scrubbed);
 
       // Retake = a fresh image: reset the transform chain to identity, then
       // regenerate the flat from the (new) base via the shared pipeline.
@@ -1028,6 +954,7 @@ class DriftDocumentRepository implements DocumentRepository {
                   : corners.toStorage(),
             ),
             flatRelativePath: Value(flatRel),
+            enhancerMode: Value(enhancerModeOf(enhancer).index),
           ),
         );
         await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
