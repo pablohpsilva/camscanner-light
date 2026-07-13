@@ -5,10 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../library/crop_corners.dart';
-import '../library/auto_enhancer.dart';
-import '../library/color_enhancer.dart';
+import '../library/enhancer_for_mode.dart';
 import '../library/enhancer_mode.dart';
-import '../library/grayscale_enhancer.dart';
 import '../library/image_enhancer.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
@@ -216,12 +214,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                 key: const Key('review-accept'),
                 onPressed: widget.saving
                     ? null
-                    : () => widget.onAccept(_corners, switch (_mode) {
-                        EnhancerMode.grayscale => const GrayscaleEnhancer(),
-                        EnhancerMode.auto => const AutoEnhancer(),
-                        EnhancerMode.color => const ColorEnhancer(),
-                        EnhancerMode.none => const NoneEnhancer(),
-                      }),
+                    : () => widget.onAccept(_corners, enhancerForMode(_mode)),
                 icon: const Icon(Icons.check),
                 label: const Text('Accept'),
               ),
