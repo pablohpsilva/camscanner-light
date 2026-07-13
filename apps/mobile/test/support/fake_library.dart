@@ -46,6 +46,8 @@ class FakeDocumentRepository implements DocumentRepository {
   final bool throwOnReplacePage;
   final bool throwOnExportImage;
   final bool throwOnExportText;
+  final bool throwOnMove;
+  final bool throwOnSetTags;
   final String? recognizesText;
   bool ranOcr = false;
   final Completer<void>? gate;
@@ -98,6 +100,8 @@ class FakeDocumentRepository implements DocumentRepository {
     this.throwOnReplacePage = false,
     this.throwOnExportImage = false,
     this.throwOnExportText = false,
+    this.throwOnMove = false,
+    this.throwOnSetTags = false,
     this.recognizesText,
     this.gate,
     this.exportGate,
@@ -515,8 +519,10 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<void> moveToFolder(int documentId, int? folderId) async =>
-      _docFolder[documentId] = folderId;
+  Future<void> moveToFolder(int documentId, int? folderId) async {
+    if (throwOnMove) throw StateError('fake: move failed');
+    _docFolder[documentId] = folderId;
+  }
 
   @override
   Future<List<Tag>> listTags() async =>
@@ -554,8 +560,10 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<void> setDocumentTags(int documentId, Set<int> tagIds) async =>
-      _docTags[documentId] = {...tagIds};
+  Future<void> setDocumentTags(int documentId, Set<int> tagIds) async {
+    if (throwOnSetTags) throw StateError('fake: setDocumentTags failed');
+    _docTags[documentId] = {...tagIds};
+  }
 
   // Seeded per-document canned suggestion, so BDD steps that want to exercise
   // the "suggest a title from OCR text" affordance can seed a result without

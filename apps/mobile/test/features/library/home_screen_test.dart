@@ -428,10 +428,7 @@ void main() {
   );
 
   testWidgets('a move failure shows an error SnackBar', (tester) async {
-    final repo = FakeDocumentRepository(
-      documents: [doc1()],
-      throwOnUpdate: true,
-    );
+    final repo = FakeDocumentRepository(documents: [doc1()], throwOnMove: true);
     await pumpHome(tester, repo);
 
     await tester.tap(find.byKey(const Key('document-menu-1')));
@@ -442,10 +439,9 @@ void main() {
     await tester.tap(find.byKey(const Key('move-to-folder-unfiled')));
     await tester.pumpAndSettle();
 
-    // moveToFolder in the fake never throws (no throwOnMove flag exists), so
-    // this exercises the success path deterministically; the failure path is
-    // covered by the rename/tags SnackBar precedent (same try/catch shape).
-    expect(find.text("Couldn't move document"), findsNothing);
+    // moveToFolder throws (throwOnMove) so this actually exercises the
+    // _moveDocument catch branch and its error SnackBar.
+    expect(find.text("Couldn't move document"), findsOneWidget);
   });
 
   testWidgets('managing tags from the menu updates document tags', (
@@ -476,10 +472,11 @@ void main() {
     expect(tags.map((t) => t.name), contains('Important'));
   });
 
-  testWidgets('a tags-update failure shows an error SnackBar', (
-    tester,
-  ) async {
-    final repo = FakeDocumentRepository(documents: [doc1()]);
+  testWidgets('a tags-update failure shows an error SnackBar', (tester) async {
+    final repo = FakeDocumentRepository(
+      documents: [doc1()],
+      throwOnSetTags: true,
+    );
     await pumpHome(tester, repo);
     await repo.createTag('Existing');
 
@@ -490,9 +487,9 @@ void main() {
     await tester.tap(find.byKey(const Key('manage-tags-done')));
     await tester.pumpAndSettle();
 
-    // setDocumentTags never throws in the fake either; assert the success
-    // path completes without error (repo call happened, no crash/snackbar).
-    expect(find.text("Couldn't update tags"), findsNothing);
+    // setDocumentTags throws (throwOnSetTags) so this actually exercises the
+    // _manageTags catch branch and its error SnackBar.
+    expect(find.text("Couldn't update tags"), findsOneWidget);
   });
 
   testWidgets('selection bar shows Move/Tag buttons when features are on', (
@@ -508,23 +505,22 @@ void main() {
     expect(find.byKey(const Key('selection-tag')), findsOneWidget);
   });
 
-  testWidgets(
-    'selection bar hides Move/Tag buttons when features are off',
-    (tester) async {
-      final repo = FakeDocumentRepository(documents: [doc1()]);
-      await pumpHome(
-        tester,
-        repo,
-        features: const FeatureFlags(folders: false, tags: false),
-      );
+  testWidgets('selection bar hides Move/Tag buttons when features are off', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository(documents: [doc1()]);
+    await pumpHome(
+      tester,
+      repo,
+      features: const FeatureFlags(folders: false, tags: false),
+    );
 
-      await tester.longPress(find.byKey(const Key('document-tile-1')));
-      await tester.pumpAndSettle();
+    await tester.longPress(find.byKey(const Key('document-tile-1')));
+    await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('selection-move')), findsNothing);
-      expect(find.byKey(const Key('selection-tag')), findsNothing);
-    },
-  );
+    expect(find.byKey(const Key('selection-move')), findsNothing);
+    expect(find.byKey(const Key('selection-tag')), findsNothing);
+  });
 
   testWidgets('bulk move applies the chosen folder to every selected doc', (
     tester,
@@ -571,8 +567,77 @@ void main() {
     expect(find.byKey(const Key('selection-bar')), findsNothing);
   });
 
+  testWidgets('a bulk-move failure shows an error SnackBar', (tester) async {
+    final repo = FakeDocumentRepository(
+      documents: [
+        doc1(),
+        Document(
+          id: 2,
+          name: 'Second',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 43),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 43),
+        ),
+      ],
+      throwOnMove: true,
+    );
+    await pumpHome(tester, repo);
+
+    await tester.longPress(find.byKey(const Key('document-tile-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-check-2')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('selection-move')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('move-to-folder-unfiled')));
+    await tester.pumpAndSettle();
+
+    // moveToFolder throws (throwOnMove) so this exercises the _bulkMove
+    // catch branch and its error SnackBar; selection is NOT cleared because
+    // the catch path returns before _clearSelection().
+    expect(find.text("Couldn't move documents"), findsOneWidget);
+    expect(find.byKey(const Key('selection-bar')), findsOneWidget);
+  });
+
+  testWidgets('bulk tag sheet starts with nothing pre-selected', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository(
+      documents: [
+        doc1(),
+        Document(
+          id: 2,
+          name: 'Second',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 43),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 43),
+        ),
+      ],
+    );
+    final common = await repo.createTag('Common');
+    await repo.setDocumentTags(1, {common.id});
+    await repo.setDocumentTags(2, {common.id});
+    await pumpHome(tester, repo);
+
+    await tester.longPress(find.byKey(const Key('document-tile-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-check-2')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('selection-tag')));
+    await tester.pumpAndSettle();
+
+    // The bulk sheet is for ADDING tags, so nothing starts pre-checked even
+    // though both selected docs already carry the "Common" tag.
+    final chip = tester.widget<FilterChip>(
+      find.byKey(Key('manage-tag-chip-${common.id}')),
+    );
+    expect(chip.selected, false);
+  });
+
   testWidgets(
-    'bulk tag seeds the sheet with the intersection and replaces each doc\'s tags',
+    'bulk tag ADDS the chosen tags to every selected doc without dropping '
+    "docs' other existing tags (merge, not replace)",
     (tester) async {
       final repo = FakeDocumentRepository(
         documents: [
@@ -585,9 +650,12 @@ void main() {
           ),
         ],
       );
-      final common = await repo.createTag('Common');
-      await repo.setDocumentTags(1, {common.id});
-      await repo.setDocumentTags(2, {common.id});
+      // A={t1,t2}, B={t1,t3} — t1 common, t2/t3 doc-specific.
+      final t1 = await repo.createTag('t1');
+      final t2 = await repo.createTag('t2');
+      final t3 = await repo.createTag('t3');
+      await repo.setDocumentTags(1, {t1.id, t2.id});
+      await repo.setDocumentTags(2, {t1.id, t3.id});
       await pumpHome(tester, repo);
 
       await tester.longPress(find.byKey(const Key('document-tile-1')));
@@ -598,24 +666,56 @@ void main() {
       await tester.tap(find.byKey(const Key('selection-tag')));
       await tester.pumpAndSettle();
 
-      // The common tag chip is pre-checked (intersection semantics).
-      final chip = tester.widget<FilterChip>(
-        find.byKey(Key('manage-tag-chip-${common.id}')),
-      );
-      expect(chip.selected, true);
-
-      // Deselect it and confirm -> both docs lose the tag ("set" semantics,
-      // not "add"/"merge" — see the _bulkTag doc comment in home_screen.dart).
-      await tester.tap(find.byKey(Key('manage-tag-chip-${common.id}')));
+      // Create + select a new tag t4 to add to both docs.
+      await tester.tap(find.byKey(const Key('manage-tags-new')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('create-tag-field')), 't4');
       await tester.pump();
+      await tester.tap(find.byKey(const Key('create-tag-save')));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.byKey(const Key('manage-tags-done')));
       await tester.pumpAndSettle();
 
-      final tags1 = await repo.tagsForDocument(1);
-      final tags2 = await repo.tagsForDocument(2);
-      expect(tags1, isEmpty);
-      expect(tags2, isEmpty);
+      final tags1 = (await repo.tagsForDocument(1)).map((t) => t.name).toSet();
+      final tags2 = (await repo.tagsForDocument(2)).map((t) => t.name).toSet();
+      // A={t1,t2,t4}, B={t1,t3,t4} — nothing lost, t4 added to both.
+      expect(tags1, {'t1', 't2', 't4'});
+      expect(tags2, {'t1', 't3', 't4'});
       expect(find.byKey(const Key('selection-bar')), findsNothing);
     },
   );
+
+  testWidgets('a bulk-tag failure shows an error SnackBar', (tester) async {
+    final repo = FakeDocumentRepository(
+      documents: [
+        doc1(),
+        Document(
+          id: 2,
+          name: 'Second',
+          createdAt: DateTime.utc(2026, 6, 27, 20, 26, 43),
+          modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 43),
+        ),
+      ],
+      throwOnSetTags: true,
+    );
+    await pumpHome(tester, repo);
+    await repo.createTag('Existing');
+
+    await tester.longPress(find.byKey(const Key('document-tile-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-check-2')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('selection-tag')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('manage-tags-done')));
+    await tester.pumpAndSettle();
+
+    // setDocumentTags throws (throwOnSetTags) so this exercises the
+    // _bulkTag catch branch and its error SnackBar; selection is NOT
+    // cleared because the catch path returns before _clearSelection().
+    expect(find.text("Couldn't update tags"), findsOneWidget);
+    expect(find.byKey(const Key('selection-bar')), findsOneWidget);
+  });
 }

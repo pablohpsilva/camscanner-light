@@ -22,6 +22,7 @@ import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
 import 'save_controller.dart';
 import 'tag.dart';
+import 'tag_merge.dart';
 import 'widgets/create_folder_dialog.dart';
 import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
@@ -454,32 +455,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Bulk tagging is a deliberate "set" (replace), not "add"/"merge": the
-  // sheet is seeded with the INTERSECTION of every selected doc's current
-  // tags (so pre-checked chips are tags common to all of them), and on Done
-  // every selected doc's tag set is REPLACED with the exact chosen set. This
-  // keeps the UI honest about what Done means (a reviewer should sanity-check
-  // this is the desired product behavior — an "add tag to selection without
-  // touching each doc's other tags" alternative was considered but produces a
-  // sheet whose checked/unchecked chip state cannot represent a real per-doc
-  // starting point when the selection's tags differ, which is confusing UX).
+  // Bulk tagging only ADDS: the sheet starts with NOTHING pre-selected (you
+  // are choosing tags to add to every selected doc, not editing one doc's
+  // existing tags), and on Done each selected document's final tag set is
+  // the UNION of its existing tags and the chosen set — never a replacement.
+  // This guarantees a doc never loses a tag it already had purely because it
+  // was included in a bulk-tag action.
   Future<void> _bulkTag() async {
     final repo = _repository;
     if (repo == null) return;
     final selected = _selectedDocuments;
     if (selected.isEmpty) return;
-    final tagSets = <Set<int>>[
-      for (final s in selected)
-        (await repo.tagsForDocument(s.document.id)).map((t) => t.id).toSet(),
-    ];
-    if (!mounted) return;
-    final intersection = tagSets.isEmpty
-        ? <int>{}
-        : tagSets.reduce((a, b) => a.intersection(b));
     final result = await showManageTagsSheet(
       context,
       tags: _tags,
-      initial: intersection,
+      initial: const <int>{},
       onCreateTag: (name) async {
         final t = await repo.createTag(name);
         await _load();
@@ -489,7 +479,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result == null || !mounted) return;
     try {
       for (final s in selected) {
-        await repo.setDocumentTags(s.document.id, result);
+        final existing = await repo.tagsForDocument(s.document.id);
+        final union = mergeTagIds(existing.map((t) => t.id).toSet(), result);
+        await repo.setDocumentTags(s.document.id, union);
       }
       if (mounted) _clearSelection();
       await _refresh();
