@@ -9,6 +9,7 @@ import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
+import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/hybrid_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/ocr/ocr_result.dart';
@@ -138,4 +139,35 @@ void main() {
       throwsA(isA<DocumentSaveException>()),
     );
   });
+
+  test(
+    'preserves enhancerMode and rotationQuarterTurns on the moved page',
+    () async {
+      final id = await seedDoc(2);
+
+      // Give the page that will be moved (position 2) a non-default filter
+      // + rotation, as if the user had applied a grayscale filter and
+      // rotated it once before splitting.
+      final movingPage =
+          await (db.select(db.pages)
+                ..where((t) => t.documentId.equals(id))
+                ..where((t) => t.position.equals(2)))
+              .getSingle();
+      await (db.update(db.pages)..where((t) => t.id.equals(movingPage.id)))
+          .write(
+            const PagesCompanion(
+              enhancerMode: Value(1), // EnhancerMode.grayscale
+              rotationQuarterTurns: Value(1),
+            ),
+          );
+
+      final created = await repo.splitAfter(id, 1);
+
+      final newPages = await repo.getDocumentPages(created.id);
+      expect(newPages.length, 1);
+      final moved = newPages.single;
+      expect(moved.enhancerMode, EnhancerMode.grayscale);
+      expect(moved.rotationQuarterTurns, 1);
+    },
+  );
 }

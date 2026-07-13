@@ -1046,6 +1046,8 @@ class DriftDocumentRepository implements DocumentRepository {
             flatRelativePath: Value(flatRel),
             ocrText: Value(src.ocrText),
             ocrBoxes: Value(src.ocrBoxes),
+            rotationQuarterTurns: Value(src.rotationQuarterTurns),
+            enhancerMode: Value(src.enhancerMode),
           ),
         );
       }
@@ -1128,6 +1130,8 @@ class DriftDocumentRepository implements DocumentRepository {
                 flatRelativePath: Value(flatRel),
                 ocrText: Value(src.ocrText),
                 ocrBoxes: Value(src.ocrBoxes),
+                rotationQuarterTurns: Value(src.rotationQuarterTurns),
+                enhancerMode: Value(src.enhancerMode),
               ),
             );
       }

@@ -9,6 +9,7 @@ import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
+import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/hybrid_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/ocr/ocr_result.dart';
@@ -146,4 +147,34 @@ void main() {
     final id = await seedDoc('Self', 1);
     expect(() => repo.mergeInto(id, id), throwsA(isA<DocumentSaveException>()));
   });
+
+  test(
+    'preserves enhancerMode and rotationQuarterTurns on the copied page',
+    () async {
+      final target = await seedDoc('Target', 1);
+      final source = await seedDoc('Source', 1);
+
+      // Give the source's page a non-default filter + rotation, as if the
+      // user had applied a grayscale filter and rotated it once before merging.
+      final sourcePage =
+          await (db.select(db.pages)
+                ..where((t) => t.documentId.equals(source)))
+              .getSingle();
+      await (db.update(db.pages)..where((t) => t.id.equals(sourcePage.id)))
+          .write(
+            const PagesCompanion(
+              enhancerMode: Value(1), // EnhancerMode.grayscale
+              rotationQuarterTurns: Value(1),
+            ),
+          );
+
+      await repo.mergeInto(target, source);
+
+      final pages = await repo.getDocumentPages(target);
+      expect(pages.length, 2);
+      final merged = pages[1];
+      expect(merged.enhancerMode, EnhancerMode.grayscale);
+      expect(merged.rotationQuarterTurns, 1);
+    },
+  );
 }
