@@ -14,6 +14,7 @@ import 'document_repository.dart';
 import 'edit_crop_screen.dart';
 import 'edit_filter_screen.dart';
 import 'enhancer_mode.dart';
+import 'feature_flags.dart';
 import 'export/export_quality_dialog.dart';
 import 'merge_picker_dialog.dart';
 import 'page_image.dart';
@@ -44,6 +45,7 @@ class PageViewerScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentPrinter printer;
   final ShareChannel share;
+  final FeatureFlags features;
   const PageViewerScreen({
     super.key,
     required this.documentId,
@@ -52,6 +54,7 @@ class PageViewerScreen extends StatefulWidget {
     this.dependencies = const ScanDependencies(),
     this.printer = const SystemDocumentPrinter(),
     this.share = const SystemShareChannel(),
+    this.features = const FeatureFlags(),
   });
 
   @override
@@ -548,6 +551,19 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   bool get _actionsDisabled =>
       _loading || _error || _exporting || _editing || (_pages?.isEmpty ?? true);
 
+  /// The Share toolbar button appears only when the umbrella `share` flag is on
+  /// AND at least one share sub-action is enabled — so an empty share sheet can
+  /// never be opened.
+  bool get _showShareButton =>
+      widget.features.share &&
+      (widget.features.exportPdf ||
+          widget.features.shareImage ||
+          widget.features.exportAllImages ||
+          widget.features.print ||
+          widget.features.protectWithPassword ||
+          widget.features.shareLink ||
+          widget.features.fax);
+
   /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document.
   Widget _buildOverflowMenu() {
     return PopupMenuButton<String>(
@@ -701,6 +717,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             ],
           ),
           bottomNavigationBar: EditorToolbar(
+            showCrop: widget.features.crop,
+            showRotate: widget.features.rotate,
+            showFilter: widget.features.filter,
+            showText: widget.features.viewText,
+            showRetake: widget.features.retake,
+            showShare: _showShareButton,
+            showDelete: widget.features.deletePage,
             onCrop: _actionsDisabled
                 ? null
                 : () => _editCrop(_pages![_current]),
