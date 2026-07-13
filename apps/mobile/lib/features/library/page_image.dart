@@ -1,4 +1,5 @@
 import 'crop_corners.dart';
+import 'enhancer_mode.dart';
 import 'ocr/ocr_result.dart';
 
 /// One page's resolved image for the viewer. [imagePath] is the original
@@ -10,6 +11,7 @@ class PageImage {
   final String imagePath;
   final CropCorners corners;
   final int rotationQuarterTurns;
+  final EnhancerMode enhancerMode;
   final String? flatImagePath;
   final String? ocrText;
   final List<OcrWordBox> ocrWords;
@@ -19,6 +21,7 @@ class PageImage {
     required this.imagePath,
     this.corners = CropCorners.fullFrame,
     this.rotationQuarterTurns = 0,
+    this.enhancerMode = EnhancerMode.none,
     this.flatImagePath,
     this.ocrText,
     this.ocrWords = const [],
