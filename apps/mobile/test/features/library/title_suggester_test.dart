@@ -19,7 +19,7 @@ void main() {
   });
 
   test('collapses internal whitespace and trims punctuation edges', () {
-    expect(s.suggest('  ***  Receipt   #42  ***  '), 'Receipt   #42');
+    expect(s.suggest('  ***  Receipt   #42  ***  '), 'Receipt #42');
   });
 
   test('ellipsizes very long lines to 40 chars', () {
