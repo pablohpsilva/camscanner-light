@@ -659,30 +659,34 @@ void main() {
       expect(after.single.corners, CropCorners.fullFrame);
     });
 
-    test('warp throws: method rethrows and DB is unchanged', () async {
-      final doc = await repo().createFromCapture(capture);
-      const badCorners = CropCorners(
-        topLeft: Offset(0.1, 0.1),
-        topRight: Offset(0.9, 0.1),
-        bottomRight: Offset(0.9, 0.9),
-        bottomLeft: Offset(0.1, 0.9),
-      );
+    test(
+      'warp fails: falls back (no throw), corners updated, flat cleared',
+      () async {
+        final doc = await repo().createFromCapture(capture);
+        const badCorners = CropCorners(
+          topLeft: Offset(0.1, 0.1),
+          topRight: Offset(0.9, 0.1),
+          bottomRight: Offset(0.9, 0.9),
+          bottomLeft: Offset(0.1, 0.9),
+        );
 
-      await expectLater(
-        repo(
-          warper: FakeImageWarper(throws: true),
-        ).updatePageCorners(doc.id, 1, badCorners),
-        throwsA(isA<WarpException>()),
-      );
+        // PageProcessor never throws on a warp failure — it falls back
+        // ("never lose a page"). updatePageCorners must complete normally.
+        await expectLater(
+          repo(
+            warper: FakeImageWarper(throws: true),
+          ).updatePageCorners(doc.id, 1, badCorners),
+          completes,
+        );
 
-      // DB must remain unchanged: no flatRelativePath set.
-      final after = await repo().getDocumentPages(doc.id);
-      expect(
-        after.single.flatImagePath,
-        isNull,
-        reason: 'rethrow must not update DB',
-      );
-    });
+        final after = await repo().getDocumentPages(doc.id);
+        // The edit is not aborted: corners are updated to the requested value.
+        expect(after.single.corners, badCorners);
+        // The failed warp produced no flat derivative, so _writeFlat cleared
+        // it (falls back to the raw capture as the displayed page).
+        expect(after.single.flatImagePath, isNull);
+      },
+    );
 
     test('unknown page: throws DocumentSaveException', () async {
       await expectLater(

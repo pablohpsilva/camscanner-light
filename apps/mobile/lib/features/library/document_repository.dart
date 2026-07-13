@@ -95,8 +95,11 @@ abstract interface class DocumentRepository {
   /// Re-warps the page at [position] using [corners] and updates the stored
   /// flat image. If [corners] == [CropCorners.fullFrame], deletes the flat
   /// file (best-effort) and clears [flatRelativePath] in the DB. Throws
-  /// [DocumentSaveException] when the page row does not exist. Rethrows
-  /// [WarpException] or IO errors on warp/write failure (DB unchanged).
+  /// [DocumentSaveException] when the page row does not exist. A warp failure
+  /// does NOT abort the edit: the crop metadata is still applied, and the
+  /// flat regenerates via the page processor, which never throws on a warp
+  /// failure — it silently falls back to a usable page ("never lose a
+  /// page"). Only IO/write failures still propagate.
   Future<void> updatePageCorners(
     int documentId,
     int position,
