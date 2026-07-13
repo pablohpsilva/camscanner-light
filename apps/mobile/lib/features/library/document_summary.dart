@@ -1,4 +1,5 @@
 import 'document.dart';
+import 'tag.dart';
 
 /// Read model for the documents list: a [Document] plus its page count and the
 /// absolute path to its first page's image (for the thumbnail). Built by the
@@ -9,10 +10,14 @@ class DocumentSummary {
   final Document document;
   final int pageCount;
   final String? thumbnailPath;
+  final int? folderId;
+  final List<Tag> tags;
 
   const DocumentSummary({
     required this.document,
     required this.pageCount,
     this.thumbnailPath,
+    this.folderId,
+    this.tags = const [],
   });
 }
