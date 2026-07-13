@@ -17,6 +17,7 @@ import 'ocr/mlkit_ocr_engine.dart';
 import 'pdf/ocr_pdf_text_layer.dart';
 import 'pdf/pdf_builder.dart';
 import 'fax_provider.dart';
+import 'feature_flags.dart';
 import 'file_archiver.dart';
 import 'link_share_channel.dart';
 import 'share_channel.dart';
@@ -32,6 +33,7 @@ class LibraryDependencies {
   final FileArchiver archiver;
   final LinkShareChannel linkShare;
   final FaxProvider fax;
+  final FeatureFlags features;
   const LibraryDependencies({
     this.createRepository = _defaultCreateRepository,
     this.printer = const SystemDocumentPrinter(),
@@ -39,6 +41,7 @@ class LibraryDependencies {
     this.archiver = const SystemFileArchiver(),
     this.linkShare = const UnavailableLinkShareChannel(),
     this.fax = const UnavailableFaxProvider(),
+    this.features = const FeatureFlags(),
   });
 }
 
