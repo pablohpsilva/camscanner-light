@@ -15,12 +15,14 @@ const String kFaxValue = 'fax';
 List<PopupMenuEntry<String>> shareExtraMenuItems({
   required bool showFax,
   required String keyPrefix,
+  bool showShareLink = true,
 }) => [
-  PopupMenuItem<String>(
-    value: kShareLinkValue,
-    key: Key('$keyPrefix-share-link'),
-    child: const Text('Share link'),
-  ),
+  if (showShareLink)
+    PopupMenuItem<String>(
+      value: kShareLinkValue,
+      key: Key('$keyPrefix-share-link'),
+      child: const Text('Share link'),
+    ),
   if (showFax)
     PopupMenuItem<String>(
       value: kFaxValue,
@@ -48,6 +50,7 @@ class ShareMenuButton extends StatelessWidget {
   final Key buttonKey;
   final VoidCallback onShare;
   final bool showFax;
+  final bool showShareLink;
   final bool enabled;
 
   const ShareMenuButton({
@@ -55,6 +58,7 @@ class ShareMenuButton extends StatelessWidget {
     required this.buttonKey,
     required this.onShare,
     this.showFax = true,
+    this.showShareLink = true,
     this.enabled = true,
   });
 
@@ -77,7 +81,11 @@ class ShareMenuButton extends StatelessWidget {
         key: Key('share-menu-share'),
         child: Text('Share'),
       ),
-      ...shareExtraMenuItems(showFax: showFax, keyPrefix: 'share-menu'),
+      ...shareExtraMenuItems(
+        showFax: showFax,
+        showShareLink: showShareLink,
+        keyPrefix: 'share-menu',
+      ),
     ],
   );
 }

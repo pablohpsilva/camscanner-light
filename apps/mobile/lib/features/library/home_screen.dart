@@ -632,6 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedIds: _selectedIds,
       onToggleSelect: _toggleSelect,
       onLongPress: _startSelection,
+      features: widget.libraryDependencies.features,
     );
   }
 

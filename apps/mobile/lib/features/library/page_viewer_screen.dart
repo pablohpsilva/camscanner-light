@@ -141,6 +141,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             pdfPath: file.path,
             name: _name,
             share: widget.share,
+            features: widget.features,
           ),
         ),
       );
