@@ -273,6 +273,7 @@ class DriftDocumentRepository implements DocumentRepository {
         ),
         pageCount: row.read(pageCount)!,
         thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
+        folderId: d.folderId,
       );
     }).toList();
   }
@@ -1216,24 +1217,66 @@ class DriftDocumentRepository implements DocumentRepository {
     }
   }
 
-  // TODO(T6/T7): implement — stubs only, to keep this class compiling against
-  // the enlarged DocumentRepository interface until folders/tags land.
   @override
-  Future<List<Folder>> listFolders() => throw UnimplementedError('T6/T7');
+  Future<List<Folder>> listFolders() async {
+    final rows = await (_db.select(_db.folders)
+          ..orderBy([(f) => OrderingTerm.asc(f.name)]))
+        .get();
+    return [
+      for (final r in rows) Folder(id: r.id, name: r.name, createdAt: r.createdAt),
+    ];
+  }
 
   @override
-  Future<Folder> createFolder(String name) => throw UnimplementedError('T6/T7');
+  Future<Folder> createFolder(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw const DocumentSaveException('createFolder: empty name');
+    }
+    final now = _clock().toUtc();
+    final id = await _db
+        .into(_db.folders)
+        .insert(FoldersCompanion.insert(name: trimmed, createdAt: now));
+    return Folder(id: id, name: trimmed, createdAt: now);
+  }
 
   @override
-  Future<Folder> renameFolder(int folderId, String newName) =>
-      throw UnimplementedError('T6/T7');
+  Future<Folder> renameFolder(int folderId, String newName) async {
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) {
+      throw const DocumentSaveException('renameFolder: empty name');
+    }
+    final updated = await (_db.update(_db.folders)
+          ..where((f) => f.id.equals(folderId)))
+        .write(FoldersCompanion(name: Value(trimmed)));
+    if (updated == 0) {
+      throw const DocumentSaveException('renameFolder: no such folder');
+    }
+    final row = await (_db.select(_db.folders)
+          ..where((f) => f.id.equals(folderId)))
+        .getSingle();
+    return Folder(id: row.id, name: row.name, createdAt: row.createdAt);
+  }
 
   @override
-  Future<void> deleteFolder(int folderId) => throw UnimplementedError('T6/T7');
+  Future<void> deleteFolder(int folderId) async {
+    // Member documents are unfiled automatically by the FK's ON DELETE SET NULL
+    // (foreign_keys pragma is ON). The document rows and files are untouched.
+    await (_db.delete(_db.folders)..where((f) => f.id.equals(folderId))).go();
+  }
 
   @override
-  Future<void> moveToFolder(int documentId, int? folderId) =>
-      throw UnimplementedError('T6/T7');
+  Future<void> moveToFolder(int documentId, int? folderId) async {
+    final updated = await (_db.update(_db.documents)
+          ..where((d) => d.id.equals(documentId)))
+        .write(DocumentsCompanion(
+          folderId: Value(folderId),
+          modifiedAt: Value(_clock().toUtc()),
+        ));
+    if (updated == 0) {
+      throw const DocumentSaveException('moveToFolder: no such document');
+    }
+  }
 
   @override
   Future<List<Tag>> listTags() => throw UnimplementedError('T6/T7');
