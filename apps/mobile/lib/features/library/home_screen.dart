@@ -27,6 +27,8 @@ import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
 import 'widgets/folder_filter_bar.dart';
+import 'widgets/manage_tags_sheet.dart';
+import 'widgets/move_to_folder_sheet.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_pill.dart';
 import 'widgets/tag_filter_sheet.dart';
@@ -360,6 +362,139 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _moveDocument(DocumentSummary s) async {
+    final repo = _repository;
+    if (repo == null) return;
+    final result = await showMoveToFolderSheet(
+      context,
+      folders: _folders,
+      onCreateFolder: (name) async {
+        final f = await repo.createFolder(name);
+        await _load();
+        return f;
+      },
+    );
+    if (result == null || !mounted) return;
+    try {
+      await repo.moveToFolder(s.document.id, result.folderId);
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't move document")),
+      );
+    }
+  }
+
+  Future<void> _manageTags(DocumentSummary s) async {
+    final repo = _repository;
+    if (repo == null) return;
+    // Fetch fresh rather than trust s.tags, so the sheet always seeds from
+    // the current on-disk state (avoids staleness if s came from an older
+    // snapshot of _summaries).
+    final current = await repo.tagsForDocument(s.document.id);
+    if (!mounted) return;
+    final result = await showManageTagsSheet(
+      context,
+      tags: _tags,
+      initial: current.map((t) => t.id).toSet(),
+      onCreateTag: (name) async {
+        final t = await repo.createTag(name);
+        await _load();
+        return t;
+      },
+    );
+    if (result == null || !mounted) return;
+    try {
+      await repo.setDocumentTags(s.document.id, result);
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't update tags")));
+    }
+  }
+
+  List<DocumentSummary> get _selectedDocuments =>
+      _displayed.where((s) => _selectedIds.contains(s.document.id)).toList();
+
+  Future<void> _bulkMove() async {
+    final repo = _repository;
+    if (repo == null) return;
+    final selected = _selectedDocuments;
+    if (selected.isEmpty) return;
+    final result = await showMoveToFolderSheet(
+      context,
+      folders: _folders,
+      onCreateFolder: (name) async {
+        final f = await repo.createFolder(name);
+        await _load();
+        return f;
+      },
+    );
+    if (result == null || !mounted) return;
+    try {
+      for (final s in selected) {
+        await repo.moveToFolder(s.document.id, result.folderId);
+      }
+      if (mounted) _clearSelection();
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't move documents")),
+      );
+    }
+  }
+
+  // Bulk tagging is a deliberate "set" (replace), not "add"/"merge": the
+  // sheet is seeded with the INTERSECTION of every selected doc's current
+  // tags (so pre-checked chips are tags common to all of them), and on Done
+  // every selected doc's tag set is REPLACED with the exact chosen set. This
+  // keeps the UI honest about what Done means (a reviewer should sanity-check
+  // this is the desired product behavior — an "add tag to selection without
+  // touching each doc's other tags" alternative was considered but produces a
+  // sheet whose checked/unchecked chip state cannot represent a real per-doc
+  // starting point when the selection's tags differ, which is confusing UX).
+  Future<void> _bulkTag() async {
+    final repo = _repository;
+    if (repo == null) return;
+    final selected = _selectedDocuments;
+    if (selected.isEmpty) return;
+    final tagSets = <Set<int>>[
+      for (final s in selected)
+        (await repo.tagsForDocument(s.document.id)).map((t) => t.id).toSet(),
+    ];
+    if (!mounted) return;
+    final intersection = tagSets.isEmpty
+        ? <int>{}
+        : tagSets.reduce((a, b) => a.intersection(b));
+    final result = await showManageTagsSheet(
+      context,
+      tags: _tags,
+      initial: intersection,
+      onCreateTag: (name) async {
+        final t = await repo.createTag(name);
+        await _load();
+        return t;
+      },
+    );
+    if (result == null || !mounted) return;
+    try {
+      for (final s in selected) {
+        await repo.setDocumentTags(s.document.id, result);
+      }
+      if (mounted) _clearSelection();
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't update tags")));
+    }
+  }
+
   void _toggleSelect(DocumentSummary s) {
     setState(() {
       final id = s.document.id;
@@ -625,6 +760,20 @@ class _HomeScreenState extends State<HomeScreen> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
+        if (widget.libraryDependencies.features.folders)
+          IconButton(
+            key: const Key('selection-move'),
+            tooltip: 'Move to folder',
+            icon: Icon(Icons.drive_file_move_outline, color: r.ink),
+            onPressed: _bulkMove,
+          ),
+        if (widget.libraryDependencies.features.tags)
+          IconButton(
+            key: const Key('selection-tag'),
+            tooltip: 'Tag',
+            icon: Icon(Icons.label_outline, color: r.ink),
+            onPressed: _bulkTag,
+          ),
         IconButton(
           key: const Key('selection-export'),
           tooltip: 'Export',
@@ -711,6 +860,8 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpen: _openDocument,
         onRename: _renameDocument,
         onShare: _shareDocument,
+        onMoveToFolder: _moveDocument,
+        onManageTags: _manageTags,
         selectionMode: _selectionMode,
         selectedIds: _selectedIds,
         onToggleSelect: _toggleSelect,
@@ -723,6 +874,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onOpen: _openDocument,
       onRename: _renameDocument,
       onShare: _shareDocument,
+      onMoveToFolder: _moveDocument,
+      onManageTags: _manageTags,
       selectionMode: _selectionMode,
       selectedIds: _selectedIds,
       onToggleSelect: _toggleSelect,

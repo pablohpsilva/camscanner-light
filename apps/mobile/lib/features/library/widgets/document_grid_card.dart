@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/library/document_summary.dart';
+import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/widgets/document_thumbnail.dart';
+import 'package:mobile/features/library/widgets/share_menu_button.dart';
 import 'package:mobile/features/library/widgets/tag_chips.dart';
 import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_typography.dart';
@@ -15,6 +17,15 @@ import 'package:mobile/theme/ream_typography.dart';
 /// Intended for use inside a [GridView] cell (which constrains width). In that
 /// context the thumbnail area fills the width at a ~0.77 portrait ratio. The
 /// card is self-sizing (no fixed outer width required).
+///
+/// Optional per-card overflow menu (Share / Rename / Move to folder / Tags…),
+/// keyed the same way as [DocumentsListView]'s row menu
+/// (`document-menu-<id>`, `document-share-<id>`, etc.) so BDD/step code can
+/// target either view generically. The menu lives directly on the card
+/// (rather than as a Positioned overlay in DocumentsGridView) — this keeps
+/// the diff smallest: DocumentsGridView already threads onRename/onShare
+/// straight through to this card's constructor, so this card is the natural
+/// single owner of "does this document have a menu, and what's in it."
 class DocumentGridCard extends StatelessWidget {
   const DocumentGridCard({
     required this.summary,
@@ -23,6 +34,11 @@ class DocumentGridCard extends StatelessWidget {
     this.selected = false,
     this.selectionMode = false,
     this.showTags = true,
+    this.onRename,
+    this.onShare,
+    this.onMoveToFolder,
+    this.onManageTags,
+    this.features = const FeatureFlags(),
     super.key,
   });
 
@@ -32,6 +48,11 @@ class DocumentGridCard extends StatelessWidget {
   final bool selected;
   final bool selectionMode;
   final bool showTags;
+  final ValueChanged<DocumentSummary>? onRename;
+  final ValueChanged<DocumentSummary>? onShare;
+  final ValueChanged<DocumentSummary>? onMoveToFolder;
+  final ValueChanged<DocumentSummary>? onManageTags;
+  final FeatureFlags features;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +62,62 @@ class DocumentGridCard extends StatelessWidget {
 
     final shortDate = _formatDate(doc.modifiedAt);
     final metaText = '${summary.pageCount}p · $shortDate';
+
+    final showMoveToFolder = features.folders && onMoveToFolder != null;
+    final showManageTags = features.tags && onManageTags != null;
+    final menu =
+        (selectionMode ||
+            (onRename == null &&
+                onShare == null &&
+                !showMoveToFolder &&
+                !showManageTags))
+        ? null
+        : PopupMenuButton<String>(
+            key: Key('document-menu-${doc.id}'),
+            tooltip: 'Document options',
+            icon: const Icon(Icons.more_horiz, color: Colors.white),
+            onSelected: (v) {
+              if (v == 'rename') onRename?.call(summary);
+              if (v == 'share') onShare?.call(summary);
+              if (v == 'move') onMoveToFolder?.call(summary);
+              if (v == 'tags') onManageTags?.call(summary);
+              if (v == kShareLinkValue || v == kFaxValue) {
+                handleShareExtra(context, v);
+              }
+            },
+            itemBuilder: (context) => [
+              if (onShare != null)
+                PopupMenuItem<String>(
+                  key: Key('document-share-${doc.id}'),
+                  value: 'share',
+                  child: const Text('Share'),
+                ),
+              if (onShare != null)
+                ...shareExtraMenuItems(
+                  showFax: features.fax,
+                  showShareLink: features.shareLink,
+                  keyPrefix: 'document-${doc.id}',
+                ),
+              if (onRename != null)
+                PopupMenuItem<String>(
+                  key: Key('document-rename-${doc.id}'),
+                  value: 'rename',
+                  child: const Text('Rename'),
+                ),
+              if (showMoveToFolder)
+                PopupMenuItem<String>(
+                  key: Key('document-move-${doc.id}'),
+                  value: 'move',
+                  child: const Text('Move to folder'),
+                ),
+              if (showManageTags)
+                PopupMenuItem<String>(
+                  key: Key('document-tags-${doc.id}'),
+                  value: 'tags',
+                  child: const Text('Tags…'),
+                ),
+            ],
+          );
 
     // The card uses an IntrinsicWidth to make the thumbnail's AspectRatio
     // derive a sensible height.  In a GridView cell the cell width constrains
@@ -85,6 +162,25 @@ class DocumentGridCard extends StatelessWidget {
                           Icons.check_circle,
                           color: ream.green,
                           size: 22,
+                        ),
+                      ),
+                    if (menu != null)
+                      Positioned(
+                        top: -6,
+                        right: -6,
+                        // Absorb the tap here so it does not also fire onTap
+                        // (opening the document) — GestureDetector.onTap on
+                        // the outer card and the PopupMenuButton's tap both
+                        // sit in the same hit-test chain otherwise.
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: menu,
+                          ),
                         ),
                       ),
                   ],

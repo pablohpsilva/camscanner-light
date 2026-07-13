@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
+import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
 
 void main() {
@@ -196,6 +197,179 @@ void main() {
     expect(pressed, isNotNull);
     expect(pressed!.document.id, 2);
   });
+
+  testWidgets(
+    'shows a Move to folder item when features.folders and onMoveToFolder set',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DocumentsListView(
+              summaries: [summary(1)],
+              onMoveToFolder: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('document-menu-1')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('document-move-1')), findsOneWidget);
+    },
+  );
+
+  testWidgets('selecting Move to folder invokes onMoveToFolder with that summary', (
+    tester,
+  ) async {
+    DocumentSummary? moved;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(
+            summaries: [summary(2)],
+            onMoveToFolder: (s) => moved = s,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-move-2')));
+    await tester.pumpAndSettle();
+    expect(moved, isNotNull);
+    expect(moved!.document.id, 2);
+  });
+
+  testWidgets('hides Move to folder when features.folders is off', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(
+            summaries: [summary(1)],
+            onShare: (_) {}, // keeps the menu itself visible
+            onMoveToFolder: (_) {},
+            features: const FeatureFlags(folders: false),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-move-1')), findsNothing);
+  });
+
+  testWidgets('hides Move to folder when onMoveToFolder is null', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(summaries: [summary(1)], onShare: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-move-1')), findsNothing);
+  });
+
+  testWidgets('shows a Tags item when features.tags and onManageTags set', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(
+            summaries: [summary(1)],
+            onManageTags: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-tags-1')), findsOneWidget);
+  });
+
+  testWidgets('selecting Tags invokes onManageTags with that summary', (
+    tester,
+  ) async {
+    DocumentSummary? tagged;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(
+            summaries: [summary(2)],
+            onManageTags: (s) => tagged = s,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-tags-2')));
+    await tester.pumpAndSettle();
+    expect(tagged, isNotNull);
+    expect(tagged!.document.id, 2);
+  });
+
+  testWidgets('hides Tags when features.tags is off', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(
+            summaries: [summary(1)],
+            onShare: (_) {}, // keeps the menu itself visible
+            onManageTags: (_) {},
+            features: const FeatureFlags(tags: false),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-tags-1')), findsNothing);
+  });
+
+  testWidgets('hides Tags when onManageTags is null', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DocumentsListView(summaries: [summary(1)], onShare: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-menu-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-tags-1')), findsNothing);
+  });
+
+  testWidgets(
+    'shows the menu when only onMoveToFolder is set (no onRename/onShare)',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DocumentsListView(
+              summaries: [summary(1)],
+              onMoveToFolder: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('document-menu-1')), findsOneWidget);
+    },
+  );
 
   testWidgets('in selection mode a tap toggles selection instead of opening', (
     tester,

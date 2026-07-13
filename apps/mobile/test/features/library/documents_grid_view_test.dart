@@ -123,5 +123,88 @@ void main() {
 
       expect(find.byKey(const Key('documents-grid')), findsOneWidget);
     });
+
+    testWidgets('threads onMoveToFolder through to the card menu', (
+      tester,
+    ) async {
+      DocumentSummary? moved;
+      await pumpReam(
+        tester,
+        DocumentsGridView(
+          summaries: [summaryA],
+          onMoveToFolder: (s) => moved = s,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('document-menu-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('document-move-1')));
+      await tester.pumpAndSettle();
+
+      expect(moved, same(summaryA));
+    });
+
+    testWidgets('threads onManageTags through to the card menu', (
+      tester,
+    ) async {
+      DocumentSummary? tagged;
+      await pumpReam(
+        tester,
+        DocumentsGridView(
+          summaries: [summaryA],
+          onManageTags: (s) => tagged = s,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('document-menu-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('document-tags-1')));
+      await tester.pumpAndSettle();
+
+      expect(tagged, same(summaryA));
+    });
+
+    testWidgets('threads onRename/onShare through to the card menu', (
+      tester,
+    ) async {
+      DocumentSummary? renamed;
+      DocumentSummary? shared;
+      await pumpReam(
+        tester,
+        DocumentsGridView(
+          summaries: [summaryA],
+          onRename: (s) => renamed = s,
+          onShare: (s) => shared = s,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('document-menu-1')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('document-rename-1')), findsOneWidget);
+      expect(find.byKey(const Key('document-share-1')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('document-rename-1')));
+      await tester.pumpAndSettle();
+      expect(renamed, same(summaryA));
+
+      await tester.tap(find.byKey(const Key('document-menu-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('document-share-1')));
+      await tester.pumpAndSettle();
+      expect(shared, same(summaryA));
+    });
+
+    testWidgets('omits the card menu in selection mode', (tester) async {
+      await pumpReam(
+        tester,
+        DocumentsGridView(
+          summaries: [summaryA],
+          selectionMode: true,
+          onShare: (_) {},
+        ),
+      );
+
+      expect(find.byKey(const Key('document-menu-1')), findsNothing);
+    });
   });
 }

@@ -27,6 +27,8 @@ class DocumentsListView extends StatelessWidget {
   final ValueChanged<DocumentSummary>? onOpen;
   final ValueChanged<DocumentSummary>? onRename;
   final ValueChanged<DocumentSummary>? onShare;
+  final ValueChanged<DocumentSummary>? onMoveToFolder;
+  final ValueChanged<DocumentSummary>? onManageTags;
   final Set<int> selectedIds;
   final bool selectionMode;
   final ValueChanged<DocumentSummary>? onToggleSelect;
@@ -38,6 +40,8 @@ class DocumentsListView extends StatelessWidget {
     this.onOpen,
     this.onRename,
     this.onShare,
+    this.onMoveToFolder,
+    this.onManageTags,
     this.selectedIds = const {},
     this.selectionMode = false,
     this.onToggleSelect,
@@ -80,7 +84,14 @@ class DocumentsListView extends StatelessWidget {
             ),
           );
 
-    final menu = (selectionMode || (onRename == null && onShare == null))
+    final showMoveToFolder = features.folders && onMoveToFolder != null;
+    final showManageTags = features.tags && onManageTags != null;
+    final menu =
+        (selectionMode ||
+            (onRename == null &&
+                onShare == null &&
+                !showMoveToFolder &&
+                !showManageTags))
         ? null
         : PopupMenuButton<String>(
             key: Key('document-menu-${d.id}'),
@@ -89,6 +100,8 @@ class DocumentsListView extends StatelessWidget {
             onSelected: (v) {
               if (v == 'rename') onRename?.call(s);
               if (v == 'share') onShare?.call(s);
+              if (v == 'move') onMoveToFolder?.call(s);
+              if (v == 'tags') onManageTags?.call(s);
               if (v == kShareLinkValue || v == kFaxValue) {
                 handleShareExtra(context, v);
               }
@@ -111,6 +124,18 @@ class DocumentsListView extends StatelessWidget {
                   key: Key('document-rename-${d.id}'),
                   value: 'rename',
                   child: const Text('Rename'),
+                ),
+              if (showMoveToFolder)
+                PopupMenuItem<String>(
+                  key: Key('document-move-${d.id}'),
+                  value: 'move',
+                  child: const Text('Move to folder'),
+                ),
+              if (showManageTags)
+                PopupMenuItem<String>(
+                  key: Key('document-tags-${d.id}'),
+                  value: 'tags',
+                  child: const Text('Tags…'),
                 ),
             ],
           );

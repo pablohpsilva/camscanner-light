@@ -16,6 +16,8 @@ class DocumentsGridView extends StatelessWidget {
   final ValueChanged<DocumentSummary>? onOpen;
   final ValueChanged<DocumentSummary>? onRename;
   final ValueChanged<DocumentSummary>? onShare;
+  final ValueChanged<DocumentSummary>? onMoveToFolder;
+  final ValueChanged<DocumentSummary>? onManageTags;
   final Set<int> selectedIds;
   final bool selectionMode;
   final ValueChanged<DocumentSummary>? onToggleSelect;
@@ -28,6 +30,8 @@ class DocumentsGridView extends StatelessWidget {
     this.onOpen,
     this.onRename,
     this.onShare,
+    this.onMoveToFolder,
+    this.onManageTags,
     this.selectedIds = const {},
     this.selectionMode = false,
     this.onToggleSelect,
@@ -58,6 +62,11 @@ class DocumentsGridView extends StatelessWidget {
               : (onOpen == null ? null : () => onOpen!(s)),
           onLongPress: onLongPress == null ? null : () => onLongPress!(s),
           showTags: features.tags,
+          onRename: onRename,
+          onShare: onShare,
+          onMoveToFolder: onMoveToFolder,
+          onManageTags: onManageTags,
+          features: features,
         );
       },
     );

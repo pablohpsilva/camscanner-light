@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
+import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/widgets/document_grid_card.dart';
 import 'package:mobile/theme/ream_colors.dart';
 import '../../support/ream_pump.dart';
@@ -61,5 +62,170 @@ void main() {
     await pumpReam(tester, DocumentGridCard(summary: _summary()));
     final icon = tester.widget<Icon>(find.byIcon(Icons.description_outlined));
     expect(icon.color, ReamColors.light.muted);
+  });
+
+  testWidgets('omits the overflow menu when no menu callback is set', (
+    tester,
+  ) async {
+    await pumpReam(tester, DocumentGridCard(summary: _summary()));
+    expect(find.byKey(const Key('document-menu-7')), findsNothing);
+  });
+
+  testWidgets('shows a Share item when onShare is set', (tester) async {
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: _summary(), onShare: (_) {}),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-share-7')), findsOneWidget);
+  });
+
+  testWidgets('selecting Share invokes onShare with the summary', (
+    tester,
+  ) async {
+    var s = _summary();
+    dynamic shared;
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: s, onShare: (v) => shared = v),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-share-7')));
+    await tester.pumpAndSettle();
+    expect(shared, same(s));
+  });
+
+  testWidgets('shows a Rename item when onRename is set', (tester) async {
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: _summary(), onRename: (_) {}),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-rename-7')), findsOneWidget);
+  });
+
+  testWidgets('selecting Rename invokes onRename with the summary', (
+    tester,
+  ) async {
+    var s = _summary();
+    dynamic renamed;
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: s, onRename: (v) => renamed = v),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-rename-7')));
+    await tester.pumpAndSettle();
+    expect(renamed, same(s));
+  });
+
+  testWidgets(
+    'shows Move to folder when features.folders and onMoveToFolder set',
+    (tester) async {
+      await pumpReam(
+        tester,
+        DocumentGridCard(summary: _summary(), onMoveToFolder: (_) {}),
+      );
+      await tester.tap(find.byKey(const Key('document-menu-7')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('document-move-7')), findsOneWidget);
+    },
+  );
+
+  testWidgets('selecting Move to folder invokes onMoveToFolder with the summary', (
+    tester,
+  ) async {
+    var s = _summary();
+    dynamic moved;
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: s, onMoveToFolder: (v) => moved = v),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-move-7')));
+    await tester.pumpAndSettle();
+    expect(moved, same(s));
+  });
+
+  testWidgets('hides Move to folder when features.folders is off', (
+    tester,
+  ) async {
+    await pumpReam(
+      tester,
+      DocumentGridCard(
+        summary: _summary(),
+        onShare: (_) {},
+        onMoveToFolder: (_) {},
+        features: const FeatureFlags(folders: false),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-move-7')), findsNothing);
+  });
+
+  testWidgets('shows Tags when features.tags and onManageTags set', (
+    tester,
+  ) async {
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: _summary(), onManageTags: (_) {}),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-tags-7')), findsOneWidget);
+  });
+
+  testWidgets('selecting Tags invokes onManageTags with the summary', (
+    tester,
+  ) async {
+    var s = _summary();
+    dynamic tagged;
+    await pumpReam(
+      tester,
+      DocumentGridCard(summary: s, onManageTags: (v) => tagged = v),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('document-tags-7')));
+    await tester.pumpAndSettle();
+    expect(tagged, same(s));
+  });
+
+  testWidgets('hides Tags when features.tags is off', (tester) async {
+    await pumpReam(
+      tester,
+      DocumentGridCard(
+        summary: _summary(),
+        onShare: (_) {},
+        onManageTags: (_) {},
+        features: const FeatureFlags(tags: false),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-tags-7')), findsNothing);
+  });
+
+  testWidgets('the overflow menu tap does not also fire onTap', (
+    tester,
+  ) async {
+    var opened = false;
+    await pumpReam(
+      tester,
+      DocumentGridCard(
+        summary: _summary(),
+        onTap: () => opened = true,
+        onShare: (_) {},
+      ),
+    );
+    await tester.tap(find.byKey(const Key('document-menu-7')));
+    await tester.pumpAndSettle();
+    expect(opened, false);
   });
 }
