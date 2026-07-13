@@ -564,8 +564,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           widget.features.shareLink ||
           widget.features.fax);
 
-  /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document.
-  Widget _buildOverflowMenu() {
+  /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document. Returns null
+  /// (no button) when every item is disabled by its feature flag.
+  Widget? _buildOverflowMenu() {
+    final f = widget.features;
+    if (!(f.rename || f.merge || f.split || f.deleteDocument)) return null;
     return PopupMenuButton<String>(
       key: const Key('page-viewer-page-menu'),
       enabled: !_actionsDisabled,
@@ -575,27 +578,31 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         if (v == 'split') unawaited(_splitAfter());
         if (v == 'delete') unawaited(_confirmAndDelete());
       },
-      itemBuilder: (_) => const [
-        PopupMenuItem<String>(
-          value: 'rename',
-          key: Key('page-viewer-rename'),
-          child: Text('Rename'),
-        ),
-        PopupMenuItem<String>(
-          value: 'merge',
-          key: Key('page-viewer-merge'),
-          child: Text('Merge another document…'),
-        ),
-        PopupMenuItem<String>(
-          value: 'split',
-          key: Key('page-viewer-split'),
-          child: Text('Split after this page'),
-        ),
-        PopupMenuItem<String>(
-          value: 'delete',
-          key: Key('page-viewer-delete'),
-          child: Text('Delete document'),
-        ),
+      itemBuilder: (_) => [
+        if (f.rename)
+          const PopupMenuItem<String>(
+            value: 'rename',
+            key: Key('page-viewer-rename'),
+            child: Text('Rename'),
+          ),
+        if (f.merge)
+          const PopupMenuItem<String>(
+            value: 'merge',
+            key: Key('page-viewer-merge'),
+            child: Text('Merge another document…'),
+          ),
+        if (f.split)
+          const PopupMenuItem<String>(
+            value: 'split',
+            key: Key('page-viewer-split'),
+            child: Text('Split after this page'),
+          ),
+        if (f.deleteDocument)
+          const PopupMenuItem<String>(
+            value: 'delete',
+            key: Key('page-viewer-delete'),
+            child: Text('Delete document'),
+          ),
       ],
     );
   }
