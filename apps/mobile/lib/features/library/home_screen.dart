@@ -16,13 +16,16 @@ import '../../theme/widgets/ream_segmented.dart';
 import 'document_repository.dart';
 import 'document_sort.dart';
 import 'document_summary.dart';
+import 'folder.dart';
 import 'library_dependencies.dart';
 import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
 import 'save_controller.dart';
+import 'widgets/create_folder_dialog.dart';
 import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
 import 'widgets/empty_documents_view.dart';
+import 'widgets/folder_filter_bar.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_pill.dart';
 import '../donation/donation_banner.dart';
@@ -64,6 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentSort _sort = DocumentSort.initial;
   bool _feedbackAvailable = false;
   LibraryViewMode _viewMode = LibraryViewMode.list;
+  List<Folder> _folders = const [];
+  FolderFilter _folderFilter = const FolderFilter.all();
   late final ThemeController _themeController =
       widget.themeController ??
       ThemeController(store: InMemoryThemeModeStore());
@@ -123,14 +128,45 @@ class _HomeScreenState extends State<HomeScreen> {
       final docs = await repo.listDocumentSummaries().timeout(
         HomeScreen.coldStartStepTimeout,
       );
+      final folders = await repo.listFolders().timeout(
+        HomeScreen.coldStartStepTimeout,
+      );
       if (!mounted) return;
       setState(() {
         _summaries = docs;
+        _folders = folders;
         _loading = false;
         _startupFailure = null;
       });
     } catch (e) {
       _failStartup('loading your documents', e);
+    }
+  }
+
+  // folderId (null = unfiled) -> document count, computed from the loaded
+  // summaries so the bar's counts always reflect what's on screen.
+  Map<int?, int> _folderCounts() {
+    final counts = <int?, int>{};
+    for (final s in _summaries) {
+      counts[s.folderId] = (counts[s.folderId] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  Future<void> _createFolder() async {
+    final repo = _repository;
+    if (repo == null) return;
+    final name = await showCreateFolderDialog(context);
+    if (name == null) return;
+    if (!mounted) return;
+    try {
+      await repo.createFolder(name);
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't create folder")));
     }
   }
 
@@ -330,9 +366,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void _clearSelection() => setState(() => _selectedIds.clear());
 
   // The documents currently on screen, in display order (search order when
-  // searching, else the active sort). Selection export follows this order.
-  List<DocumentSummary> get _displayed =>
-      _searching ? _searchResults : sortDocuments(_summaries, _sort);
+  // searching, else the active sort), further narrowed by the active folder
+  // filter. Selection export follows this order.
+  List<DocumentSummary> get _displayed {
+    final base = _searching ? _searchResults : sortDocuments(_summaries, _sort);
+    return base.where(_folderFilter.matches).toList();
+  }
 
   Future<void> _exportSelected() async {
     final repo = _repository;
@@ -424,6 +463,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ReamSearchField(
                 controller: _searchController,
                 onChanged: _onQueryChanged,
+              ),
+            ],
+            if (widget.libraryDependencies.features.folders &&
+                _folders.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              FolderFilterBar(
+                folders: _folders,
+                counts: _folderCounts(),
+                active: _folderFilter,
+                onChanged: (f) => setState(() => _folderFilter = f),
+                onCreateFolder: _createFolder,
               ),
             ],
             if (_showControls) ...[
@@ -603,11 +653,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text('No documents match "$_query".'),
         );
       }
-      return _buildDocuments(_searchResults);
+      return _buildDocuments(_displayed);
     }
 
     if (_summaries.isEmpty) return const EmptyDocumentsView();
-    return _buildDocuments(sortDocuments(_summaries, _sort));
+    return _buildDocuments(_displayed);
   }
 
   Widget _buildDocuments(List<DocumentSummary> docs) {
