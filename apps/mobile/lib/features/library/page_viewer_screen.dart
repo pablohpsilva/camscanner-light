@@ -156,7 +156,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   Future<void> _rename() async {
-    final newName = await showRenameDialog(context, _name);
+    final newName = await showRenameDialog(
+      context,
+      _name,
+      suggest: widget.features.smartTitles
+          ? () => widget.repository.suggestTitleFor(widget.documentId)
+          : null,
+    );
     if (newName == null) return;
     if (!mounted) return;
     try {

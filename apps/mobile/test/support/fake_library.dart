@@ -529,7 +529,11 @@ class FakeDocumentRepository implements DocumentRepository {
       (t) => t.name.toLowerCase() == trimmed.toLowerCase(),
     );
     if (existing.isNotEmpty) return existing.first;
-    final t = Tag(id: _nextTagId++, name: trimmed, createdAt: DateTime.utc(2026));
+    final t = Tag(
+      id: _nextTagId++,
+      name: trimmed,
+      createdAt: DateTime.utc(2026),
+    );
     _tags.add(t);
     return t;
   }
@@ -553,8 +557,14 @@ class FakeDocumentRepository implements DocumentRepository {
   Future<void> setDocumentTags(int documentId, Set<int> tagIds) async =>
       _docTags[documentId] = {...tagIds};
 
+  // Seeded per-document canned suggestion, so BDD steps that want to exercise
+  // the "suggest a title from OCR text" affordance can seed a result without
+  // faking the real TitleSuggester/OCR pipeline (that's covered elsewhere).
+  final Map<int, String> suggestedTitles = {};
+
   @override
-  Future<String?> suggestTitleFor(int documentId) async => null; // no OCR in fake
+  Future<String?> suggestTitleFor(int documentId) async =>
+      suggestedTitles[documentId];
 
   @override
   Future<void> runOcr(int documentId, int position) async {

@@ -329,7 +329,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _renameDocument(DocumentSummary s) async {
     final repo = _repository;
     if (repo == null) return;
-    final newName = await showRenameDialog(context, s.document.name);
+    final newName = await showRenameDialog(
+      context,
+      s.document.name,
+      suggest: widget.libraryDependencies.features.smartTitles
+          ? () => repo.suggestTitleFor(s.document.id)
+          : null,
+    );
     if (newName == null) return;
     if (!mounted) return;
     try {
@@ -380,9 +386,9 @@ class _HomeScreenState extends State<HomeScreen> {
       await _refresh();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't move document")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't move document")));
     }
   }
 
@@ -442,9 +448,9 @@ class _HomeScreenState extends State<HomeScreen> {
       await _refresh();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't move documents")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't move documents")));
     }
   }
 
