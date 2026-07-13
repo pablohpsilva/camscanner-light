@@ -10,6 +10,7 @@ import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/perspective_warper.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
+import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/file_archiver.dart';
 import 'package:mobile/features/library/document_summary.dart';
@@ -447,6 +448,25 @@ class FakeDocumentRepository implements DocumentRepository {
     lastRotatedPosition = position;
     // Optional gate lets a test hold the edit "in flight" to exercise the
     // page viewer's concurrency guard (no overlapping edits).
+    if (gate != null) await gate!.future;
+  }
+
+  int updateEnhancerCalls = 0;
+  int? lastEnhancerPosition;
+  EnhancerMode? lastEnhancerMode;
+
+  @override
+  Future<void> updatePageEnhancer(
+    int documentId,
+    int position,
+    EnhancerMode mode,
+  ) async {
+    if (throwOnUpdate) {
+      throw const DocumentSaveException('fake: updateEnhancer failed');
+    }
+    updateEnhancerCalls++;
+    lastEnhancerPosition = position;
+    lastEnhancerMode = mode;
     if (gate != null) await gate!.future;
   }
 

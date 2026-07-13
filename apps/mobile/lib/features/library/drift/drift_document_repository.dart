@@ -794,6 +794,42 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<void> updatePageEnhancer(
+    int documentId,
+    int position,
+    EnhancerMode mode,
+  ) async {
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
+    if (row == null) {
+      throw DocumentSaveException(
+        'updatePageEnhancer: no page ($documentId, $position)',
+      );
+    }
+    final corners =
+        CropCorners.tryParse(row.corners) ?? CropCorners.fullFrame;
+    final flatRel = await _writeFlat(
+      relativeImagePath: row.relativeImagePath,
+      quarterTurns: row.rotationQuarterTurns,
+      corners: corners,
+      mode: mode,
+      existingFlatRel: row.flatRelativePath,
+    );
+    await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
+      PagesCompanion(
+        enhancerMode: Value(mode.index),
+        flatRelativePath: Value(flatRel),
+      ),
+    );
+    await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
+        .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+  }
+
+  @override
   Future<int> addPageToDocument(
     int documentId,
     CapturedImage capture, {

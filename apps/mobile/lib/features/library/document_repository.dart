@@ -4,6 +4,7 @@ import '../scan/captured_image.dart';
 import 'crop_corners.dart';
 import 'document.dart';
 import 'document_summary.dart';
+import 'enhancer_mode.dart';
 import 'export/export_quality.dart';
 import 'image_enhancer.dart';
 import 'page_image.dart';
@@ -154,6 +155,17 @@ abstract interface class DocumentRepository {
   /// quarter-turn). Nothing leaves the device. Throws [DocumentSaveException]
   /// when the page row is missing or its image cannot be decoded.
   Future<void> rotatePage(int documentId, int position);
+
+  /// Re-applies enhancement [mode] to the page at [position] of [documentId]
+  /// non-destructively: regenerates the displayed flat from the PRISTINE base
+  /// (enhance ∘ rotate ∘ crop) and persists the mode. NEVER writes the base.
+  /// OCR is not re-run (a tonal filter changes no recognized text). Throws
+  /// [DocumentSaveException] when the page row is missing.
+  Future<void> updatePageEnhancer(
+    int documentId,
+    int position,
+    EnhancerMode mode,
+  );
 
   /// Recognizes the page at [position] of [documentId] via the OCR engine and
   /// caches the recognized text + word boxes on the page (reads the flat
