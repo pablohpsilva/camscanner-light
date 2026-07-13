@@ -14,6 +14,7 @@ import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/file_archiver.dart';
+import 'package:mobile/features/library/folder.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/drift/app_database.dart'
@@ -26,6 +27,7 @@ import 'package:mobile/features/library/share_channel.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/ocr/ocr_engine.dart';
 import 'package:mobile/features/library/ocr/ocr_result.dart';
+import 'package:mobile/features/library/tag.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 /// In-memory fake repository for host tests. Optionally throws, or blocks on a
@@ -74,6 +76,13 @@ class FakeDocumentRepository implements DocumentRepository {
   int? lastExportedTextPosition;
   int protectCalls = 0;
   String? lastProtectPassword;
+
+  final List<Folder> _folders = [];
+  final List<Tag> _tags = [];
+  int _nextFolderId = 1;
+  int _nextTagId = 1;
+  final Map<int, int?> _docFolder = {}; // documentId -> folderId
+  final Map<int, Set<int>> _docTags = {}; // documentId -> tagIds
 
   FakeDocumentRepository({
     this.throwOnCreate = false,
@@ -255,15 +264,16 @@ class FakeDocumentRepository implements DocumentRepository {
     }
     // Synthesize: every fake document has one page and a deliberately
     // NON-LOADABLE thumbnail path (host tests must not load a real Image.file).
-    return List<DocumentSummary>.unmodifiable(
-      documents.map(
-        (d) => DocumentSummary(
+    return List<DocumentSummary>.unmodifiable([
+      for (final d in documents)
+        DocumentSummary(
           document: d,
           pageCount: 1,
           thumbnailPath: '/nonexistent/thumb-${d.id}.jpg',
+          folderId: _docFolder[d.id],
+          tags: await tagsForDocument(d.id),
         ),
-      ),
-    );
+    ]);
   }
 
   @override
@@ -470,6 +480,81 @@ class FakeDocumentRepository implements DocumentRepository {
     lastEnhancerMode = mode;
     if (gate != null) await gate!.future;
   }
+
+  @override
+  Future<List<Folder>> listFolders() async =>
+      [..._folders]..sort((a, b) => a.name.compareTo(b.name));
+
+  @override
+  Future<Folder> createFolder(String name) async {
+    final f = Folder(
+      id: _nextFolderId++,
+      name: name.trim(),
+      createdAt: DateTime.utc(2026),
+    );
+    _folders.add(f);
+    return f;
+  }
+
+  @override
+  Future<Folder> renameFolder(int folderId, String newName) async {
+    final i = _folders.indexWhere((f) => f.id == folderId);
+    final updated = Folder(
+      id: folderId,
+      name: newName.trim(),
+      createdAt: _folders[i].createdAt,
+    );
+    _folders[i] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> deleteFolder(int folderId) async {
+    _folders.removeWhere((f) => f.id == folderId);
+    _docFolder.updateAll((k, v) => v == folderId ? null : v); // setNull
+  }
+
+  @override
+  Future<void> moveToFolder(int documentId, int? folderId) async =>
+      _docFolder[documentId] = folderId;
+
+  @override
+  Future<List<Tag>> listTags() async =>
+      [..._tags]..sort((a, b) => a.name.compareTo(b.name));
+
+  @override
+  Future<Tag> createTag(String name) async {
+    final trimmed = name.trim();
+    final existing = _tags.where(
+      (t) => t.name.toLowerCase() == trimmed.toLowerCase(),
+    );
+    if (existing.isNotEmpty) return existing.first;
+    final t = Tag(id: _nextTagId++, name: trimmed, createdAt: DateTime.utc(2026));
+    _tags.add(t);
+    return t;
+  }
+
+  @override
+  Future<void> deleteTag(int tagId) async {
+    _tags.removeWhere((t) => t.id == tagId);
+    for (final s in _docTags.values) {
+      s.remove(tagId);
+    }
+  }
+
+  @override
+  Future<List<Tag>> tagsForDocument(int documentId) async {
+    final ids = _docTags[documentId] ?? const <int>{};
+    return _tags.where((t) => ids.contains(t.id)).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  @override
+  Future<void> setDocumentTags(int documentId, Set<int> tagIds) async =>
+      _docTags[documentId] = {...tagIds};
+
+  @override
+  Future<String?> suggestTitleFor(int documentId) async => null; // no OCR in fake
 
   @override
   Future<void> runOcr(int documentId, int position) async {

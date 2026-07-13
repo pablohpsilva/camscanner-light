@@ -6,8 +6,10 @@ import 'document.dart';
 import 'document_summary.dart';
 import 'enhancer_mode.dart';
 import 'export/export_quality.dart';
+import 'folder.dart';
 import 'image_enhancer.dart';
 import 'page_image.dart';
+import 'tag.dart';
 
 /// The only persistence surface the widget layer knows (DIP). The Drift
 /// implementation hides the DB, scrubber, file store, and clock.
@@ -201,6 +203,40 @@ abstract interface class DocumentRepository {
   /// Flags [documentId] as an ID card (changes only its PDF export layout) and
   /// bumps modifiedAt. Throws [DocumentSaveException] if the document is missing.
   Future<void> markAsIdCard(int documentId);
+
+  /// Lists all folders, name-ascending.
+  Future<List<Folder>> listFolders();
+
+  /// Creates a new folder named [name] (trimmed).
+  Future<Folder> createFolder(String name);
+
+  /// Renames the folder [folderId] to [newName] (trimmed) and returns it.
+  Future<Folder> renameFolder(int folderId, String newName);
+
+  /// Deletes the folder [folderId]; documents in it become Unfiled.
+  Future<void> deleteFolder(int folderId);
+
+  /// Moves [documentId] into [folderId], or to Unfiled when [folderId] is null.
+  Future<void> moveToFolder(int documentId, int? folderId);
+
+  /// Lists all tags, name-ascending.
+  Future<List<Tag>> listTags();
+
+  /// Creates a tag named [name] (trimmed), deduping by case-insensitive name.
+  Future<Tag> createTag(String name);
+
+  /// Deletes the tag [tagId] and detaches it from every document.
+  Future<void> deleteTag(int tagId);
+
+  /// Lists the tags attached to [documentId], name-ascending.
+  Future<List<Tag>> tagsForDocument(int documentId);
+
+  /// Replaces the full set of tags attached to [documentId] with [tagIds].
+  Future<void> setDocumentTags(int documentId, Set<int> tagIds);
+
+  /// Suggests a title for [documentId] from its page-1 OCR text, or null when
+  /// page-1 OCR is absent or unusable.
+  Future<String?> suggestTitleFor(int documentId);
 }
 
 class DocumentSaveException implements Exception {

@@ -15,6 +15,7 @@ import '../export/image_compressor.dart';
 import '../dart_page_processor.dart';
 import '../enhancer_mode.dart';
 import '../ensure_jpeg.dart';
+import '../folder.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
@@ -25,7 +26,8 @@ import '../ocr/ocr_result.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import '../pdf/pdf_encryptor.dart';
-import 'app_database.dart' hide Document;
+import '../tag.dart';
+import 'app_database.dart' hide Document, Folder, Tag;
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
 /// inserts the rows inside a single transaction so the DB never holds a partial
@@ -1213,6 +1215,46 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentSaveException('markAsIdCard: document not found');
     }
   }
+
+  // TODO(T6/T7): implement — stubs only, to keep this class compiling against
+  // the enlarged DocumentRepository interface until folders/tags land.
+  @override
+  Future<List<Folder>> listFolders() => throw UnimplementedError('T6/T7');
+
+  @override
+  Future<Folder> createFolder(String name) => throw UnimplementedError('T6/T7');
+
+  @override
+  Future<Folder> renameFolder(int folderId, String newName) =>
+      throw UnimplementedError('T6/T7');
+
+  @override
+  Future<void> deleteFolder(int folderId) => throw UnimplementedError('T6/T7');
+
+  @override
+  Future<void> moveToFolder(int documentId, int? folderId) =>
+      throw UnimplementedError('T6/T7');
+
+  @override
+  Future<List<Tag>> listTags() => throw UnimplementedError('T6/T7');
+
+  @override
+  Future<Tag> createTag(String name) => throw UnimplementedError('T6/T7');
+
+  @override
+  Future<void> deleteTag(int tagId) => throw UnimplementedError('T6/T7');
+
+  @override
+  Future<List<Tag>> tagsForDocument(int documentId) =>
+      throw UnimplementedError('T6/T7');
+
+  @override
+  Future<void> setDocumentTags(int documentId, Set<int> tagIds) =>
+      throw UnimplementedError('T6/T7');
+
+  @override
+  Future<String?> suggestTitleFor(int documentId) =>
+      throw UnimplementedError('T6/T7');
 }
 
 /// Arguments for [rotateAndBakeJpeg] — must be a top-level type so it can cross
