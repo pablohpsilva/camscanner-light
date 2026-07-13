@@ -35,6 +35,28 @@ If any of these cannot be satisfied, STOP and say so explicitly, naming the gap
 and the platform — do not quietly downgrade the definition of done. This applies
 to every feature, bugfix, and refactor, however small.
 
+## NON-NEGOTIABLE: plans decompose into small, independent, subagent-run tasks
+
+**Every design or plan for any task MUST be broken into small, self-contained
+tasks that have no dependencies on each other, so they can be handed to
+subagents and executed in parallel.** Maximizing subagent usage is an explicit
+goal of this project — always fan work out to as many subagents as the work
+allows.
+
+- **Decompose, don't monolith.** When you produce a design or a plan, express it
+  as a set of small tasks, each doing one thing. Prefer more small tasks over
+  fewer large ones.
+- **Make tasks independent.** Design the decomposition so tasks don't share
+  state or block one another. Where a true dependency exists, isolate it into
+  its own small task and keep everything else parallelizable.
+- **Dispatch to subagents.** Run independent tasks concurrently via subagents
+  (see the `superpowers:dispatching-parallel-agents` and
+  `superpowers:subagent-driven-development` skills). Default to parallel
+  subagents; only fall back to sequential work when a hard dependency forces it.
+- **Still bound by the rules above.** Parallelism never waives the TDD + BDD,
+  both-platforms, and verify-then-claim requirements — each subagent's output
+  must meet the same definition of done.
+
 ## Commands
 
 All from `apps/mobile/` unless noted.
