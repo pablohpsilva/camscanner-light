@@ -641,6 +641,7 @@ class FakeOcrEngine implements OcrEngine {
 LibraryDependencies persistentLibraryDependencies({
   required File dbFile,
   required Directory baseDir,
+  FeatureFlags features = const FeatureFlags(),
 }) {
   final share = FakeShareChannel();
   lastBddShareChannel = share;
@@ -655,5 +656,6 @@ LibraryDependencies persistentLibraryDependencies({
     ),
     printer: FakeDocumentPrinter(),
     share: share,
+    features: features,
   );
 }
