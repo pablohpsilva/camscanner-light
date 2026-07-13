@@ -234,10 +234,10 @@ void main() {
   // v5 → v6 : Documents.isIdCard column
   // ---------------------------------------------------------------------------
 
-  test('schemaVersion is 7', () {
+  test('schemaVersion is 8', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 7);
+    expect(db.schemaVersion, 8);
   });
 
   test('fresh DB has the isIdCard column defaulting to false', () async {
@@ -361,6 +361,78 @@ void main() {
         db.pages,
       )..where((t) => t.id.equals(1))).getSingle();
       expect(updated.rotationQuarterTurns, 3);
+
+      await db.close();
+      await dir.delete(recursive: true);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // v7 → v8 : Pages.enhancerMode column
+  // ---------------------------------------------------------------------------
+
+  test(
+    'v7→v8: upgrading an EDITED page adds enhancer_mode defaulting to 0',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('enhmig_v7v8');
+      final file = File('${dir.path}/app.db');
+
+      // 1) Build a v7-shaped DB (v6 tables + rotation_quarter_turns, no
+      //    enhancer_mode) holding an EDITED page (cropped + rotated).
+      final raw = sqlite.sqlite3.open(file.path);
+      raw.execute('''
+        CREATE TABLE documents (
+          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          modified_at TEXT NOT NULL,
+          is_id_card INTEGER NOT NULL DEFAULT 0
+        );
+      ''');
+      raw.execute('''
+        CREATE TABLE pages (
+          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          document_id INTEGER NOT NULL REFERENCES documents (id) ON DELETE CASCADE,
+          position INTEGER NOT NULL,
+          relative_image_path TEXT NOT NULL,
+          corners TEXT,
+          flat_relative_path TEXT,
+          rotation_quarter_turns INTEGER NOT NULL DEFAULT 0,
+          ocr_text TEXT,
+          ocr_boxes TEXT
+        );
+      ''');
+      raw.execute(
+        "INSERT INTO documents (id, name, created_at, modified_at, is_id_card) "
+        "VALUES (1, 'Old Doc', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 0);",
+      );
+      raw.execute(
+        "INSERT INTO pages (id, document_id, position, relative_image_path, corners, flat_relative_path, rotation_quarter_turns) "
+        "VALUES (1, 1, 1, 'documents/1/page_1.jpg', "
+        "'0.100000,0.100000,0.900000,0.100000,0.900000,0.900000,0.100000,0.900000', "
+        "'documents/1/page_1_flat.jpg', 1);",
+      );
+      raw.execute('PRAGMA user_version = 7;');
+      raw.close();
+
+      // 2) Open at v8 → triggers onUpgrade (from=7, adds enhancer_mode).
+      final db = AppDatabase(NativeDatabase(file));
+
+      // 3a) Legacy edited row still loads; new column defaults to 0 (none).
+      final rows = await db.select(db.pages).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.enhancerMode, 0);
+      expect(rows.single.rotationQuarterTurns, 1); // rotation preserved
+      expect(rows.single.corners != null, isTrue); // crop preserved
+
+      // 3b) A fresh enhancerMode write round-trips.
+      await (db.update(db.pages)..where((t) => t.id.equals(1))).write(
+        const PagesCompanion(enhancerMode: Value(2)), // auto
+      );
+      final updated = await (db.select(
+        db.pages,
+      )..where((t) => t.id.equals(1))).getSingle();
+      expect(updated.enhancerMode, 2);
 
       await db.close();
       await dir.delete(recursive: true);

@@ -43,6 +43,12 @@ class Pages extends Table {
   IntColumn get rotationQuarterTurns =>
       integer().withDefault(const Constant(0))();
 
+  /// Enhancement filter (EnhancerMode index: none=0, grayscale=1, auto=2,
+  /// color=3) applied to the DISPLAY image. Metadata re-applied during flat
+  /// regeneration — never baked destructively into the base. See _writeFlat.
+  IntColumn get enhancerMode =>
+      integer().withDefault(const Constant(0))();
+
   /// Recognized OCR text for this page (O1); null until OCR has run.
   TextColumn get ocrText => text().nullable()();
 
@@ -55,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -78,6 +84,7 @@ class AppDatabase extends _$AppDatabase {
       if (from < 7) {
         await m.addColumn(pages, pages.rotationQuarterTurns);
       }
+      if (from < 8) await m.addColumn(pages, pages.enhancerMode);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

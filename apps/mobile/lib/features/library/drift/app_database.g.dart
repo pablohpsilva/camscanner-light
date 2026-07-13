@@ -447,6 +447,18 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _enhancerModeMeta = const VerificationMeta(
+    'enhancerMode',
+  );
+  @override
+  late final GeneratedColumn<int> enhancerMode = GeneratedColumn<int>(
+    'enhancer_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _ocrTextMeta = const VerificationMeta(
     'ocrText',
   );
@@ -478,6 +490,7 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
     corners,
     flatRelativePath,
     rotationQuarterTurns,
+    enhancerMode,
     ocrText,
     ocrBoxes,
   ];
@@ -547,6 +560,15 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         ),
       );
     }
+    if (data.containsKey('enhancer_mode')) {
+      context.handle(
+        _enhancerModeMeta,
+        enhancerMode.isAcceptableOrUnknown(
+          data['enhancer_mode']!,
+          _enhancerModeMeta,
+        ),
+      );
+    }
     if (data.containsKey('ocr_text')) {
       context.handle(
         _ocrTextMeta,
@@ -596,6 +618,10 @@ class $PagesTable extends Pages with TableInfo<$PagesTable, Page> {
         DriftSqlType.int,
         data['${effectivePrefix}rotation_quarter_turns'],
       )!,
+      enhancerMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}enhancer_mode'],
+      )!,
       ocrText: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}ocr_text'],
@@ -632,6 +658,11 @@ class Page extends DataClass implements Insertable<Page> {
   /// destructively into the base image. See DriftDocumentRepository._writeFlat.
   final int rotationQuarterTurns;
 
+  /// Enhancement filter (EnhancerMode index: none=0, grayscale=1, auto=2,
+  /// color=3) applied to the DISPLAY image. Metadata re-applied during flat
+  /// regeneration — never baked destructively into the base. See _writeFlat.
+  final int enhancerMode;
+
   /// Recognized OCR text for this page (O1); null until OCR has run.
   final String? ocrText;
 
@@ -645,6 +676,7 @@ class Page extends DataClass implements Insertable<Page> {
     this.corners,
     this.flatRelativePath,
     required this.rotationQuarterTurns,
+    required this.enhancerMode,
     this.ocrText,
     this.ocrBoxes,
   });
@@ -662,6 +694,7 @@ class Page extends DataClass implements Insertable<Page> {
       map['flat_relative_path'] = Variable<String>(flatRelativePath);
     }
     map['rotation_quarter_turns'] = Variable<int>(rotationQuarterTurns);
+    map['enhancer_mode'] = Variable<int>(enhancerMode);
     if (!nullToAbsent || ocrText != null) {
       map['ocr_text'] = Variable<String>(ocrText);
     }
@@ -684,6 +717,7 @@ class Page extends DataClass implements Insertable<Page> {
           ? const Value.absent()
           : Value(flatRelativePath),
       rotationQuarterTurns: Value(rotationQuarterTurns),
+      enhancerMode: Value(enhancerMode),
       ocrText: ocrText == null && nullToAbsent
           ? const Value.absent()
           : Value(ocrText),
@@ -708,6 +742,7 @@ class Page extends DataClass implements Insertable<Page> {
       rotationQuarterTurns: serializer.fromJson<int>(
         json['rotationQuarterTurns'],
       ),
+      enhancerMode: serializer.fromJson<int>(json['enhancerMode']),
       ocrText: serializer.fromJson<String?>(json['ocrText']),
       ocrBoxes: serializer.fromJson<String?>(json['ocrBoxes']),
     );
@@ -723,6 +758,7 @@ class Page extends DataClass implements Insertable<Page> {
       'corners': serializer.toJson<String?>(corners),
       'flatRelativePath': serializer.toJson<String?>(flatRelativePath),
       'rotationQuarterTurns': serializer.toJson<int>(rotationQuarterTurns),
+      'enhancerMode': serializer.toJson<int>(enhancerMode),
       'ocrText': serializer.toJson<String?>(ocrText),
       'ocrBoxes': serializer.toJson<String?>(ocrBoxes),
     };
@@ -736,6 +772,7 @@ class Page extends DataClass implements Insertable<Page> {
     Value<String?> corners = const Value.absent(),
     Value<String?> flatRelativePath = const Value.absent(),
     int? rotationQuarterTurns,
+    int? enhancerMode,
     Value<String?> ocrText = const Value.absent(),
     Value<String?> ocrBoxes = const Value.absent(),
   }) => Page(
@@ -748,6 +785,7 @@ class Page extends DataClass implements Insertable<Page> {
         ? flatRelativePath.value
         : this.flatRelativePath,
     rotationQuarterTurns: rotationQuarterTurns ?? this.rotationQuarterTurns,
+    enhancerMode: enhancerMode ?? this.enhancerMode,
     ocrText: ocrText.present ? ocrText.value : this.ocrText,
     ocrBoxes: ocrBoxes.present ? ocrBoxes.value : this.ocrBoxes,
   );
@@ -768,6 +806,9 @@ class Page extends DataClass implements Insertable<Page> {
       rotationQuarterTurns: data.rotationQuarterTurns.present
           ? data.rotationQuarterTurns.value
           : this.rotationQuarterTurns,
+      enhancerMode: data.enhancerMode.present
+          ? data.enhancerMode.value
+          : this.enhancerMode,
       ocrText: data.ocrText.present ? data.ocrText.value : this.ocrText,
       ocrBoxes: data.ocrBoxes.present ? data.ocrBoxes.value : this.ocrBoxes,
     );
@@ -783,6 +824,7 @@ class Page extends DataClass implements Insertable<Page> {
           ..write('corners: $corners, ')
           ..write('flatRelativePath: $flatRelativePath, ')
           ..write('rotationQuarterTurns: $rotationQuarterTurns, ')
+          ..write('enhancerMode: $enhancerMode, ')
           ..write('ocrText: $ocrText, ')
           ..write('ocrBoxes: $ocrBoxes')
           ..write(')'))
@@ -798,6 +840,7 @@ class Page extends DataClass implements Insertable<Page> {
     corners,
     flatRelativePath,
     rotationQuarterTurns,
+    enhancerMode,
     ocrText,
     ocrBoxes,
   );
@@ -812,6 +855,7 @@ class Page extends DataClass implements Insertable<Page> {
           other.corners == this.corners &&
           other.flatRelativePath == this.flatRelativePath &&
           other.rotationQuarterTurns == this.rotationQuarterTurns &&
+          other.enhancerMode == this.enhancerMode &&
           other.ocrText == this.ocrText &&
           other.ocrBoxes == this.ocrBoxes);
 }
@@ -824,6 +868,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
   final Value<String?> corners;
   final Value<String?> flatRelativePath;
   final Value<int> rotationQuarterTurns;
+  final Value<int> enhancerMode;
   final Value<String?> ocrText;
   final Value<String?> ocrBoxes;
   const PagesCompanion({
@@ -834,6 +879,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     this.corners = const Value.absent(),
     this.flatRelativePath = const Value.absent(),
     this.rotationQuarterTurns = const Value.absent(),
+    this.enhancerMode = const Value.absent(),
     this.ocrText = const Value.absent(),
     this.ocrBoxes = const Value.absent(),
   });
@@ -845,6 +891,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     this.corners = const Value.absent(),
     this.flatRelativePath = const Value.absent(),
     this.rotationQuarterTurns = const Value.absent(),
+    this.enhancerMode = const Value.absent(),
     this.ocrText = const Value.absent(),
     this.ocrBoxes = const Value.absent(),
   }) : documentId = Value(documentId),
@@ -858,6 +905,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Expression<String>? corners,
     Expression<String>? flatRelativePath,
     Expression<int>? rotationQuarterTurns,
+    Expression<int>? enhancerMode,
     Expression<String>? ocrText,
     Expression<String>? ocrBoxes,
   }) {
@@ -870,6 +918,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
       if (flatRelativePath != null) 'flat_relative_path': flatRelativePath,
       if (rotationQuarterTurns != null)
         'rotation_quarter_turns': rotationQuarterTurns,
+      if (enhancerMode != null) 'enhancer_mode': enhancerMode,
       if (ocrText != null) 'ocr_text': ocrText,
       if (ocrBoxes != null) 'ocr_boxes': ocrBoxes,
     });
@@ -883,6 +932,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
     Value<String?>? corners,
     Value<String?>? flatRelativePath,
     Value<int>? rotationQuarterTurns,
+    Value<int>? enhancerMode,
     Value<String?>? ocrText,
     Value<String?>? ocrBoxes,
   }) {
@@ -894,6 +944,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
       corners: corners ?? this.corners,
       flatRelativePath: flatRelativePath ?? this.flatRelativePath,
       rotationQuarterTurns: rotationQuarterTurns ?? this.rotationQuarterTurns,
+      enhancerMode: enhancerMode ?? this.enhancerMode,
       ocrText: ocrText ?? this.ocrText,
       ocrBoxes: ocrBoxes ?? this.ocrBoxes,
     );
@@ -923,6 +974,9 @@ class PagesCompanion extends UpdateCompanion<Page> {
     if (rotationQuarterTurns.present) {
       map['rotation_quarter_turns'] = Variable<int>(rotationQuarterTurns.value);
     }
+    if (enhancerMode.present) {
+      map['enhancer_mode'] = Variable<int>(enhancerMode.value);
+    }
     if (ocrText.present) {
       map['ocr_text'] = Variable<String>(ocrText.value);
     }
@@ -942,6 +996,7 @@ class PagesCompanion extends UpdateCompanion<Page> {
           ..write('corners: $corners, ')
           ..write('flatRelativePath: $flatRelativePath, ')
           ..write('rotationQuarterTurns: $rotationQuarterTurns, ')
+          ..write('enhancerMode: $enhancerMode, ')
           ..write('ocrText: $ocrText, ')
           ..write('ocrBoxes: $ocrBoxes')
           ..write(')'))
@@ -1273,6 +1328,7 @@ typedef $$PagesTableCreateCompanionBuilder =
       Value<String?> corners,
       Value<String?> flatRelativePath,
       Value<int> rotationQuarterTurns,
+      Value<int> enhancerMode,
       Value<String?> ocrText,
       Value<String?> ocrBoxes,
     });
@@ -1285,6 +1341,7 @@ typedef $$PagesTableUpdateCompanionBuilder =
       Value<String?> corners,
       Value<String?> flatRelativePath,
       Value<int> rotationQuarterTurns,
+      Value<int> enhancerMode,
       Value<String?> ocrText,
       Value<String?> ocrBoxes,
     });
@@ -1346,6 +1403,11 @@ class $$PagesTableFilterComposer extends Composer<_$AppDatabase, $PagesTable> {
 
   ColumnFilters<int> get rotationQuarterTurns => $composableBuilder(
     column: $table.rotationQuarterTurns,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get enhancerMode => $composableBuilder(
+    column: $table.enhancerMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1422,6 +1484,11 @@ class $$PagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get enhancerMode => $composableBuilder(
+    column: $table.enhancerMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get ocrText => $composableBuilder(
     column: $table.ocrText,
     builder: (column) => ColumnOrderings(column),
@@ -1486,6 +1553,11 @@ class $$PagesTableAnnotationComposer
 
   GeneratedColumn<int> get rotationQuarterTurns => $composableBuilder(
     column: $table.rotationQuarterTurns,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get enhancerMode => $composableBuilder(
+    column: $table.enhancerMode,
     builder: (column) => column,
   );
 
@@ -1554,6 +1626,7 @@ class $$PagesTableTableManager
                 Value<String?> corners = const Value.absent(),
                 Value<String?> flatRelativePath = const Value.absent(),
                 Value<int> rotationQuarterTurns = const Value.absent(),
+                Value<int> enhancerMode = const Value.absent(),
                 Value<String?> ocrText = const Value.absent(),
                 Value<String?> ocrBoxes = const Value.absent(),
               }) => PagesCompanion(
@@ -1564,6 +1637,7 @@ class $$PagesTableTableManager
                 corners: corners,
                 flatRelativePath: flatRelativePath,
                 rotationQuarterTurns: rotationQuarterTurns,
+                enhancerMode: enhancerMode,
                 ocrText: ocrText,
                 ocrBoxes: ocrBoxes,
               ),
@@ -1576,6 +1650,7 @@ class $$PagesTableTableManager
                 Value<String?> corners = const Value.absent(),
                 Value<String?> flatRelativePath = const Value.absent(),
                 Value<int> rotationQuarterTurns = const Value.absent(),
+                Value<int> enhancerMode = const Value.absent(),
                 Value<String?> ocrText = const Value.absent(),
                 Value<String?> ocrBoxes = const Value.absent(),
               }) => PagesCompanion.insert(
@@ -1586,6 +1661,7 @@ class $$PagesTableTableManager
                 corners: corners,
                 flatRelativePath: flatRelativePath,
                 rotationQuarterTurns: rotationQuarterTurns,
+                enhancerMode: enhancerMode,
                 ocrText: ocrText,
                 ocrBoxes: ocrBoxes,
               ),
