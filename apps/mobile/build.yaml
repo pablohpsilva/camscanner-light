@@ -20,3 +20,8 @@ targets:
           # the feature file lives under integration_test/.
         generate_for:
           - integration_test/**
+          # Host-level BDD: .feature files under test/bdd/ generate plain widget
+          # tests (no IntegrationTestWidgetsFlutterBinding) that run under
+          # `flutter test` and therefore count toward host coverage. Steps are
+          # still shared from test/step/.
+          - test/bdd/**
