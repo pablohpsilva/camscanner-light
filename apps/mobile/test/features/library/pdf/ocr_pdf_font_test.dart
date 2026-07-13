@@ -16,8 +16,9 @@ Future<List<String>> _capturePrints(Future<void> Function() body) async {
   final logs = <String>[];
   await runZoned(
     body,
-    zoneSpecification:
-        ZoneSpecification(print: (s, p, z, line) => logs.add(line)),
+    zoneSpecification: ZoneSpecification(
+      print: (s, p, z, line) => logs.add(line),
+    ),
   );
   return logs;
 }
@@ -53,19 +54,27 @@ void main() {
   test('OCR overlay with a Unicode font draws NO missing-glyph box', () async {
     final fontData = await File('fonts/IBMPlexMono-Regular.ttf').readAsBytes();
     final ttf = pw.Font.ttf(fontData.buffer.asByteData());
-    final overlay = const OcrPdfTextLayer()
-        .overlayFor(_pageWithWords(problemWords), 600, 800, font: ttf);
+    final overlay = const OcrPdfTextLayer().overlayFor(
+      _pageWithWords(problemWords),
+      600,
+      800,
+      font: ttf,
+    );
     expect(
       await _missingGlyphWarnings(overlay),
       0,
-      reason: 'a Unicode font resolves em-dash/curly-quotes/ellipsis, so '
+      reason:
+          'a Unicode font resolves em-dash/curly-quotes/ellipsis, so '
           'dart_pdf never strokes a visible .notdef box-with-X',
     );
   });
 
   test('regression: without a Unicode font those glyphs are missing', () async {
-    final overlay = const OcrPdfTextLayer()
-        .overlayFor(_pageWithWords(problemWords), 600, 800);
+    final overlay = const OcrPdfTextLayer().overlayFor(
+      _pageWithWords(problemWords),
+      600,
+      800,
+    );
     expect(
       await _missingGlyphWarnings(overlay),
       greaterThan(0),
@@ -73,31 +82,37 @@ void main() {
     );
   });
 
-  test('PdfBuilder threads the OCR font end-to-end (no missing-glyph box)',
-      () async {
-    final tmp = Directory.systemTemp.createTempSync();
-    final jpegPath = '${tmp.path}/page.jpg';
-    File(jpegPath)
-        .writeAsBytesSync(img.encodeJpg(img.Image(width: 100, height: 200)));
-    final page =
-        PageImage(position: 1, imagePath: jpegPath, ocrWords: problemWords);
+  test(
+    'PdfBuilder threads the OCR font end-to-end (no missing-glyph box)',
+    () async {
+      final tmp = Directory.systemTemp.createTempSync();
+      final jpegPath = '${tmp.path}/page.jpg';
+      File(
+        jpegPath,
+      ).writeAsBytesSync(img.encodeJpg(img.Image(width: 100, height: 200)));
+      final page = PageImage(
+        position: 1,
+        imagePath: jpegPath,
+        ocrWords: problemWords,
+      );
 
-    Future<pw.Font?> loader() async {
-      final data = await File('fonts/IBMPlexMono-Regular.ttf').readAsBytes();
-      return pw.Font.ttf(data.buffer.asByteData());
-    }
+      Future<pw.Font?> loader() async {
+        final data = await File('fonts/IBMPlexMono-Regular.ttf').readAsBytes();
+        return pw.Font.ttf(data.buffer.asByteData());
+      }
 
-    final builder = PdfBuilder(
-      textLayer: const OcrPdfTextLayer(),
-      ocrFontLoader: loader,
-    );
-    final logs = await _capturePrints(() async {
-      await builder.build([page], compress: false);
-    });
-    expect(
-      logs.where((l) => l.contains('Unable to find a font')).length,
-      0,
-      reason: 'PdfBuilder must pass the loaded font down to overlayFor',
-    );
-  });
+      final builder = PdfBuilder(
+        textLayer: const OcrPdfTextLayer(),
+        ocrFontLoader: loader,
+      );
+      final logs = await _capturePrints(() async {
+        await builder.build([page], compress: false);
+      });
+      expect(
+        logs.where((l) => l.contains('Unable to find a font')).length,
+        0,
+        reason: 'PdfBuilder must pass the loaded font down to overlayFor',
+      );
+    },
+  );
 }
