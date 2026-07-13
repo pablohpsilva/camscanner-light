@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:image/image.dart' as img;
 
 import '../../scan/captured_image.dart';
@@ -634,39 +635,45 @@ class DriftDocumentRepository implements DocumentRepository {
     final baseBytes = await _fileStore
         .absoluteFor(relativeImagePath)
         .readAsBytes();
-    img.Image? decoded;
-    try {
-      decoded = img.decodeImage(baseBytes);
-    } catch (_) {
-      decoded = null;
-    }
-    if (decoded == null) {
-      throw const DocumentSaveException('regenerate: undecodable base image');
-    }
-    // Work in the EXIF-applied (upright) frame — the same frame the crop editor
-    // shows and stores corners in. `img.decodeImage` already auto-orients in
-    // image 4.x, so this is a no-op at runtime, but we bake explicitly to match
-    // every other pixel path in the app (perspective_warper, coons_warper,
-    // warp_enhancer) and to stay correct if the decode path ever changes.
-    final upright = img.bakeOrientation(decoded);
-    final rotated = quarterTurns == 0
-        ? upright
-        : img.copyRotate(upright, angle: 90 * quarterTurns);
     final isFullFrame = corners == CropCorners.fullFrame;
+
+    // Fast path: the display equals the pristine base — no image work at all.
+    if (quarterTurns == 0 && isFullFrame) {
+      if (existingFlatRel != null) {
+        try {
+          await _fileStore.absoluteFor(existingFlatRel).delete();
+        } on FileSystemException {
+          /* already gone — fine */
+        }
+      }
+      return null;
+    }
+
+    // Rotation requires a full-res decode+rotate+re-encode; run it OFF the UI
+    // isolate (`compute`) or it freezes the app for seconds on a real photo.
+    // For quarterTurns == 0 there is nothing to rotate — the warper consumes
+    // the base bytes directly (it bakes EXIF orientation itself), so we skip
+    // the isolate entirely.
+    Uint8List? rotatedBytes;
+    if (quarterTurns != 0) {
+      rotatedBytes = await compute(
+        rotateAndBakeJpeg,
+        RotateJpegArgs(baseBytes, quarterTurns),
+      );
+      if (rotatedBytes == null) {
+        throw const DocumentSaveException('regenerate: undecodable base image');
+      }
+    }
 
     Uint8List? flatBytes;
     if (isFullFrame) {
-      flatBytes = quarterTurns == 0
-          ? null // display == base
-          : Uint8List.fromList(img.encodeJpg(rotated, quality: 95));
+      flatBytes = rotatedBytes; // quarterTurns != 0 here (== 0 handled above)
     } else {
-      final rotatedBytes = Uint8List.fromList(
-        img.encodeJpg(rotated, quality: 95),
-      );
-      final warped = await _warper.warp(rotatedBytes, corners);
+      final warpInput = rotatedBytes ?? baseBytes;
+      final warped = await _warper.warp(warpInput, corners);
       // A null warp means "crop not applied" — fall back to the rotated-only
       // image (or the base when there is no rotation either).
-      flatBytes = warped ?? (quarterTurns == 0 ? null : rotatedBytes);
+      flatBytes = warped ?? rotatedBytes;
     }
 
     if (flatBytes == null) {
@@ -1223,4 +1230,30 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentSaveException('markAsIdCard: document not found');
     }
   }
+}
+
+/// Arguments for [rotateAndBakeJpeg] — must be a top-level type so it can cross
+/// the isolate boundary used by `compute`.
+class RotateJpegArgs {
+  final Uint8List bytes;
+  final int quarterTurns;
+  const RotateJpegArgs(this.bytes, this.quarterTurns);
+}
+
+/// Isolate entrypoint (top-level, for `compute`): decode [args.bytes], bake EXIF
+/// orientation into the pixels (see _writeFlat's note — matches every other
+/// pixel path), rotate 90°*quarterTurns clockwise, and re-encode as JPEG.
+/// Returns null if the bytes can't be decoded. Full-res decode/rotate/encode is
+/// CPU-heavy, so this runs off the UI isolate to keep edits from freezing it.
+Uint8List? rotateAndBakeJpeg(RotateJpegArgs args) {
+  img.Image? decoded;
+  try {
+    decoded = img.decodeImage(args.bytes);
+  } catch (_) {
+    decoded = null;
+  }
+  if (decoded == null) return null;
+  final upright = img.bakeOrientation(decoded);
+  final rotated = img.copyRotate(upright, angle: 90 * args.quarterTurns);
+  return Uint8List.fromList(img.encodeJpg(rotated, quality: 95));
 }

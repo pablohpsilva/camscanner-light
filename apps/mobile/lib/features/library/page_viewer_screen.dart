@@ -62,6 +62,11 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   bool _loading = true;
   bool _error = false;
   bool _exporting = false;
+  // True while a mutating edit (rotate/crop/retake) is running. Edits are
+  // single-flight: the toolbar is disabled and re-entry is refused so
+  // overlapping full-res regenerations can't race (which made the image
+  // appear to "revert" — 4x90 = 360).
+  bool _editing = false;
   int _current = 0;
   late String _name;
 
@@ -351,7 +356,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
 
   Future<void> _retakePage() async {
     final pages = _pages;
-    if (pages == null || pages.isEmpty) return;
+    if (pages == null || pages.isEmpty || _editing) return;
     final page = pages[_current];
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -404,22 +409,43 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     }
   }
 
-  Future<void> _rotatePage() async {
-    final pages = _pages;
-    if (pages == null || pages.isEmpty) return;
-    final page = pages[_current];
+  /// Runs a single mutating edit with single-flight protection: refuses
+  /// re-entry while another edit is running, flips [_editing] (which disables
+  /// the toolbar + shows a busy overlay), reloads on success, and surfaces
+  /// [failMessage] on failure. Callers do their own navigation (e.g. opening
+  /// the crop editor) BEFORE calling this with the resolved edit closure.
+  Future<void> _runEdit(
+    Future<void> Function() edit,
+    String failMessage,
+  ) async {
+    if (_editing) return; // single-flight
+    setState(() => _editing = true);
     try {
-      await widget.repository.rotatePage(widget.documentId, page.position);
+      await edit();
+      if (!mounted) return;
       await _reloadAfterEdit();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't rotate")));
+      ).showSnackBar(SnackBar(content: Text(failMessage)));
+    } finally {
+      if (mounted) setState(() => _editing = false);
     }
   }
 
+  Future<void> _rotatePage() async {
+    final pages = _pages;
+    if (pages == null || pages.isEmpty || _editing) return;
+    final page = pages[_current];
+    await _runEdit(
+      () => widget.repository.rotatePage(widget.documentId, page.position),
+      "Couldn't rotate",
+    );
+  }
+
   Future<void> _editCrop(PageImage pg) async {
+    if (_editing) return;
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
         builder: (_) => EditCropScreen(
@@ -430,20 +456,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ),
     );
     if (corners == null || !mounted) return;
-    try {
-      await widget.repository.updatePageCorners(
+    await _runEdit(
+      () => widget.repository.updatePageCorners(
         widget.documentId,
         pg.position,
         corners,
-      );
-      if (!mounted) return;
-      await _reloadAfterEdit();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't update crop")));
-    }
+      ),
+      "Couldn't update crop",
+    );
   }
 
   Future<void> _splitAfter() async {
@@ -496,7 +516,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   /// be disabled: while loading, in the error state, mid-export, or with no
   /// pages. Mirrors the guard the old AppBar controls used.
   bool get _actionsDisabled =>
-      _loading || _error || _exporting || (_pages?.isEmpty ?? true);
+      _loading || _error || _exporting || _editing || (_pages?.isEmpty ?? true);
 
   /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document.
   Widget _buildOverflowMenu() {
@@ -624,16 +644,32 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             onBack: () => Navigator.of(context).pop(),
             trailing: _buildOverflowMenu(),
           ),
-          body: _loading
-              ? const Center(
-                  key: Key('page-viewer-loading'),
-                  child: CircularProgressIndicator(),
-                )
-              : _error
-              ? _buildError()
-              : !hasPages
-              ? _buildEmpty()
-              : _buildPages(pages),
+          body: Stack(
+            children: [
+              _loading
+                  ? const Center(
+                      key: Key('page-viewer-loading'),
+                      child: CircularProgressIndicator(),
+                    )
+                  : _error
+                  ? _buildError()
+                  : !hasPages
+                  ? _buildEmpty()
+                  : _buildPages(pages),
+              // Busy overlay while a mutating edit runs — blocks input and
+              // signals progress so the user isn't left tapping a frozen UI.
+              if (_editing)
+                const Positioned.fill(
+                  child: ColoredBox(
+                    color: Color(0x99000000),
+                    child: Center(
+                      key: Key('page-viewer-editing'),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           bottomNavigationBar: EditorToolbar(
             onCrop: _actionsDisabled
                 ? null

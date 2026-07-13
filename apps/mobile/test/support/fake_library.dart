@@ -445,6 +445,9 @@ class FakeDocumentRepository implements DocumentRepository {
     }
     rotateCalls++;
     lastRotatedPosition = position;
+    // Optional gate lets a test hold the edit "in flight" to exercise the
+    // page viewer's concurrency guard (no overlapping edits).
+    if (gate != null) await gate!.future;
   }
 
   @override
