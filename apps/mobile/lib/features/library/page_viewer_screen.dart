@@ -612,48 +612,55 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            ListTile(
-              key: const Key('page-viewer-export'),
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text('Export PDF'),
-              onTap: () => Navigator.of(ctx).pop('export-pdf'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-export-image'),
-              leading: const Icon(Icons.image_outlined),
-              title: const Text('Share as image'),
-              onTap: () => Navigator.of(ctx).pop('export-image'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-export-all-images'),
-              leading: const Icon(Icons.collections_outlined),
-              title: const Text('Share all as images'),
-              onTap: () => Navigator.of(ctx).pop('export-all-images'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-print'),
-              leading: const Icon(Icons.print_outlined),
-              title: const Text('Print'),
-              onTap: () => Navigator.of(ctx).pop('print'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-protect'),
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Protect with password'),
-              onTap: () => Navigator.of(ctx).pop('protect'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-share-link'),
-              leading: const Icon(Icons.link),
-              title: const Text('Share link'),
-              onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
-            ),
-            ListTile(
-              key: const Key('page-viewer-fax'),
-              leading: const Icon(Icons.print),
-              title: const Text('Fax'),
-              onTap: () => Navigator.of(ctx).pop(kFaxValue),
-            ),
+            if (widget.features.exportPdf)
+              ListTile(
+                key: const Key('page-viewer-export'),
+                leading: const Icon(Icons.picture_as_pdf),
+                title: const Text('Export PDF'),
+                onTap: () => Navigator.of(ctx).pop('export-pdf'),
+              ),
+            if (widget.features.shareImage)
+              ListTile(
+                key: const Key('page-viewer-export-image'),
+                leading: const Icon(Icons.image_outlined),
+                title: const Text('Share as image'),
+                onTap: () => Navigator.of(ctx).pop('export-image'),
+              ),
+            if (widget.features.exportAllImages)
+              ListTile(
+                key: const Key('page-viewer-export-all-images'),
+                leading: const Icon(Icons.collections_outlined),
+                title: const Text('Share all as images'),
+                onTap: () => Navigator.of(ctx).pop('export-all-images'),
+              ),
+            if (widget.features.print)
+              ListTile(
+                key: const Key('page-viewer-print'),
+                leading: const Icon(Icons.print_outlined),
+                title: const Text('Print'),
+                onTap: () => Navigator.of(ctx).pop('print'),
+              ),
+            if (widget.features.protectWithPassword)
+              ListTile(
+                key: const Key('page-viewer-protect'),
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('Protect with password'),
+                onTap: () => Navigator.of(ctx).pop('protect'),
+              ),
+            if (widget.features.shareLink)
+              ListTile(
+                key: const Key('page-viewer-share-link'),
+                leading: const Icon(Icons.link),
+                title: const Text('Share link'),
+                onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
+              ),
+            if (widget.features.fax)
+              ListTile(
+                key: const Key('page-viewer-fax'),
+                leading: const Icon(Icons.print),
+                title: const Text('Fax'),
+                onTap: () => Navigator.of(ctx).pop(kFaxValue),
+              ),
           ],
         ),
       ),
