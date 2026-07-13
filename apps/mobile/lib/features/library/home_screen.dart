@@ -246,6 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
           dependencies: widget.dependencies,
           printer: widget.libraryDependencies.printer,
           share: widget.libraryDependencies.share,
+          features: widget.libraryDependencies.features,
         ),
       ),
     );
@@ -541,42 +542,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionRow(BuildContext context) {
+    final f = widget.libraryDependencies.features;
+    final buttons = <Widget>[
+      if (f.scan)
+        Expanded(
+          flex: 3,
+          child: ReamActionButton(
+            key: const Key('home-scan'),
+            label: 'Scan',
+            icon: Icons.add,
+            primary: true,
+            onPressed: _repository == null ? null : _openScan,
+          ),
+        ),
+      if (f.idCard)
+        Expanded(
+          flex: 2,
+          child: ReamActionButton(
+            key: const Key('home-scan-id'),
+            label: 'ID card',
+            icon: Icons.badge_outlined,
+            onPressed: _repository == null ? null : _openIdScan,
+          ),
+        ),
+      if (f.import)
+        Expanded(
+          flex: 2,
+          child: ReamActionButton(
+            key: const Key('home-import'),
+            label: 'Import',
+            icon: Icons.download_outlined,
+            onPressed: _repository == null ? null : _onImport,
+          ),
+        ),
+    ];
+    final spaced = <Widget>[];
+    for (var i = 0; i < buttons.length; i++) {
+      if (i > 0) spaced.add(const SizedBox(width: 8));
+      spaced.add(buttons[i]);
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: ReamActionButton(
-              key: const Key('home-scan'),
-              label: 'Scan',
-              icon: Icons.add,
-              primary: true,
-              onPressed: _repository == null ? null : _openScan,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: ReamActionButton(
-              key: const Key('home-scan-id'),
-              label: 'ID card',
-              icon: Icons.badge_outlined,
-              onPressed: _repository == null ? null : _openIdScan,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: ReamActionButton(
-              key: const Key('home-import'),
-              label: 'Import',
-              icon: Icons.download_outlined,
-              onPressed: _repository == null ? null : _onImport,
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: spaced),
     );
   }
 

@@ -12,6 +12,7 @@ import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/document_repository.dart';
+import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/file_archiver.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
@@ -583,8 +584,11 @@ class FakeImageWarper implements ImageWarper {
 }
 
 /// LibraryDependencies whose factory returns the given fake repository.
-LibraryDependencies fakeLibraryDependencies(FakeDocumentRepository repo) =>
-    LibraryDependencies(createRepository: () async => repo);
+LibraryDependencies fakeLibraryDependencies(
+  FakeDocumentRepository repo, {
+  FeatureFlags features = const FeatureFlags(),
+}) =>
+    LibraryDependencies(createRepository: () async => repo, features: features);
 
 /// Real DriftDocumentRepository on an in-memory DB + temp file store. Exercises
 /// the real save/scrub/list code paths deterministically with no persistent
