@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../document_summary.dart';
+import '../feature_flags.dart';
 import 'document_grid_card.dart';
 
 /// A 2-column grid of saved documents, mirroring the public API of
@@ -19,6 +20,7 @@ class DocumentsGridView extends StatelessWidget {
   final bool selectionMode;
   final ValueChanged<DocumentSummary>? onToggleSelect;
   final ValueChanged<DocumentSummary>? onLongPress;
+  final FeatureFlags features;
 
   const DocumentsGridView({
     super.key,
@@ -30,6 +32,7 @@ class DocumentsGridView extends StatelessWidget {
     this.selectionMode = false,
     this.onToggleSelect,
     this.onLongPress,
+    this.features = const FeatureFlags(),
   });
 
   @override
@@ -54,6 +57,7 @@ class DocumentsGridView extends StatelessWidget {
               ? (onToggleSelect == null ? null : () => onToggleSelect!(s))
               : (onOpen == null ? null : () => onOpen!(s)),
           onLongPress: onLongPress == null ? null : () => onLongPress!(s),
+          showTags: features.tags,
         );
       },
     );

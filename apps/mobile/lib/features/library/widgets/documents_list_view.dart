@@ -6,6 +6,7 @@ import '../document_summary.dart';
 import '../feature_flags.dart';
 import 'document_thumbnail.dart';
 import 'share_menu_button.dart';
+import 'tag_chips.dart';
 
 /// Rich list of saved documents: thumbnail, name, date, page count. Rendered in
 /// the order it is given — the caller (HomeScreen) applies the user's chosen
@@ -149,6 +150,10 @@ class DocumentsListView extends StatelessWidget {
                         '${_formatLocal(d.createdAt.toLocal())}',
                         style: ReamTypography.mono(size: 11.5, color: r.muted),
                       ),
+                      if (features.tags && s.tags.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        TagChips(tags: s.tags),
+                      ],
                     ],
                   ),
                 ),

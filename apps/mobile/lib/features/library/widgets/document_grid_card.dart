@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/document_thumbnail.dart';
+import 'package:mobile/features/library/widgets/tag_chips.dart';
 import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_typography.dart';
 
@@ -21,6 +22,7 @@ class DocumentGridCard extends StatelessWidget {
     this.onLongPress,
     this.selected = false,
     this.selectionMode = false,
+    this.showTags = true,
     super.key,
   });
 
@@ -29,6 +31,7 @@ class DocumentGridCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool selected;
   final bool selectionMode;
+  final bool showTags;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +110,10 @@ class DocumentGridCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (showTags && summary.tags.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      TagChips(tags: summary.tags),
+                    ],
                   ],
                 ),
               ),

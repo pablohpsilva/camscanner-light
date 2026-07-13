@@ -21,6 +21,7 @@ import 'library_dependencies.dart';
 import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
 import 'save_controller.dart';
+import 'tag.dart';
 import 'widgets/create_folder_dialog.dart';
 import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
@@ -28,6 +29,7 @@ import 'widgets/empty_documents_view.dart';
 import 'widgets/folder_filter_bar.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_pill.dart';
+import 'widgets/tag_filter_sheet.dart';
 import '../donation/donation_banner.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../settings/settings_screen.dart';
@@ -69,6 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
   LibraryViewMode _viewMode = LibraryViewMode.list;
   List<Folder> _folders = const [];
   FolderFilter _folderFilter = const FolderFilter.all();
+  List<Tag> _tags = const [];
+  Set<int> _activeTagIds = <int>{};
   late final ThemeController _themeController =
       widget.themeController ??
       ThemeController(store: InMemoryThemeModeStore());
@@ -131,10 +135,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final folders = await repo.listFolders().timeout(
         HomeScreen.coldStartStepTimeout,
       );
+      final tags = await repo.listTags().timeout(
+        HomeScreen.coldStartStepTimeout,
+      );
       if (!mounted) return;
       setState(() {
         _summaries = docs;
         _folders = folders;
+        _tags = tags;
         _loading = false;
         _startupFailure = null;
       });
@@ -370,7 +378,22 @@ class _HomeScreenState extends State<HomeScreen> {
   // filter. Selection export follows this order.
   List<DocumentSummary> get _displayed {
     final base = _searching ? _searchResults : sortDocuments(_summaries, _sort);
-    return base.where(_folderFilter.matches).toList();
+    return base.where(_folderFilter.matches).where(_matchesTagFilter).toList();
+  }
+
+  // AND semantics: a document must carry every id in _activeTagIds.
+  bool _matchesTagFilter(DocumentSummary s) =>
+      _activeTagIds.isEmpty ||
+      _activeTagIds.every((id) => s.tags.any((t) => t.id == id));
+
+  Future<void> _openTagFilter() async {
+    final result = await showTagFilterSheet(
+      context,
+      tags: _tags,
+      initial: _activeTagIds,
+    );
+    if (result == null || !mounted) return;
+    setState(() => _activeTagIds = result);
   }
 
   Future<void> _exportSelected() async {
@@ -460,9 +483,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 : _buildTitleRow(context),
             if (!_selectionMode) ...[
               const SizedBox(height: 14),
-              ReamSearchField(
-                controller: _searchController,
-                onChanged: _onQueryChanged,
+              Row(
+                children: [
+                  Expanded(
+                    child: ReamSearchField(
+                      controller: _searchController,
+                      onChanged: _onQueryChanged,
+                    ),
+                  ),
+                  if (widget.libraryDependencies.features.tags &&
+                      _tags.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      key: const Key('tag-filter'),
+                      tooltip: 'Filter by tag',
+                      icon: Icon(
+                        _activeTagIds.isEmpty
+                            ? Icons.label_outline
+                            : Icons.label,
+                        color: r.ink2,
+                      ),
+                      onPressed: _openTagFilter,
+                    ),
+                  ],
+                ],
               ),
             ],
             if (widget.libraryDependencies.features.folders &&
@@ -671,6 +715,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedIds: _selectedIds,
         onToggleSelect: _toggleSelect,
         onLongPress: _startSelection,
+        features: widget.libraryDependencies.features,
       );
     }
     return DocumentsListView(
