@@ -17,6 +17,14 @@ class Documents extends Table {
   /// True when this document is an ID card (front + back). Only its PDF export
   /// layout differs (single page, both images centered). Default false.
   BoolColumn get isIdCard => boolean().withDefault(const Constant(false))();
+
+  /// Owning folder (flat). Null = "Unfiled". SET NULL on folder delete so
+  /// deleting a folder never deletes its documents.
+  IntColumn get folderId => integer().nullable().references(
+    Folders,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 }
 
 /// One page of a document. B1 creates exactly one page (position 1). The image
@@ -46,8 +54,7 @@ class Pages extends Table {
   /// Enhancement filter (EnhancerMode index: none=0, grayscale=1, auto=2,
   /// color=3) applied to the DISPLAY image. Metadata re-applied during flat
   /// regeneration — never baked destructively into the base. See _writeFlat.
-  IntColumn get enhancerMode =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get enhancerMode => integer().withDefault(const Constant(0))();
 
   /// Recognized OCR text for this page (O1); null until OCR has run.
   TextColumn get ocrText => text().nullable()();
@@ -56,12 +63,38 @@ class Pages extends Table {
   TextColumn get ocrBoxes => text().nullable()();
 }
 
-@DriftDatabase(tables: [Documents, Pages])
+/// A flat (non-nested) folder. A document lives in at most one folder via
+/// Documents.folderId; null there means "Unfiled".
+class Folders extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+/// A cross-cutting label. A document carries 0+ tags via DocumentTags.
+class Tags extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+/// Many-to-many join between documents and tags. Rows are cascade-deleted when
+/// either side is removed (foreign_keys pragma is ON, see beforeOpen).
+class DocumentTags extends Table {
+  IntColumn get documentId =>
+      integer().references(Documents, #id, onDelete: KeyAction.cascade)();
+  IntColumn get tagId =>
+      integer().references(Tags, #id, onDelete: KeyAction.cascade)();
+  @override
+  Set<Column> get primaryKey => {documentId, tagId};
+}
+
+@DriftDatabase(tables: [Documents, Pages, Folders, Tags, DocumentTags])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +118,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(pages, pages.rotationQuarterTurns);
       }
       if (from < 8) await m.addColumn(pages, pages.enhancerMode);
+      if (from < 9) {
+        await m.createTable(folders);
+        await m.createTable(tags);
+        await m.createTable(documentTags);
+        await m.addColumn(documents, documents.folderId);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

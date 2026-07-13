@@ -3,6 +3,249 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FoldersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'folders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Folder> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Folder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Folder(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FoldersTable createAlias(String alias) {
+    return $FoldersTable(attachedDatabase, alias);
+  }
+}
+
+class Folder extends DataClass implements Insertable<Folder> {
+  final int id;
+  final String name;
+  final DateTime createdAt;
+  const Folder({required this.id, required this.name, required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FoldersCompanion toCompanion(bool nullToAbsent) {
+    return FoldersCompanion(
+      id: Value(id),
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Folder.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Folder(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Folder copyWith({int? id, String? name, DateTime? createdAt}) => Folder(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Folder copyWithCompanion(FoldersCompanion data) {
+    return Folder(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Folder(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Folder &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class FoldersCompanion extends UpdateCompanion<Folder> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<DateTime> createdAt;
+  const FoldersCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  FoldersCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required DateTime createdAt,
+  }) : name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<Folder> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  FoldersCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<DateTime>? createdAt,
+  }) {
+    return FoldersCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoldersCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DocumentsTable extends Documents
     with TableInfo<$DocumentsTable, Document> {
   @override
@@ -68,6 +311,20 @@ class $DocumentsTable extends Documents
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _folderIdMeta = const VerificationMeta(
+    'folderId',
+  );
+  @override
+  late final GeneratedColumn<int> folderId = GeneratedColumn<int>(
+    'folder_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES folders (id) ON DELETE SET NULL',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -75,6 +332,7 @@ class $DocumentsTable extends Documents
     createdAt,
     modifiedAt,
     isIdCard,
+    folderId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -121,6 +379,12 @@ class $DocumentsTable extends Documents
         isIdCard.isAcceptableOrUnknown(data['is_id_card']!, _isIdCardMeta),
       );
     }
+    if (data.containsKey('folder_id')) {
+      context.handle(
+        _folderIdMeta,
+        folderId.isAcceptableOrUnknown(data['folder_id']!, _folderIdMeta),
+      );
+    }
     return context;
   }
 
@@ -150,6 +414,10 @@ class $DocumentsTable extends Documents
         DriftSqlType.bool,
         data['${effectivePrefix}is_id_card'],
       )!,
+      folderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}folder_id'],
+      ),
     );
   }
 
@@ -168,12 +436,17 @@ class Document extends DataClass implements Insertable<Document> {
   /// True when this document is an ID card (front + back). Only its PDF export
   /// layout differs (single page, both images centered). Default false.
   final bool isIdCard;
+
+  /// Owning folder (flat). Null = "Unfiled". SET NULL on folder delete so
+  /// deleting a folder never deletes its documents.
+  final int? folderId;
   const Document({
     required this.id,
     required this.name,
     required this.createdAt,
     required this.modifiedAt,
     required this.isIdCard,
+    this.folderId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -183,6 +456,9 @@ class Document extends DataClass implements Insertable<Document> {
     map['created_at'] = Variable<DateTime>(createdAt);
     map['modified_at'] = Variable<DateTime>(modifiedAt);
     map['is_id_card'] = Variable<bool>(isIdCard);
+    if (!nullToAbsent || folderId != null) {
+      map['folder_id'] = Variable<int>(folderId);
+    }
     return map;
   }
 
@@ -193,6 +469,9 @@ class Document extends DataClass implements Insertable<Document> {
       createdAt: Value(createdAt),
       modifiedAt: Value(modifiedAt),
       isIdCard: Value(isIdCard),
+      folderId: folderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderId),
     );
   }
 
@@ -207,6 +486,7 @@ class Document extends DataClass implements Insertable<Document> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       modifiedAt: serializer.fromJson<DateTime>(json['modifiedAt']),
       isIdCard: serializer.fromJson<bool>(json['isIdCard']),
+      folderId: serializer.fromJson<int?>(json['folderId']),
     );
   }
   @override
@@ -218,6 +498,7 @@ class Document extends DataClass implements Insertable<Document> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'modifiedAt': serializer.toJson<DateTime>(modifiedAt),
       'isIdCard': serializer.toJson<bool>(isIdCard),
+      'folderId': serializer.toJson<int?>(folderId),
     };
   }
 
@@ -227,12 +508,14 @@ class Document extends DataClass implements Insertable<Document> {
     DateTime? createdAt,
     DateTime? modifiedAt,
     bool? isIdCard,
+    Value<int?> folderId = const Value.absent(),
   }) => Document(
     id: id ?? this.id,
     name: name ?? this.name,
     createdAt: createdAt ?? this.createdAt,
     modifiedAt: modifiedAt ?? this.modifiedAt,
     isIdCard: isIdCard ?? this.isIdCard,
+    folderId: folderId.present ? folderId.value : this.folderId,
   );
   Document copyWithCompanion(DocumentsCompanion data) {
     return Document(
@@ -243,6 +526,7 @@ class Document extends DataClass implements Insertable<Document> {
           ? data.modifiedAt.value
           : this.modifiedAt,
       isIdCard: data.isIdCard.present ? data.isIdCard.value : this.isIdCard,
+      folderId: data.folderId.present ? data.folderId.value : this.folderId,
     );
   }
 
@@ -253,13 +537,15 @@ class Document extends DataClass implements Insertable<Document> {
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
           ..write('modifiedAt: $modifiedAt, ')
-          ..write('isIdCard: $isIdCard')
+          ..write('isIdCard: $isIdCard, ')
+          ..write('folderId: $folderId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt, modifiedAt, isIdCard);
+  int get hashCode =>
+      Object.hash(id, name, createdAt, modifiedAt, isIdCard, folderId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -268,7 +554,8 @@ class Document extends DataClass implements Insertable<Document> {
           other.name == this.name &&
           other.createdAt == this.createdAt &&
           other.modifiedAt == this.modifiedAt &&
-          other.isIdCard == this.isIdCard);
+          other.isIdCard == this.isIdCard &&
+          other.folderId == this.folderId);
 }
 
 class DocumentsCompanion extends UpdateCompanion<Document> {
@@ -277,12 +564,14 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
   final Value<DateTime> createdAt;
   final Value<DateTime> modifiedAt;
   final Value<bool> isIdCard;
+  final Value<int?> folderId;
   const DocumentsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.modifiedAt = const Value.absent(),
     this.isIdCard = const Value.absent(),
+    this.folderId = const Value.absent(),
   });
   DocumentsCompanion.insert({
     this.id = const Value.absent(),
@@ -290,6 +579,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     required DateTime createdAt,
     required DateTime modifiedAt,
     this.isIdCard = const Value.absent(),
+    this.folderId = const Value.absent(),
   }) : name = Value(name),
        createdAt = Value(createdAt),
        modifiedAt = Value(modifiedAt);
@@ -299,6 +589,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? modifiedAt,
     Expression<bool>? isIdCard,
+    Expression<int>? folderId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -306,6 +597,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
       if (createdAt != null) 'created_at': createdAt,
       if (modifiedAt != null) 'modified_at': modifiedAt,
       if (isIdCard != null) 'is_id_card': isIdCard,
+      if (folderId != null) 'folder_id': folderId,
     });
   }
 
@@ -315,6 +607,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Value<DateTime>? createdAt,
     Value<DateTime>? modifiedAt,
     Value<bool>? isIdCard,
+    Value<int?>? folderId,
   }) {
     return DocumentsCompanion(
       id: id ?? this.id,
@@ -322,6 +615,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
       createdAt: createdAt ?? this.createdAt,
       modifiedAt: modifiedAt ?? this.modifiedAt,
       isIdCard: isIdCard ?? this.isIdCard,
+      folderId: folderId ?? this.folderId,
     );
   }
 
@@ -343,6 +637,9 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     if (isIdCard.present) {
       map['is_id_card'] = Variable<bool>(isIdCard.value);
     }
+    if (folderId.present) {
+      map['folder_id'] = Variable<int>(folderId.value);
+    }
     return map;
   }
 
@@ -353,7 +650,8 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
           ..write('modifiedAt: $modifiedAt, ')
-          ..write('isIdCard: $isIdCard')
+          ..write('isIdCard: $isIdCard, ')
+          ..write('folderId: $folderId')
           ..write(')'))
         .toString();
   }
@@ -1004,18 +1302,500 @@ class PagesCompanion extends UpdateCompanion<Page> {
   }
 }
 
+class $TagsTable extends Tags with TableInfo<$TagsTable, Tag> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TagsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Tag> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Tag map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Tag(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TagsTable createAlias(String alias) {
+    return $TagsTable(attachedDatabase, alias);
+  }
+}
+
+class Tag extends DataClass implements Insertable<Tag> {
+  final int id;
+  final String name;
+  final DateTime createdAt;
+  const Tag({required this.id, required this.name, required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TagsCompanion toCompanion(bool nullToAbsent) {
+    return TagsCompanion(
+      id: Value(id),
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Tag.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Tag(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Tag copyWith({int? id, String? name, DateTime? createdAt}) => Tag(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Tag copyWithCompanion(TagsCompanion data) {
+    return Tag(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Tag(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Tag &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class TagsCompanion extends UpdateCompanion<Tag> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<DateTime> createdAt;
+  const TagsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TagsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required DateTime createdAt,
+  }) : name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<Tag> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TagsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<DateTime>? createdAt,
+  }) {
+    return TagsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TagsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DocumentTagsTable extends DocumentTags
+    with TableInfo<$DocumentTagsTable, DocumentTag> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DocumentTagsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<int> documentId = GeneratedColumn<int>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES documents (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _tagIdMeta = const VerificationMeta('tagId');
+  @override
+  late final GeneratedColumn<int> tagId = GeneratedColumn<int>(
+    'tag_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tags (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [documentId, tagId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'document_tags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DocumentTag> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('tag_id')) {
+      context.handle(
+        _tagIdMeta,
+        tagId.isAcceptableOrUnknown(data['tag_id']!, _tagIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tagIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {documentId, tagId};
+  @override
+  DocumentTag map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DocumentTag(
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_id'],
+      )!,
+      tagId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tag_id'],
+      )!,
+    );
+  }
+
+  @override
+  $DocumentTagsTable createAlias(String alias) {
+    return $DocumentTagsTable(attachedDatabase, alias);
+  }
+}
+
+class DocumentTag extends DataClass implements Insertable<DocumentTag> {
+  final int documentId;
+  final int tagId;
+  const DocumentTag({required this.documentId, required this.tagId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['document_id'] = Variable<int>(documentId);
+    map['tag_id'] = Variable<int>(tagId);
+    return map;
+  }
+
+  DocumentTagsCompanion toCompanion(bool nullToAbsent) {
+    return DocumentTagsCompanion(
+      documentId: Value(documentId),
+      tagId: Value(tagId),
+    );
+  }
+
+  factory DocumentTag.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DocumentTag(
+      documentId: serializer.fromJson<int>(json['documentId']),
+      tagId: serializer.fromJson<int>(json['tagId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'documentId': serializer.toJson<int>(documentId),
+      'tagId': serializer.toJson<int>(tagId),
+    };
+  }
+
+  DocumentTag copyWith({int? documentId, int? tagId}) => DocumentTag(
+    documentId: documentId ?? this.documentId,
+    tagId: tagId ?? this.tagId,
+  );
+  DocumentTag copyWithCompanion(DocumentTagsCompanion data) {
+    return DocumentTag(
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      tagId: data.tagId.present ? data.tagId.value : this.tagId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentTag(')
+          ..write('documentId: $documentId, ')
+          ..write('tagId: $tagId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(documentId, tagId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DocumentTag &&
+          other.documentId == this.documentId &&
+          other.tagId == this.tagId);
+}
+
+class DocumentTagsCompanion extends UpdateCompanion<DocumentTag> {
+  final Value<int> documentId;
+  final Value<int> tagId;
+  final Value<int> rowid;
+  const DocumentTagsCompanion({
+    this.documentId = const Value.absent(),
+    this.tagId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DocumentTagsCompanion.insert({
+    required int documentId,
+    required int tagId,
+    this.rowid = const Value.absent(),
+  }) : documentId = Value(documentId),
+       tagId = Value(tagId);
+  static Insertable<DocumentTag> custom({
+    Expression<int>? documentId,
+    Expression<int>? tagId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (documentId != null) 'document_id': documentId,
+      if (tagId != null) 'tag_id': tagId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DocumentTagsCompanion copyWith({
+    Value<int>? documentId,
+    Value<int>? tagId,
+    Value<int>? rowid,
+  }) {
+    return DocumentTagsCompanion(
+      documentId: documentId ?? this.documentId,
+      tagId: tagId ?? this.tagId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (documentId.present) {
+      map['document_id'] = Variable<int>(documentId.value);
+    }
+    if (tagId.present) {
+      map['tag_id'] = Variable<int>(tagId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentTagsCompanion(')
+          ..write('documentId: $documentId, ')
+          ..write('tagId: $tagId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $FoldersTable folders = $FoldersTable(this);
   late final $DocumentsTable documents = $DocumentsTable(this);
   late final $PagesTable pages = $PagesTable(this);
+  late final $TagsTable tags = $TagsTable(this);
+  late final $DocumentTagsTable documentTags = $DocumentTagsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [documents, pages];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    folders,
+    documents,
+    pages,
+    tags,
+    documentTags,
+  ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'folders',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('documents', kind: UpdateKind.update)],
+    ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'documents',
@@ -1023,12 +1803,271 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [TableUpdate('pages', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'documents',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('document_tags', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tags',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('document_tags', kind: UpdateKind.delete)],
+    ),
   ]);
   @override
   DriftDatabaseOptions get options =>
       const DriftDatabaseOptions(storeDateTimeAsText: true);
 }
 
+typedef $$FoldersTableCreateCompanionBuilder =
+    FoldersCompanion Function({
+      Value<int> id,
+      required String name,
+      required DateTime createdAt,
+    });
+typedef $$FoldersTableUpdateCompanionBuilder =
+    FoldersCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<DateTime> createdAt,
+    });
+
+final class $$FoldersTableReferences
+    extends BaseReferences<_$AppDatabase, $FoldersTable, Folder> {
+  $$FoldersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$DocumentsTable, List<Document>>
+  _documentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.documents,
+    aliasName: 'folders__id__documents__folder_id',
+  );
+
+  $$DocumentsTableProcessedTableManager get documentsRefs {
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.folderId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_documentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$FoldersTableFilterComposer
+    extends Composer<_$AppDatabase, $FoldersTable> {
+  $$FoldersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> documentsRefs(
+    Expression<bool> Function($$DocumentsTableFilterComposer f) f,
+  ) {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.folderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FoldersTableOrderingComposer
+    extends Composer<_$AppDatabase, $FoldersTable> {
+  $$FoldersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FoldersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FoldersTable> {
+  $$FoldersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> documentsRefs<T extends Object>(
+    Expression<T> Function($$DocumentsTableAnnotationComposer a) f,
+  ) {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.folderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FoldersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FoldersTable,
+          Folder,
+          $$FoldersTableFilterComposer,
+          $$FoldersTableOrderingComposer,
+          $$FoldersTableAnnotationComposer,
+          $$FoldersTableCreateCompanionBuilder,
+          $$FoldersTableUpdateCompanionBuilder,
+          (Folder, $$FoldersTableReferences),
+          Folder,
+          PrefetchHooks Function({bool documentsRefs})
+        > {
+  $$FoldersTableTableManager(_$AppDatabase db, $FoldersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FoldersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FoldersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FoldersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => FoldersCompanion(id: id, name: name, createdAt: createdAt),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required DateTime createdAt,
+              }) => FoldersCompanion.insert(
+                id: id,
+                name: name,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FoldersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({documentsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (documentsRefs) db.documents],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (documentsRefs)
+                    await $_getPrefetchedData<Folder, $FoldersTable, Document>(
+                      currentTable: table,
+                      referencedTable: $$FoldersTableReferences
+                          ._documentsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$FoldersTableReferences(db, table, p0).documentsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.folderId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$FoldersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FoldersTable,
+      Folder,
+      $$FoldersTableFilterComposer,
+      $$FoldersTableOrderingComposer,
+      $$FoldersTableAnnotationComposer,
+      $$FoldersTableCreateCompanionBuilder,
+      $$FoldersTableUpdateCompanionBuilder,
+      (Folder, $$FoldersTableReferences),
+      Folder,
+      PrefetchHooks Function({bool documentsRefs})
+    >;
 typedef $$DocumentsTableCreateCompanionBuilder =
     DocumentsCompanion Function({
       Value<int> id,
@@ -1036,6 +2075,7 @@ typedef $$DocumentsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime modifiedAt,
       Value<bool> isIdCard,
+      Value<int?> folderId,
     });
 typedef $$DocumentsTableUpdateCompanionBuilder =
     DocumentsCompanion Function({
@@ -1044,11 +2084,29 @@ typedef $$DocumentsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> modifiedAt,
       Value<bool> isIdCard,
+      Value<int?> folderId,
     });
 
 final class $$DocumentsTableReferences
     extends BaseReferences<_$AppDatabase, $DocumentsTable, Document> {
   $$DocumentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $FoldersTable _folderIdTable(_$AppDatabase db) =>
+      db.folders.createAlias('documents__folder_id__folders__id');
+
+  $$FoldersTableProcessedTableManager? get folderId {
+    final $_column = $_itemColumn<int>('folder_id');
+    if ($_column == null) return null;
+    final manager = $$FoldersTableTableManager(
+      $_db,
+      $_db.folders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_folderIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$PagesTable, List<Page>> _pagesRefsTable(
     _$AppDatabase db,
@@ -1064,6 +2122,24 @@ final class $$DocumentsTableReferences
     ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_pagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DocumentTagsTable, List<DocumentTag>>
+  _documentTagsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.documentTags,
+    aliasName: 'documents__id__document_tags__document_id',
+  );
+
+  $$DocumentTagsTableProcessedTableManager get documentTagsRefs {
+    final manager = $$DocumentTagsTableTableManager(
+      $_db,
+      $_db.documentTags,
+    ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_documentTagsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1104,6 +2180,29 @@ class $$DocumentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  $$FoldersTableFilterComposer get folderId {
+    final $$FoldersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.folderId,
+      referencedTable: $db.folders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoldersTableFilterComposer(
+            $db: $db,
+            $table: $db.folders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<bool> pagesRefs(
     Expression<bool> Function($$PagesTableFilterComposer f) f,
   ) {
@@ -1120,6 +2219,31 @@ class $$DocumentsTableFilterComposer
           }) => $$PagesTableFilterComposer(
             $db: $db,
             $table: $db.pages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> documentTagsRefs(
+    Expression<bool> Function($$DocumentTagsTableFilterComposer f) f,
+  ) {
+    final $$DocumentTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentTags,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.documentTags,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1163,6 +2287,29 @@ class $$DocumentsTableOrderingComposer
     column: $table.isIdCard,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$FoldersTableOrderingComposer get folderId {
+    final $$FoldersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.folderId,
+      referencedTable: $db.folders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoldersTableOrderingComposer(
+            $db: $db,
+            $table: $db.folders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$DocumentsTableAnnotationComposer
@@ -1191,6 +2338,29 @@ class $$DocumentsTableAnnotationComposer
   GeneratedColumn<bool> get isIdCard =>
       $composableBuilder(column: $table.isIdCard, builder: (column) => column);
 
+  $$FoldersTableAnnotationComposer get folderId {
+    final $$FoldersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.folderId,
+      referencedTable: $db.folders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoldersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.folders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> pagesRefs<T extends Object>(
     Expression<T> Function($$PagesTableAnnotationComposer a) f,
   ) {
@@ -1215,6 +2385,31 @@ class $$DocumentsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> documentTagsRefs<T extends Object>(
+    Expression<T> Function($$DocumentTagsTableAnnotationComposer a) f,
+  ) {
+    final $$DocumentTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentTags,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documentTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$DocumentsTableTableManager
@@ -1230,7 +2425,11 @@ class $$DocumentsTableTableManager
           $$DocumentsTableUpdateCompanionBuilder,
           (Document, $$DocumentsTableReferences),
           Document,
-          PrefetchHooks Function({bool pagesRefs})
+          PrefetchHooks Function({
+            bool folderId,
+            bool pagesRefs,
+            bool documentTagsRefs,
+          })
         > {
   $$DocumentsTableTableManager(_$AppDatabase db, $DocumentsTable table)
     : super(
@@ -1250,12 +2449,14 @@ class $$DocumentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> modifiedAt = const Value.absent(),
                 Value<bool> isIdCard = const Value.absent(),
+                Value<int?> folderId = const Value.absent(),
               }) => DocumentsCompanion(
                 id: id,
                 name: name,
                 createdAt: createdAt,
                 modifiedAt: modifiedAt,
                 isIdCard: isIdCard,
+                folderId: folderId,
               ),
           createCompanionCallback:
               ({
@@ -1264,12 +2465,14 @@ class $$DocumentsTableTableManager
                 required DateTime createdAt,
                 required DateTime modifiedAt,
                 Value<bool> isIdCard = const Value.absent(),
+                Value<int?> folderId = const Value.absent(),
               }) => DocumentsCompanion.insert(
                 id: id,
                 name: name,
                 createdAt: createdAt,
                 modifiedAt: modifiedAt,
                 isIdCard: isIdCard,
+                folderId: folderId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -1279,28 +2482,98 @@ class $$DocumentsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({pagesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (pagesRefs) db.pages],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (pagesRefs)
-                    await $_getPrefetchedData<Document, $DocumentsTable, Page>(
-                      currentTable: table,
-                      referencedTable: $$DocumentsTableReferences
-                          ._pagesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$DocumentsTableReferences(db, table, p0).pagesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.documentId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({
+                folderId = false,
+                pagesRefs = false,
+                documentTagsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (pagesRefs) db.pages,
+                    if (documentTagsRefs) db.documentTags,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (folderId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.folderId,
+                                    referencedTable: $$DocumentsTableReferences
+                                        ._folderIdTable(db),
+                                    referencedColumn: $$DocumentsTableReferences
+                                        ._folderIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (pagesRefs)
+                        await $_getPrefetchedData<
+                          Document,
+                          $DocumentsTable,
+                          Page
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DocumentsTableReferences
+                              ._pagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DocumentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).pagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.documentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (documentTagsRefs)
+                        await $_getPrefetchedData<
+                          Document,
+                          $DocumentsTable,
+                          DocumentTag
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DocumentsTableReferences
+                              ._documentTagsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DocumentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).documentTagsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.documentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1317,7 +2590,11 @@ typedef $$DocumentsTableProcessedTableManager =
       $$DocumentsTableUpdateCompanionBuilder,
       (Document, $$DocumentsTableReferences),
       Document,
-      PrefetchHooks Function({bool pagesRefs})
+      PrefetchHooks Function({
+        bool folderId,
+        bool pagesRefs,
+        bool documentTagsRefs,
+      })
     >;
 typedef $$PagesTableCreateCompanionBuilder =
     PagesCompanion Function({
@@ -1730,12 +3007,604 @@ typedef $$PagesTableProcessedTableManager =
       Page,
       PrefetchHooks Function({bool documentId})
     >;
+typedef $$TagsTableCreateCompanionBuilder =
+    TagsCompanion Function({
+      Value<int> id,
+      required String name,
+      required DateTime createdAt,
+    });
+typedef $$TagsTableUpdateCompanionBuilder =
+    TagsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TagsTableReferences
+    extends BaseReferences<_$AppDatabase, $TagsTable, Tag> {
+  $$TagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$DocumentTagsTable, List<DocumentTag>>
+  _documentTagsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.documentTags,
+    aliasName: 'tags__id__document_tags__tag_id',
+  );
+
+  $$DocumentTagsTableProcessedTableManager get documentTagsRefs {
+    final manager = $$DocumentTagsTableTableManager(
+      $_db,
+      $_db.documentTags,
+    ).filter((f) => f.tagId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_documentTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TagsTableFilterComposer extends Composer<_$AppDatabase, $TagsTable> {
+  $$TagsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> documentTagsRefs(
+    Expression<bool> Function($$DocumentTagsTableFilterComposer f) f,
+  ) {
+    final $$DocumentTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.documentTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TagsTableOrderingComposer extends Composer<_$AppDatabase, $TagsTable> {
+  $$TagsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TagsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TagsTable> {
+  $$TagsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> documentTagsRefs<T extends Object>(
+    Expression<T> Function($$DocumentTagsTableAnnotationComposer a) f,
+  ) {
+    final $$DocumentTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documentTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TagsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TagsTable,
+          Tag,
+          $$TagsTableFilterComposer,
+          $$TagsTableOrderingComposer,
+          $$TagsTableAnnotationComposer,
+          $$TagsTableCreateCompanionBuilder,
+          $$TagsTableUpdateCompanionBuilder,
+          (Tag, $$TagsTableReferences),
+          Tag,
+          PrefetchHooks Function({bool documentTagsRefs})
+        > {
+  $$TagsTableTableManager(_$AppDatabase db, $TagsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TagsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TagsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TagsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TagsCompanion(id: id, name: name, createdAt: createdAt),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required DateTime createdAt,
+              }) => TagsCompanion.insert(
+                id: id,
+                name: name,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$TagsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({documentTagsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (documentTagsRefs) db.documentTags],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (documentTagsRefs)
+                    await $_getPrefetchedData<Tag, $TagsTable, DocumentTag>(
+                      currentTable: table,
+                      referencedTable: $$TagsTableReferences
+                          ._documentTagsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$TagsTableReferences(db, table, p0).documentTagsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.tagId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TagsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TagsTable,
+      Tag,
+      $$TagsTableFilterComposer,
+      $$TagsTableOrderingComposer,
+      $$TagsTableAnnotationComposer,
+      $$TagsTableCreateCompanionBuilder,
+      $$TagsTableUpdateCompanionBuilder,
+      (Tag, $$TagsTableReferences),
+      Tag,
+      PrefetchHooks Function({bool documentTagsRefs})
+    >;
+typedef $$DocumentTagsTableCreateCompanionBuilder =
+    DocumentTagsCompanion Function({
+      required int documentId,
+      required int tagId,
+      Value<int> rowid,
+    });
+typedef $$DocumentTagsTableUpdateCompanionBuilder =
+    DocumentTagsCompanion Function({
+      Value<int> documentId,
+      Value<int> tagId,
+      Value<int> rowid,
+    });
+
+final class $$DocumentTagsTableReferences
+    extends BaseReferences<_$AppDatabase, $DocumentTagsTable, DocumentTag> {
+  $$DocumentTagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $DocumentsTable _documentIdTable(_$AppDatabase db) =>
+      db.documents.createAlias('document_tags__document_id__documents__id');
+
+  $$DocumentsTableProcessedTableManager get documentId {
+    final $_column = $_itemColumn<int>('document_id')!;
+
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_documentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TagsTable _tagIdTable(_$AppDatabase db) =>
+      db.tags.createAlias('document_tags__tag_id__tags__id');
+
+  $$TagsTableProcessedTableManager get tagId {
+    final $_column = $_itemColumn<int>('tag_id')!;
+
+    final manager = $$TagsTableTableManager(
+      $_db,
+      $_db.tags,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tagIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DocumentTagsTableFilterComposer
+    extends Composer<_$AppDatabase, $DocumentTagsTable> {
+  $$DocumentTagsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$DocumentsTableFilterComposer get documentId {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TagsTableFilterComposer get tagId {
+    final $$TagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableFilterComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentTagsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DocumentTagsTable> {
+  $$DocumentTagsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$DocumentsTableOrderingComposer get documentId {
+    final $$DocumentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TagsTableOrderingComposer get tagId {
+    final $$TagsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableOrderingComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentTagsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DocumentTagsTable> {
+  $$DocumentTagsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$DocumentsTableAnnotationComposer get documentId {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TagsTableAnnotationComposer get tagId {
+    final $$TagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentTagsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DocumentTagsTable,
+          DocumentTag,
+          $$DocumentTagsTableFilterComposer,
+          $$DocumentTagsTableOrderingComposer,
+          $$DocumentTagsTableAnnotationComposer,
+          $$DocumentTagsTableCreateCompanionBuilder,
+          $$DocumentTagsTableUpdateCompanionBuilder,
+          (DocumentTag, $$DocumentTagsTableReferences),
+          DocumentTag,
+          PrefetchHooks Function({bool documentId, bool tagId})
+        > {
+  $$DocumentTagsTableTableManager(_$AppDatabase db, $DocumentTagsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DocumentTagsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DocumentTagsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DocumentTagsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> documentId = const Value.absent(),
+                Value<int> tagId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentTagsCompanion(
+                documentId: documentId,
+                tagId: tagId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int documentId,
+                required int tagId,
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentTagsCompanion.insert(
+                documentId: documentId,
+                tagId: tagId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DocumentTagsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({documentId = false, tagId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (documentId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.documentId,
+                                referencedTable: $$DocumentTagsTableReferences
+                                    ._documentIdTable(db),
+                                referencedColumn: $$DocumentTagsTableReferences
+                                    ._documentIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (tagId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tagId,
+                                referencedTable: $$DocumentTagsTableReferences
+                                    ._tagIdTable(db),
+                                referencedColumn: $$DocumentTagsTableReferences
+                                    ._tagIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DocumentTagsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DocumentTagsTable,
+      DocumentTag,
+      $$DocumentTagsTableFilterComposer,
+      $$DocumentTagsTableOrderingComposer,
+      $$DocumentTagsTableAnnotationComposer,
+      $$DocumentTagsTableCreateCompanionBuilder,
+      $$DocumentTagsTableUpdateCompanionBuilder,
+      (DocumentTag, $$DocumentTagsTableReferences),
+      DocumentTag,
+      PrefetchHooks Function({bool documentId, bool tagId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$FoldersTableTableManager get folders =>
+      $$FoldersTableTableManager(_db, _db.folders);
   $$DocumentsTableTableManager get documents =>
       $$DocumentsTableTableManager(_db, _db.documents);
   $$PagesTableTableManager get pages =>
       $$PagesTableTableManager(_db, _db.pages);
+  $$TagsTableTableManager get tags => $$TagsTableTableManager(_db, _db.tags);
+  $$DocumentTagsTableTableManager get documentTags =>
+      $$DocumentTagsTableTableManager(_db, _db.documentTags);
 }

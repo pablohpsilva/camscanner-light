@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 
 void main() {
-  test('schemaVersion is 8', () {
+  test('schemaVersion is 9', () {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 8);
+    expect(db.schemaVersion, 9);
     addTearDown(db.close);
   });
 

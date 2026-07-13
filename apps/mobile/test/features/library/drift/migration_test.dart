@@ -70,6 +70,68 @@ void _buildV5Db(sqlite.Database raw) {
   raw.execute('PRAGMA user_version = 5;');
 }
 
+/// Creates the v8-shaped documents + pages tables (documents.is_id_card,
+/// pages through enhancer_mode) plus the FTS vtable + triggers, then sets
+/// PRAGMA user_version = 8. Mirrors the real v8 shape so the v8→v9 step
+/// (folders/tags/document_tags + documents.folder_id) starts from a faithful
+/// pre-migration DB.
+void _buildV8Db(sqlite.Database raw) {
+  raw.execute('''
+    CREATE TABLE documents (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      modified_at TEXT NOT NULL,
+      is_id_card INTEGER NOT NULL DEFAULT 0
+    );
+  ''');
+  raw.execute('''
+    CREATE TABLE pages (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      document_id INTEGER NOT NULL REFERENCES documents (id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      relative_image_path TEXT NOT NULL,
+      corners TEXT,
+      flat_relative_path TEXT,
+      rotation_quarter_turns INTEGER NOT NULL DEFAULT 0,
+      enhancer_mode INTEGER NOT NULL DEFAULT 0,
+      ocr_text TEXT,
+      ocr_boxes TEXT
+    );
+  ''');
+  raw.execute(
+    "CREATE VIRTUAL TABLE doc_fts USING fts5(text, tokenize = 'trigram')",
+  );
+  raw.execute(
+    "CREATE TRIGGER doc_fts_ai AFTER INSERT ON pages "
+    "WHEN NEW.ocr_text IS NOT NULL BEGIN "
+    "DELETE FROM doc_fts WHERE rowid = NEW.document_id; "
+    "INSERT INTO doc_fts(rowid, text) "
+    "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+    "WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL "
+    "GROUP BY document_id; END",
+  );
+  raw.execute(
+    "CREATE TRIGGER doc_fts_au AFTER UPDATE OF ocr_text ON pages "
+    "BEGIN "
+    "DELETE FROM doc_fts WHERE rowid = NEW.document_id; "
+    "INSERT INTO doc_fts(rowid, text) "
+    "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+    "WHERE document_id = NEW.document_id AND ocr_text IS NOT NULL "
+    "GROUP BY document_id; END",
+  );
+  raw.execute(
+    "CREATE TRIGGER doc_fts_ad AFTER DELETE ON pages "
+    "BEGIN "
+    "DELETE FROM doc_fts WHERE rowid = OLD.document_id; "
+    "INSERT INTO doc_fts(rowid, text) "
+    "SELECT document_id, group_concat(ocr_text, ' ') FROM pages "
+    "WHERE document_id = OLD.document_id AND ocr_text IS NOT NULL "
+    "GROUP BY document_id; END",
+  );
+  raw.execute('PRAGMA user_version = 8;');
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -234,10 +296,10 @@ void main() {
   // v5 → v6 : Documents.isIdCard column
   // ---------------------------------------------------------------------------
 
-  test('schemaVersion is 8', () {
+  test('schemaVersion is 9', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 8);
+    expect(db.schemaVersion, 9);
   });
 
   test('fresh DB has the isIdCard column defaulting to false', () async {
@@ -438,4 +500,48 @@ void main() {
       await dir.delete(recursive: true);
     },
   );
+
+  // ---------------------------------------------------------------------------
+  // v8 → v9 : Folders/Tags/DocumentTags tables + Documents.folderId column
+  // ---------------------------------------------------------------------------
+
+  test('v8 -> v9 adds folders/tags/document_tags and documents.folder_id, '
+      'preserving existing rows', () async {
+    final file = File(
+      '${Directory.systemTemp.createTempSync().path}/v8.sqlite',
+    );
+    addTearDown(() => file.existsSync() ? file.deleteSync() : null);
+    final raw = sqlite.sqlite3.open(file.path);
+    _buildV8Db(raw);
+    raw.execute(
+      "INSERT INTO documents (name, created_at, modified_at, is_id_card) "
+      "VALUES ('Doc A', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 0)",
+    );
+    raw.dispose();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+
+    // Triggers migration by touching the DB.
+    final docs = await db.select(db.documents).get();
+    expect(docs.single.name, 'Doc A');
+    expect(docs.single.folderId, isNull); // new column, defaults null
+
+    // New tables usable.
+    final now = DateTime.utc(2026, 2, 1);
+    final fid = await db
+        .into(db.folders)
+        .insert(FoldersCompanion.insert(name: 'Receipts', createdAt: now));
+    final tid = await db
+        .into(db.tags)
+        .insert(TagsCompanion.insert(name: 'tax', createdAt: now));
+    await db
+        .into(db.documentTags)
+        .insert(
+          DocumentTagsCompanion.insert(documentId: docs.single.id, tagId: tid),
+        );
+    expect((await db.select(db.folders).get()).single.name, 'Receipts');
+    expect((await db.select(db.documentTags).get()).length, 1);
+    expect(fid, isNonNegative);
+  });
 }
