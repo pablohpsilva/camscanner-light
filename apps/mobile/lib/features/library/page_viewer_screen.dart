@@ -12,6 +12,8 @@ import 'crop_corners.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
 import 'edit_crop_screen.dart';
+import 'edit_filter_screen.dart';
+import 'enhancer_mode.dart';
 import 'export/export_quality_dialog.dart';
 import 'merge_picker_dialog.dart';
 import 'page_image.dart';
@@ -473,6 +475,27 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     );
   }
 
+  Future<void> _editFilter(PageImage pg) async {
+    if (_editing) return;
+    final mode = await Navigator.of(context).push<EnhancerMode>(
+      MaterialPageRoute<EnhancerMode>(
+        builder: (_) => EditFilterScreen(
+          imagePath: pg.imagePath,
+          initialMode: pg.enhancerMode,
+        ),
+      ),
+    );
+    if (mode == null || !mounted) return;
+    await _runEdit(
+      () => widget.repository.updatePageEnhancer(
+        widget.documentId,
+        pg.position,
+        mode,
+      ),
+      "Couldn't change filter",
+    );
+  }
+
   Future<void> _splitAfter() async {
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
@@ -690,6 +713,9 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             onDelete: _actionsDisabled
                 ? null
                 : () => unawaited(_confirmAndDeletePage()),
+            onFilter: _actionsDisabled
+                ? null
+                : () => unawaited(_editFilter(_pages![_current])),
           ),
         ),
       ),

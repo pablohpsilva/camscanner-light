@@ -7,7 +7,7 @@ import '../../support/ream_pump.dart';
 
 void main() {
   group('EditorToolbar', () {
-    testWidgets('renders all 6 keyed buttons with their labels', (
+    testWidgets('renders all 7 keyed buttons with their labels', (
       tester,
     ) async {
       await pumpReam(
@@ -19,12 +19,14 @@ void main() {
           onRetake: () {},
           onShare: () {},
           onDelete: () {},
+          onFilter: () {},
         ),
         theme: ReamTheme.dark(),
       );
 
       expect(find.byKey(const Key('page-viewer-edit')), findsOneWidget);
       expect(find.byKey(const Key('page-viewer-rotate')), findsOneWidget);
+      expect(find.byKey(const Key('page-viewer-filter')), findsOneWidget);
       expect(find.byKey(const Key('page-viewer-view-text')), findsOneWidget);
       expect(find.byKey(const Key('page-viewer-retake')), findsOneWidget);
       expect(find.byKey(const Key('page-viewer-share')), findsOneWidget);
@@ -32,6 +34,7 @@ void main() {
 
       expect(find.text('Crop'), findsOneWidget);
       expect(find.text('Rotate'), findsOneWidget);
+      expect(find.text('Filter'), findsOneWidget);
       expect(find.text('Text'), findsOneWidget);
       expect(find.text('Retake'), findsOneWidget);
       expect(find.text('Share'), findsOneWidget);
@@ -49,6 +52,7 @@ void main() {
           onRetake: () {},
           onShare: () {},
           onDelete: () {},
+          onFilter: () {},
         ),
         theme: ReamTheme.dark(),
       );
@@ -57,6 +61,26 @@ void main() {
       await tester.pump();
 
       expect(rotateCount, 1);
+    });
+
+    testWidgets('tapping filter fires onFilter', (tester) async {
+      var filterCount = 0;
+      await pumpReam(
+        tester,
+        EditorToolbar(
+          onCrop: () {},
+          onRotate: () {},
+          onText: () {},
+          onRetake: () {},
+          onShare: () {},
+          onDelete: () {},
+          onFilter: () => filterCount++,
+        ),
+        theme: ReamTheme.dark(),
+      );
+      await tester.tap(find.byKey(const Key('page-viewer-filter')));
+      await tester.pump();
+      expect(filterCount, 1);
     });
 
     testWidgets('tapping delete fires onDelete', (tester) async {
@@ -70,6 +94,7 @@ void main() {
           onRetake: () {},
           onShare: () {},
           onDelete: () => deleteCount++,
+          onFilter: () {},
         ),
         theme: ReamTheme.dark(),
       );
@@ -92,6 +117,7 @@ void main() {
           onRetake: () {},
           onShare: () {},
           onDelete: () {},
+          onFilter: () {},
         ),
         theme: ReamTheme.dark(),
       );
