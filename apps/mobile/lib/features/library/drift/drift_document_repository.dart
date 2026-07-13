@@ -36,7 +36,6 @@ class DriftDocumentRepository implements DocumentRepository {
   final DocumentFileStore _fileStore;
   final DateTime Function() _clock;
   final PdfBuilder _pdfBuilder;
-  final ImageWarper _warper;
   final PageProcessor _processor;
   final OcrEngine _ocrEngine;
   final PdfEncryptor _encryptor;
@@ -58,7 +57,6 @@ class DriftDocumentRepository implements DocumentRepository {
        _fileStore = fileStore, // ignore: prefer_initializing_formals
        _clock = clock, // ignore: prefer_initializing_formals
        _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
-       _warper = warper, // ignore: prefer_initializing_formals
        _processor = pageProcessor ?? DartPageProcessor(warper),
        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
        _encryptor = encryptor, // ignore: prefer_initializing_formals
@@ -628,13 +626,15 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   /// Regenerates the display ("flat") derivative from the PRISTINE base by
-  /// applying rotate-then-crop, and returns the new flat's relative path (or
-  /// null when the display equals the base: no rotation and no crop). NEVER
-  /// writes the base. [corners] are in the display frame (post-rotation).
+  /// applying enhance ∘ rotate ∘ crop, and returns the new flat's relative path
+  /// (or null when the display equals the base: no rotation, no crop, no
+  /// filter). NEVER writes the base. [corners] are in the display frame
+  /// (post-rotation).
   Future<String?> _writeFlat({
     required String relativeImagePath,
     required int quarterTurns,
     required CropCorners corners,
+    required EnhancerMode mode,
     required String? existingFlatRel,
   }) async {
     final baseBytes = await _fileStore
@@ -643,22 +643,14 @@ class DriftDocumentRepository implements DocumentRepository {
     final isFullFrame = corners == CropCorners.fullFrame;
 
     // Fast path: the display equals the pristine base — no image work at all.
-    if (quarterTurns == 0 && isFullFrame) {
-      if (existingFlatRel != null) {
-        try {
-          await _fileStore.absoluteFor(existingFlatRel).delete();
-        } on FileSystemException {
-          /* already gone — fine */
-        }
-      }
+    if (quarterTurns == 0 && isFullFrame && mode == EnhancerMode.none) {
+      await _deleteFlatIfPresent(existingFlatRel);
       return null;
     }
 
-    // Rotation requires a full-res decode+rotate+re-encode; run it OFF the UI
-    // isolate (`compute`) or it freezes the app for seconds on a real photo.
-    // For quarterTurns == 0 there is nothing to rotate — the warper consumes
-    // the base bytes directly (it bakes EXIF orientation itself), so we skip
-    // the isolate entirely.
+    // Rotation needs a full-res decode+rotate+re-encode — run it OFF the UI
+    // isolate (`compute`). quarterTurns == 0 skips it (the processor bakes EXIF
+    // orientation itself), so it consumes the base bytes directly.
     Uint8List? rotatedBytes;
     if (quarterTurns != 0) {
       rotatedBytes = await compute(
@@ -669,26 +661,28 @@ class DriftDocumentRepository implements DocumentRepository {
         throw const DocumentSaveException('regenerate: undecodable base image');
       }
     }
+    final input = rotatedBytes ?? baseBytes;
 
     Uint8List? flatBytes;
     if (isFullFrame) {
-      flatBytes = rotatedBytes; // quarterTurns != 0 here (== 0 handled above)
+      if (mode == EnhancerMode.none) {
+        // quarterTurns != 0 here (pure pass-through handled above).
+        flatBytes = rotatedBytes;
+      } else {
+        // Full-frame enhancement; fall back to the un-enhanced frame on failure
+        // so a page is never lost.
+        flatBytes =
+            await _processor.process(input, CropCorners.fullFrame, mode) ??
+            input;
+      }
     } else {
-      final warpInput = rotatedBytes ?? baseBytes;
-      final warped = await _warper.warp(warpInput, corners);
-      // A null warp means "crop not applied" — fall back to the rotated-only
-      // image (or the base when there is no rotation either).
-      flatBytes = warped ?? rotatedBytes;
+      // Cropped: the processor warps + enhances in one pass (or two-step for a
+      // stubbed warper). Fall back to the rotated-only image if it makes nothing.
+      flatBytes = await _processor.process(input, corners, mode) ?? rotatedBytes;
     }
 
     if (flatBytes == null) {
-      if (existingFlatRel != null) {
-        try {
-          await _fileStore.absoluteFor(existingFlatRel).delete();
-        } on FileSystemException {
-          /* already gone — fine */
-        }
-      }
+      await _deleteFlatIfPresent(existingFlatRel);
       return null;
     }
     final flatRel =
@@ -696,6 +690,20 @@ class DriftDocumentRepository implements DocumentRepository {
     await _fileStore.writeRelative(flatRel, flatBytes);
     return flatRel;
   }
+
+  Future<void> _deleteFlatIfPresent(String? rel) async {
+    if (rel == null) return;
+    try {
+      await _fileStore.absoluteFor(rel).delete();
+    } on FileSystemException {
+      /* already gone — fine */
+    }
+  }
+
+  static EnhancerMode _modeOf(int index) =>
+      (index >= 0 && index < EnhancerMode.values.length)
+      ? EnhancerMode.values[index]
+      : EnhancerMode.none;
 
   @override
   Future<void> updatePageCorners(
@@ -720,6 +728,7 @@ class DriftDocumentRepository implements DocumentRepository {
       relativeImagePath: page.relativeImagePath,
       quarterTurns: page.rotationQuarterTurns,
       corners: corners,
+      mode: _modeOf(page.enhancerMode),
       existingFlatRel: page.flatRelativePath,
     );
     final isFullFrame = corners == CropCorners.fullFrame;
@@ -756,6 +765,7 @@ class DriftDocumentRepository implements DocumentRepository {
       relativeImagePath: row.relativeImagePath,
       quarterTurns: turns,
       corners: corners,
+      mode: _modeOf(row.enhancerMode),
       existingFlatRel: row.flatRelativePath,
     );
 
@@ -968,6 +978,7 @@ class DriftDocumentRepository implements DocumentRepository {
         relativeImagePath: row.relativeImagePath,
         quarterTurns: 0,
         corners: effective,
+        mode: enhancerModeOf(enhancer),
         existingFlatRel: row.flatRelativePath,
       );
 
