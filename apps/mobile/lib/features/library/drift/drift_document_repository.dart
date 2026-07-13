@@ -27,6 +27,7 @@ import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import '../pdf/pdf_encryptor.dart';
 import '../tag.dart';
+import '../title_suggester.dart';
 import 'app_database.dart' hide Document, Folder, Tag;
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
@@ -261,6 +262,20 @@ class DriftDocumentRepository implements DocumentRepository {
       );
     }
 
+    // (3) tags per document — one join query, no N+1.
+    final tagRows = await (_db.select(_db.documentTags).join([
+      innerJoin(_db.tags, _db.tags.id.equalsExp(_db.documentTags.tagId)),
+    ])..orderBy([OrderingTerm.asc(_db.tags.name)]))
+        .get();
+    final tagsByDoc = <int, List<Tag>>{};
+    for (final r in tagRows) {
+      final dt = r.readTable(_db.documentTags);
+      final t = r.readTable(_db.tags);
+      (tagsByDoc[dt.documentId] ??= []).add(
+        Tag(id: t.id, name: t.name, createdAt: t.createdAt),
+      );
+    }
+
     return rows.map((row) {
       final d = row.readTable(_db.documents);
       final rel = firstPathByDoc[d.id];
@@ -274,6 +289,7 @@ class DriftDocumentRepository implements DocumentRepository {
         pageCount: row.read(pageCount)!,
         thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
         folderId: d.folderId,
+        tags: tagsByDoc[d.id] ?? const [],
       );
     }).toList();
   }
@@ -1279,25 +1295,81 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<Tag>> listTags() => throw UnimplementedError('T6/T7');
+  Future<List<Tag>> listTags() async {
+    final rows = await (_db.select(_db.tags)
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .get();
+    return [
+      for (final r in rows) Tag(id: r.id, name: r.name, createdAt: r.createdAt),
+    ];
+  }
 
   @override
-  Future<Tag> createTag(String name) => throw UnimplementedError('T6/T7');
+  Future<Tag> createTag(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw const DocumentSaveException('createTag: empty name');
+    }
+    final existing = await (_db.select(_db.tags)
+          ..where((t) => t.name.lower().equals(trimmed.toLowerCase())))
+        .getSingleOrNull();
+    if (existing != null) {
+      return Tag(id: existing.id, name: existing.name, createdAt: existing.createdAt);
+    }
+    final now = _clock().toUtc();
+    final id = await _db
+        .into(_db.tags)
+        .insert(TagsCompanion.insert(name: trimmed, createdAt: now));
+    return Tag(id: id, name: trimmed, createdAt: now);
+  }
 
   @override
-  Future<void> deleteTag(int tagId) => throw UnimplementedError('T6/T7');
+  Future<void> deleteTag(int tagId) async {
+    await (_db.delete(_db.tags)..where((t) => t.id.equals(tagId))).go();
+  }
 
   @override
-  Future<List<Tag>> tagsForDocument(int documentId) =>
-      throw UnimplementedError('T6/T7');
+  Future<List<Tag>> tagsForDocument(int documentId) async {
+    final query = _db.select(_db.tags).join([
+      innerJoin(_db.documentTags, _db.documentTags.tagId.equalsExp(_db.tags.id)),
+    ])
+      ..where(_db.documentTags.documentId.equals(documentId))
+      ..orderBy([OrderingTerm.asc(_db.tags.name)]);
+    final rows = await query.get();
+    return [
+      for (final r in rows)
+        () {
+          final t = r.readTable(_db.tags);
+          return Tag(id: t.id, name: t.name, createdAt: t.createdAt);
+        }(),
+    ];
+  }
 
   @override
-  Future<void> setDocumentTags(int documentId, Set<int> tagIds) =>
-      throw UnimplementedError('T6/T7');
+  Future<void> setDocumentTags(int documentId, Set<int> tagIds) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.documentTags)
+            ..where((dt) => dt.documentId.equals(documentId)))
+          .go();
+      for (final tid in tagIds) {
+        await _db
+            .into(_db.documentTags)
+            .insert(DocumentTagsCompanion.insert(documentId: documentId, tagId: tid));
+      }
+    });
+  }
 
   @override
-  Future<String?> suggestTitleFor(int documentId) =>
-      throw UnimplementedError('T6/T7');
+  Future<String?> suggestTitleFor(int documentId) async {
+    final page = await (_db.select(_db.pages)
+          ..where((p) => p.documentId.equals(documentId))
+          ..orderBy([(p) => OrderingTerm.asc(p.position)])
+          ..limit(1))
+        .getSingleOrNull();
+    final text = page?.ocrText;
+    if (text == null || text.trim().isEmpty) return null;
+    return const TitleSuggester().suggest(text);
+  }
 }
 
 /// Arguments for [rotateAndBakeJpeg] — must be a top-level type so it can cross
