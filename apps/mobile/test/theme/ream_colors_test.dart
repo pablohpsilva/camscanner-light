@@ -87,4 +87,61 @@ void main() {
     expect(seen.paper, ReamColors.light.paper);
     expect(seen.green, ReamColors.light.green);
   });
+
+  test(
+    'copyWith with no args returns instance with all fields equal to original',
+    () {
+      const original = ReamColors.light;
+      final copy = original.copyWith();
+
+      expect(copy.paper, original.paper);
+      expect(copy.surface, original.surface);
+      expect(copy.surface2, original.surface2);
+      expect(copy.ink, original.ink);
+      expect(copy.ink2, original.ink2);
+      expect(copy.muted, original.muted);
+      expect(copy.line, original.line);
+      expect(copy.line2, original.line2);
+      expect(copy.appBg, original.appBg);
+      expect(copy.green, original.green);
+      expect(copy.greenDeep, original.greenDeep);
+      expect(copy.greenSoft, original.greenSoft);
+      expect(copy.amber, original.amber);
+      expect(copy.amberSoft, original.amberSoft);
+      expect(copy.blue, original.blue);
+      expect(copy.blueSoft, original.blueSoft);
+      expect(copy.kofiRed, original.kofiRed);
+      expect(copy.deleteRed, original.deleteRed);
+    },
+  );
+
+  test('copyWith with overrides applies only those overrides', () {
+    const original = ReamColors.light;
+    const newPaper = Color(0xFF010203);
+    const newDeleteRed = Color(0xFF040506);
+
+    final copy = original.copyWith(paper: newPaper, deleteRed: newDeleteRed);
+
+    // Overridden fields
+    expect(copy.paper, newPaper);
+    expect(copy.deleteRed, newDeleteRed);
+
+    // All other fields should remain equal to original
+    expect(copy.surface, original.surface);
+    expect(copy.surface2, original.surface2);
+    expect(copy.ink, original.ink);
+    expect(copy.ink2, original.ink2);
+    expect(copy.muted, original.muted);
+    expect(copy.line, original.line);
+    expect(copy.line2, original.line2);
+    expect(copy.appBg, original.appBg);
+    expect(copy.green, original.green);
+    expect(copy.greenDeep, original.greenDeep);
+    expect(copy.greenSoft, original.greenSoft);
+    expect(copy.amber, original.amber);
+    expect(copy.amberSoft, original.amberSoft);
+    expect(copy.blue, original.blue);
+    expect(copy.blueSoft, original.blueSoft);
+    expect(copy.kofiRed, original.kofiRed);
+  });
 }
