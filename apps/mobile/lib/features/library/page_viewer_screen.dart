@@ -67,6 +67,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   // overlapping full-res regenerations can't race (which made the image
   // appear to "revert" — 4x90 = 360).
   bool _editing = false;
+  // Bumped on every edit so the displayed Image gets a new key and is forced
+  // to re-decode. A regenerated flat reuses its file PATH, and FileImage is
+  // keyed by path — so clearing the image cache alone leaves the mounted Image
+  // element showing its already-decoded (stale) frame. The changing key
+  // recreates the element, which (with the cache cleared) reads fresh bytes.
+  int _imageEpoch = 0;
   int _current = 0;
   late String _name;
 
@@ -109,6 +115,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     // clear the cache before reloading or the stale image would show.
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
+    _imageEpoch++; // force the displayed Image to re-decode (see field doc)
     if (!mounted) return;
     await _load();
   }
@@ -726,6 +733,9 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                     key: Key('page-viewer-page-${pg.position}'),
                     child: Image.file(
                       File(pg.displayPath),
+                      // Key includes the edit epoch so a same-path regenerated
+                      // flat forces a fresh decode instead of showing stale.
+                      key: ValueKey('${pg.displayPath}#$_imageEpoch'),
                       fit: BoxFit.contain,
                       errorBuilder: (c, e, s) => const Center(
                         child: Icon(Icons.broken_image_outlined, size: 64),
