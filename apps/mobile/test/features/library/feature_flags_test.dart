@@ -33,4 +33,18 @@ void main() {
     expect(deps.features.scan, isFalse);
     expect(deps.features.import, isTrue);
   });
+
+  test('new org flags default on', () {
+    const f = FeatureFlags();
+    expect(f.folders, isTrue);
+    expect(f.tags, isTrue);
+    expect(f.smartTitles, isTrue);
+  });
+
+  test('flags are overridable for tests', () {
+    const f = FeatureFlags(folders: false, tags: false, smartTitles: false);
+    expect(f.folders, isFalse);
+    expect(f.tags, isFalse);
+    expect(f.smartTitles, isFalse);
+  });
 }

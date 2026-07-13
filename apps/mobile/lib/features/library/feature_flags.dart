@@ -33,6 +33,9 @@ class FeatureFlags {
   final bool idCard;
   final bool scan;
   final bool import;
+  final bool folders;
+  final bool tags;
+  final bool smartTitles;
 
   const FeatureFlags({
     this.crop = const bool.fromEnvironment('FEATURE_CROP', defaultValue: true),
@@ -82,5 +85,13 @@ class FeatureFlags {
         const bool.fromEnvironment('FEATURE_SCAN', defaultValue: true),
     this.import =
         const bool.fromEnvironment('FEATURE_IMPORT', defaultValue: true),
+    this.folders =
+        const bool.fromEnvironment('FEATURE_FOLDERS', defaultValue: true),
+    this.tags =
+        const bool.fromEnvironment('FEATURE_TAGS', defaultValue: true),
+    this.smartTitles = const bool.fromEnvironment(
+      'FEATURE_SMART_TITLES',
+      defaultValue: true,
+    ),
   });
 }
