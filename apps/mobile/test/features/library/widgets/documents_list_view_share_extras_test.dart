@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
+import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
 import 'package:mobile/features/library/widgets/share_menu_button.dart';
 
@@ -26,6 +27,7 @@ void main() {
             summaries: [s],
             onShare: (_) {},
             onRename: (_) {},
+            features: const FeatureFlags(fax: true),
           ),
         ),
       ),

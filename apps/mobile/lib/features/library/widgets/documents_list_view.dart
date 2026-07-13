@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/ream_colors.dart';
 import '../../../theme/ream_typography.dart';
 import '../document_summary.dart';
+import '../feature_flags.dart';
 import 'document_thumbnail.dart';
 import 'share_menu_button.dart';
 
@@ -29,6 +30,7 @@ class DocumentsListView extends StatelessWidget {
   final bool selectionMode;
   final ValueChanged<DocumentSummary>? onToggleSelect;
   final ValueChanged<DocumentSummary>? onLongPress;
+  final FeatureFlags features;
   const DocumentsListView({
     super.key,
     required this.summaries,
@@ -39,6 +41,7 @@ class DocumentsListView extends StatelessWidget {
     this.selectionMode = false,
     this.onToggleSelect,
     this.onLongPress,
+    this.features = const FeatureFlags(),
   });
 
   @override
@@ -98,7 +101,8 @@ class DocumentsListView extends StatelessWidget {
                 ),
               if (onShare != null)
                 ...shareExtraMenuItems(
-                  showFax: true,
+                  showFax: features.fax,
+                  showShareLink: features.shareLink,
                   keyPrefix: 'document-${d.id}',
                 ),
               if (onRename != null)

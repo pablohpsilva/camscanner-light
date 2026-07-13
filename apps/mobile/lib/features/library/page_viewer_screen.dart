@@ -14,6 +14,7 @@ import 'document_repository.dart';
 import 'edit_crop_screen.dart';
 import 'edit_filter_screen.dart';
 import 'enhancer_mode.dart';
+import 'feature_flags.dart';
 import 'export/export_quality_dialog.dart';
 import 'merge_picker_dialog.dart';
 import 'page_image.dart';
@@ -44,6 +45,7 @@ class PageViewerScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final DocumentPrinter printer;
   final ShareChannel share;
+  final FeatureFlags features;
   const PageViewerScreen({
     super.key,
     required this.documentId,
@@ -52,6 +54,7 @@ class PageViewerScreen extends StatefulWidget {
     this.dependencies = const ScanDependencies(),
     this.printer = const SystemDocumentPrinter(),
     this.share = const SystemShareChannel(),
+    this.features = const FeatureFlags(),
   });
 
   @override
@@ -138,6 +141,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             pdfPath: file.path,
             name: _name,
             share: widget.share,
+            features: widget.features,
           ),
         ),
       );
@@ -548,8 +552,24 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   bool get _actionsDisabled =>
       _loading || _error || _exporting || _editing || (_pages?.isEmpty ?? true);
 
-  /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document.
-  Widget _buildOverflowMenu() {
+  /// The Share toolbar button appears only when the umbrella `share` flag is on
+  /// AND at least one share sub-action is enabled — so an empty share sheet can
+  /// never be opened.
+  bool get _showShareButton =>
+      widget.features.share &&
+      (widget.features.exportPdf ||
+          widget.features.shareImage ||
+          widget.features.exportAllImages ||
+          widget.features.print ||
+          widget.features.protectWithPassword ||
+          widget.features.shareLink ||
+          widget.features.fax);
+
+  /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document. Returns null
+  /// (no button) when every item is disabled by its feature flag.
+  Widget? _buildOverflowMenu() {
+    final f = widget.features;
+    if (!(f.rename || f.merge || f.split || f.deleteDocument)) return null;
     return PopupMenuButton<String>(
       key: const Key('page-viewer-page-menu'),
       enabled: !_actionsDisabled,
@@ -559,27 +579,31 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         if (v == 'split') unawaited(_splitAfter());
         if (v == 'delete') unawaited(_confirmAndDelete());
       },
-      itemBuilder: (_) => const [
-        PopupMenuItem<String>(
-          value: 'rename',
-          key: Key('page-viewer-rename'),
-          child: Text('Rename'),
-        ),
-        PopupMenuItem<String>(
-          value: 'merge',
-          key: Key('page-viewer-merge'),
-          child: Text('Merge another document…'),
-        ),
-        PopupMenuItem<String>(
-          value: 'split',
-          key: Key('page-viewer-split'),
-          child: Text('Split after this page'),
-        ),
-        PopupMenuItem<String>(
-          value: 'delete',
-          key: Key('page-viewer-delete'),
-          child: Text('Delete document'),
-        ),
+      itemBuilder: (_) => [
+        if (f.rename)
+          const PopupMenuItem<String>(
+            value: 'rename',
+            key: Key('page-viewer-rename'),
+            child: Text('Rename'),
+          ),
+        if (f.merge)
+          const PopupMenuItem<String>(
+            value: 'merge',
+            key: Key('page-viewer-merge'),
+            child: Text('Merge another document…'),
+          ),
+        if (f.split)
+          const PopupMenuItem<String>(
+            value: 'split',
+            key: Key('page-viewer-split'),
+            child: Text('Split after this page'),
+          ),
+        if (f.deleteDocument)
+          const PopupMenuItem<String>(
+            value: 'delete',
+            key: Key('page-viewer-delete'),
+            child: Text('Delete document'),
+          ),
       ],
     );
   }
@@ -596,48 +620,55 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            ListTile(
-              key: const Key('page-viewer-export'),
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text('Export PDF'),
-              onTap: () => Navigator.of(ctx).pop('export-pdf'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-export-image'),
-              leading: const Icon(Icons.image_outlined),
-              title: const Text('Share as image'),
-              onTap: () => Navigator.of(ctx).pop('export-image'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-export-all-images'),
-              leading: const Icon(Icons.collections_outlined),
-              title: const Text('Share all as images'),
-              onTap: () => Navigator.of(ctx).pop('export-all-images'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-print'),
-              leading: const Icon(Icons.print_outlined),
-              title: const Text('Print'),
-              onTap: () => Navigator.of(ctx).pop('print'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-protect'),
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Protect with password'),
-              onTap: () => Navigator.of(ctx).pop('protect'),
-            ),
-            ListTile(
-              key: const Key('page-viewer-share-link'),
-              leading: const Icon(Icons.link),
-              title: const Text('Share link'),
-              onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
-            ),
-            ListTile(
-              key: const Key('page-viewer-fax'),
-              leading: const Icon(Icons.print),
-              title: const Text('Fax'),
-              onTap: () => Navigator.of(ctx).pop(kFaxValue),
-            ),
+            if (widget.features.exportPdf)
+              ListTile(
+                key: const Key('page-viewer-export'),
+                leading: const Icon(Icons.picture_as_pdf),
+                title: const Text('Export PDF'),
+                onTap: () => Navigator.of(ctx).pop('export-pdf'),
+              ),
+            if (widget.features.shareImage)
+              ListTile(
+                key: const Key('page-viewer-export-image'),
+                leading: const Icon(Icons.image_outlined),
+                title: const Text('Share as image'),
+                onTap: () => Navigator.of(ctx).pop('export-image'),
+              ),
+            if (widget.features.exportAllImages)
+              ListTile(
+                key: const Key('page-viewer-export-all-images'),
+                leading: const Icon(Icons.collections_outlined),
+                title: const Text('Share all as images'),
+                onTap: () => Navigator.of(ctx).pop('export-all-images'),
+              ),
+            if (widget.features.print)
+              ListTile(
+                key: const Key('page-viewer-print'),
+                leading: const Icon(Icons.print_outlined),
+                title: const Text('Print'),
+                onTap: () => Navigator.of(ctx).pop('print'),
+              ),
+            if (widget.features.protectWithPassword)
+              ListTile(
+                key: const Key('page-viewer-protect'),
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('Protect with password'),
+                onTap: () => Navigator.of(ctx).pop('protect'),
+              ),
+            if (widget.features.shareLink)
+              ListTile(
+                key: const Key('page-viewer-share-link'),
+                leading: const Icon(Icons.link),
+                title: const Text('Share link'),
+                onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
+              ),
+            if (widget.features.fax)
+              ListTile(
+                key: const Key('page-viewer-fax'),
+                leading: const Icon(Icons.print),
+                title: const Text('Fax'),
+                onTap: () => Navigator.of(ctx).pop(kFaxValue),
+              ),
           ],
         ),
       ),
@@ -701,6 +732,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
             ],
           ),
           bottomNavigationBar: EditorToolbar(
+            showCrop: widget.features.crop,
+            showRotate: widget.features.rotate,
+            showFilter: widget.features.filter,
+            showText: widget.features.viewText,
+            showRetake: widget.features.retake,
+            showShare: _showShareButton,
+            showDelete: widget.features.deletePage,
             onCrop: _actionsDisabled
                 ? null
                 : () => _editCrop(_pages![_current]),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/share_menu_button.dart';
@@ -13,7 +14,12 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        home: PageViewerScreen(documentId: 1, name: 'Scan X', repository: repo),
+        home: PageViewerScreen(
+          documentId: 1,
+          name: 'Scan X',
+          repository: repo,
+          features: const FeatureFlags(fax: true),
+        ),
       ),
     );
     // Safe to settle: page image paths are NON-LOADABLE, which does not hang.

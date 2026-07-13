@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/ream_back_header.dart';
+import 'feature_flags.dart';
 import 'share_channel.dart';
 import 'widgets/share_menu_button.dart';
 
@@ -20,12 +21,14 @@ class PdfPreviewScreen extends StatefulWidget {
   final String name;
   final PdfOpener opener;
   final ShareChannel share;
+  final FeatureFlags features;
   const PdfPreviewScreen({
     super.key,
     required this.pdfPath,
     required this.name,
     this.opener = PdfDocument.openFile,
     this.share = const SystemShareChannel(),
+    this.features = const FeatureFlags(),
   });
 
   @override
@@ -79,6 +82,8 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
         onBack: () => Navigator.of(context).maybePop(),
         trailing: ShareMenuButton(
           buttonKey: const Key('pdf-preview-share'),
+          showFax: widget.features.fax,
+          showShareLink: widget.features.shareLink,
           onShare: () => unawaited(
             widget.share.share([widget.pdfPath], subject: widget.name),
           ),
