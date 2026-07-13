@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/home_screen.dart';
+import 'package:mobile/features/library/widgets/folder_filter_bar.dart';
 import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
@@ -11,6 +12,7 @@ void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
     required FeatureFlags features,
+    FakeDocumentRepository? repo,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -18,7 +20,7 @@ void main() {
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(
-            FakeDocumentRepository(),
+            repo ?? FakeDocumentRepository(),
             features: features,
           ),
         ),
@@ -52,4 +54,29 @@ void main() {
     expect(find.byKey(const Key('home-import')), findsNothing);
     expect(find.byKey(const Key('home-scan')), findsOneWidget);
   });
+
+  testWidgets(
+    'folder filter bar is hidden when features.folders is off, even with '
+    'folders present in the repo',
+    (tester) async {
+      final repo = FakeDocumentRepository();
+      await repo.createFolder('Work');
+      await pumpHome(
+        tester,
+        features: const FeatureFlags(folders: false),
+        repo: repo,
+      );
+      expect(find.byType(FolderFilterBar), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'folder filter bar is shown when folders exist and the feature is on',
+    (tester) async {
+      final repo = FakeDocumentRepository();
+      await repo.createFolder('Work');
+      await pumpHome(tester, features: const FeatureFlags(), repo: repo);
+      expect(find.byType(FolderFilterBar), findsOneWidget);
+    },
+  );
 }
