@@ -5,6 +5,7 @@ import '../../theme/widgets/ream_back_header.dart';
 import '../../theme/widgets/ream_section_label.dart';
 import '../../theme/widgets/ream_segmented.dart';
 import '../../theme/theme_controller.dart';
+import '../donation/donation_availability.dart';
 import '../donation/donation_screen.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../feedback/feedback_screen.dart';
@@ -66,14 +67,15 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            _NavRow(
-              key: const Key('settings-support'),
-              icon: Icons.favorite_outline,
-              label: 'Support the app',
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const DonationScreen())),
-            ),
+            if (donationsAvailable)
+              _NavRow(
+                key: const Key('settings-support'),
+                icon: Icons.favorite_outline,
+                label: 'Support the app',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const DonationScreen()),
+                ),
+              ),
             const SizedBox(height: 36),
             _About(key: const Key('settings-about')),
           ],
