@@ -13,9 +13,7 @@ import 'package:mobile/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('donation entry points match the platform rules', (
-    tester,
-  ) async {
+  testWidgets('donation entry points match the platform rules', (tester) async {
     app.main();
     await tester.pumpAndSettle();
 

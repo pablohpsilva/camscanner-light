@@ -24,8 +24,9 @@ void main() {
       await iDoNotSeeTheSupportRow(tester);
       await thePlatformOverrideIsCleared(tester);
     });
-    testWidgets('''Donation entry points are shown on Android''',
-        (tester) async {
+    testWidgets('''Donation entry points are shown on Android''', (
+      tester,
+    ) async {
       await thePlatformIsAndroid(tester);
       await theHomeScreenIsShown(tester);
       await iSeeTheDonationBanner(tester);
