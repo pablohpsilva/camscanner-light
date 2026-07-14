@@ -17,8 +17,6 @@ Widget _host(ThemeController c, {bool feedbackAvailable = true}) => MaterialApp(
 );
 
 void main() {
-  tearDown(() => debugDefaultTargetPlatformOverride = null);
-
   testWidgets('shows the theme selector at the current mode', (t) async {
     final c = ThemeController(
       store: InMemoryThemeModeStore(),
