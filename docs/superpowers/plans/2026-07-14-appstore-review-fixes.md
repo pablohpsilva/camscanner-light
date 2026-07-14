@@ -18,7 +18,7 @@
 - Native/user-visible behavior must be proven on a real Android device AND an iOS device; if no physical iOS device is attached, an iOS simulator run plus an explicitly named gap is the fallback.
 - `flutter analyze` must stay at zero warnings; run `dart format lib test integration_test` on touched files.
 - Scope every `git add` to named paths — never `git add -A` (long-lived WIP files may sit in the tree).
-- Widget tests that set `debugDefaultTargetPlatformOverride` MUST reset it to `null` in a `tearDown`/`addTearDown`, or flutter_test fails the test.
+- Widget tests (`testWidgets`) that set `debugDefaultTargetPlatformOverride` MUST reset it to `null` inside the test body via `try/finally` — flutter_test's foundation-variable invariant runs BEFORE `tearDown`/`addTearDown` callbacks, so those fire too late and the test errors (verified empirically 2026-07-14). Plain `test()` bodies (no widget binding) may use `tearDown`.
 
 ## Parallel execution groups (per CLAUDE.md subagent mandate)
 
@@ -291,6 +291,7 @@ git commit -m "fix(donation): hide Settings support row on iOS (guideline 3.1.1)
 - Create: `apps/mobile/test/bdd/donation_platform_gate.feature`
 - Create: `apps/mobile/test/step/the_platform_is_ios.dart`
 - Create: `apps/mobile/test/step/the_platform_is_android.dart`
+- Create: `apps/mobile/test/step/the_platform_override_is_cleared.dart`
 - Create: `apps/mobile/test/step/the_home_screen_is_shown.dart`
 - Create: `apps/mobile/test/step/i_see_the_donation_banner.dart`
 - Create: `apps/mobile/test/step/i_do_not_see_the_donation_banner.dart`
@@ -317,6 +318,7 @@ Feature: Donation entry points respect the platform
     Then I do not see the donation banner
     When I open settings from home
     Then I do not see the support row
+    And the platform override is cleared
 
   Scenario: Donation entry points are shown on Android
     Given the platform is Android
@@ -324,6 +326,7 @@ Feature: Donation entry points respect the platform
     Then I see the donation banner
     When I open settings from home
     Then I see the support row
+    And the platform override is cleared
 ```
 
 - [ ] **Step 2: Write the step implementations**
@@ -334,9 +337,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Usage: the platform is iOS
+///
+/// NOTE: no addTearDown here — flutter_test's foundation-variable invariant
+/// runs before tearDown callbacks, so each scenario must end with the
+/// "the platform override is cleared" step instead.
 Future<void> thePlatformIsIOS(WidgetTester tester) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
 }
 ```
 
@@ -348,7 +354,21 @@ import 'package:flutter_test/flutter_test.dart';
 /// Usage: the platform is Android
 Future<void> thePlatformIsAndroid(WidgetTester tester) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.android;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
+}
+```
+
+```dart
+// apps/mobile/test/step/the_platform_override_is_cleared.dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// Usage: the platform override is cleared
+///
+/// Must be the LAST step of any scenario that set a platform override:
+/// flutter_test asserts all foundation debug variables are unset at the end
+/// of the testWidgets body, before tearDown/addTearDown ever run.
+Future<void> thePlatformOverrideIsCleared(WidgetTester tester) async {
+  debugDefaultTargetPlatformOverride = null;
 }
 ```
 
@@ -438,6 +458,7 @@ git add apps/mobile/test/bdd/donation_platform_gate.feature \
         apps/mobile/test/bdd/donation_platform_gate_test.dart \
         apps/mobile/test/step/the_platform_is_ios.dart \
         apps/mobile/test/step/the_platform_is_android.dart \
+        apps/mobile/test/step/the_platform_override_is_cleared.dart \
         apps/mobile/test/step/the_home_screen_is_shown.dart \
         apps/mobile/test/step/i_see_the_donation_banner.dart \
         apps/mobile/test/step/i_do_not_see_the_donation_banner.dart \
