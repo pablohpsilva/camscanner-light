@@ -15,6 +15,8 @@ void main() {
     final share = FakeShareChannel();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: PdfPreviewScreen(
           pdfPath: '/docs/report.pdf',
           name: 'Report',
@@ -51,6 +53,8 @@ void main() {
       final share = FakeShareChannel();
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: RecognizedTextScreen(
             documentId: 7,
             position: 1,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/rename_dialog.dart';
 
+import '../../../support/localized_app.dart';
+
 void main() {
   // Pump a trivial host with a button that opens the dialog and stores the
   // result, so each test can assert what showRenameDialog returned.
@@ -11,7 +13,7 @@ void main() {
     required void Function(String?) onResult,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => Center(

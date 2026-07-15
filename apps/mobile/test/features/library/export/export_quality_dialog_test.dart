@@ -3,10 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/export/export_quality.dart';
 import 'package:mobile/features/library/export/export_quality_dialog.dart';
 
+import '../../../support/localized_app.dart';
+
 Future<ExportQuality?> _open(WidgetTester tester) async {
   ExportQuality? result;
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: Scaffold(
         body: Builder(
           builder: (context) => ElevatedButton(
@@ -42,7 +44,7 @@ void main() {
   testWidgets('returns the chosen quality value', (tester) async {
     ExportQuality? picked;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
@@ -64,7 +66,7 @@ void main() {
   testWidgets('cancel returns null', (tester) async {
     ExportQuality? picked = ExportQuality.high;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(

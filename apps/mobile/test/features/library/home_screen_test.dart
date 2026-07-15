@@ -8,7 +8,6 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/scan_screen.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 
@@ -359,9 +358,9 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.dark(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        theme: ReamTheme.dark(),
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(

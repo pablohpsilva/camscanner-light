@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/password_dialog.dart';
 
+import '../../support/localized_app.dart';
+
 void main() {
   testWidgets('returns the entered password on Protect', (tester) async {
     String? result = 'unset';
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
@@ -40,7 +42,7 @@ void main() {
   testWidgets('returns null on Cancel', (tester) async {
     String? result = 'unset';
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
