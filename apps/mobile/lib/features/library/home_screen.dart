@@ -312,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final repo = _repository;
     if (repo == null || _sharing) return;
     final l10n = context.l10n;
-    _sharing = true;
+    setState(() => _sharing = true);
     try {
       final file = await repo.exportPdf(s.document.id);
       await widget.libraryDependencies.share.share([
@@ -324,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.commonErrorShare)));
     } finally {
-      _sharing = false;
+      if (mounted) setState(() => _sharing = false);
     }
   }
 
@@ -356,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final ids = selected.map((s) => s.document.id).toList();
     final l10n = context.l10n;
 
-    _sharing = true;
+    setState(() => _sharing = true);
     try {
       final share = widget.libraryDependencies.share;
       if (ids.length == 1) {
@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.commonErrorShare)));
     } finally {
-      _sharing = false;
+      if (mounted) setState(() => _sharing = false);
     }
   }
 
@@ -390,15 +390,32 @@ class _HomeScreenState extends State<HomeScreen> {
     // it (iOS, guideline 3.1.1) the body must clear the home indicator itself.
     final banner = donationsAvailable ? const DonationBanner() : null;
     return Scaffold(
-      body: SafeArea(
-        bottom: banner == null,
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Expanded(child: _buildBody()),
-            if (!_selectionMode) _buildActionRow(context),
-          ],
-        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: banner == null,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(child: _buildBody()),
+                if (!_selectionMode) _buildActionRow(context),
+              ],
+            ),
+          ),
+          // Busy overlay while a share/export runs — blocks input and signals
+          // progress so the user isn't left tapping a frozen UI. Mirrors the
+          // page viewer's mid-edit overlay.
+          if (_sharing)
+            const Positioned.fill(
+              child: ColoredBox(
+                color: Color(0x66000000),
+                child: Center(
+                  key: Key('home-sharing'),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: banner,
     );
@@ -561,7 +578,9 @@ class _HomeScreenState extends State<HomeScreen> {
           key: const Key('selection-export'),
           tooltip: context.l10n.homeExportTooltip,
           icon: Icon(Icons.ios_share, color: r.ink),
-          onPressed: _exportSelected,
+          // Disabled while a share/export is already in flight — the re-entry
+          // guard is now visibly disabled instead of silently swallowing taps.
+          onPressed: _sharing ? null : _exportSelected,
         ),
       ],
     );

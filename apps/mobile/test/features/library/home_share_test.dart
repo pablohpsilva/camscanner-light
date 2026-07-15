@@ -94,11 +94,10 @@ void main() {
     await tester.tap(find.byKey(const Key('document-share-1')));
     await tester.pump();
 
-    // Second Share while the first is still in-flight.
-    await tester.tap(find.byKey(const Key('document-menu-1')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('document-share-1')));
-    await tester.pump();
+    // P04 T3: while the first share is in flight the busy overlay covers the
+    // screen, so a second Share cannot be launched (re-entry is also guarded by
+    // _sharing). The overlay's presence is what now prevents the double export.
+    expect(find.byKey(const Key('home-sharing')), findsOneWidget);
 
     gate.complete();
     await tester.pump();

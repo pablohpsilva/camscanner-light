@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/home_screen.dart';
+import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
@@ -350,6 +351,109 @@ void main() {
       expect(find.byKey(const Key('documents-grid')), findsOneWidget);
       expect(find.byKey(const Key('documents-list')), findsNothing);
       expect(find.text('Scan 2026-06-27 20.26.42'), findsOneWidget);
+    },
+  );
+
+  // --- P04 T3: share-busy state is visible (was a plain field driving no UI) ---
+  Document oneDoc() => Document(
+    id: 1,
+    name: 'Scan 2026-06-27 20.26.42',
+    createdAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+    modifiedAt: DateTime.utc(2026, 6, 27, 20, 26, 42),
+  );
+
+  testWidgets(
+    'sharing a document from the list menu shows a busy indicator that clears '
+    'when the share completes',
+    (tester) async {
+      final gate = Completer<void>();
+      final repo = FakeDocumentRepository(
+        exportGate: gate,
+        documents: [oneDoc()],
+      );
+      // Inject a recording fake share so share() completes on host (the default
+      // SystemShareChannel hits share_plus and never resolves under test).
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: HomeScreen(
+            dependencies: grantedScanDependencies(),
+            libraryDependencies: LibraryDependencies(
+              createRepository: () async => repo,
+              share: FakeShareChannel(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open the row overflow menu and tap Share.
+      await tester.tap(find.byKey(const Key('document-menu-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('document-share-1')));
+      await tester
+          .pump(); // dispatch tap; _shareDocument runs to the gated await
+
+      // While in flight: the busy overlay is shown.
+      expect(find.byKey(const Key('home-sharing')), findsOneWidget);
+
+      // Complete the share; the busy overlay clears (the finally ran).
+      // Explicit pumps drain the export→share future chain, then rebuild without
+      // the overlay. pumpAndSettle is unusable — the perpetual spinner never
+      // settles while it is on screen.
+      gate.complete();
+      await tester.pump(); // resolve exportPdf → share.share()
+      await tester.pump(); // resolve share future + finally setState
+      await tester.pump(); // rebuild without the overlay
+      expect(find.byKey(const Key('home-sharing')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'exporting a selection disables the export button and shows a busy '
+    'indicator while in flight, both clearing on completion',
+    (tester) async {
+      final gate = Completer<void>();
+      final repo = FakeDocumentRepository(
+        exportGate: gate,
+        documents: [oneDoc()],
+      );
+      // Inject a recording fake share so share() completes on host.
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: HomeScreen(
+            dependencies: grantedScanDependencies(),
+            libraryDependencies: LibraryDependencies(
+              createRepository: () async => repo,
+              share: FakeShareChannel(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Enter selection mode (long-press) and select the document.
+      await tester.longPress(find.byKey(const Key('document-tile-1')));
+      await tester.pumpAndSettle();
+
+      // Tap Export in the selection bar; the share is gated in flight.
+      await tester.tap(find.byKey(const Key('selection-export')));
+      await tester.pump(); // dispatch tap; _exportSelected runs to gated await
+
+      // Busy overlay shown, and the export button is disabled (re-entry guard
+      // now visibly disabled — a second tap is ignored).
+      expect(find.byKey(const Key('home-sharing')), findsOneWidget);
+      final exportBtn = tester.widget<IconButton>(
+        find.byKey(const Key('selection-export')),
+      );
+      expect(exportBtn.onPressed, isNull);
+
+      // Complete the export; overlay clears and (on success) selection clears.
+      // Explicit pumps — the perpetual spinner never settles while on screen.
+      gate.complete();
+      await tester.pump(); // drain export/share futures + the finally setState
+      await tester.pump(); // resolve share future + finally setState
+      await tester.pump(); // rebuild without the overlay
+      expect(find.byKey(const Key('home-sharing')), findsNothing);
     },
   );
 
