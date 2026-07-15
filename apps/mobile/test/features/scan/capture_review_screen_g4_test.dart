@@ -10,13 +10,15 @@ import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
+import '../../support/localized_app.dart';
+
 Future<void> _pump(
   WidgetTester tester, {
   required void Function(CropCorners, ImageEnhancer) onAccept,
   bool saving = false,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/g4.jpg'),
         onRetake: () {},
@@ -125,7 +127,7 @@ void main() {
     // Use pump() not pumpAndSettle(): CircularProgressIndicator is indeterminate
     // and its animation controller never stops, so pumpAndSettle() always times out.
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/g4.jpg'),
           onRetake: () {},

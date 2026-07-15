@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
 import '../library/image_enhancer.dart';
@@ -62,6 +63,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
     if (retake) {
       final messenger = ScaffoldMessenger.of(context);
+      final l10n = context.l10n;
       final success = await widget.onCapture!(
         pages.first,
         CropCorners.fullFrame,
@@ -70,7 +72,7 @@ class _ScanScreenState extends State<ScanScreen> {
       if (!mounted) return;
       if (!success) {
         messenger.showSnackBar(
-          const SnackBar(content: Text("Couldn't replace page. Try again.")),
+          SnackBar(content: Text(l10n.scanErrorReplacePage)),
         );
       }
       navigator.pop();
@@ -119,6 +121,7 @@ class _ScanScreenState extends State<ScanScreen> {
     ImageEnhancer enhancer,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final doc = await _saveController.save(
       pages.first,
       corners: CropCorners.fullFrame,
@@ -128,7 +131,7 @@ class _ScanScreenState extends State<ScanScreen> {
     if (doc == null) {
       setState(() => _saveFailed = true);
       messenger.showSnackBar(
-        const SnackBar(content: Text("Couldn't save document. Try again.")),
+        SnackBar(content: Text(l10n.commonErrorSaveDocument)),
       );
       return;
     }
@@ -153,21 +156,19 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_saveFailed) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Scan')),
+        appBar: AppBar(title: Text(l10n.scanTitle)),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "Couldn't save the scan.",
-                key: Key('scan-save-error'),
-              ),
+              Text(l10n.scanSaveFailed, key: const Key('scan-save-error')),
               FilledButton(
                 key: const Key('scan-retry'),
                 onPressed: _retry,
-                child: const Text('Retry'),
+                child: Text(l10n.commonRetry),
               ),
             ],
           ),
@@ -177,8 +178,8 @@ class _ScanScreenState extends State<ScanScreen> {
     return Scaffold(
       appBar: AppBar(
         title: _pageCount == 0
-            ? const Text('Scan')
-            : Text('$_pageCount page${_pageCount == 1 ? '' : 's'} saved'),
+            ? Text(l10n.scanTitle)
+            : Text(l10n.scanPagesSaved(_pageCount)),
       ),
       body: const Center(
         key: Key('scan-opening'),

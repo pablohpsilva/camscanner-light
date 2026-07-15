@@ -8,6 +8,7 @@ import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 import '../../test/support/fake_library.dart';
+import '../../test/support/localized_app.dart';
 
 /// Shared repo instance — set by the Given step; read by the Then steps.
 FakeDocumentRepository g1Repo = FakeDocumentRepository();
@@ -18,7 +19,7 @@ Future<void> theReviewScreenIsOpenWithACapturedImage(
 ) async {
   g1Repo = FakeDocumentRepository();
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/g1bdd.jpg'),
         saving: false,

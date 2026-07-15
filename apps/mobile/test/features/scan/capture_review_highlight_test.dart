@@ -8,6 +8,8 @@ import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/scan/widgets/crop_overlay.dart';
 
+import '../../support/localized_app.dart';
+
 /// A detector that returns a fixed confidence so we can drive the tint tiers.
 class _FakeDetector implements EdgeDetector {
   final double confidence;
@@ -19,7 +21,7 @@ class _FakeDetector implements EdgeDetector {
 
 Future<Color> _highlightFor(WidgetTester tester, double confidence) async {
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: CaptureReviewScreen(
         image: const CapturedImage('/nonexistent/h.jpg'),
         onRetake: () {},
