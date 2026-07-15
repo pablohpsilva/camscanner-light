@@ -8,6 +8,7 @@ import 'package:mobile/features/library/recognized_text_screen.dart';
 import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 class _ThrowingRunOcrRepository extends FakeDocumentRepository {
   _ThrowingRunOcrRepository({super.pages});
@@ -20,8 +21,7 @@ class _ThrowingRunOcrRepository extends FakeDocumentRepository {
 
 void main() {
   Widget host(FakeDocumentRepository repo, {String? initialText}) =>
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: RecognizedTextScreen(
           documentId: 1,
           position: 1,
@@ -78,6 +78,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

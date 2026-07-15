@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/pdf_preview_screen.dart';
 
+import '../../support/localized_app.dart';
+
 Future<void> _pump(WidgetTester tester, {FeatureFlags? features}) async {
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: PdfPreviewScreen(
         pdfPath: '/x.pdf',
         name: 'x',

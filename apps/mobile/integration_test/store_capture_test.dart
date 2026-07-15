@@ -210,6 +210,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: PdfPreviewScreen(
           pdfPath: pdf.path,
           name: 'Acme Corporation Invoice',

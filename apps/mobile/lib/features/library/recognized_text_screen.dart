@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'share_channel.dart';
 
+import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/confidence_chip.dart';
 import '../../theme/widgets/ream_action_button.dart';
@@ -70,6 +71,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
   }
 
   Future<void> _recognize() async {
+    final l10n = context.l10n;
     setState(() => _busy = true);
     try {
       await widget.repository.runOcr(widget.documentId, widget.position);
@@ -78,7 +80,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't recognize text")));
+      ).showSnackBar(SnackBar(content: Text(l10n.ocrErrorRecognize)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -87,14 +89,16 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
   Future<void> _copy() async {
     final t = _text;
     if (t == null || t.isEmpty) return;
+    final l10n = context.l10n;
     await Clipboard.setData(ClipboardData(text: t));
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Copied')));
+    ).showSnackBar(SnackBar(content: Text(l10n.commonCopied)));
   }
 
   Future<void> _share() async {
+    final l10n = context.l10n;
     try {
       final file = await widget.repository.exportRecognizedText(
         widget.documentId,
@@ -105,19 +109,20 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't export text")));
+      ).showSnackBar(SnackBar(content: Text(l10n.ocrErrorExport)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final r = context.ream;
+    final l10n = context.l10n;
     final text = _text;
     final hasText = text != null && text.trim().isNotEmpty;
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
-        title: 'Recognized text',
+        title: l10n.ocrTitle,
         onBack: () => Navigator.of(context).maybePop(),
         backKey: const Key('recognized-text-back'),
       ),
@@ -135,7 +140,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                     alignment: Alignment.centerLeft,
                     child: ConfidenceChip(
                       level: ConfidenceLevel.high,
-                      label: 'Text layer ready · powers search',
+                      label: l10n.ocrTextLayerReady,
                     ),
                   ),
                 ),
@@ -161,7 +166,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                       Expanded(
                         child: ReamActionButton(
                           key: const Key('recognized-text-copy'),
-                          label: 'Copy text',
+                          label: l10n.ocrCopyText,
                           onPressed: (_busy || !hasText) ? null : _copy,
                         ),
                       ),
@@ -169,7 +174,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                       Expanded(
                         child: ReamActionButton(
                           key: const Key('recognized-text-share'),
-                          label: 'Share .txt',
+                          label: l10n.ocrShareTxt,
                           primary: true,
                           fillColor: r.ink,
                           onPressed: (_busy || !hasText)
@@ -188,7 +193,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'No text recognized on this page yet.',
+                    l10n.ocrEmpty,
                     style: TextStyle(
                       fontFamily: 'Figtree',
                       fontSize: 14,
@@ -199,7 +204,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                   FilledButton(
                     key: const Key('recognized-text-run'),
                     onPressed: _busy ? null : _recognize,
-                    child: const Text('Recognize text'),
+                    child: Text(l10n.ocrRecognizeButton),
                   ),
                 ],
               ),

@@ -12,6 +12,8 @@ import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 import 'package:pdfx/pdfx.dart';
 
+import '../../support/localized_app.dart';
+
 class _FakeTexture extends PdfPageTexture {
   _FakeTexture() : super(id: 1, pageId: 'p1', pageNumber: 1);
   @override
@@ -95,8 +97,7 @@ void main() {
     'a successful open shows the PdfViewPinch (loaded) state, no error/loading',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: ReamTheme.light(),
+        localizedTestApp(
           home: PdfPreviewScreen(
             pdfPath: '/x/export.pdf',
             name: 'Lease Agreement',
@@ -126,6 +127,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
@@ -169,6 +172,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
