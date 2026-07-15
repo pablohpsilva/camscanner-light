@@ -12,368 +12,386 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appTitle => 'CamScanner-light';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => 'إلغاء';
 
   @override
-  String get commonSave => 'Save';
+  String get commonSave => 'حفظ';
 
   @override
-  String get commonDelete => 'Delete';
+  String get commonDelete => 'حذف';
 
   @override
-  String get commonRetry => 'Retry';
+  String get commonRetry => 'إعادة المحاولة';
 
   @override
-  String get commonRetake => 'Retake';
+  String get commonRetake => 'إعادة الالتقاط';
 
   @override
-  String get commonShare => 'Share';
+  String get commonShare => 'مشاركة';
 
   @override
-  String get commonRename => 'Rename';
+  String get commonRename => 'إعادة تسمية';
 
   @override
-  String get commonCopied => 'Copied';
+  String get commonCopied => 'تم النسخ';
 
   @override
-  String get commonDocumentOptions => 'Document options';
+  String get commonDocumentOptions => 'خيارات المستند';
 
   @override
-  String get commonSearchHint => 'Search titles & text inside pages';
+  String get commonSearchHint => 'ابحث في العناوين والنص داخل الصفحات';
 
   @override
   String commonPageCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '1 page',
+      other: '$count صفحة',
+      many: '$count صفحة',
+      few: '$count صفحات',
+      two: 'صفحتان',
+      one: 'صفحة واحدة',
+      zero: '$count صفحة',
     );
     return '$_temp0';
   }
 
   @override
-  String get commonErrorSaveDocument => 'Couldn\'t save document. Try again.';
+  String get commonErrorSaveDocument => 'تعذّر حفظ المستند. حاول مرة أخرى.';
 
   @override
-  String get commonErrorRename => 'Couldn\'t rename';
+  String get commonErrorRename => 'تعذّرت إعادة التسمية';
 
   @override
-  String get commonErrorShare => 'Couldn\'t share';
+  String get commonErrorShare => 'تعذّرت المشاركة';
 
   @override
-  String get homeDocumentsTitle => 'Documents';
+  String get homeDocumentsTitle => 'المستندات';
 
   @override
-  String get homePrivateOnDevice => 'Private · on this device';
+  String get homePrivateOnDevice => 'خاص · على هذا الجهاز';
 
   @override
-  String get homeCancelSelectionTooltip => 'Cancel selection';
+  String get homeCancelSelectionTooltip => 'إلغاء التحديد';
 
   @override
   String homeSelectedCount(int count) {
-    return '$count selected';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم تحديد $count عنصر',
+      many: 'تم تحديد $count عنصرًا',
+      few: 'تم تحديد $count عناصر',
+      two: 'تم تحديد عنصرين',
+      one: 'تم تحديد عنصر واحد',
+      zero: 'تم تحديد $count',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get homeExportTooltip => 'Export';
+  String get homeExportTooltip => 'تصدير';
 
   @override
-  String get homeActionScan => 'Scan';
+  String get homeActionScan => 'مسح ضوئي';
 
   @override
-  String get homeActionIdCard => 'ID card';
+  String get homeActionIdCard => 'بطاقة هوية';
 
   @override
-  String get homeActionImport => 'Import';
+  String get homeActionImport => 'استيراد';
 
   @override
   String homeSearchNoMatch(String query) {
-    return 'No documents match \"$query\".';
+    return 'لا توجد مستندات مطابقة لـ \"$query\".';
   }
 
   @override
-  String get homeErrorLoadDocuments => 'Couldn\'t load documents.';
+  String get homeErrorLoadDocuments => 'تعذّر تحميل المستندات.';
 
   @override
-  String get homeErrorImportPhoto => 'Couldn\'t import photo';
+  String get homeErrorImportPhoto => 'تعذّر استيراد الصورة';
 
   @override
-  String get homeViewList => 'List';
+  String get homeViewList => 'قائمة';
 
   @override
-  String get homeViewGrid => 'Grid';
+  String get homeViewGrid => 'شبكة';
 
   @override
-  String get homeEmptyTitle => 'No documents yet';
+  String get homeEmptyTitle => 'لا توجد مستندات بعد';
 
   @override
-  String get homeEmptySubtitle => 'Tap Scan to create your first document';
+  String get homeEmptySubtitle => 'اضغط على مسح ضوئي لإنشاء أول مستند لك';
 
   @override
-  String get sortName => 'Name';
+  String get sortName => 'الاسم';
 
   @override
-  String get sortCreated => 'Created';
+  String get sortCreated => 'تاريخ الإنشاء';
 
   @override
-  String get sortModified => 'Modified';
+  String get sortModified => 'تاريخ التعديل';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'الإعدادات';
 
   @override
-  String get settingsSectionAppearance => 'Appearance';
+  String get settingsSectionAppearance => 'المظهر';
 
   @override
-  String get settingsThemeLight => 'Light';
+  String get settingsThemeLight => 'فاتح';
 
   @override
-  String get settingsThemeDark => 'Dark';
+  String get settingsThemeDark => 'داكن';
 
   @override
-  String get settingsThemeSystem => 'System';
+  String get settingsThemeSystem => 'النظام';
 
   @override
-  String get settingsSectionLanguage => 'Language';
+  String get settingsSectionLanguage => 'اللغة';
 
   @override
-  String get settingsLanguageSystem => 'System default';
+  String get settingsLanguageSystem => 'لغة النظام';
 
   @override
-  String get settingsSectionFeedback => 'Feedback & support';
+  String get settingsSectionFeedback => 'الملاحظات والدعم';
 
   @override
-  String get settingsSupportApp => 'Support the app';
+  String get settingsSupportApp => 'ادعم التطبيق';
 
   @override
   String get settingsAboutTagline =>
-      'Your scans stay on your device — no account, no cloud.';
+      'تبقى مسحوباتك الضوئية على جهازك — بلا حساب وبلا سحابة.';
 
   @override
-  String get donationHeadline => 'No accounts. No cloud.\\nNo subscription.';
+  String get donationHeadline => 'بلا حسابات. بلا سحابة.\\nبلا اشتراك.';
 
   @override
   String get donationDisclaimer =>
-      'This is a voluntary donation only. You receive no features, benefits, or content in return — it simply helps support ongoing development.';
+      'هذا تبرّع اختياري فقط. لن تحصل على أي ميزات أو مزايا أو محتوى مقابله — فهو يساعد ببساطة على دعم تطوير التطبيق.';
 
   @override
   String get donationOptionalNote =>
-      'Donating unlocks nothing — every feature is already yours. This is genuinely optional.';
+      'التبرّع لا يفتح أي شيء — فكل الميزات متاحة لك بالفعل. هذا أمر اختياري تمامًا.';
 
   @override
-  String get donationKofiButton => 'Buy me a coffee — Ko-fi';
+  String get donationKofiButton => 'اشترِ لي قهوة — Ko-fi';
 
   @override
-  String get donationErrorOpenKofi => 'Couldn\'t open Ko-fi';
+  String get donationErrorOpenKofi => 'تعذّر فتح Ko-fi';
 
   @override
-  String get donationBitcoinCopied => 'Bitcoin address copied';
+  String get donationBitcoinCopied => 'تم نسخ عنوان Bitcoin';
 
   @override
-  String get donationBitcoinHeading => 'Or donate with Bitcoin';
+  String get donationBitcoinHeading => 'أو تبرّع عبر Bitcoin';
 
   @override
-  String get donationCopyAddress => 'Copy address';
+  String get donationCopyAddress => 'نسخ العنوان';
 
   @override
-  String get donationBannerText => 'Enjoying the app? Tap to support it';
+  String get donationBannerText => 'هل يعجبك التطبيق؟ اضغط لدعمه';
 
   @override
-  String get scanTitle => 'Scan';
+  String get scanTitle => 'مسح ضوئي';
 
   @override
   String scanPagesSaved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages saved',
-      one: '1 page saved',
+      other: 'تم حفظ $count صفحة',
+      many: 'تم حفظ $count صفحة',
+      few: 'تم حفظ $count صفحات',
+      two: 'تم حفظ صفحتين',
+      one: 'تم حفظ صفحة واحدة',
+      zero: 'تم حفظ $count صفحة',
     );
     return '$_temp0';
   }
 
   @override
-  String get scanErrorReplacePage => 'Couldn\'t replace page. Try again.';
+  String get scanErrorReplacePage => 'تعذّر استبدال الصفحة. حاول مرة أخرى.';
 
   @override
-  String get scanSaveFailed => 'Couldn\'t save the scan.';
+  String get scanSaveFailed => 'تعذّر حفظ المسح الضوئي.';
 
   @override
-  String get idScanTitle => 'Scan ID';
+  String get idScanTitle => 'مسح بطاقة الهوية';
 
   @override
-  String get idScanFrontPrompt => 'Scan the FRONT of the ID';
+  String get idScanFrontPrompt => 'امسح الوجه الأمامي للبطاقة';
 
   @override
-  String get idScanBackPrompt => 'Scan the BACK of the ID';
+  String get idScanBackPrompt => 'امسح الوجه الخلفي للبطاقة';
 
   @override
-  String get idScanSaving => 'Saving…';
+  String get idScanSaving => 'جارٍ الحفظ…';
 
   @override
-  String get idScanErrorSave => 'Couldn\'t save the ID. Try again.';
+  String get idScanErrorSave => 'تعذّر حفظ بطاقة الهوية. حاول مرة أخرى.';
 
   @override
   String get idScanErrorBackRetake =>
-      'Saved the front, but the back failed. Retake it from the document.';
+      'تم حفظ الوجه الأمامي، لكن الوجه الخلفي فشل. أعد التقاطه من المستند.';
 
   @override
-  String get captureReviewTitle => 'Review';
+  String get captureReviewTitle => 'مراجعة';
 
   @override
-  String get captureReviewReset => 'Reset';
+  String get captureReviewReset => 'إعادة ضبط';
 
   @override
-  String get captureReviewAccept => 'Accept';
+  String get captureReviewAccept => 'قبول';
 
   @override
-  String get editFilterTitle => 'Filter';
+  String get editFilterTitle => 'الفلتر';
 
   @override
-  String get editCropTitle => 'Review & clean';
+  String get editCropTitle => 'مراجعة وتنظيف';
 
   @override
-  String get filterAuto => 'Auto';
+  String get filterAuto => 'تلقائي';
 
   @override
-  String get filterOriginal => 'Original';
+  String get filterOriginal => 'أصلي';
 
   @override
-  String get filterColor => 'Color';
+  String get filterColor => 'ملوّن';
 
   @override
-  String get filterGrayscale => 'Grayscale';
+  String get filterGrayscale => 'تدرج رمادي';
 
   @override
-  String get toolbarCrop => 'Crop';
+  String get toolbarCrop => 'قص';
 
   @override
-  String get toolbarRotate => 'Rotate';
+  String get toolbarRotate => 'تدوير';
 
   @override
-  String get toolbarFilter => 'Filter';
+  String get toolbarFilter => 'فلتر';
 
   @override
-  String get toolbarText => 'Text';
+  String get toolbarText => 'نص';
 
   @override
-  String get cropHandleTopEdge => 'Top edge midpoint';
+  String get cropHandleTopEdge => 'منتصف الحافة العلوية';
 
   @override
-  String get cropHandleRightEdge => 'Right edge midpoint';
+  String get cropHandleRightEdge => 'منتصف الحافة اليمنى';
 
   @override
-  String get cropHandleBottomEdge => 'Bottom edge midpoint';
+  String get cropHandleBottomEdge => 'منتصف الحافة السفلية';
 
   @override
-  String get cropHandleLeftEdge => 'Left edge midpoint';
+  String get cropHandleLeftEdge => 'منتصف الحافة اليسرى';
 
   @override
-  String get cropHandleTopLeft => 'Top-left crop corner';
+  String get cropHandleTopLeft => 'زاوية القص العلوية اليسرى';
 
   @override
-  String get cropHandleTopRight => 'Top-right crop corner';
+  String get cropHandleTopRight => 'زاوية القص العلوية اليمنى';
 
   @override
-  String get cropHandleBottomRight => 'Bottom-right crop corner';
+  String get cropHandleBottomRight => 'زاوية القص السفلية اليمنى';
 
   @override
-  String get cropHandleBottomLeft => 'Bottom-left crop corner';
+  String get cropHandleBottomLeft => 'زاوية القص السفلية اليسرى';
 
   @override
   String get viewerDeleteDocumentConfirm =>
-      'Delete this document? This can\'t be undone.';
+      'حذف هذا المستند؟ لا يمكن التراجع عن هذا الإجراء.';
 
   @override
-  String get viewerDeleteDocumentError => 'Couldn\'t delete';
+  String get viewerDeleteDocumentError => 'تعذّر الحذف';
 
   @override
   String get viewerDeletePageOnlyPageWarning =>
-      'This is the only page. Deleting it removes the whole document.';
+      'هذه هي الصفحة الوحيدة. حذفها يؤدي إلى حذف المستند بالكامل.';
 
   @override
   String get viewerDeletePageConfirm =>
-      'Delete this page? This can\'t be undone.';
+      'حذف هذه الصفحة؟ لا يمكن التراجع عن هذا الإجراء.';
 
   @override
-  String get viewerDeletePageError => 'Couldn\'t delete page';
+  String get viewerDeletePageError => 'تعذّر حذف الصفحة';
 
   @override
-  String get viewerExportPdfError => 'Couldn\'t export PDF';
+  String get viewerExportPdfError => 'تعذّر تصدير ملف PDF';
 
   @override
-  String get viewerShareImageError => 'Couldn\'t share image';
+  String get viewerShareImageError => 'تعذّرت مشاركة الصورة';
 
   @override
-  String get viewerShareImagesError => 'Couldn\'t share images';
+  String get viewerShareImagesError => 'تعذّرت مشاركة الصور';
 
   @override
-  String get viewerPrintSuccess => 'Sent to printer';
+  String get viewerPrintSuccess => 'تم الإرسال إلى الطابعة';
 
   @override
-  String get viewerPrintError => 'Couldn\'t print';
+  String get viewerPrintError => 'تعذّرت الطباعة';
 
   @override
-  String get viewerProtectPdfSuccess => 'Protected PDF ready';
+  String get viewerProtectPdfSuccess => 'ملف PDF المحمي جاهز';
 
   @override
-  String get viewerProtectPdfError => 'Couldn\'t protect PDF';
+  String get viewerProtectPdfError => 'تعذّرت حماية ملف PDF';
 
   @override
   String get viewerSplitLastPageWarning =>
-      'This is the last page — nothing to split after.';
+      'هذه هي الصفحة الأخيرة — لا يوجد ما يُقسَّم بعدها.';
 
   @override
-  String get viewerSplitSuccess => 'Split into a new document';
+  String get viewerSplitSuccess => 'تم التقسيم إلى مستند جديد';
 
   @override
-  String get viewerSplitError => 'Couldn\'t split';
+  String get viewerSplitError => 'تعذّر التقسيم';
 
   @override
-  String get viewerMergeError => 'Couldn\'t merge';
+  String get viewerMergeError => 'تعذّر الدمج';
 
   @override
-  String get viewerReorderPagesError => 'Couldn\'t reorder pages';
+  String get viewerReorderPagesError => 'تعذّرت إعادة ترتيب الصفحات';
 
   @override
-  String get viewerRotateError => 'Couldn\'t rotate';
+  String get viewerRotateError => 'تعذّر التدوير';
 
   @override
-  String get viewerCropError => 'Couldn\'t update crop';
+  String get viewerCropError => 'تعذّر تحديث القص';
 
   @override
-  String get viewerFilterError => 'Couldn\'t change filter';
+  String get viewerFilterError => 'تعذّر تغيير الفلتر';
 
   @override
-  String get viewerLoadError => 'Couldn\'t load this document.';
+  String get viewerLoadError => 'تعذّر تحميل هذا المستند.';
 
   @override
-  String get viewerEmptyPages => 'This document has no pages.';
+  String get viewerEmptyPages => 'هذا المستند لا يحتوي على صفحات.';
 
   @override
-  String get viewerMenuMerge => 'Merge another document…';
+  String get viewerMenuMerge => 'دمج مستند آخر…';
 
   @override
-  String get viewerMenuSplit => 'Split after this page';
+  String get viewerMenuSplit => 'تقسيم بعد هذه الصفحة';
 
   @override
-  String get viewerMenuDeleteDocument => 'Delete document';
+  String get viewerMenuDeleteDocument => 'حذف المستند';
 
   @override
-  String get viewerShareExportPdf => 'Export PDF';
+  String get viewerShareExportPdf => 'تصدير PDF';
 
   @override
-  String get viewerShareAsImage => 'Share as image';
+  String get viewerShareAsImage => 'مشاركة كصورة';
 
   @override
-  String get viewerShareAllAsImages => 'Share all as images';
+  String get viewerShareAllAsImages => 'مشاركة الكل كصور';
 
   @override
-  String get viewerSharePrint => 'Print';
+  String get viewerSharePrint => 'طباعة';
 
   @override
-  String get viewerShareProtect => 'Protect with password';
+  String get viewerShareProtect => 'حماية بكلمة مرور';
 
   @override
   String viewerPageCounter(int current, int total) {
@@ -381,163 +399,164 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get shareLink => 'Share link';
+  String get shareLink => 'مشاركة رابط';
 
   @override
-  String get shareFax => 'Fax';
+  String get shareFax => 'فاكس';
 
   @override
-  String get shareLinkUnavailable => 'Link sharing isn\'t available yet';
+  String get shareLinkUnavailable => 'مشاركة الروابط غير متاحة بعد';
 
   @override
-  String get shareFaxUnavailable => 'Fax isn\'t available yet';
+  String get shareFaxUnavailable => 'الفاكس غير متاح بعد';
 
   @override
-  String get renameDialogTitle => 'Rename document';
+  String get renameDialogTitle => 'إعادة تسمية المستند';
 
   @override
-  String get renameFieldLabel => 'Name';
+  String get renameFieldLabel => 'الاسم';
 
   @override
-  String get passwordDialogTitle => 'Password-protect PDF';
+  String get passwordDialogTitle => 'حماية ملف PDF بكلمة مرور';
 
   @override
-  String get passwordFieldHint => 'Enter a password';
+  String get passwordFieldHint => 'أدخل كلمة مرور';
 
   @override
-  String get passwordProtectButton => 'Protect';
+  String get passwordProtectButton => 'حماية';
 
   @override
-  String get exportQualityTitle => 'Export quality';
+  String get exportQualityTitle => 'جودة التصدير';
 
   @override
-  String get exportQualityOriginal => 'Original';
+  String get exportQualityOriginal => 'أصلية';
 
   @override
-  String get exportQualityOriginalDesc => 'Full quality, largest file';
+  String get exportQualityOriginalDesc => 'جودة كاملة، أكبر حجم ملف';
 
   @override
-  String get exportQualityHigh => 'High';
+  String get exportQualityHigh => 'عالية';
 
   @override
-  String get exportQualityHighDesc => 'High quality';
+  String get exportQualityHighDesc => 'جودة عالية';
 
   @override
-  String get exportQualityMedium => 'Medium';
+  String get exportQualityMedium => 'متوسطة';
 
   @override
-  String get exportQualityMediumDesc => 'Good for email';
+  String get exportQualityMediumDesc => 'مناسبة للبريد الإلكتروني';
 
   @override
-  String get exportQualityLow => 'Low';
+  String get exportQualityLow => 'منخفضة';
 
   @override
-  String get exportQualityLowDesc => 'Smallest file';
+  String get exportQualityLowDesc => 'أصغر حجم ملف';
 
   @override
-  String get mergeDialogTitle => 'Merge another document';
+  String get mergeDialogTitle => 'دمج مستند آخر';
 
   @override
-  String get mergeDialogEmpty => 'No other documents to merge.';
+  String get mergeDialogEmpty => 'لا توجد مستندات أخرى للدمج.';
 
   @override
-  String get ocrTitle => 'Recognized text';
+  String get ocrTitle => 'النص المتعرَّف عليه';
 
   @override
-  String get ocrErrorRecognize => 'Couldn\'t recognize text';
+  String get ocrErrorRecognize => 'تعذّر التعرّف على النص';
 
   @override
-  String get ocrErrorExport => 'Couldn\'t export text';
+  String get ocrErrorExport => 'تعذّر تصدير النص';
 
   @override
-  String get ocrTextLayerReady => 'Text layer ready · powers search';
+  String get ocrTextLayerReady => 'طبقة النص جاهزة · تُفعّل البحث';
 
   @override
-  String get ocrCopyText => 'Copy text';
+  String get ocrCopyText => 'نسخ النص';
 
   @override
-  String get ocrShareTxt => 'Share .txt';
+  String get ocrShareTxt => 'مشاركة ملف .txt';
 
   @override
-  String get ocrEmpty => 'No text recognized on this page yet.';
+  String get ocrEmpty => 'لم يتم التعرّف على أي نص في هذه الصفحة بعد.';
 
   @override
-  String get ocrRecognizeButton => 'Recognize text';
+  String get ocrRecognizeButton => 'التعرّف على النص';
 
   @override
-  String get pdfPreviewOpenError => 'Couldn\'t open the PDF.';
+  String get pdfPreviewOpenError => 'تعذّر فتح ملف PDF.';
 
   @override
-  String get feedbackTitle => 'Send feedback';
+  String get feedbackTitle => 'إرسال ملاحظات';
 
   @override
-  String get feedbackSuccess => 'Thanks! Your feedback was sent.';
+  String get feedbackSuccess => 'شكرًا لك! تم إرسال ملاحظاتك.';
 
   @override
   String get feedbackRateLimited =>
-      'You\'ve sent a few already — please try again later.';
+      'لقد أرسلت عدة رسائل بالفعل — يُرجى المحاولة لاحقًا.';
 
   @override
   String get feedbackRejectedUnverified =>
-      'Couldn\'t verify the app — please try again.';
+      'تعذّر التحقق من التطبيق — يُرجى المحاولة مرة أخرى.';
 
   @override
-  String get feedbackOffline => 'Check your connection and try again.';
+  String get feedbackOffline => 'تحقق من اتصالك وحاول مرة أخرى.';
 
   @override
-  String get feedbackInvalid => 'Please check your message and try again.';
+  String get feedbackInvalid => 'يُرجى التحقق من رسالتك والمحاولة مرة أخرى.';
 
   @override
   String get feedbackServerError =>
-      'Couldn\'t send right now — please try again.';
+      'تعذّر الإرسال الآن — يُرجى المحاولة مرة أخرى.';
 
   @override
-  String get feedbackTypeLabel => 'Type';
+  String get feedbackTypeLabel => 'النوع';
 
   @override
-  String get feedbackTypeBug => 'Bug';
+  String get feedbackTypeBug => 'خلل';
 
   @override
-  String get feedbackTypeIdea => 'Idea';
+  String get feedbackTypeIdea => 'فكرة';
 
   @override
-  String get feedbackTypeQuestion => 'Question';
+  String get feedbackTypeQuestion => 'سؤال';
 
   @override
-  String get feedbackMessageLabel => 'Message';
+  String get feedbackMessageLabel => 'الرسالة';
 
   @override
-  String get feedbackMessageHint => 'Your feedback';
+  String get feedbackMessageHint => 'ملاحظاتك';
 
   @override
-  String get feedbackMessageRequired => 'Please enter a message';
+  String get feedbackMessageRequired => 'يُرجى إدخال رسالة';
 
   @override
-  String get feedbackEmailLabel => 'Email — optional';
+  String get feedbackEmailLabel => 'البريد الإلكتروني — اختياري';
 
   @override
   String get feedbackEmailHint => 'you@example.com';
 
   @override
-  String get feedbackEmailInvalid => 'Enter a valid email or leave it blank';
+  String get feedbackEmailInvalid =>
+      'أدخل بريدًا إلكترونيًا صالحًا أو اتركه فارغًا';
 
   @override
   String get feedbackEmailPublicNote =>
-      'Optional. This will be publicly visible on GitHub.';
+      'اختياري. سيكون هذا مرئيًا للعامة على GitHub.';
 
   @override
-  String get feedbackDiagnosticsShow => 'What will be sent?';
+  String get feedbackDiagnosticsShow => 'ماذا سيتم إرساله؟';
 
   @override
-  String get feedbackDiagnosticsHide => 'Hide what will be sent';
+  String get feedbackDiagnosticsHide => 'إخفاء ما سيتم إرساله';
 
   @override
-  String get feedbackDiagnosticsTitle => 'What we include';
+  String get feedbackDiagnosticsTitle => 'ما نقوم بتضمينه';
 
   @override
   String get feedbackDiagnosticsBody =>
-      'Diagnostics attached: app version, OS version, device model, and language. No scanned documents or their contents are ever sent.';
+      'التشخيصات المرفقة: إصدار التطبيق، إصدار نظام التشغيل، طراز الجهاز، واللغة. لا يتم إرسال أي مستندات ممسوحة ضوئيًا أو محتواها مطلقًا.';
 
   @override
-  String get feedbackSubmit => 'Send report';
+  String get feedbackSubmit => 'إرسال التقرير';
 }

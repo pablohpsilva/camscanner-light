@@ -12,226 +12,232 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appTitle => 'CamScanner-light';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => 'Abbrechen';
 
   @override
-  String get commonSave => 'Save';
+  String get commonSave => 'Speichern';
 
   @override
-  String get commonDelete => 'Delete';
+  String get commonDelete => 'Löschen';
 
   @override
-  String get commonRetry => 'Retry';
+  String get commonRetry => 'Erneut versuchen';
 
   @override
-  String get commonRetake => 'Retake';
+  String get commonRetake => 'Erneut aufnehmen';
 
   @override
-  String get commonShare => 'Share';
+  String get commonShare => 'Teilen';
 
   @override
-  String get commonRename => 'Rename';
+  String get commonRename => 'Umbenennen';
 
   @override
-  String get commonCopied => 'Copied';
+  String get commonCopied => 'Kopiert';
 
   @override
-  String get commonDocumentOptions => 'Document options';
+  String get commonDocumentOptions => 'Dokumentoptionen';
 
   @override
-  String get commonSearchHint => 'Search titles & text inside pages';
+  String get commonSearchHint => 'Titel & Text in Seiten durchsuchen';
 
   @override
   String commonPageCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '1 page',
+      other: '$count Seiten',
+      one: '1 Seite',
     );
     return '$_temp0';
   }
 
   @override
-  String get commonErrorSaveDocument => 'Couldn\'t save document. Try again.';
+  String get commonErrorSaveDocument =>
+      'Dokument konnte nicht gespeichert werden. Bitte erneut versuchen.';
 
   @override
-  String get commonErrorRename => 'Couldn\'t rename';
+  String get commonErrorRename => 'Umbenennen fehlgeschlagen';
 
   @override
-  String get commonErrorShare => 'Couldn\'t share';
+  String get commonErrorShare => 'Teilen fehlgeschlagen';
 
   @override
-  String get homeDocumentsTitle => 'Documents';
+  String get homeDocumentsTitle => 'Dokumente';
 
   @override
-  String get homePrivateOnDevice => 'Private · on this device';
+  String get homePrivateOnDevice => 'Privat · auf diesem Gerät';
 
   @override
-  String get homeCancelSelectionTooltip => 'Cancel selection';
+  String get homeCancelSelectionTooltip => 'Auswahl aufheben';
 
   @override
   String homeSelectedCount(int count) {
-    return '$count selected';
+    return '$count ausgewählt';
   }
 
   @override
-  String get homeExportTooltip => 'Export';
+  String get homeExportTooltip => 'Exportieren';
 
   @override
-  String get homeActionScan => 'Scan';
+  String get homeActionScan => 'Scannen';
 
   @override
-  String get homeActionIdCard => 'ID card';
+  String get homeActionIdCard => 'Ausweis';
 
   @override
-  String get homeActionImport => 'Import';
+  String get homeActionImport => 'Importieren';
 
   @override
   String homeSearchNoMatch(String query) {
-    return 'No documents match \"$query\".';
+    return 'Keine Dokumente gefunden für \"$query\".';
   }
 
   @override
-  String get homeErrorLoadDocuments => 'Couldn\'t load documents.';
+  String get homeErrorLoadDocuments =>
+      'Dokumente konnten nicht geladen werden.';
 
   @override
-  String get homeErrorImportPhoto => 'Couldn\'t import photo';
+  String get homeErrorImportPhoto => 'Foto konnte nicht importiert werden';
 
   @override
-  String get homeViewList => 'List';
+  String get homeViewList => 'Liste';
 
   @override
-  String get homeViewGrid => 'Grid';
+  String get homeViewGrid => 'Raster';
 
   @override
-  String get homeEmptyTitle => 'No documents yet';
+  String get homeEmptyTitle => 'Noch keine Dokumente';
 
   @override
-  String get homeEmptySubtitle => 'Tap Scan to create your first document';
+  String get homeEmptySubtitle =>
+      'Tippe auf Scannen, um dein erstes Dokument zu erstellen';
 
   @override
   String get sortName => 'Name';
 
   @override
-  String get sortCreated => 'Created';
+  String get sortCreated => 'Erstellt';
 
   @override
-  String get sortModified => 'Modified';
+  String get sortModified => 'Geändert';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'Einstellungen';
 
   @override
-  String get settingsSectionAppearance => 'Appearance';
+  String get settingsSectionAppearance => 'Erscheinungsbild';
 
   @override
-  String get settingsThemeLight => 'Light';
+  String get settingsThemeLight => 'Hell';
 
   @override
-  String get settingsThemeDark => 'Dark';
+  String get settingsThemeDark => 'Dunkel';
 
   @override
   String get settingsThemeSystem => 'System';
 
   @override
-  String get settingsSectionLanguage => 'Language';
+  String get settingsSectionLanguage => 'Sprache';
 
   @override
-  String get settingsLanguageSystem => 'System default';
+  String get settingsLanguageSystem => 'Systemstandard';
 
   @override
-  String get settingsSectionFeedback => 'Feedback & support';
+  String get settingsSectionFeedback => 'Feedback & Support';
 
   @override
-  String get settingsSupportApp => 'Support the app';
+  String get settingsSupportApp => 'App unterstützen';
 
   @override
   String get settingsAboutTagline =>
-      'Your scans stay on your device — no account, no cloud.';
+      'Deine Scans bleiben auf deinem Gerät — kein Konto, keine Cloud.';
 
   @override
-  String get donationHeadline => 'No accounts. No cloud.\\nNo subscription.';
+  String get donationHeadline => 'Keine Konten. Keine Cloud.\\nKein Abo.';
 
   @override
   String get donationDisclaimer =>
-      'This is a voluntary donation only. You receive no features, benefits, or content in return — it simply helps support ongoing development.';
+      'Dies ist eine freiwillige Spende. Du erhältst dafür keine Funktionen, Vorteile oder Inhalte — sie unterstützt lediglich die weitere Entwicklung.';
 
   @override
   String get donationOptionalNote =>
-      'Donating unlocks nothing — every feature is already yours. This is genuinely optional.';
+      'Eine Spende schaltet nichts frei — jede Funktion gehört dir bereits. Sie ist wirklich optional.';
 
   @override
-  String get donationKofiButton => 'Buy me a coffee — Ko-fi';
+  String get donationKofiButton => 'Spendier mir einen Kaffee — Ko-fi';
 
   @override
-  String get donationErrorOpenKofi => 'Couldn\'t open Ko-fi';
+  String get donationErrorOpenKofi => 'Ko-fi konnte nicht geöffnet werden';
 
   @override
-  String get donationBitcoinCopied => 'Bitcoin address copied';
+  String get donationBitcoinCopied => 'Bitcoin-Adresse kopiert';
 
   @override
-  String get donationBitcoinHeading => 'Or donate with Bitcoin';
+  String get donationBitcoinHeading => 'Oder mit Bitcoin spenden';
 
   @override
-  String get donationCopyAddress => 'Copy address';
+  String get donationCopyAddress => 'Adresse kopieren';
 
   @override
-  String get donationBannerText => 'Enjoying the app? Tap to support it';
+  String get donationBannerText =>
+      'Gefällt dir die App? Tippe, um sie zu unterstützen';
 
   @override
-  String get scanTitle => 'Scan';
+  String get scanTitle => 'Scannen';
 
   @override
   String scanPagesSaved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages saved',
-      one: '1 page saved',
+      other: '$count Seiten gespeichert',
+      one: '1 Seite gespeichert',
     );
     return '$_temp0';
   }
 
   @override
-  String get scanErrorReplacePage => 'Couldn\'t replace page. Try again.';
+  String get scanErrorReplacePage =>
+      'Seite konnte nicht ersetzt werden. Bitte erneut versuchen.';
 
   @override
-  String get scanSaveFailed => 'Couldn\'t save the scan.';
+  String get scanSaveFailed => 'Der Scan konnte nicht gespeichert werden.';
 
   @override
-  String get idScanTitle => 'Scan ID';
+  String get idScanTitle => 'Ausweis scannen';
 
   @override
-  String get idScanFrontPrompt => 'Scan the FRONT of the ID';
+  String get idScanFrontPrompt => 'VORDERSEITE des Ausweises scannen';
 
   @override
-  String get idScanBackPrompt => 'Scan the BACK of the ID';
+  String get idScanBackPrompt => 'RÜCKSEITE des Ausweises scannen';
 
   @override
-  String get idScanSaving => 'Saving…';
+  String get idScanSaving => 'Wird gespeichert…';
 
   @override
-  String get idScanErrorSave => 'Couldn\'t save the ID. Try again.';
+  String get idScanErrorSave =>
+      'Ausweis konnte nicht gespeichert werden. Bitte erneut versuchen.';
 
   @override
   String get idScanErrorBackRetake =>
-      'Saved the front, but the back failed. Retake it from the document.';
+      'Vorderseite gespeichert, aber Rückseite fehlgeschlagen. Bitte im Dokument erneut aufnehmen.';
 
   @override
-  String get captureReviewTitle => 'Review';
+  String get captureReviewTitle => 'Überprüfen';
 
   @override
-  String get captureReviewReset => 'Reset';
+  String get captureReviewReset => 'Zurücksetzen';
 
   @override
-  String get captureReviewAccept => 'Accept';
+  String get captureReviewAccept => 'Übernehmen';
 
   @override
   String get editFilterTitle => 'Filter';
 
   @override
-  String get editCropTitle => 'Review & clean';
+  String get editCropTitle => 'Prüfen & bereinigen';
 
   @override
   String get filterAuto => 'Auto';
@@ -240,16 +246,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get filterOriginal => 'Original';
 
   @override
-  String get filterColor => 'Color';
+  String get filterColor => 'Farbe';
 
   @override
-  String get filterGrayscale => 'Grayscale';
+  String get filterGrayscale => 'Graustufen';
 
   @override
-  String get toolbarCrop => 'Crop';
+  String get toolbarCrop => 'Zuschneiden';
 
   @override
-  String get toolbarRotate => 'Rotate';
+  String get toolbarRotate => 'Drehen';
 
   @override
   String get toolbarFilter => 'Filter';
@@ -258,122 +264,123 @@ class AppLocalizationsDe extends AppLocalizations {
   String get toolbarText => 'Text';
 
   @override
-  String get cropHandleTopEdge => 'Top edge midpoint';
+  String get cropHandleTopEdge => 'Mittelpunkt obere Kante';
 
   @override
-  String get cropHandleRightEdge => 'Right edge midpoint';
+  String get cropHandleRightEdge => 'Mittelpunkt rechte Kante';
 
   @override
-  String get cropHandleBottomEdge => 'Bottom edge midpoint';
+  String get cropHandleBottomEdge => 'Mittelpunkt untere Kante';
 
   @override
-  String get cropHandleLeftEdge => 'Left edge midpoint';
+  String get cropHandleLeftEdge => 'Mittelpunkt linke Kante';
 
   @override
-  String get cropHandleTopLeft => 'Top-left crop corner';
+  String get cropHandleTopLeft => 'Zuschneideecke oben links';
 
   @override
-  String get cropHandleTopRight => 'Top-right crop corner';
+  String get cropHandleTopRight => 'Zuschneideecke oben rechts';
 
   @override
-  String get cropHandleBottomRight => 'Bottom-right crop corner';
+  String get cropHandleBottomRight => 'Zuschneideecke unten rechts';
 
   @override
-  String get cropHandleBottomLeft => 'Bottom-left crop corner';
+  String get cropHandleBottomLeft => 'Zuschneideecke unten links';
 
   @override
   String get viewerDeleteDocumentConfirm =>
-      'Delete this document? This can\'t be undone.';
+      'Dieses Dokument löschen? Das kann nicht rückgängig gemacht werden.';
 
   @override
-  String get viewerDeleteDocumentError => 'Couldn\'t delete';
+  String get viewerDeleteDocumentError => 'Löschen fehlgeschlagen';
 
   @override
   String get viewerDeletePageOnlyPageWarning =>
-      'This is the only page. Deleting it removes the whole document.';
+      'Dies ist die einzige Seite. Beim Löschen wird das gesamte Dokument entfernt.';
 
   @override
   String get viewerDeletePageConfirm =>
-      'Delete this page? This can\'t be undone.';
+      'Diese Seite löschen? Das kann nicht rückgängig gemacht werden.';
 
   @override
-  String get viewerDeletePageError => 'Couldn\'t delete page';
+  String get viewerDeletePageError => 'Seite konnte nicht gelöscht werden';
 
   @override
-  String get viewerExportPdfError => 'Couldn\'t export PDF';
+  String get viewerExportPdfError => 'PDF konnte nicht exportiert werden';
 
   @override
-  String get viewerShareImageError => 'Couldn\'t share image';
+  String get viewerShareImageError => 'Bild konnte nicht geteilt werden';
 
   @override
-  String get viewerShareImagesError => 'Couldn\'t share images';
+  String get viewerShareImagesError => 'Bilder konnten nicht geteilt werden';
 
   @override
-  String get viewerPrintSuccess => 'Sent to printer';
+  String get viewerPrintSuccess => 'An Drucker gesendet';
 
   @override
-  String get viewerPrintError => 'Couldn\'t print';
+  String get viewerPrintError => 'Drucken fehlgeschlagen';
 
   @override
-  String get viewerProtectPdfSuccess => 'Protected PDF ready';
+  String get viewerProtectPdfSuccess => 'Geschützte PDF bereit';
 
   @override
-  String get viewerProtectPdfError => 'Couldn\'t protect PDF';
+  String get viewerProtectPdfError => 'PDF konnte nicht geschützt werden';
 
   @override
   String get viewerSplitLastPageWarning =>
-      'This is the last page — nothing to split after.';
+      'Dies ist die letzte Seite — danach gibt es nichts mehr zu teilen.';
 
   @override
-  String get viewerSplitSuccess => 'Split into a new document';
+  String get viewerSplitSuccess => 'In neues Dokument aufgeteilt';
 
   @override
-  String get viewerSplitError => 'Couldn\'t split';
+  String get viewerSplitError => 'Aufteilen fehlgeschlagen';
 
   @override
-  String get viewerMergeError => 'Couldn\'t merge';
+  String get viewerMergeError => 'Zusammenführen fehlgeschlagen';
 
   @override
-  String get viewerReorderPagesError => 'Couldn\'t reorder pages';
+  String get viewerReorderPagesError =>
+      'Seiten konnten nicht neu angeordnet werden';
 
   @override
-  String get viewerRotateError => 'Couldn\'t rotate';
+  String get viewerRotateError => 'Drehen fehlgeschlagen';
 
   @override
-  String get viewerCropError => 'Couldn\'t update crop';
+  String get viewerCropError => 'Zuschnitt konnte nicht aktualisiert werden';
 
   @override
-  String get viewerFilterError => 'Couldn\'t change filter';
+  String get viewerFilterError => 'Filter konnte nicht geändert werden';
 
   @override
-  String get viewerLoadError => 'Couldn\'t load this document.';
+  String get viewerLoadError => 'Dieses Dokument konnte nicht geladen werden.';
 
   @override
-  String get viewerEmptyPages => 'This document has no pages.';
+  String get viewerEmptyPages => 'Dieses Dokument hat keine Seiten.';
 
   @override
-  String get viewerMenuMerge => 'Merge another document…';
+  String get viewerMenuMerge => 'Anderes Dokument zusammenführen…';
 
   @override
-  String get viewerMenuSplit => 'Split after this page';
+  String get viewerMenuSplit => 'Nach dieser Seite teilen';
 
   @override
-  String get viewerMenuDeleteDocument => 'Delete document';
+  String get viewerMenuDeleteDocument => 'Dokument löschen';
 
   @override
-  String get viewerShareExportPdf => 'Export PDF';
+  String get viewerShareExportPdf => 'PDF exportieren';
 
   @override
-  String get viewerShareAsImage => 'Share as image';
+  String get viewerShareAsImage => 'Als Bild teilen';
 
   @override
-  String get viewerShareAllAsImages => 'Share all as images';
+  String get viewerShareAllAsImages => 'Alle als Bilder teilen';
 
   @override
-  String get viewerSharePrint => 'Print';
+  String get viewerSharePrint => 'Drucken';
 
   @override
-  String get viewerShareProtect => 'Protect with password';
+  String get viewerShareProtect => 'Mit Passwort schützen';
 
   @override
   String viewerPageCounter(int current, int total) {
@@ -381,163 +388,163 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get shareLink => 'Share link';
+  String get shareLink => 'Link teilen';
 
   @override
   String get shareFax => 'Fax';
 
   @override
-  String get shareLinkUnavailable => 'Link sharing isn\'t available yet';
+  String get shareLinkUnavailable => 'Link-Teilen ist noch nicht verfügbar';
 
   @override
-  String get shareFaxUnavailable => 'Fax isn\'t available yet';
+  String get shareFaxUnavailable => 'Fax ist noch nicht verfügbar';
 
   @override
-  String get renameDialogTitle => 'Rename document';
+  String get renameDialogTitle => 'Dokument umbenennen';
 
   @override
   String get renameFieldLabel => 'Name';
 
   @override
-  String get passwordDialogTitle => 'Password-protect PDF';
+  String get passwordDialogTitle => 'PDF mit Passwort schützen';
 
   @override
-  String get passwordFieldHint => 'Enter a password';
+  String get passwordFieldHint => 'Passwort eingeben';
 
   @override
-  String get passwordProtectButton => 'Protect';
+  String get passwordProtectButton => 'Schützen';
 
   @override
-  String get exportQualityTitle => 'Export quality';
+  String get exportQualityTitle => 'Exportqualität';
 
   @override
   String get exportQualityOriginal => 'Original';
 
   @override
-  String get exportQualityOriginalDesc => 'Full quality, largest file';
+  String get exportQualityOriginalDesc => 'Volle Qualität, größte Datei';
 
   @override
-  String get exportQualityHigh => 'High';
+  String get exportQualityHigh => 'Hoch';
 
   @override
-  String get exportQualityHighDesc => 'High quality';
+  String get exportQualityHighDesc => 'Hohe Qualität';
 
   @override
-  String get exportQualityMedium => 'Medium';
+  String get exportQualityMedium => 'Mittel';
 
   @override
-  String get exportQualityMediumDesc => 'Good for email';
+  String get exportQualityMediumDesc => 'Gut für E-Mail';
 
   @override
-  String get exportQualityLow => 'Low';
+  String get exportQualityLow => 'Niedrig';
 
   @override
-  String get exportQualityLowDesc => 'Smallest file';
+  String get exportQualityLowDesc => 'Kleinste Datei';
 
   @override
-  String get mergeDialogTitle => 'Merge another document';
+  String get mergeDialogTitle => 'Anderes Dokument zusammenführen';
 
   @override
-  String get mergeDialogEmpty => 'No other documents to merge.';
+  String get mergeDialogEmpty => 'Keine anderen Dokumente zum Zusammenführen.';
 
   @override
-  String get ocrTitle => 'Recognized text';
+  String get ocrTitle => 'Erkannter Text';
 
   @override
-  String get ocrErrorRecognize => 'Couldn\'t recognize text';
+  String get ocrErrorRecognize => 'Text konnte nicht erkannt werden';
 
   @override
-  String get ocrErrorExport => 'Couldn\'t export text';
+  String get ocrErrorExport => 'Text konnte nicht exportiert werden';
 
   @override
-  String get ocrTextLayerReady => 'Text layer ready · powers search';
+  String get ocrTextLayerReady => 'Textebene bereit · unterstützt die Suche';
 
   @override
-  String get ocrCopyText => 'Copy text';
+  String get ocrCopyText => 'Text kopieren';
 
   @override
-  String get ocrShareTxt => 'Share .txt';
+  String get ocrShareTxt => '.txt teilen';
 
   @override
-  String get ocrEmpty => 'No text recognized on this page yet.';
+  String get ocrEmpty => 'Auf dieser Seite wurde noch kein Text erkannt.';
 
   @override
-  String get ocrRecognizeButton => 'Recognize text';
+  String get ocrRecognizeButton => 'Text erkennen';
 
   @override
-  String get pdfPreviewOpenError => 'Couldn\'t open the PDF.';
+  String get pdfPreviewOpenError => 'Die PDF konnte nicht geöffnet werden.';
 
   @override
-  String get feedbackTitle => 'Send feedback';
+  String get feedbackTitle => 'Feedback senden';
 
   @override
-  String get feedbackSuccess => 'Thanks! Your feedback was sent.';
+  String get feedbackSuccess => 'Danke! Dein Feedback wurde gesendet.';
 
   @override
   String get feedbackRateLimited =>
-      'You\'ve sent a few already — please try again later.';
+      'Du hast bereits mehrere gesendet — bitte später erneut versuchen.';
 
   @override
   String get feedbackRejectedUnverified =>
-      'Couldn\'t verify the app — please try again.';
+      'Die App konnte nicht verifiziert werden — bitte erneut versuchen.';
 
   @override
-  String get feedbackOffline => 'Check your connection and try again.';
+  String get feedbackOffline => 'Bitte Verbindung prüfen und erneut versuchen.';
 
   @override
-  String get feedbackInvalid => 'Please check your message and try again.';
+  String get feedbackInvalid => 'Bitte Nachricht prüfen und erneut versuchen.';
 
   @override
   String get feedbackServerError =>
-      'Couldn\'t send right now — please try again.';
+      'Konnte gerade nicht gesendet werden — bitte erneut versuchen.';
 
   @override
-  String get feedbackTypeLabel => 'Type';
+  String get feedbackTypeLabel => 'Typ';
 
   @override
-  String get feedbackTypeBug => 'Bug';
+  String get feedbackTypeBug => 'Fehler';
 
   @override
-  String get feedbackTypeIdea => 'Idea';
+  String get feedbackTypeIdea => 'Idee';
 
   @override
-  String get feedbackTypeQuestion => 'Question';
+  String get feedbackTypeQuestion => 'Frage';
 
   @override
-  String get feedbackMessageLabel => 'Message';
+  String get feedbackMessageLabel => 'Nachricht';
 
   @override
-  String get feedbackMessageHint => 'Your feedback';
+  String get feedbackMessageHint => 'Dein Feedback';
 
   @override
-  String get feedbackMessageRequired => 'Please enter a message';
+  String get feedbackMessageRequired => 'Bitte eine Nachricht eingeben';
 
   @override
-  String get feedbackEmailLabel => 'Email — optional';
+  String get feedbackEmailLabel => 'E-Mail — optional';
 
   @override
   String get feedbackEmailHint => 'you@example.com';
 
   @override
-  String get feedbackEmailInvalid => 'Enter a valid email or leave it blank';
+  String get feedbackEmailInvalid => 'Gültige E-Mail eingeben oder leer lassen';
 
   @override
   String get feedbackEmailPublicNote =>
-      'Optional. This will be publicly visible on GitHub.';
+      'Optional. Dies wird auf GitHub öffentlich sichtbar sein.';
 
   @override
-  String get feedbackDiagnosticsShow => 'What will be sent?';
+  String get feedbackDiagnosticsShow => 'Was wird gesendet?';
 
   @override
-  String get feedbackDiagnosticsHide => 'Hide what will be sent';
+  String get feedbackDiagnosticsHide => 'Verbergen, was gesendet wird';
 
   @override
-  String get feedbackDiagnosticsTitle => 'What we include';
+  String get feedbackDiagnosticsTitle => 'Was wir einschließen';
 
   @override
   String get feedbackDiagnosticsBody =>
-      'Diagnostics attached: app version, OS version, device model, and language. No scanned documents or their contents are ever sent.';
+      'Beigefügte Diagnosedaten: App-Version, Betriebssystemversion, Gerätemodell und Sprache. Gescannte Dokumente oder ihre Inhalte werden nie gesendet.';
 
   @override
-  String get feedbackSubmit => 'Send report';
+  String get feedbackSubmit => 'Bericht senden';
 }

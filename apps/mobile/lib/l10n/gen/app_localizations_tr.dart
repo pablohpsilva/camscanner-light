@@ -12,368 +12,369 @@ class AppLocalizationsTr extends AppLocalizations {
   String get appTitle => 'CamScanner-light';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => 'İptal';
 
   @override
-  String get commonSave => 'Save';
+  String get commonSave => 'Kaydet';
 
   @override
-  String get commonDelete => 'Delete';
+  String get commonDelete => 'Sil';
 
   @override
-  String get commonRetry => 'Retry';
+  String get commonRetry => 'Yeniden dene';
 
   @override
-  String get commonRetake => 'Retake';
+  String get commonRetake => 'Yeniden çek';
 
   @override
-  String get commonShare => 'Share';
+  String get commonShare => 'Paylaş';
 
   @override
-  String get commonRename => 'Rename';
+  String get commonRename => 'Yeniden adlandır';
 
   @override
-  String get commonCopied => 'Copied';
+  String get commonCopied => 'Kopyalandı';
 
   @override
-  String get commonDocumentOptions => 'Document options';
+  String get commonDocumentOptions => 'Belge seçenekleri';
 
   @override
-  String get commonSearchHint => 'Search titles & text inside pages';
+  String get commonSearchHint => 'Başlıklarda ve sayfa metinlerinde ara';
 
   @override
   String commonPageCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '1 page',
+      other: '$count sayfa',
+      one: '1 sayfa',
     );
     return '$_temp0';
   }
 
   @override
-  String get commonErrorSaveDocument => 'Couldn\'t save document. Try again.';
+  String get commonErrorSaveDocument => 'Belge kaydedilemedi. Tekrar deneyin.';
 
   @override
-  String get commonErrorRename => 'Couldn\'t rename';
+  String get commonErrorRename => 'Yeniden adlandırılamadı';
 
   @override
-  String get commonErrorShare => 'Couldn\'t share';
+  String get commonErrorShare => 'Paylaşılamadı';
 
   @override
-  String get homeDocumentsTitle => 'Documents';
+  String get homeDocumentsTitle => 'Belgeler';
 
   @override
-  String get homePrivateOnDevice => 'Private · on this device';
+  String get homePrivateOnDevice => 'Gizli · bu cihazda';
 
   @override
-  String get homeCancelSelectionTooltip => 'Cancel selection';
+  String get homeCancelSelectionTooltip => 'Seçimi iptal et';
 
   @override
   String homeSelectedCount(int count) {
-    return '$count selected';
+    return '$count seçildi';
   }
 
   @override
-  String get homeExportTooltip => 'Export';
+  String get homeExportTooltip => 'Dışa aktar';
 
   @override
-  String get homeActionScan => 'Scan';
+  String get homeActionScan => 'Tara';
 
   @override
-  String get homeActionIdCard => 'ID card';
+  String get homeActionIdCard => 'Kimlik kartı';
 
   @override
-  String get homeActionImport => 'Import';
+  String get homeActionImport => 'İçe aktar';
 
   @override
   String homeSearchNoMatch(String query) {
-    return 'No documents match \"$query\".';
+    return '\"$query\" ile eşleşen belge yok.';
   }
 
   @override
-  String get homeErrorLoadDocuments => 'Couldn\'t load documents.';
+  String get homeErrorLoadDocuments => 'Belgeler yüklenemedi.';
 
   @override
-  String get homeErrorImportPhoto => 'Couldn\'t import photo';
+  String get homeErrorImportPhoto => 'Fotoğraf içe aktarılamadı';
 
   @override
-  String get homeViewList => 'List';
+  String get homeViewList => 'Liste';
 
   @override
-  String get homeViewGrid => 'Grid';
+  String get homeViewGrid => 'Izgara';
 
   @override
-  String get homeEmptyTitle => 'No documents yet';
+  String get homeEmptyTitle => 'Henüz belge yok';
 
   @override
-  String get homeEmptySubtitle => 'Tap Scan to create your first document';
+  String get homeEmptySubtitle => 'İlk belgeni oluşturmak için Tara\'ya dokun';
 
   @override
-  String get sortName => 'Name';
+  String get sortName => 'Ad';
 
   @override
-  String get sortCreated => 'Created';
+  String get sortCreated => 'Oluşturulma';
 
   @override
-  String get sortModified => 'Modified';
+  String get sortModified => 'Değiştirilme';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'Ayarlar';
 
   @override
-  String get settingsSectionAppearance => 'Appearance';
+  String get settingsSectionAppearance => 'Görünüm';
 
   @override
-  String get settingsThemeLight => 'Light';
+  String get settingsThemeLight => 'Açık';
 
   @override
-  String get settingsThemeDark => 'Dark';
+  String get settingsThemeDark => 'Koyu';
 
   @override
-  String get settingsThemeSystem => 'System';
+  String get settingsThemeSystem => 'Sistem';
 
   @override
-  String get settingsSectionLanguage => 'Language';
+  String get settingsSectionLanguage => 'Dil';
 
   @override
-  String get settingsLanguageSystem => 'System default';
+  String get settingsLanguageSystem => 'Sistem varsayılanı';
 
   @override
-  String get settingsSectionFeedback => 'Feedback & support';
+  String get settingsSectionFeedback => 'Geri bildirim ve destek';
 
   @override
-  String get settingsSupportApp => 'Support the app';
+  String get settingsSupportApp => 'Uygulamayı destekle';
 
   @override
   String get settingsAboutTagline =>
-      'Your scans stay on your device — no account, no cloud.';
+      'Taramaların cihazında kalır — hesap yok, bulut yok.';
 
   @override
-  String get donationHeadline => 'No accounts. No cloud.\\nNo subscription.';
+  String get donationHeadline => 'Hesap yok. Bulut yok.\\nAbonelik yok.';
 
   @override
   String get donationDisclaimer =>
-      'This is a voluntary donation only. You receive no features, benefits, or content in return — it simply helps support ongoing development.';
+      'Bu tamamen gönüllü bir bağıştır. Karşılığında herhangi bir özellik, ayrıcalık veya içerik almazsınız — yalnızca sürekli gelişime destek olur.';
 
   @override
   String get donationOptionalNote =>
-      'Donating unlocks nothing — every feature is already yours. This is genuinely optional.';
+      'Bağış hiçbir şeyin kilidini açmaz — tüm özellikler zaten senin. Bu gerçekten isteğe bağlı.';
 
   @override
-  String get donationKofiButton => 'Buy me a coffee — Ko-fi';
+  String get donationKofiButton => 'Bana bir kahve ısmarla — Ko-fi';
 
   @override
-  String get donationErrorOpenKofi => 'Couldn\'t open Ko-fi';
+  String get donationErrorOpenKofi => 'Ko-fi açılamadı';
 
   @override
-  String get donationBitcoinCopied => 'Bitcoin address copied';
+  String get donationBitcoinCopied => 'Bitcoin adresi kopyalandı';
 
   @override
-  String get donationBitcoinHeading => 'Or donate with Bitcoin';
+  String get donationBitcoinHeading => 'Ya da Bitcoin ile bağışla';
 
   @override
-  String get donationCopyAddress => 'Copy address';
+  String get donationCopyAddress => 'Adresi kopyala';
 
   @override
-  String get donationBannerText => 'Enjoying the app? Tap to support it';
+  String get donationBannerText =>
+      'Uygulamayı beğendin mi? Desteklemek için dokun';
 
   @override
-  String get scanTitle => 'Scan';
+  String get scanTitle => 'Tara';
 
   @override
   String scanPagesSaved(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages saved',
-      one: '1 page saved',
+      other: '$count sayfa kaydedildi',
+      one: '1 sayfa kaydedildi',
     );
     return '$_temp0';
   }
 
   @override
-  String get scanErrorReplacePage => 'Couldn\'t replace page. Try again.';
+  String get scanErrorReplacePage => 'Sayfa değiştirilemedi. Tekrar deneyin.';
 
   @override
-  String get scanSaveFailed => 'Couldn\'t save the scan.';
+  String get scanSaveFailed => 'Tarama kaydedilemedi.';
 
   @override
-  String get idScanTitle => 'Scan ID';
+  String get idScanTitle => 'Kimlik tara';
 
   @override
-  String get idScanFrontPrompt => 'Scan the FRONT of the ID';
+  String get idScanFrontPrompt => 'Kimliğin ÖN yüzünü tara';
 
   @override
-  String get idScanBackPrompt => 'Scan the BACK of the ID';
+  String get idScanBackPrompt => 'Kimliğin ARKA yüzünü tara';
 
   @override
-  String get idScanSaving => 'Saving…';
+  String get idScanSaving => 'Kaydediliyor…';
 
   @override
-  String get idScanErrorSave => 'Couldn\'t save the ID. Try again.';
+  String get idScanErrorSave => 'Kimlik kaydedilemedi. Tekrar deneyin.';
 
   @override
   String get idScanErrorBackRetake =>
-      'Saved the front, but the back failed. Retake it from the document.';
+      'Ön yüz kaydedildi, ancak arka yüz başarısız oldu. Belgeden yeniden çekin.';
 
   @override
-  String get captureReviewTitle => 'Review';
+  String get captureReviewTitle => 'İnceleme';
 
   @override
-  String get captureReviewReset => 'Reset';
+  String get captureReviewReset => 'Sıfırla';
 
   @override
-  String get captureReviewAccept => 'Accept';
+  String get captureReviewAccept => 'Onayla';
 
   @override
-  String get editFilterTitle => 'Filter';
+  String get editFilterTitle => 'Filtre';
 
   @override
-  String get editCropTitle => 'Review & clean';
+  String get editCropTitle => 'İncele ve temizle';
 
   @override
-  String get filterAuto => 'Auto';
+  String get filterAuto => 'Otomatik';
 
   @override
-  String get filterOriginal => 'Original';
+  String get filterOriginal => 'Orijinal';
 
   @override
-  String get filterColor => 'Color';
+  String get filterColor => 'Renkli';
 
   @override
-  String get filterGrayscale => 'Grayscale';
+  String get filterGrayscale => 'Gri tonlama';
 
   @override
-  String get toolbarCrop => 'Crop';
+  String get toolbarCrop => 'Kırp';
 
   @override
-  String get toolbarRotate => 'Rotate';
+  String get toolbarRotate => 'Döndür';
 
   @override
-  String get toolbarFilter => 'Filter';
+  String get toolbarFilter => 'Filtre';
 
   @override
-  String get toolbarText => 'Text';
+  String get toolbarText => 'Metin';
 
   @override
-  String get cropHandleTopEdge => 'Top edge midpoint';
+  String get cropHandleTopEdge => 'Üst kenar orta noktası';
 
   @override
-  String get cropHandleRightEdge => 'Right edge midpoint';
+  String get cropHandleRightEdge => 'Sağ kenar orta noktası';
 
   @override
-  String get cropHandleBottomEdge => 'Bottom edge midpoint';
+  String get cropHandleBottomEdge => 'Alt kenar orta noktası';
 
   @override
-  String get cropHandleLeftEdge => 'Left edge midpoint';
+  String get cropHandleLeftEdge => 'Sol kenar orta noktası';
 
   @override
-  String get cropHandleTopLeft => 'Top-left crop corner';
+  String get cropHandleTopLeft => 'Sol üst kırpma köşesi';
 
   @override
-  String get cropHandleTopRight => 'Top-right crop corner';
+  String get cropHandleTopRight => 'Sağ üst kırpma köşesi';
 
   @override
-  String get cropHandleBottomRight => 'Bottom-right crop corner';
+  String get cropHandleBottomRight => 'Sağ alt kırpma köşesi';
 
   @override
-  String get cropHandleBottomLeft => 'Bottom-left crop corner';
+  String get cropHandleBottomLeft => 'Sol alt kırpma köşesi';
 
   @override
   String get viewerDeleteDocumentConfirm =>
-      'Delete this document? This can\'t be undone.';
+      'Bu belge silinsin mi? Bu işlem geri alınamaz.';
 
   @override
-  String get viewerDeleteDocumentError => 'Couldn\'t delete';
+  String get viewerDeleteDocumentError => 'Silinemedi';
 
   @override
   String get viewerDeletePageOnlyPageWarning =>
-      'This is the only page. Deleting it removes the whole document.';
+      'Bu tek sayfa. Silmek tüm belgeyi kaldırır.';
 
   @override
   String get viewerDeletePageConfirm =>
-      'Delete this page? This can\'t be undone.';
+      'Bu sayfa silinsin mi? Bu işlem geri alınamaz.';
 
   @override
-  String get viewerDeletePageError => 'Couldn\'t delete page';
+  String get viewerDeletePageError => 'Sayfa silinemedi';
 
   @override
-  String get viewerExportPdfError => 'Couldn\'t export PDF';
+  String get viewerExportPdfError => 'PDF dışa aktarılamadı';
 
   @override
-  String get viewerShareImageError => 'Couldn\'t share image';
+  String get viewerShareImageError => 'Görsel paylaşılamadı';
 
   @override
-  String get viewerShareImagesError => 'Couldn\'t share images';
+  String get viewerShareImagesError => 'Görseller paylaşılamadı';
 
   @override
-  String get viewerPrintSuccess => 'Sent to printer';
+  String get viewerPrintSuccess => 'Yazıcıya gönderildi';
 
   @override
-  String get viewerPrintError => 'Couldn\'t print';
+  String get viewerPrintError => 'Yazdırılamadı';
 
   @override
-  String get viewerProtectPdfSuccess => 'Protected PDF ready';
+  String get viewerProtectPdfSuccess => 'Korumalı PDF hazır';
 
   @override
-  String get viewerProtectPdfError => 'Couldn\'t protect PDF';
+  String get viewerProtectPdfError => 'PDF korunamadı';
 
   @override
   String get viewerSplitLastPageWarning =>
-      'This is the last page — nothing to split after.';
+      'Bu son sayfa — sonrasında bölünecek bir şey yok.';
 
   @override
-  String get viewerSplitSuccess => 'Split into a new document';
+  String get viewerSplitSuccess => 'Yeni bir belgeye bölündü';
 
   @override
-  String get viewerSplitError => 'Couldn\'t split';
+  String get viewerSplitError => 'Bölünemedi';
 
   @override
-  String get viewerMergeError => 'Couldn\'t merge';
+  String get viewerMergeError => 'Birleştirilemedi';
 
   @override
-  String get viewerReorderPagesError => 'Couldn\'t reorder pages';
+  String get viewerReorderPagesError => 'Sayfalar yeniden sıralanamadı';
 
   @override
-  String get viewerRotateError => 'Couldn\'t rotate';
+  String get viewerRotateError => 'Döndürülemedi';
 
   @override
-  String get viewerCropError => 'Couldn\'t update crop';
+  String get viewerCropError => 'Kırpma güncellenemedi';
 
   @override
-  String get viewerFilterError => 'Couldn\'t change filter';
+  String get viewerFilterError => 'Filtre değiştirilemedi';
 
   @override
-  String get viewerLoadError => 'Couldn\'t load this document.';
+  String get viewerLoadError => 'Bu belge yüklenemedi.';
 
   @override
-  String get viewerEmptyPages => 'This document has no pages.';
+  String get viewerEmptyPages => 'Bu belgede sayfa yok.';
 
   @override
-  String get viewerMenuMerge => 'Merge another document…';
+  String get viewerMenuMerge => 'Başka bir belgeyi birleştir…';
 
   @override
-  String get viewerMenuSplit => 'Split after this page';
+  String get viewerMenuSplit => 'Bu sayfadan sonra böl';
 
   @override
-  String get viewerMenuDeleteDocument => 'Delete document';
+  String get viewerMenuDeleteDocument => 'Belgeyi sil';
 
   @override
-  String get viewerShareExportPdf => 'Export PDF';
+  String get viewerShareExportPdf => 'PDF dışa aktar';
 
   @override
-  String get viewerShareAsImage => 'Share as image';
+  String get viewerShareAsImage => 'Görsel olarak paylaş';
 
   @override
-  String get viewerShareAllAsImages => 'Share all as images';
+  String get viewerShareAllAsImages => 'Tümünü görsel olarak paylaş';
 
   @override
-  String get viewerSharePrint => 'Print';
+  String get viewerSharePrint => 'Yazdır';
 
   @override
-  String get viewerShareProtect => 'Protect with password';
+  String get viewerShareProtect => 'Şifreyle koru';
 
   @override
   String viewerPageCounter(int current, int total) {
@@ -381,163 +382,165 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get shareLink => 'Share link';
+  String get shareLink => 'Bağlantı paylaş';
 
   @override
-  String get shareFax => 'Fax';
+  String get shareFax => 'Faks';
 
   @override
-  String get shareLinkUnavailable => 'Link sharing isn\'t available yet';
+  String get shareLinkUnavailable => 'Bağlantı paylaşımı henüz kullanılamıyor';
 
   @override
-  String get shareFaxUnavailable => 'Fax isn\'t available yet';
+  String get shareFaxUnavailable => 'Faks henüz kullanılamıyor';
 
   @override
-  String get renameDialogTitle => 'Rename document';
+  String get renameDialogTitle => 'Belgeyi yeniden adlandır';
 
   @override
-  String get renameFieldLabel => 'Name';
+  String get renameFieldLabel => 'Ad';
 
   @override
-  String get passwordDialogTitle => 'Password-protect PDF';
+  String get passwordDialogTitle => 'PDF\'yi şifreyle koru';
 
   @override
-  String get passwordFieldHint => 'Enter a password';
+  String get passwordFieldHint => 'Bir şifre girin';
 
   @override
-  String get passwordProtectButton => 'Protect';
+  String get passwordProtectButton => 'Koru';
 
   @override
-  String get exportQualityTitle => 'Export quality';
+  String get exportQualityTitle => 'Dışa aktarma kalitesi';
 
   @override
-  String get exportQualityOriginal => 'Original';
+  String get exportQualityOriginal => 'Orijinal';
 
   @override
-  String get exportQualityOriginalDesc => 'Full quality, largest file';
+  String get exportQualityOriginalDesc => 'Tam kalite, en büyük dosya';
 
   @override
-  String get exportQualityHigh => 'High';
+  String get exportQualityHigh => 'Yüksek';
 
   @override
-  String get exportQualityHighDesc => 'High quality';
+  String get exportQualityHighDesc => 'Yüksek kalite';
 
   @override
-  String get exportQualityMedium => 'Medium';
+  String get exportQualityMedium => 'Orta';
 
   @override
-  String get exportQualityMediumDesc => 'Good for email';
+  String get exportQualityMediumDesc => 'E-posta için uygun';
 
   @override
-  String get exportQualityLow => 'Low';
+  String get exportQualityLow => 'Düşük';
 
   @override
-  String get exportQualityLowDesc => 'Smallest file';
+  String get exportQualityLowDesc => 'En küçük dosya';
 
   @override
-  String get mergeDialogTitle => 'Merge another document';
+  String get mergeDialogTitle => 'Başka bir belgeyi birleştir';
 
   @override
-  String get mergeDialogEmpty => 'No other documents to merge.';
+  String get mergeDialogEmpty => 'Birleştirilecek başka belge yok.';
 
   @override
-  String get ocrTitle => 'Recognized text';
+  String get ocrTitle => 'Tanınan metin';
 
   @override
-  String get ocrErrorRecognize => 'Couldn\'t recognize text';
+  String get ocrErrorRecognize => 'Metin tanınamadı';
 
   @override
-  String get ocrErrorExport => 'Couldn\'t export text';
+  String get ocrErrorExport => 'Metin dışa aktarılamadı';
 
   @override
-  String get ocrTextLayerReady => 'Text layer ready · powers search';
+  String get ocrTextLayerReady => 'Metin katmanı hazır · aramayı destekler';
 
   @override
-  String get ocrCopyText => 'Copy text';
+  String get ocrCopyText => 'Metni kopyala';
 
   @override
-  String get ocrShareTxt => 'Share .txt';
+  String get ocrShareTxt => '.txt paylaş';
 
   @override
-  String get ocrEmpty => 'No text recognized on this page yet.';
+  String get ocrEmpty => 'Bu sayfada henüz tanınan metin yok.';
 
   @override
-  String get ocrRecognizeButton => 'Recognize text';
+  String get ocrRecognizeButton => 'Metni tanı';
 
   @override
-  String get pdfPreviewOpenError => 'Couldn\'t open the PDF.';
+  String get pdfPreviewOpenError => 'PDF açılamadı.';
 
   @override
-  String get feedbackTitle => 'Send feedback';
+  String get feedbackTitle => 'Geri bildirim gönder';
 
   @override
-  String get feedbackSuccess => 'Thanks! Your feedback was sent.';
+  String get feedbackSuccess => 'Teşekkürler! Geri bildiriminiz gönderildi.';
 
   @override
   String get feedbackRateLimited =>
-      'You\'ve sent a few already — please try again later.';
+      'Zaten birkaç tane gönderdiniz — lütfen daha sonra tekrar deneyin.';
 
   @override
   String get feedbackRejectedUnverified =>
-      'Couldn\'t verify the app — please try again.';
+      'Uygulama doğrulanamadı — lütfen tekrar deneyin.';
 
   @override
-  String get feedbackOffline => 'Check your connection and try again.';
+  String get feedbackOffline => 'Bağlantınızı kontrol edip tekrar deneyin.';
 
   @override
-  String get feedbackInvalid => 'Please check your message and try again.';
+  String get feedbackInvalid =>
+      'Lütfen mesajınızı kontrol edip tekrar deneyin.';
 
   @override
   String get feedbackServerError =>
-      'Couldn\'t send right now — please try again.';
+      'Şu anda gönderilemedi — lütfen tekrar deneyin.';
 
   @override
-  String get feedbackTypeLabel => 'Type';
+  String get feedbackTypeLabel => 'Tür';
 
   @override
-  String get feedbackTypeBug => 'Bug';
+  String get feedbackTypeBug => 'Hata';
 
   @override
-  String get feedbackTypeIdea => 'Idea';
+  String get feedbackTypeIdea => 'Fikir';
 
   @override
-  String get feedbackTypeQuestion => 'Question';
+  String get feedbackTypeQuestion => 'Soru';
 
   @override
-  String get feedbackMessageLabel => 'Message';
+  String get feedbackMessageLabel => 'Mesaj';
 
   @override
-  String get feedbackMessageHint => 'Your feedback';
+  String get feedbackMessageHint => 'Geri bildiriminiz';
 
   @override
-  String get feedbackMessageRequired => 'Please enter a message';
+  String get feedbackMessageRequired => 'Lütfen bir mesaj girin';
 
   @override
-  String get feedbackEmailLabel => 'Email — optional';
+  String get feedbackEmailLabel => 'E-posta — isteğe bağlı';
 
   @override
   String get feedbackEmailHint => 'you@example.com';
 
   @override
-  String get feedbackEmailInvalid => 'Enter a valid email or leave it blank';
+  String get feedbackEmailInvalid =>
+      'Geçerli bir e-posta girin veya boş bırakın';
 
   @override
   String get feedbackEmailPublicNote =>
-      'Optional. This will be publicly visible on GitHub.';
+      'İsteğe bağlı. Bu, GitHub\'da herkese açık olarak görünecektir.';
 
   @override
-  String get feedbackDiagnosticsShow => 'What will be sent?';
+  String get feedbackDiagnosticsShow => 'Neler gönderilecek?';
 
   @override
-  String get feedbackDiagnosticsHide => 'Hide what will be sent';
+  String get feedbackDiagnosticsHide => 'Gönderilecekleri gizle';
 
   @override
-  String get feedbackDiagnosticsTitle => 'What we include';
+  String get feedbackDiagnosticsTitle => 'Neleri dahil ediyoruz';
 
   @override
   String get feedbackDiagnosticsBody =>
-      'Diagnostics attached: app version, OS version, device model, and language. No scanned documents or their contents are ever sent.';
+      'Eklenen tanılama bilgileri: uygulama sürümü, işletim sistemi sürümü, cihaz modeli ve dil. Taranan belgeler veya içerikleri asla gönderilmez.';
 
   @override
-  String get feedbackSubmit => 'Send report';
+  String get feedbackSubmit => 'Raporu gönder';
 }
