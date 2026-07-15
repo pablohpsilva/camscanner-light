@@ -1,0 +1,695 @@
+{
+  "@@locale": "en",
+  "appTitle": "CamScanner-light",
+  "@appTitle": {
+    "description": "Brand name — MaterialApp title, Settings About; same in all languages"
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Dialogs"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Dialogs, edit screens"
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Dialogs, toolbar"
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Error screens"
+  },
+  "commonRetake": "Retake",
+  "@commonRetake": {
+    "description": "Toolbar, capture review"
+  },
+  "commonShare": "Share",
+  "@commonShare": {
+    "description": "Toolbar, menus, tooltip"
+  },
+  "commonRename": "Rename",
+  "@commonRename": {
+    "description": "Menus"
+  },
+  "commonCopied": "Copied",
+  "@commonCopied": {
+    "description": "Snackbar"
+  },
+  "commonDocumentOptions": "Document options",
+  "@commonDocumentOptions": {
+    "description": "List-item menu tooltip"
+  },
+  "commonSearchHint": "Search titles & text inside pages",
+  "@commonSearchHint": {
+    "description": "Search field"
+  },
+  "commonPageCount": "{count, plural, =1{1 page} other{{count} pages}}",
+  "@commonPageCount": {
+    "description": "Page count under a document (list + merge dialog)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonErrorSaveDocument": "Couldn't save document. Try again.",
+  "@commonErrorSaveDocument": {
+    "description": "Home, scan"
+  },
+  "commonErrorRename": "Couldn't rename",
+  "@commonErrorRename": {
+    "description": "Home, viewer"
+  },
+  "commonErrorShare": "Couldn't share",
+  "@commonErrorShare": {
+    "description": "Home"
+  },
+  "homeDocumentsTitle": "Documents",
+  "@homeDocumentsTitle": {
+    "description": "Home header title"
+  },
+  "homePrivateOnDevice": "Private · on this device",
+  "@homePrivateOnDevice": {
+    "description": "Home subheader"
+  },
+  "homeCancelSelectionTooltip": "Cancel selection",
+  "@homeCancelSelectionTooltip": {
+    "description": "Selection bar tooltip"
+  },
+  "homeSelectedCount": "{count} selected",
+  "@homeSelectedCount": {
+    "description": "Selection bar counter",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeExportTooltip": "Export",
+  "@homeExportTooltip": {
+    "description": "Selection bar tooltip"
+  },
+  "homeActionScan": "Scan",
+  "@homeActionScan": {
+    "description": "Home action button"
+  },
+  "homeActionIdCard": "ID card",
+  "@homeActionIdCard": {
+    "description": "Home action button"
+  },
+  "homeActionImport": "Import",
+  "@homeActionImport": {
+    "description": "Home action button"
+  },
+  "homeSearchNoMatch": "No documents match \"{query}\".",
+  "@homeSearchNoMatch": {
+    "description": "Search empty state",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "homeErrorLoadDocuments": "Couldn't load documents.",
+  "@homeErrorLoadDocuments": {
+    "description": "Startup error"
+  },
+  "homeErrorImportPhoto": "Couldn't import photo",
+  "@homeErrorImportPhoto": {
+    "description": "Snackbar"
+  },
+  "homeViewList": "List",
+  "@homeViewList": {
+    "description": "View-mode toggle"
+  },
+  "homeViewGrid": "Grid",
+  "@homeViewGrid": {
+    "description": "View-mode toggle"
+  },
+  "homeEmptyTitle": "No documents yet",
+  "@homeEmptyTitle": {
+    "description": "Empty state"
+  },
+  "homeEmptySubtitle": "Tap Scan to create your first document",
+  "@homeEmptySubtitle": {
+    "description": "Empty state"
+  },
+  "sortName": "Name",
+  "@sortName": {
+    "description": "Sort menu; sort criterion"
+  },
+  "sortCreated": "Created",
+  "@sortCreated": {
+    "description": "Sort menu"
+  },
+  "sortModified": "Modified",
+  "@sortModified": {
+    "description": "Sort menu"
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings header"
+  },
+  "settingsSectionAppearance": "Appearance",
+  "@settingsSectionAppearance": {
+    "description": "Section label"
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Theme segment"
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Theme segment"
+  },
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {
+    "description": "Theme segment"
+  },
+  "settingsSectionLanguage": "Language",
+  "@settingsSectionLanguage": {
+    "description": "Section label + picker dialog title"
+  },
+  "settingsLanguageSystem": "System default",
+  "@settingsLanguageSystem": {
+    "description": "Picker option"
+  },
+  "settingsSectionFeedback": "Feedback & support",
+  "@settingsSectionFeedback": {
+    "description": "Section label"
+  },
+  "settingsSupportApp": "Support the app",
+  "@settingsSupportApp": {
+    "description": "Settings row + donation title"
+  },
+  "settingsAboutTagline": "Your scans stay on your device — no account, no cloud.",
+  "@settingsAboutTagline": {
+    "description": "About footer"
+  },
+  "donationHeadline": "No accounts. No cloud.\\nNo subscription.",
+  "@donationHeadline": {
+    "description": "Donation hero; keep \\n"
+  },
+  "donationDisclaimer": "This is a voluntary donation only. You receive no features, benefits, or content in return — it simply helps support ongoing development.",
+  "@donationDisclaimer": {
+    "description": "Donation body"
+  },
+  "donationOptionalNote": "Donating unlocks nothing — every feature is already yours. This is genuinely optional.",
+  "@donationOptionalNote": {
+    "description": "Amber note"
+  },
+  "donationKofiButton": "Buy me a coffee — Ko-fi",
+  "@donationKofiButton": {
+    "description": "Button; keep Ko-fi"
+  },
+  "donationErrorOpenKofi": "Couldn't open Ko-fi",
+  "@donationErrorOpenKofi": {
+    "description": "Snackbar; keep Ko-fi"
+  },
+  "donationBitcoinCopied": "Bitcoin address copied",
+  "@donationBitcoinCopied": {
+    "description": "Snackbar; keep Bitcoin"
+  },
+  "donationBitcoinHeading": "Or donate with Bitcoin",
+  "@donationBitcoinHeading": {
+    "description": "Section heading; keep Bitcoin"
+  },
+  "donationCopyAddress": "Copy address",
+  "@donationCopyAddress": {
+    "description": "Button"
+  },
+  "donationBannerText": "Enjoying the app? Tap to support it",
+  "@donationBannerText": {
+    "description": "Home banner"
+  },
+  "scanTitle": "Scan",
+  "@scanTitle": {
+    "description": "Scan app bar"
+  },
+  "scanPagesSaved": "{count, plural, =1{1 page saved} other{{count} pages saved}}",
+  "@scanPagesSaved": {
+    "description": "Scan app-bar title after saving",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanErrorReplacePage": "Couldn't replace page. Try again.",
+  "@scanErrorReplacePage": {
+    "description": "Snackbar"
+  },
+  "scanSaveFailed": "Couldn't save the scan.",
+  "@scanSaveFailed": {
+    "description": "Error body"
+  },
+  "idScanTitle": "Scan ID",
+  "@idScanTitle": {
+    "description": "App bar"
+  },
+  "idScanFrontPrompt": "Scan the FRONT of the ID",
+  "@idScanFrontPrompt": {
+    "description": "Status label; keep emphasis"
+  },
+  "idScanBackPrompt": "Scan the BACK of the ID",
+  "@idScanBackPrompt": {
+    "description": "Status label; keep emphasis"
+  },
+  "idScanSaving": "Saving…",
+  "@idScanSaving": {
+    "description": "Status label"
+  },
+  "idScanErrorSave": "Couldn't save the ID. Try again.",
+  "@idScanErrorSave": {
+    "description": "Snackbar"
+  },
+  "idScanErrorBackRetake": "Saved the front, but the back failed. Retake it from the document.",
+  "@idScanErrorBackRetake": {
+    "description": "Snackbar"
+  },
+  "captureReviewTitle": "Review",
+  "@captureReviewTitle": {
+    "description": "App bar"
+  },
+  "captureReviewReset": "Reset",
+  "@captureReviewReset": {
+    "description": "Button"
+  },
+  "captureReviewAccept": "Accept",
+  "@captureReviewAccept": {
+    "description": "Button"
+  },
+  "editFilterTitle": "Filter",
+  "@editFilterTitle": {
+    "description": "Editor top bar; screen title"
+  },
+  "editCropTitle": "Review & clean",
+  "@editCropTitle": {
+    "description": "Crop header"
+  },
+  "filterAuto": "Auto",
+  "@filterAuto": {
+    "description": "Filter strip; filter name"
+  },
+  "filterOriginal": "Original",
+  "@filterOriginal": {
+    "description": "Filter strip"
+  },
+  "filterColor": "Color",
+  "@filterColor": {
+    "description": "Filter strip"
+  },
+  "filterGrayscale": "Grayscale",
+  "@filterGrayscale": {
+    "description": "Filter strip"
+  },
+  "toolbarCrop": "Crop",
+  "@toolbarCrop": {
+    "description": "Editor toolbar; verb"
+  },
+  "toolbarRotate": "Rotate",
+  "@toolbarRotate": {
+    "description": "Editor toolbar; verb"
+  },
+  "toolbarFilter": "Filter",
+  "@toolbarFilter": {
+    "description": "Editor toolbar; noun/verb"
+  },
+  "toolbarText": "Text",
+  "@toolbarText": {
+    "description": "Editor toolbar; OCR entry"
+  },
+  "cropHandleTopEdge": "Top edge midpoint",
+  "@cropHandleTopEdge": {
+    "description": "A11y label"
+  },
+  "cropHandleRightEdge": "Right edge midpoint",
+  "@cropHandleRightEdge": {
+    "description": "A11y label"
+  },
+  "cropHandleBottomEdge": "Bottom edge midpoint",
+  "@cropHandleBottomEdge": {
+    "description": "A11y label"
+  },
+  "cropHandleLeftEdge": "Left edge midpoint",
+  "@cropHandleLeftEdge": {
+    "description": "A11y label"
+  },
+  "cropHandleTopLeft": "Top-left crop corner",
+  "@cropHandleTopLeft": {
+    "description": "A11y label"
+  },
+  "cropHandleTopRight": "Top-right crop corner",
+  "@cropHandleTopRight": {
+    "description": "A11y label"
+  },
+  "cropHandleBottomRight": "Bottom-right crop corner",
+  "@cropHandleBottomRight": {
+    "description": "A11y label"
+  },
+  "cropHandleBottomLeft": "Bottom-left crop corner",
+  "@cropHandleBottomLeft": {
+    "description": "A11y label"
+  },
+  "viewerDeleteDocumentConfirm": "Delete this document? This can't be undone.",
+  "@viewerDeleteDocumentConfirm": {
+    "description": "Dialog"
+  },
+  "viewerDeleteDocumentError": "Couldn't delete",
+  "@viewerDeleteDocumentError": {
+    "description": "Snackbar"
+  },
+  "viewerDeletePageOnlyPageWarning": "This is the only page. Deleting it removes the whole document.",
+  "@viewerDeletePageOnlyPageWarning": {
+    "description": "Dialog"
+  },
+  "viewerDeletePageConfirm": "Delete this page? This can't be undone.",
+  "@viewerDeletePageConfirm": {
+    "description": "Dialog"
+  },
+  "viewerDeletePageError": "Couldn't delete page",
+  "@viewerDeletePageError": {
+    "description": "Snackbar"
+  },
+  "viewerExportPdfError": "Couldn't export PDF",
+  "@viewerExportPdfError": {
+    "description": "Snackbar"
+  },
+  "viewerShareImageError": "Couldn't share image",
+  "@viewerShareImageError": {
+    "description": "Snackbar"
+  },
+  "viewerShareImagesError": "Couldn't share images",
+  "@viewerShareImagesError": {
+    "description": "Snackbar"
+  },
+  "viewerPrintSuccess": "Sent to printer",
+  "@viewerPrintSuccess": {
+    "description": "Snackbar"
+  },
+  "viewerPrintError": "Couldn't print",
+  "@viewerPrintError": {
+    "description": "Snackbar"
+  },
+  "viewerProtectPdfSuccess": "Protected PDF ready",
+  "@viewerProtectPdfSuccess": {
+    "description": "Snackbar"
+  },
+  "viewerProtectPdfError": "Couldn't protect PDF",
+  "@viewerProtectPdfError": {
+    "description": "Snackbar"
+  },
+  "viewerSplitLastPageWarning": "This is the last page — nothing to split after.",
+  "@viewerSplitLastPageWarning": {
+    "description": "Snackbar"
+  },
+  "viewerSplitSuccess": "Split into a new document",
+  "@viewerSplitSuccess": {
+    "description": "Snackbar"
+  },
+  "viewerSplitError": "Couldn't split",
+  "@viewerSplitError": {
+    "description": "Snackbar"
+  },
+  "viewerMergeError": "Couldn't merge",
+  "@viewerMergeError": {
+    "description": "Snackbar"
+  },
+  "viewerReorderPagesError": "Couldn't reorder pages",
+  "@viewerReorderPagesError": {
+    "description": "Snackbar"
+  },
+  "viewerRotateError": "Couldn't rotate",
+  "@viewerRotateError": {
+    "description": "Snackbar"
+  },
+  "viewerCropError": "Couldn't update crop",
+  "@viewerCropError": {
+    "description": "Snackbar"
+  },
+  "viewerFilterError": "Couldn't change filter",
+  "@viewerFilterError": {
+    "description": "Snackbar"
+  },
+  "viewerLoadError": "Couldn't load this document.",
+  "@viewerLoadError": {
+    "description": "Error body"
+  },
+  "viewerEmptyPages": "This document has no pages.",
+  "@viewerEmptyPages": {
+    "description": "Empty state"
+  },
+  "viewerMenuMerge": "Merge another document…",
+  "@viewerMenuMerge": {
+    "description": "Menu item; keep …"
+  },
+  "viewerMenuSplit": "Split after this page",
+  "@viewerMenuSplit": {
+    "description": "Menu item"
+  },
+  "viewerMenuDeleteDocument": "Delete document",
+  "@viewerMenuDeleteDocument": {
+    "description": "Menu item"
+  },
+  "viewerShareExportPdf": "Export PDF",
+  "@viewerShareExportPdf": {
+    "description": "Share sheet"
+  },
+  "viewerShareAsImage": "Share as image",
+  "@viewerShareAsImage": {
+    "description": "Share sheet"
+  },
+  "viewerShareAllAsImages": "Share all as images",
+  "@viewerShareAllAsImages": {
+    "description": "Share sheet"
+  },
+  "viewerSharePrint": "Print",
+  "@viewerSharePrint": {
+    "description": "Share sheet"
+  },
+  "viewerShareProtect": "Protect with password",
+  "@viewerShareProtect": {
+    "description": "Share sheet"
+  },
+  "viewerPageCounter": "{current} / {total}",
+  "@viewerPageCounter": {
+    "description": "Page position pill, e.g. 2 / 5",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "shareLink": "Share link",
+  "@shareLink": {
+    "description": "Menu item"
+  },
+  "shareFax": "Fax",
+  "@shareFax": {
+    "description": "Menu item"
+  },
+  "shareLinkUnavailable": "Link sharing isn't available yet",
+  "@shareLinkUnavailable": {
+    "description": "Snackbar"
+  },
+  "shareFaxUnavailable": "Fax isn't available yet",
+  "@shareFaxUnavailable": {
+    "description": "Snackbar"
+  },
+  "renameDialogTitle": "Rename document",
+  "@renameDialogTitle": {
+    "description": "Dialog title"
+  },
+  "renameFieldLabel": "Name",
+  "@renameFieldLabel": {
+    "description": "Text field label; noun: document name"
+  },
+  "passwordDialogTitle": "Password-protect PDF",
+  "@passwordDialogTitle": {
+    "description": "Dialog title"
+  },
+  "passwordFieldHint": "Enter a password",
+  "@passwordFieldHint": {
+    "description": "Text field hint"
+  },
+  "passwordProtectButton": "Protect",
+  "@passwordProtectButton": {
+    "description": "Dialog action"
+  },
+  "exportQualityTitle": "Export quality",
+  "@exportQualityTitle": {
+    "description": "Dialog title"
+  },
+  "exportQualityOriginal": "Original",
+  "@exportQualityOriginal": {
+    "description": "Option label"
+  },
+  "exportQualityOriginalDesc": "Full quality, largest file",
+  "@exportQualityOriginalDesc": {
+    "description": "Option description"
+  },
+  "exportQualityHigh": "High",
+  "@exportQualityHigh": {
+    "description": "Option label"
+  },
+  "exportQualityHighDesc": "High quality",
+  "@exportQualityHighDesc": {
+    "description": "Option description"
+  },
+  "exportQualityMedium": "Medium",
+  "@exportQualityMedium": {
+    "description": "Option label"
+  },
+  "exportQualityMediumDesc": "Good for email",
+  "@exportQualityMediumDesc": {
+    "description": "Option description"
+  },
+  "exportQualityLow": "Low",
+  "@exportQualityLow": {
+    "description": "Option label"
+  },
+  "exportQualityLowDesc": "Smallest file",
+  "@exportQualityLowDesc": {
+    "description": "Option description"
+  },
+  "mergeDialogTitle": "Merge another document",
+  "@mergeDialogTitle": {
+    "description": "Dialog title"
+  },
+  "mergeDialogEmpty": "No other documents to merge.",
+  "@mergeDialogEmpty": {
+    "description": "Empty state"
+  },
+  "ocrTitle": "Recognized text",
+  "@ocrTitle": {
+    "description": "App bar"
+  },
+  "ocrErrorRecognize": "Couldn't recognize text",
+  "@ocrErrorRecognize": {
+    "description": "Snackbar"
+  },
+  "ocrErrorExport": "Couldn't export text",
+  "@ocrErrorExport": {
+    "description": "Snackbar"
+  },
+  "ocrTextLayerReady": "Text layer ready · powers search",
+  "@ocrTextLayerReady": {
+    "description": "Chip; keep ·"
+  },
+  "ocrCopyText": "Copy text",
+  "@ocrCopyText": {
+    "description": "Button"
+  },
+  "ocrShareTxt": "Share .txt",
+  "@ocrShareTxt": {
+    "description": "Button; keep .txt"
+  },
+  "ocrEmpty": "No text recognized on this page yet.",
+  "@ocrEmpty": {
+    "description": "Empty state"
+  },
+  "ocrRecognizeButton": "Recognize text",
+  "@ocrRecognizeButton": {
+    "description": "Button"
+  },
+  "pdfPreviewOpenError": "Couldn't open the PDF.",
+  "@pdfPreviewOpenError": {
+    "description": "Error body"
+  },
+  "feedbackTitle": "Send feedback",
+  "@feedbackTitle": {
+    "description": "Screen title + settings row"
+  },
+  "feedbackSuccess": "Thanks! Your feedback was sent.",
+  "@feedbackSuccess": {
+    "description": "Snackbar"
+  },
+  "feedbackRateLimited": "You've sent a few already — please try again later.",
+  "@feedbackRateLimited": {
+    "description": "Snackbar"
+  },
+  "feedbackRejectedUnverified": "Couldn't verify the app — please try again.",
+  "@feedbackRejectedUnverified": {
+    "description": "Snackbar"
+  },
+  "feedbackOffline": "Check your connection and try again.",
+  "@feedbackOffline": {
+    "description": "Snackbar"
+  },
+  "feedbackInvalid": "Please check your message and try again.",
+  "@feedbackInvalid": {
+    "description": "Snackbar"
+  },
+  "feedbackServerError": "Couldn't send right now — please try again.",
+  "@feedbackServerError": {
+    "description": "Snackbar"
+  },
+  "feedbackTypeLabel": "Type",
+  "@feedbackTypeLabel": {
+    "description": "Section label; feedback category"
+  },
+  "feedbackTypeBug": "Bug",
+  "@feedbackTypeBug": {
+    "description": "Segment"
+  },
+  "feedbackTypeIdea": "Idea",
+  "@feedbackTypeIdea": {
+    "description": "Segment"
+  },
+  "feedbackTypeQuestion": "Question",
+  "@feedbackTypeQuestion": {
+    "description": "Segment"
+  },
+  "feedbackMessageLabel": "Message",
+  "@feedbackMessageLabel": {
+    "description": "Section label"
+  },
+  "feedbackMessageHint": "Your feedback",
+  "@feedbackMessageHint": {
+    "description": "Text field hint"
+  },
+  "feedbackMessageRequired": "Please enter a message",
+  "@feedbackMessageRequired": {
+    "description": "Validator"
+  },
+  "feedbackEmailLabel": "Email — optional",
+  "@feedbackEmailLabel": {
+    "description": "Section label"
+  },
+  "feedbackEmailHint": "you@example.com",
+  "@feedbackEmailHint": {
+    "description": "Text field hint"
+  },
+  "feedbackEmailInvalid": "Enter a valid email or leave it blank",
+  "@feedbackEmailInvalid": {
+    "description": "Validator"
+  },
+  "feedbackEmailPublicNote": "Optional. This will be publicly visible on GitHub.",
+  "@feedbackEmailPublicNote": {
+    "description": "Helper text; keep GitHub"
+  },
+  "feedbackDiagnosticsShow": "What will be sent?",
+  "@feedbackDiagnosticsShow": {
+    "description": "Toggle button"
+  },
+  "feedbackDiagnosticsHide": "Hide what will be sent",
+  "@feedbackDiagnosticsHide": {
+    "description": "Toggle button"
+  },
+  "feedbackDiagnosticsTitle": "What we include",
+  "@feedbackDiagnosticsTitle": {
+    "description": "Box heading"
+  },
+  "feedbackDiagnosticsBody": "Diagnostics attached: app version, OS version, device model, and language. No scanned documents or their contents are ever sent.",
+  "@feedbackDiagnosticsBody": {
+    "description": "Box body"
+  },
+  "feedbackSubmit": "Send report",
+  "@feedbackSubmit": {
+    "description": "Submit button"
+  }
+}
