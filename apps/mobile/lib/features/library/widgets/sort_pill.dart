@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/library/document_sort.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/theme/ream_colors.dart';
 
 /// A compact pill that shows the active [DocumentSort] criterion and a
@@ -17,14 +18,14 @@ class SortPill extends StatelessWidget {
   final DocumentSort sort;
   final ValueChanged<SortCriterion> onCriterionSelected;
 
-  String get _criterionLabel {
+  String _criterionLabel(BuildContext context) {
     switch (sort.criterion) {
       case SortCriterion.name:
-        return 'Name';
+        return context.l10n.sortName;
       case SortCriterion.created:
-        return 'Created';
+        return context.l10n.sortCreated;
       case SortCriterion.modified:
-        return 'Modified';
+        return context.l10n.sortModified;
     }
   }
 
@@ -42,21 +43,30 @@ class SortPill extends StatelessWidget {
         side: BorderSide(color: ream.line),
       ),
       color: ream.surface,
-      itemBuilder: (_) => [
+      itemBuilder: (context) => [
         PopupMenuItem(
           key: const Key('sort-option-name'),
           value: SortCriterion.name,
-          child: Text('Name', style: TextStyle(color: ream.ink2)),
+          child: Text(
+            context.l10n.sortName,
+            style: TextStyle(color: ream.ink2),
+          ),
         ),
         PopupMenuItem(
           key: const Key('sort-option-created'),
           value: SortCriterion.created,
-          child: Text('Created', style: TextStyle(color: ream.ink2)),
+          child: Text(
+            context.l10n.sortCreated,
+            style: TextStyle(color: ream.ink2),
+          ),
         ),
         PopupMenuItem(
           key: const Key('sort-option-modified'),
           value: SortCriterion.modified,
-          child: Text('Modified', style: TextStyle(color: ream.ink2)),
+          child: Text(
+            context.l10n.sortModified,
+            style: TextStyle(color: ream.ink2),
+          ),
         ),
       ],
       child: Container(
@@ -70,7 +80,7 @@ class SortPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _criterionLabel,
+              _criterionLabel(context),
               style: TextStyle(
                 color: ream.ink2,
                 fontSize: 13,

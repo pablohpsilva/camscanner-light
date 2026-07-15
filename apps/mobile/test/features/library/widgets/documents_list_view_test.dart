@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 DocumentSummary _summary(int id) => DocumentSummary(
   document: Document(
@@ -21,6 +22,8 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: DocumentsListView(
               summaries: [_summary(1), _summary(2)],

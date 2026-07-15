@@ -4,8 +4,9 @@ import 'package:mobile/features/library/edit_filter_screen.dart';
 import 'package:mobile/features/library/enhancer_mode.dart';
 
 void main() {
-  testWidgets('shows the filter strip and returns the selected mode on Save',
-      (tester) async {
+  testWidgets('shows the filter strip and returns the selected mode on Save', (
+    tester,
+  ) async {
     EnhancerMode? popped;
     await tester.pumpWidget(
       MaterialApp(

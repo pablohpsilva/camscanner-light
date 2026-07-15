@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import '../ream_colors.dart';
 
 /// Inline, always-visible search field in the Ream header style.
 class ReamSearchField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final String hintText;
+  final String? hintText;
   final VoidCallback? onClear;
   const ReamSearchField({
     super.key,
     required this.controller,
     required this.onChanged,
-    this.hintText = 'Search titles & text inside pages',
+    this.hintText,
     this.onClear,
   });
 
   @override
   Widget build(BuildContext context) {
     final r = context.ream;
+    final effectiveHintText = hintText ?? context.l10n.commonSearchHint;
     return Container(
       decoration: BoxDecoration(
         color: r.surface,
@@ -39,7 +41,7 @@ class ReamSearchField extends StatelessWidget {
               decoration: InputDecoration(
                 isCollapsed: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                hintText: hintText,
+                hintText: effectiveHintText,
                 hintStyle: TextStyle(color: r.muted, fontSize: 13.5),
                 border: InputBorder.none,
               ),

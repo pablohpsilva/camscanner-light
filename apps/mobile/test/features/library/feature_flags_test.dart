@@ -7,10 +7,26 @@ void main() {
     const f = FeatureFlags();
     expect(f.fax, isFalse, reason: 'fax is the only default-off flag');
     final onByDefault = <bool>[
-      f.crop, f.rotate, f.filter, f.viewText, f.retake, f.share, f.deletePage,
-      f.rename, f.merge, f.split, f.deleteDocument, f.exportPdf, f.shareImage,
-      f.exportAllImages, f.print, f.protectWithPassword, f.shareLink,
-      f.idCard, f.scan, f.import,
+      f.crop,
+      f.rotate,
+      f.filter,
+      f.viewText,
+      f.retake,
+      f.share,
+      f.deletePage,
+      f.rename,
+      f.merge,
+      f.split,
+      f.deleteDocument,
+      f.exportPdf,
+      f.shareImage,
+      f.exportAllImages,
+      f.print,
+      f.protectWithPassword,
+      f.shareLink,
+      f.idCard,
+      f.scan,
+      f.import,
     ];
     expect(onByDefault, everyElement(isTrue));
   });

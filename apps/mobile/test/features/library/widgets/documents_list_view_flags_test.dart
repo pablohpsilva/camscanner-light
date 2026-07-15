@@ -4,6 +4,7 @@ import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 DocumentSummary _summary() => DocumentSummary(
   document: Document(
@@ -20,6 +21,8 @@ Future<void> _pump(WidgetTester tester, {FeatureFlags? features}) async {
   final s = _summary();
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: DocumentsListView(
           summaries: [s],

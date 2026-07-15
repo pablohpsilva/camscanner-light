@@ -32,12 +32,16 @@ void main() {
     img.fill(red, color: img.ColorRgb8(220, 20, 20));
     final baseBytes = Uint8List.fromList(img.encodeJpg(red, quality: 95));
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
+    final id = await db
+        .into(db.documents)
+        .insert(
           DocumentsCompanion.insert(name: 'D', createdAt: now, modifiedAt: now),
         );
     final rel = 'documents/$id/page_1.jpg';
     await store.writeRelative(rel, baseBytes);
-    await db.into(db.pages).insert(
+    await db
+        .into(db.pages)
+        .insert(
           PagesCompanion.insert(
             documentId: id,
             position: 1,
@@ -66,8 +70,9 @@ void main() {
     expect((p.g - p.b).abs(), lessThan(6));
 
     // Base is untouched (still red).
-    final storedBase =
-        img.decodeImage(File('${base.path}/$rel').readAsBytesSync())!;
+    final storedBase = img.decodeImage(
+      File('${base.path}/$rel').readAsBytesSync(),
+    )!;
     final bp = storedBase.getPixel(20, 20);
     expect(bp.r, greaterThan(bp.b + 40)); // clearly red, not gray
 

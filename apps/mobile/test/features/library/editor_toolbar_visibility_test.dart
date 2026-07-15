@@ -14,20 +14,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  EditorToolbar build({
-    bool showCrop = true,
-    bool showShare = true,
-  }) => EditorToolbar(
-    onCrop: () {},
-    onRotate: () {},
-    onText: () {},
-    onRetake: () {},
-    onShare: () {},
-    onDelete: () {},
-    onFilter: () {},
-    showCrop: showCrop,
-    showShare: showShare,
-  );
+  EditorToolbar build({bool showCrop = true, bool showShare = true}) =>
+      EditorToolbar(
+        onCrop: () {},
+        onRotate: () {},
+        onText: () {},
+        onRetake: () {},
+        onShare: () {},
+        onDelete: () {},
+        onFilter: () {},
+        showCrop: showCrop,
+        showShare: showShare,
+      );
 
   testWidgets('shows all seven buttons by default', (tester) async {
     await pump(tester, toolbar: build());
