@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:image/image.dart' as img;
 
+import '../../core/async/with_isolate_timeout.dart';
 import 'crop_corners.dart';
 import 'image_warper.dart';
 
@@ -15,14 +16,40 @@ const int kDefaultFlatMaxDimension = 3500;
 
 class PerspectiveWarper implements ImageWarper {
   final int maxDimension;
-  const PerspectiveWarper({this.maxDimension = kDefaultFlatMaxDimension});
+
+  /// Cap on the full-image warp isolate. A wedged `compute()` isolate cannot be
+  /// killed from Dart; this bounds how long [warp] waits before de-shadowing to
+  /// the un-warped frame (returns null). Generous — a 12.5 MP capture warp on a
+  /// slow device still finishes well inside it.
+  final Duration timeout;
+
+  /// Test-only seam: when non-null, [warp] routes through this instead of the
+  /// real `compute()` isolate, so a never-completing runner can exercise the
+  /// timeout branch deterministically. Production leaves it null and the byte
+  /// output is identical to calling `compute(_warpFn, …)` directly.
+  @visibleForTesting
+  final Future<Uint8List?> Function(Uint8List bytes, CropCorners corners)?
+  runnerOverride;
+
+  const PerspectiveWarper({
+    this.maxDimension = kDefaultFlatMaxDimension,
+    this.timeout = const Duration(seconds: 12),
+    @visibleForTesting this.runnerOverride,
+  });
 
   @override
   Future<Uint8List?> warp(Uint8List bytes, CropCorners corners) {
     if (corners == CropCorners.fullFrame) return Future.value(null);
-    return compute(
-      _warpFn,
-      _WarpArgs(bytes: bytes, corners: corners, maxDim: maxDimension),
+    final run =
+        runnerOverride ??
+        (b, c) => compute(
+          _warpFn,
+          _WarpArgs(bytes: b, corners: c, maxDim: maxDimension),
+        );
+    return withIsolateTimeout(
+      () => run(bytes, corners),
+      timeout: timeout,
+      onTimeout: () => null,
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,11 @@ Uint8List _jpeg(int w, int h, {int orientation = 1}) {
   }
   return Uint8List.fromList(img.encodeJpg(image, quality: 85));
 }
+
+/// A runner that never resolves — stands in for a wedged isolate so the
+/// timeout branch of warp() can be exercised deterministically.
+Future<Uint8List?> _neverCompletes(Uint8List bytes, CropCorners corners) =>
+    Completer<Uint8List?>().future;
 
 /// Quad that takes 80 % of a display-frame image: [0.1,0.9]×[0.1,0.9].
 const _kRect = CropCorners(
@@ -92,6 +98,22 @@ void main() {
     expect(out.width, lessThanOrEqualTo(50));
     expect(out.height, lessThanOrEqualTo(50));
     expect(out.width, greaterThan(2));
+  });
+
+  // 6. Timeout path: an injected runner whose Future never completes must
+  //    resolve to null (never-throws contract) within the configured bound.
+  test('never-completing runner + tiny timeout → null (no hang)', () async {
+    const warperTimeout = PerspectiveWarper(
+      timeout: Duration(milliseconds: 50),
+      runnerOverride: _neverCompletes,
+    );
+    final result = await warperTimeout
+        .warp(_jpeg(100, 80), _kRect)
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw StateError('warp() did not honor its timeout'),
+        );
+    expect(result, isNull);
   });
 
   // 5. EXIF orientation alignment.

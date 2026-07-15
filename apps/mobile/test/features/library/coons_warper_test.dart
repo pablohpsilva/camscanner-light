@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -19,8 +20,34 @@ Uint8List _rectJpeg(int w, int h) {
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
 
+/// A runner that never resolves — stands in for a wedged isolate so the
+/// timeout branch of warp() can be exercised deterministically.
+Future<Uint8List?> _neverCompletes(Uint8List bytes, CropCorners corners) =>
+    Completer<Uint8List?>().future;
+
 void main() {
   const warper = CoonsWarper();
+
+  test('never-completing runner + tiny timeout → null (no hang)', () async {
+    const warperTimeout = CoonsWarper(
+      timeout: Duration(milliseconds: 50),
+      runnerOverride: _neverCompletes,
+    );
+    const bent = CropCorners(
+      topLeft: Offset(0.1, 0.1),
+      topRight: Offset(0.9, 0.1),
+      bottomRight: Offset(0.9, 0.9),
+      bottomLeft: Offset(0.1, 0.9),
+      topMidDev: Offset(0, -0.08),
+    );
+    final result = await warperTimeout
+        .warp(_rectJpeg(200, 160), bent)
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw StateError('warp() did not honor its timeout'),
+        );
+    expect(result, isNull);
+  });
 
   test('fullFrame → null (no-op)', () async {
     expect(await warper.warp(_rectJpeg(80, 60), CropCorners.fullFrame), isNull);
