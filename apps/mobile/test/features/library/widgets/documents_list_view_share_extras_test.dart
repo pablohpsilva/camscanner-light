@@ -4,7 +4,6 @@ import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
-import 'package:mobile/features/library/widgets/share_menu_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 DocumentSummary _summary() => DocumentSummary(
@@ -43,6 +42,6 @@ void main() {
     );
     await tester.tap(find.byKey(Key('document-${s.document.id}-fax')));
     await tester.pumpAndSettle();
-    expect(find.text(kFaxUnavailableMessage), findsOneWidget);
+    expect(find.text("Fax isn't available yet"), findsOneWidget);
   });
 }

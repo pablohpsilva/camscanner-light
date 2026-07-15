@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-
-/// SnackBar copy shown when link-share / fax are tapped but no real provider is
-/// wired yet. Shared so tests and UI assert the same strings.
-const String kLinkShareUnavailableMessage = "Link sharing isn't available yet";
-const String kFaxUnavailableMessage = "Fax isn't available yet";
+import '../../../l10n/l10n.dart';
 
 /// Menu values for the shared "extra" share actions.
 const String kShareLinkValue = 'share-link';
@@ -13,6 +9,7 @@ const String kFaxValue = 'fax';
 /// [keyPrefix] namespaces the item keys so multiple menus stay unique
 /// (e.g. 'document-42', 'page-viewer', 'share-menu').
 List<PopupMenuEntry<String>> shareExtraMenuItems({
+  required BuildContext context,
   required bool showFax,
   required String keyPrefix,
   bool showShareLink = true,
@@ -21,13 +18,13 @@ List<PopupMenuEntry<String>> shareExtraMenuItems({
     PopupMenuItem<String>(
       value: kShareLinkValue,
       key: Key('$keyPrefix-share-link'),
-      child: const Text('Share link'),
+      child: Text(context.l10n.shareLink),
     ),
   if (showFax)
     PopupMenuItem<String>(
       value: kFaxValue,
       key: Key('$keyPrefix-fax'),
-      child: const Text('Fax'),
+      child: Text(context.l10n.shareFax),
     ),
 ];
 
@@ -37,8 +34,8 @@ List<PopupMenuEntry<String>> shareExtraMenuItems({
 /// together with its UX (see spec non-goals).
 void handleShareExtra(BuildContext context, String value) {
   final message = value == kFaxValue
-      ? kFaxUnavailableMessage
-      : kLinkShareUnavailableMessage;
+      ? context.l10n.shareFaxUnavailable
+      : context.l10n.shareLinkUnavailable;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
@@ -66,7 +63,7 @@ class ShareMenuButton extends StatelessWidget {
   Widget build(BuildContext context) => PopupMenuButton<String>(
     key: buttonKey,
     enabled: enabled,
-    tooltip: 'Share',
+    tooltip: context.l10n.commonShare,
     icon: const Icon(Icons.share),
     onSelected: (value) {
       if (value == 'share') {
@@ -75,13 +72,14 @@ class ShareMenuButton extends StatelessWidget {
         handleShareExtra(context, value);
       }
     },
-    itemBuilder: (_) => [
-      const PopupMenuItem<String>(
+    itemBuilder: (menuContext) => [
+      PopupMenuItem<String>(
         value: 'share',
-        key: Key('share-menu-share'),
-        child: Text('Share'),
+        key: const Key('share-menu-share'),
+        child: Text(context.l10n.commonShare),
       ),
       ...shareExtraMenuItems(
+        context: menuContext,
         showFax: showFax,
         showShareLink: showShareLink,
         keyPrefix: 'share-menu',

@@ -218,6 +218,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ReamTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

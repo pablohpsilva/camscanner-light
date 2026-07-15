@@ -102,6 +102,7 @@ class DocumentsListView extends StatelessWidget {
                 ),
               if (onShare != null)
                 ...shareExtraMenuItems(
+                  context: context,
                   showFax: features.fax,
                   showShareLink: features.shareLink,
                   keyPrefix: 'document-${d.id}',

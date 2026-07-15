@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
-import 'package:mobile/features/library/widgets/share_menu_button.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/localized_app.dart';
@@ -31,6 +30,6 @@ void main() {
     expect(find.byKey(const Key('page-viewer-share-link')), findsOneWidget);
     await tester.tap(find.byKey(const Key('page-viewer-fax')));
     await tester.pumpAndSettle();
-    expect(find.text(kFaxUnavailableMessage), findsOneWidget);
+    expect(find.text("Fax isn't available yet"), findsOneWidget);
   });
 }
