@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,8 @@ Future<void> _pump(
   EnhancerMode selectedMode = EnhancerMode.auto,
   void Function(EnhancerMode)? onModeChanged,
   Uint8List? sourceBytes,
+  Duration thumbTimeout = const Duration(seconds: 6),
+  Future<Uint8List?> Function(Uint8List)? thumbRunner,
 }) async {
   await tester.pumpWidget(
     localizedTestApp(
@@ -21,6 +24,8 @@ Future<void> _pump(
           selectedMode: selectedMode,
           onModeChanged: onModeChanged ?? (_) {},
           sourceBytes: sourceBytes,
+          thumbTimeout: thumbTimeout,
+          thumbRunner: thumbRunner,
         ),
       ),
     ),
@@ -147,6 +152,78 @@ void main() {
         expect(find.byKey(const Key('filter-tile-original')), findsOneWidget);
         expect(find.byKey(const Key('filter-tile-color')), findsOneWidget);
         expect(find.byKey(const Key('filter-tile-grayscale')), findsOneWidget);
+      },
+    );
+
+    // P02 T9 (CMP-10): the thumbnail compute() had no timeout — a wedged
+    // isolate would keep every tile stuck on its spinner forever.  A fast
+    // runner must still render thumbnails (behavior unchanged).
+    testWidgets('renders thumbnails when the runner completes quickly', (
+      tester,
+    ) async {
+      // The downsample runner is fast (returns bytes immediately), but the
+      // enhancers in step 2 do real image work — like the c2777d7 regression
+      // above, runAsync lets those real futures complete.
+      await tester.runAsync(() async {
+        await _pump(
+          tester,
+          sourceBytes: kFakeJpegBytes,
+          thumbRunner: (bytes) async => bytes, // fast, non-null thumbnail
+        );
+        await Future.delayed(const Duration(seconds: 2));
+      });
+      await tester.pump();
+
+      // No stuck spinner; the tiles carry real images.
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(Image), findsWidgets);
+      expect(find.byKey(const Key('filter-tile-auto')), findsOneWidget);
+    });
+
+    // TIMEOUT: inject a never-completing runner + tiny thumbTimeout.  After the
+    // bound elapses, the strip must degrade to its EXISTING no-thumbnail path
+    // (fallback icons, no spinner) and stay interactive — not hang.
+    testWidgets(
+      'degrades to fallback icons (no spinner) when the runner never completes',
+      (tester) async {
+        final never = Completer<Uint8List?>(); // never completes
+        EnhancerMode? captured;
+
+        await _pump(
+          tester,
+          sourceBytes: kFakeJpegBytes,
+          onModeChanged: (m) => captured = m,
+          thumbTimeout: const Duration(milliseconds: 50),
+          thumbRunner: (bytes) => never.future,
+        );
+
+        // Before the timeout fires the tiles may show a spinner. Pump past the
+        // 50ms bound so withIsolateTimeout resolves onTimeout -> null.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // Degraded to the existing "no thumbnail" state: fallback icons, and
+        // critically NO stuck spinner.
+        expect(
+          find.byType(CircularProgressIndicator),
+          findsNothing,
+          reason:
+              'On timeout the strip must degrade to fallback icons, never '
+              'stay on a spinner.',
+        );
+
+        // Still interactive: tapping a tile fires onModeChanged.
+        await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
+        await tester.pump();
+        expect(captured, EnhancerMode.grayscale);
+
+        // All four tiles remain present.
+        expect(find.byKey(const Key('filter-tile-auto')), findsOneWidget);
+        expect(find.byKey(const Key('filter-tile-grayscale')), findsOneWidget);
+
+        // Drain the dangling completer so the harness sees no leaked timer.
+        never.complete(null);
+        await tester.pump();
       },
     );
   });

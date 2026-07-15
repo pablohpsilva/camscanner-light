@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
+import '../../../core/async/with_isolate_timeout.dart';
 import '../../../l10n/l10n.dart';
 import '../../library/auto_enhancer.dart';
 import '../../library/color_enhancer.dart';
@@ -69,11 +70,26 @@ class FilterPickerStrip extends StatefulWidget {
   final void Function(EnhancerMode) onModeChanged;
   final Uint8List? sourceBytes;
 
+  /// Upper bound on the thumbnail downsample [compute] isolate. It's just a
+  /// display-only thumbnail, so the bound is short — on expiry the strip
+  /// degrades to its existing "no thumbnail" state (fallback icons) instead of
+  /// leaving every tile stuck on a spinner. A wedged native isolate can't be
+  /// killed from Dart; this only detaches the awaiting future.
+  final Duration thumbTimeout;
+
+  /// Test seam: overrides the real downsample runner (`compute(_thumbFn, …)`).
+  /// Production leaves this null, so behavior is unchanged. Tests inject a
+  /// fast or never-completing runner to exercise the timeout path.
+  @visibleForTesting
+  final Future<Uint8List?> Function(Uint8List bytes)? thumbRunner;
+
   const FilterPickerStrip({
     super.key,
     required this.selectedMode,
     required this.onModeChanged,
     this.sourceBytes,
+    this.thumbTimeout = const Duration(seconds: 6),
+    this.thumbRunner,
   });
 
   @override
@@ -108,8 +124,17 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
     _generating = true;
 
     try {
-      // Step 1: downsample in a compute isolate (avoids blocking UI thread).
-      final small = await compute(_thumbFn, bytes);
+      // Step 1: downsample in a compute isolate (avoids blocking UI thread),
+      // bounded by [thumbTimeout] so a wedged isolate can't hang the strip.
+      // On timeout we degrade to the SAME "no thumbnail" path as any failure:
+      // onTimeout yields null, hits the `small == null` guard below, and the
+      // `finally` clears _generating so tiles fall back to their filter icons.
+      final runner = widget.thumbRunner ?? (b) => compute(_thumbFn, b);
+      final small = await withIsolateTimeout<Uint8List?>(
+        () => runner(bytes),
+        timeout: widget.thumbTimeout,
+        onTimeout: () => null,
+      );
       if (!mounted || small == null) return; // finally clears _generating
 
       // Step 2: apply all enhancers concurrently on the downsampled bytes.
