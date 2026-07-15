@@ -8,6 +8,8 @@ import 'package:integration_test/integration_test.dart';
 import './../test/step/the_app_is_launched_with_a_fake_id_scanner_returning_a_front_and_a_back.dart';
 import './../test/step/i_open_the_id_scanner.dart';
 import './../test/step/an_id_card_document_with2_pages_is_saved.dart';
+import './../test/step/the_app_is_launched_with_a_fake_id_scanner_returning_a_front_then_a_cancelled_back.dart';
+import './../test/step/an_id_card_document_with1_page_is_saved.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +20,14 @@ void main() {
       await theAppIsLaunchedWithAFakeIdScannerReturningAFrontAndABack(tester);
       await iOpenTheIdScanner(tester);
       await anIdCardDocumentWith2PagesIsSaved(tester);
+    });
+    testWidgets(
+        '''Cancelling the back keeps the captured front as a 1-page ID document''',
+        (tester) async {
+      await theAppIsLaunchedWithAFakeIdScannerReturningAFrontThenACancelledBack(
+          tester);
+      await iOpenTheIdScanner(tester);
+      await anIdCardDocumentWith1PageIsSaved(tester);
     });
   });
 }
