@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:image/image.dart' as img;
 
 import '../../../core/async/with_isolate_timeout.dart';
+import '../../../core/logging/app_logger.dart';
 
 import '../../scan/captured_image.dart';
 import '../crop_corners.dart';
@@ -34,9 +35,12 @@ import 'app_database.dart' hide Document;
 /// production defaults to the real `compute(rotateAndBakeJpeg, ...)`.
 typedef RotateRunner = Future<Uint8List?> Function(RotateJpegArgs args);
 
-/// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
-/// inserts the rows inside a single transaction so the DB never holds a partial
-/// record. Stores RELATIVE image paths.
+/// Drift-backed [DocumentRepository]. Scrubs the capture and writes the file
+/// OUTSIDE any transaction (so the write lock is never held across slow image
+/// work — P03 SAFE-02), then inserts the rows in a short transaction. Multi-row
+/// ops (`mergeInto`/`splitAfter`) commit all their row mutations atomically and
+/// clean up any append-only files on rollback (P03 SAFE-01). Stores RELATIVE
+/// image paths.
 class DriftDocumentRepository implements DocumentRepository {
   final AppDatabase _db;
   final ImageMetadataScrubber _scrubber;
@@ -47,6 +51,11 @@ class DriftDocumentRepository implements DocumentRepository {
   final OcrEngine _ocrEngine;
   final PdfEncryptor _encryptor;
   final ImageCompressor _compressor;
+
+  /// Reports best-effort file-cleanup failures on a rolled-back merge/split
+  /// (P03 SAFE-01). Const-defaulted so production wiring is silent-safe and
+  /// tests can inject a recording [SilentAppLogger].
+  final AppLogger _logger;
 
   /// Upper bound on the rotate decode+rotate+re-encode `compute()` isolate
   /// (CMP-10). A wedged isolate cannot be killed from Dart, so this only
@@ -72,9 +81,11 @@ class DriftDocumentRepository implements DocumentRepository {
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
     ImageCompressor compressor = const ImageLibraryCompressor(),
     this.rotateTimeout = const Duration(seconds: 12),
+    AppLogger logger = const PrintAppLogger(),
     @visibleForTesting RotateRunner? rotateRunner,
   }) : _rotateRunner =
            rotateRunner ?? ((args) => compute(rotateAndBakeJpeg, args)),
+       _logger = logger, // ignore: prefer_initializing_formals
        _db = db, // ignore: prefer_initializing_formals
        _scrubber = scrubber, // ignore: prefer_initializing_formals
        _fileStore = fileStore, // ignore: prefer_initializing_formals
@@ -95,31 +106,33 @@ class DriftDocumentRepository implements DocumentRepository {
     final createdUtc = now.toUtc();
     final name = _defaultName(now);
     try {
-      final doc = await _db.transaction(() async {
-        final docId = await _db
-            .into(_db.documents)
-            .insert(
-              DocumentsCompanion.insert(
-                name: name,
-                createdAt: createdUtc,
-                modifiedAt: createdUtc,
-              ),
-            );
-        final rel = _fileStore.relativeFor(docId, 1);
-        late final Uint8List scrubbed;
-        try {
-          final raw = await File(capture.path).readAsBytes();
-          scrubbed = _scrubber.scrub(ensureJpegBytes(Uint8List.fromList(raw)));
-          // Base is PRISTINE and unfiltered — the filter is metadata, applied
-          // when regenerating the flat. Never bake enhancement into the base.
-          await _fileStore.writeRelative(rel, scrubbed);
-        } catch (e) {
-          await _fileStore.deleteDocumentDir(docId); // best-effort cleanup
-          rethrow; // rolls back the inserted document row
-        }
-        final mode = enhancerModeOf(enhancer);
-        final effective = corners ?? CropCorners.fullFrame;
-        String? flatRel;
+      // Reserve the document row first so we have a docId to name the page's
+      // file — but do the slow read/scrub/flat work OUTSIDE any transaction
+      // (P03 SAFE-02) so the write lock is not held across it. The narrow
+      // window between this insert and the page insert can only leave a
+      // harmless empty document on a hard crash (never a dangling page row);
+      // a catchable base-write failure rolls the document row back below.
+      final docId = await _db
+          .into(_db.documents)
+          .insert(
+            DocumentsCompanion.insert(
+              name: name,
+              createdAt: createdUtc,
+              modifiedAt: createdUtc,
+            ),
+          );
+      final rel = _fileStore.relativeFor(docId, 1);
+      final mode = enhancerModeOf(enhancer);
+      final effective = corners ?? CropCorners.fullFrame;
+      String? flatRel;
+      try {
+        final raw = await File(capture.path).readAsBytes();
+        // Base is PRISTINE and unfiltered — the filter is metadata, applied
+        // when regenerating the flat. Never bake enhancement into the base.
+        final scrubbed = _scrubber.scrub(
+          ensureJpegBytes(Uint8List.fromList(raw)),
+        );
+        await _fileStore.writeRelative(rel, scrubbed);
         try {
           flatRel = await _writeFlat(
             relativeImagePath: rel,
@@ -131,32 +144,40 @@ class DriftDocumentRepository implements DocumentRepository {
         } catch (_) {
           flatRel = null; // IO/regen failure — save proceeds with base only
         }
-        await _db
-            .into(_db.pages)
-            .insert(
-              PagesCompanion.insert(
-                documentId: docId,
-                position: 1,
-                relativeImagePath: rel,
-                corners: Value(
-                  effective == CropCorners.fullFrame
-                      ? null
-                      : effective.toStorage(),
-                ),
-                flatRelativePath: Value(flatRel),
-                enhancerMode: Value(mode.index),
+      } catch (e) {
+        // Base write failed: roll back the reserved document row + its dir so
+        // no empty document is left behind.
+        await (_db.delete(
+          _db.documents,
+        )..where((d) => d.id.equals(docId))).go();
+        await _fileStore.deleteDocumentDir(docId);
+        rethrow;
+      }
+      // Short transaction: insert only the page row.
+      await _db
+          .into(_db.pages)
+          .insert(
+            PagesCompanion.insert(
+              documentId: docId,
+              position: 1,
+              relativeImagePath: rel,
+              corners: Value(
+                effective == CropCorners.fullFrame
+                    ? null
+                    : effective.toStorage(),
               ),
-            );
-        return Document(
-          id: docId,
-          name: name,
-          createdAt: createdUtc,
-          modifiedAt: createdUtc,
-        );
-      });
+              flatRelativePath: Value(flatRel),
+              enhancerMode: Value(mode.index),
+            ),
+          );
       await _deleteTempSource(capture.path);
-      _triggerOcr(doc.id, 1);
-      return doc;
+      _triggerOcr(docId, 1);
+      return Document(
+        id: docId,
+        name: name,
+        createdAt: createdUtc,
+        modifiedAt: createdUtc,
+      );
     } catch (e) {
       throw DocumentSaveException('save failed: $e');
     }
@@ -314,9 +335,9 @@ class DriftDocumentRepository implements DocumentRepository {
             rotationQuarterTurns: pg.rotationQuarterTurns,
             enhancerMode:
                 (pg.enhancerMode >= 0 &&
-                        pg.enhancerMode < EnhancerMode.values.length)
-                    ? EnhancerMode.values[pg.enhancerMode]
-                    : EnhancerMode.none,
+                    pg.enhancerMode < EnhancerMode.values.length)
+                ? EnhancerMode.values[pg.enhancerMode]
+                : EnhancerMode.none,
             flatImagePath: pg.flatRelativePath == null
                 ? null
                 : _fileStore.absoluteFor(pg.flatRelativePath!).path,
@@ -658,7 +679,8 @@ class DriftDocumentRepository implements DocumentRepository {
     } else {
       // Cropped: the processor warps + enhances in one pass (or two-step for a
       // stubbed warper). Fall back to the rotated-only image if it makes nothing.
-      flatBytes = await _processor.process(input, corners, mode) ?? rotatedBytes;
+      flatBytes =
+          await _processor.process(input, corners, mode) ?? rotatedBytes;
     }
 
     if (flatBytes == null) {
@@ -678,6 +700,25 @@ class DriftDocumentRepository implements DocumentRepository {
     } on FileSystemException {
       /* already gone — fine */
     }
+  }
+
+  /// Best-effort delete of the append-only files written during a merge/split
+  /// that then failed, so a rolled-back op leaves no orphan files (P03 SAFE-01,
+  /// T03.5). Never throws; reports the triggering [cause] via [_logger].
+  Future<void> _cleanupWrittenFiles(List<String> relPaths, Object cause) async {
+    for (final rel in relPaths) {
+      try {
+        final f = _fileStore.absoluteFor(rel);
+        if (await f.exists()) await f.delete();
+      } catch (_) {
+        /* best-effort — a leftover file is harmless, a thrown cleanup is not */
+      }
+    }
+    _logger.error(
+      cause,
+      context:
+          'rolled back file writes; cleaned ${relPaths.length} orphan file(s)',
+    );
   }
 
   static EnhancerMode _modeOf(int index) =>
@@ -790,8 +831,7 @@ class DriftDocumentRepository implements DocumentRepository {
         'updatePageEnhancer: no page ($documentId, $position)',
       );
     }
-    final corners =
-        CropCorners.tryParse(row.corners) ?? CropCorners.fullFrame;
+    final corners = CropCorners.tryParse(row.corners) ?? CropCorners.fullFrame;
     final flatRel = await _writeFlat(
       relativeImagePath: row.relativeImagePath,
       quarterTurns: row.rotationQuarterTurns,
@@ -817,35 +857,41 @@ class DriftDocumentRepository implements DocumentRepository {
     ImageEnhancer? enhancer,
   }) async {
     try {
-      final position = await _db.transaction(() async {
-        final maxRow =
-            await (_db.select(_db.pages)
-                  ..where((p) => p.documentId.equals(documentId))
-                  ..orderBy([(p) => OrderingTerm.desc(p.position)])
-                  ..limit(1))
-                .getSingleOrNull();
-        if (maxRow == null) {
-          throw DocumentSaveException('document $documentId has no pages');
-        }
-        final newPosition = maxRow.position + 1;
-        final rel = _fileStore.relativeFor(documentId, newPosition);
-        final raw = await File(capture.path).readAsBytes();
-        final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
-        await _fileStore.writeRelative(rel, scrubbed); // pristine, unfiltered
-        final mode = enhancerModeOf(enhancer);
-        final effective = corners ?? CropCorners.fullFrame;
-        String? flatRel;
-        try {
-          flatRel = await _writeFlat(
-            relativeImagePath: rel,
-            quarterTurns: 0,
-            corners: effective,
-            mode: mode,
-            existingFlatRel: null,
-          );
-        } catch (_) {
-          flatRel = null;
-        }
+      // Short read for the next position — no lock held across image work
+      // (P03 SAFE-02).
+      final maxRow =
+          await (_db.select(_db.pages)
+                ..where((p) => p.documentId.equals(documentId))
+                ..orderBy([(p) => OrderingTerm.desc(p.position)])
+                ..limit(1))
+              .getSingleOrNull();
+      if (maxRow == null) {
+        throw DocumentSaveException('document $documentId has no pages');
+      }
+      final newPosition = maxRow.position + 1;
+      final rel = _fileStore.relativeFor(documentId, newPosition);
+      final mode = enhancerModeOf(enhancer);
+      final effective = corners ?? CropCorners.fullFrame;
+
+      // Read/scrub/write/flat OUTSIDE any transaction.
+      final raw = await File(capture.path).readAsBytes();
+      final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
+      await _fileStore.writeRelative(rel, scrubbed); // pristine, unfiltered
+      String? flatRel;
+      try {
+        flatRel = await _writeFlat(
+          relativeImagePath: rel,
+          quarterTurns: 0,
+          corners: effective,
+          mode: mode,
+          existingFlatRel: null,
+        );
+      } catch (_) {
+        flatRel = null;
+      }
+
+      // Short transaction: insert the page row + bump modifiedAt.
+      await _db.transaction(() async {
         await _db
             .into(_db.pages)
             .insert(
@@ -864,11 +910,10 @@ class DriftDocumentRepository implements DocumentRepository {
             );
         await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
-        return newPosition;
       });
       await _deleteTempSource(capture.path);
-      _triggerOcr(documentId, position);
-      return position;
+      _triggerOcr(documentId, newPosition);
+      return newPosition;
     } catch (e) {
       if (e is DocumentSaveException) rethrow;
       throw DocumentSaveException('addPage failed: $e');
@@ -1034,6 +1079,7 @@ class DriftDocumentRepository implements DocumentRepository {
     if (targetDocumentId == sourceDocumentId) {
       throw const DocumentSaveException('mergeInto: target == source');
     }
+    final written = <String>[];
     try {
       final maxRow =
           await (_db.select(_db.pages)
@@ -1048,7 +1094,8 @@ class DriftDocumentRepository implements DocumentRepository {
                 ..orderBy([(p) => OrderingTerm.asc(p.position)]))
               .get();
 
-      // Copy files first (outside the DB txn), building the row inserts.
+      // Copy files first (append-only new paths, outside the DB txn), building
+      // the row inserts. Track every path so a rollback can clean them up.
       final inserts = <PagesCompanion>[];
       var k = 0;
       for (final src in sourcePages) {
@@ -1059,6 +1106,7 @@ class DriftDocumentRepository implements DocumentRepository {
             .absoluteFor(src.relativeImagePath)
             .readAsBytes();
         await _fileStore.writeRelative(imageRel, srcBytes);
+        written.add(imageRel);
         String? flatRel;
         if (src.flatRelativePath != null) {
           final flatBytes = await _fileStore
@@ -1066,6 +1114,7 @@ class DriftDocumentRepository implements DocumentRepository {
               .readAsBytes();
           flatRel = _fileStore.flatForImage(imageRel);
           await _fileStore.writeRelative(flatRel, flatBytes);
+          written.add(flatRel);
         }
         inserts.add(
           PagesCompanion.insert(
@@ -1081,24 +1130,38 @@ class DriftDocumentRepository implements DocumentRepository {
           ),
         );
       }
+      // Atomic: append the pages AND remove the source's rows in ONE txn, so a
+      // crash can never leave the pages living in BOTH documents (P03 SAFE-01a).
+      // The source-row deletion is inlined here rather than via the post-txn
+      // deleteDocument() so it commits together with the inserts.
       await _db.transaction(() async {
         for (final c in inserts) {
           await _db.into(_db.pages).insert(c);
         }
+        await (_db.update(_db.documents)
+              ..where((d) => d.id.equals(targetDocumentId)))
+            .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
+        await (_db.delete(
+          _db.pages,
+        )..where((t) => t.documentId.equals(sourceDocumentId))).go();
+        await (_db.delete(
+          _db.documents,
+        )..where((d) => d.id.equals(sourceDocumentId))).go();
       });
-      await (_db.update(_db.documents)
-            ..where((d) => d.id.equals(targetDocumentId)))
-          .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
     } catch (e) {
+      await _cleanupWrittenFiles(written, e); // rolled back — no orphan files
       if (e is DocumentSaveException) rethrow;
       throw DocumentSaveException('mergeInto failed: $e');
     }
-    // Remove the now-copied source (rows + dir). Separate from the txn above.
-    await deleteDocument(sourceDocumentId);
+    // Source ROWS are gone (committed above). Best-effort remove its dir; worst
+    // case is a harmless orphan directory (no row references it).
+    await _fileStore.deleteDocumentDir(sourceDocumentId);
   }
 
   @override
   Future<Document> splitAfter(int documentId, int position) async {
+    int? newId;
+    final written = <String>[];
     try {
       final pages =
           await (_db.select(_db.pages)
@@ -1122,7 +1185,10 @@ class DriftDocumentRepository implements DocumentRepository {
       }
       final now = _clock().toUtc();
       final newName = '${doc.name} (split)';
-      final newId = await _db
+      // Reserve the new document id — needed to name the copied files. If any
+      // later step fails, this row (and its files) are removed in the catch, so
+      // no half-built split ever becomes visible (P03 SAFE-01b).
+      newId = await _db
           .into(_db.documents)
           .insert(
             DocumentsCompanion.insert(
@@ -1133,6 +1199,8 @@ class DriftDocumentRepository implements DocumentRepository {
           );
 
       final moved = pages.where((p) => p.position > position).toList();
+      // Copy the moved pages' files first (append-only), OUTSIDE the txn.
+      final inserts = <PagesCompanion>[];
       var k = 0;
       for (final src in moved) {
         k++;
@@ -1141,6 +1209,7 @@ class DriftDocumentRepository implements DocumentRepository {
             .absoluteFor(src.relativeImagePath)
             .readAsBytes();
         await _fileStore.writeRelative(imageRel, bytes);
+        written.add(imageRel);
         String? flatRel;
         if (src.flatRelativePath != null) {
           final flatBytes = await _fileStore
@@ -1148,25 +1217,30 @@ class DriftDocumentRepository implements DocumentRepository {
               .readAsBytes();
           flatRel = _fileStore.flatForImage(imageRel);
           await _fileStore.writeRelative(flatRel, flatBytes);
+          written.add(flatRel);
         }
-        await _db
-            .into(_db.pages)
-            .insert(
-              PagesCompanion.insert(
-                documentId: newId,
-                position: k,
-                relativeImagePath: imageRel,
-                corners: Value(src.corners),
-                flatRelativePath: Value(flatRel),
-                ocrText: Value(src.ocrText),
-                ocrBoxes: Value(src.ocrBoxes),
-                rotationQuarterTurns: Value(src.rotationQuarterTurns),
-                enhancerMode: Value(src.enhancerMode),
-              ),
-            );
+        inserts.add(
+          PagesCompanion.insert(
+            documentId: newId,
+            position: k,
+            relativeImagePath: imageRel,
+            corners: Value(src.corners),
+            flatRelativePath: Value(flatRel),
+            ocrText: Value(src.ocrText),
+            ocrBoxes: Value(src.ocrBoxes),
+            rotationQuarterTurns: Value(src.rotationQuarterTurns),
+            enhancerMode: Value(src.enhancerMode),
+          ),
+        );
       }
 
+      // Atomic: insert the moved rows into the new doc AND delete them from the
+      // source in ONE txn, so a crash can never duplicate a page across both
+      // documents (P03 SAFE-01b).
       await _db.transaction(() async {
+        for (final c in inserts) {
+          await _db.into(_db.pages).insert(c);
+        }
         for (final src in moved) {
           await (_db.delete(_db.pages)..where((t) => t.id.equals(src.id))).go();
         }
@@ -1198,6 +1272,24 @@ class DriftDocumentRepository implements DocumentRepository {
         modifiedAt: now,
       );
     } catch (e) {
+      // Roll back: drop the copied files AND the reserved (now-empty) new doc,
+      // so a failed split leaves no orphan document or duplicated pages.
+      await _cleanupWrittenFiles(written, e);
+      if (newId != null) {
+        try {
+          await _db.transaction(() async {
+            await (_db.delete(
+              _db.pages,
+            )..where((t) => t.documentId.equals(newId!))).go();
+            await (_db.delete(
+              _db.documents,
+            )..where((d) => d.id.equals(newId!))).go();
+          });
+        } catch (_) {
+          /* best-effort */
+        }
+        await _fileStore.deleteDocumentDir(newId);
+      }
       if (e is DocumentSaveException) rethrow;
       throw DocumentSaveException('splitAfter failed: $e');
     }
