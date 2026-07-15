@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import 'donation_screen.dart';
 
@@ -33,7 +34,7 @@ class DonationBanner extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Enjoying the app? Tap to support it',
+                      context.l10n.donationBannerText,
                       style: TextStyle(color: ream.ink2),
                     ),
                   ),
