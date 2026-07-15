@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/language_autonyms.dart';
 import '../../l10n/locale_controller.dart';
+import '../../l10n/locale_resolution.dart';
+import '../../l10n/locale_store.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import '../../theme/widgets/ream_section_label.dart';
@@ -38,7 +42,7 @@ class SettingsScreen extends StatelessWidget {
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: AnimatedBuilder(
-        animation: themeController,
+        animation: Listenable.merge([themeController, localeController]),
         builder: (context, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -54,6 +58,15 @@ class SettingsScreen extends StatelessWidget {
                 ReamSegment(value: ThemeMode.dark, label: 'Dark'),
                 ReamSegment(value: ThemeMode.system, label: 'System'),
               ],
+            ),
+            const SizedBox(height: 28),
+            ReamSectionLabel(context.l10n.settingsSectionLanguage),
+            const SizedBox(height: 10),
+            _NavRow(
+              key: const Key('settings-language'),
+              icon: Icons.language,
+              label: _currentLanguageLabel(context),
+              onTap: () => _showLanguagePicker(context),
             ),
             const SizedBox(height: 28),
             const ReamSectionLabel('Feedback & support'),
@@ -86,6 +99,65 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  String _currentLanguageLabel(BuildContext context) {
+    final override = localeController.localeOverride;
+    return override == null
+        ? context.l10n.settingsLanguageSystem
+        : kLanguageAutonyms[localeTag(override)]!;
+  }
+
+  Future<void> _showLanguagePicker(BuildContext context) async {
+    final choice = await showDialog<_LanguageChoice>(
+      context: context,
+      builder: (context) {
+        final current = localeController.localeOverride;
+        Widget option({
+          required String keySuffix,
+          required String label,
+          required Locale? locale,
+          required bool selected,
+        }) {
+          return SimpleDialogOption(
+            key: Key('language-option-$keySuffix'),
+            onPressed: () => Navigator.pop(context, _LanguageChoice(locale)),
+            child: Row(
+              children: [
+                Expanded(child: Text(label)),
+                if (selected) const Icon(Icons.check, size: 18),
+              ],
+            ),
+          );
+        }
+
+        return SimpleDialog(
+          title: Text(context.l10n.settingsSectionLanguage),
+          children: [
+            option(
+              keySuffix: 'system',
+              label: context.l10n.settingsLanguageSystem,
+              locale: null,
+              selected: current == null,
+            ),
+            for (final locale in kSupportedAppLocales)
+              option(
+                keySuffix: localeTag(locale),
+                label: kLanguageAutonyms[localeTag(locale)]!,
+                locale: locale,
+                selected: current == locale,
+              ),
+          ],
+        );
+      },
+    );
+    if (choice != null) await localeController.setLocale(choice.locale);
+  }
+}
+
+/// Wrapper so `null` (System default) is distinguishable from a dismissed dialog.
+class _LanguageChoice {
+  final Locale? locale;
+  const _LanguageChoice(this.locale);
 }
 
 class _NavRow extends StatelessWidget {

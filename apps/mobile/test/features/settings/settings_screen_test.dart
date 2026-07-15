@@ -5,19 +5,20 @@ import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
 import 'package:mobile/l10n/locale_controller.dart';
 import 'package:mobile/l10n/locale_store.dart';
-import 'package:mobile/theme/ream_theme.dart';
 import 'package:mobile/theme/theme_controller.dart';
 import 'package:mobile/theme/theme_mode_store.dart';
 
-Widget _host(ThemeController c, {bool feedbackAvailable = true}) => MaterialApp(
-  theme: ReamTheme.light(),
-  home: SettingsScreen(
-    themeController: c,
-    localeController: LocaleController(store: InMemoryLocaleStore()),
-    feedbackDependencies: const FeedbackDependencies(),
-    feedbackAvailable: feedbackAvailable,
-  ),
-);
+import '../../support/localized_app.dart';
+
+Widget _host(ThemeController c, {bool feedbackAvailable = true}) =>
+    localizedTestApp(
+      home: SettingsScreen(
+        themeController: c,
+        localeController: LocaleController(store: InMemoryLocaleStore()),
+        feedbackDependencies: const FeedbackDependencies(),
+        feedbackAvailable: feedbackAvailable,
+      ),
+    );
 
 void main() {
   testWidgets('shows the theme selector at the current mode', (t) async {

@@ -4,6 +4,7 @@ import 'package:mobile/features/donation/donation_screen.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/feedback/feedback_screen.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/l10n/locale_controller.dart';
 import 'package:mobile/l10n/locale_store.dart';
 import 'package:mobile/theme/ream_colors.dart';
@@ -24,8 +25,12 @@ Color _scaffoldBg(WidgetTester t) =>
     t.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor!;
 
 void main() {
-  Widget dark(Widget child) =>
-      MaterialApp(theme: ReamTheme.dark(), home: child);
+  Widget dark(Widget child) => MaterialApp(
+    theme: ReamTheme.dark(),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: child,
+  );
 
   testWidgets('DonationScreen uses dark paper', (t) async {
     await t.pumpWidget(dark(const DonationScreen()));
