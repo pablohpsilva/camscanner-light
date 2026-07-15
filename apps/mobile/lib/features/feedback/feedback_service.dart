@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -26,6 +27,11 @@ class FeedbackService {
   final DiagnosticsCollector collector;
   final AttestationProvider attestation;
   final http.Client httpClient;
+
+  /// Upper bound on each network POST. A stalled TCP connection never returns,
+  /// so without this the submit spinner would hang forever; on timeout we fall
+  /// back to the existing offline result.
+  final Duration timeout;
   final String Function() _newId;
 
   FeedbackService({
@@ -33,6 +39,7 @@ class FeedbackService {
     required this.collector,
     required this.attestation,
     required this.httpClient,
+    this.timeout = const Duration(seconds: 15),
     String Function()? newId,
   }) : _newId = newId ?? (() => const Uuid().v4());
 
@@ -41,7 +48,9 @@ class FeedbackService {
       final base = Uri.parse(config.workerUrl);
 
       // 1. One-time server-issued challenge (anti-replay for attestation).
-      final chalRes = await httpClient.post(base.replace(path: '/challenge'));
+      final chalRes = await httpClient
+          .post(base.replace(path: '/challenge'))
+          .timeout(timeout);
       if (chalRes.statusCode != 200) return const FeedbackServerError();
       final challenge =
           (jsonDecode(chalRes.body) as Map<String, dynamic>)['challenge']
@@ -66,12 +75,16 @@ class FeedbackService {
       };
 
       // 4. Submit.
-      final res = await httpClient.post(
-        base.replace(path: '/feedback'),
-        headers: const {'content-type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final res = await httpClient
+          .post(
+            base.replace(path: '/feedback'),
+            headers: const {'content-type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
       return _map(res);
+    } on TimeoutException {
+      return const FeedbackOffline();
     } on http.ClientException {
       return const FeedbackOffline();
     } catch (_) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -123,6 +124,53 @@ void main() {
     );
     expect(await _service(client).submit(_draft), isA<FeedbackOffline>());
   });
+
+  test('a stalled /challenge POST times out → offline', () async {
+    final client = _StallingClient(stallPath: '/challenge');
+    final service = FeedbackService(
+      config: _config,
+      collector: _FakeCollector(),
+      attestation: const NoAttestationProvider(),
+      httpClient: client,
+      newId: () => '55555555-5555-5555-5555-555555555555',
+      timeout: const Duration(milliseconds: 50),
+    );
+    expect(await service.submit(_draft), isA<FeedbackOffline>());
+  });
+
+  test('a stalled /feedback POST times out → offline', () async {
+    final client = _StallingClient(stallPath: '/feedback');
+    final service = FeedbackService(
+      config: _config,
+      collector: _FakeCollector(),
+      attestation: const NoAttestationProvider(),
+      httpClient: client,
+      newId: () => '55555555-5555-5555-5555-555555555555',
+      timeout: const Duration(milliseconds: 50),
+    );
+    expect(await service.submit(_draft), isA<FeedbackOffline>());
+  });
+}
+
+/// An [http.Client] that never completes a POST to [stallPath] (simulates a
+/// wedged TCP connection), while answering the other endpoint normally so the
+/// flow can reach the stalling one.
+class _StallingClient extends http.BaseClient {
+  final String stallPath;
+  _StallingClient({required this.stallPath});
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    if (request.url.path == stallPath) {
+      return Completer<http.StreamedResponse>().future; // never completes
+    }
+    // The non-stalling endpoint answers with a valid challenge so the flow
+    // proceeds to the /feedback POST.
+    final body = utf8.encode(jsonEncode({'challenge': 'CHAL'}));
+    return Future.value(
+      http.StreamedResponse(Stream.value(body), 200),
+    );
+  }
 }
 
 class _StubAttest implements AttestationProvider {
