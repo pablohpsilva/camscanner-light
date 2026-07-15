@@ -4,8 +4,10 @@ flutter_launcher_icons:
   image_path: "assets/icons/scannercam_light_icon_1024.png"
   min_sdk_android: 21
   # iOS icons must be fully opaque (App Store rejects any alpha channel).
-  # The master art is a white-bodied rounded square on transparency, so
-  # flattening onto white removes the corners cleanly; Apple re-applies its mask.
+  # The master art is a full-bleed white face (white body + white margin) — the
+  # earlier version had an opaque BLACK matte around the card, which showed up as
+  # a black border on both platforms. remove_alpha_ios flattens onto white (a
+  # no-op for the now-white margin); Apple re-applies its own rounded mask.
   remove_alpha_ios: true
   background_color_ios: "#FFFFFF"
   # Android adaptive icon: white background matches the icon's white body,
