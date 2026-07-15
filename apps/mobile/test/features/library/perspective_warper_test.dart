@@ -116,6 +116,61 @@ void main() {
     expect(result, isNull);
   });
 
+  // P01 T4: NORMAL source (≤ 2×cap) — output bytes/dimensions are byte-for-byte
+  //   UNCHANGED vs the pre-bound implementation. computeWorkResolution returns
+  //   scale==1.0 so no source resize happens and normal inputs are untouched.
+  test('P01 T4: small source (≤ 2×cap) → output unchanged (scale==1.0)', () async {
+    // 200×100 long side 200 ≪ 2×3500 → no resize path.
+    final expected = await warper.warp(_jpeg(200, 100), _kRect);
+    expect(expected, isNotNull);
+    final out = img.decodeImage(expected!)!;
+    // Same edge-length dims as test #2 — proves geometry is preserved.
+    expect(out.width, 160);
+    expect(out.height, 80);
+  });
+
+  // P01 T4: LARGE source (long side > 2×cap) — the warp still succeeds and
+  //   produces the same-capped output dims; the SOURCE buffer is now bounded so
+  //   it must not throw and the output long side stays ≤ kDefaultFlatMaxDimension.
+  test('P01 T4: large source (> 2×cap) → bounded, output long side ≤ cap', () async {
+    // Long side 8000 > 2×3500=7000 → source-bound path engages.
+    const cap = kDefaultFlatMaxDimension;
+    final bytes = _jpeg(8000, 6000);
+    final result = await warper.warp(bytes, _kRect);
+    expect(result, isNotNull);
+    final out = img.decodeImage(result!)!;
+    final longest = out.width > out.height ? out.width : out.height;
+    expect(longest, lessThanOrEqualTo(cap));
+    // Geometry: _kRect quad is 0.8×8000=6400 wide, 0.8×6000=4800 tall → capped
+    // to 3500 long side keeps the 4:3 aspect (3500×2625).
+    expect(out.width, 3500);
+    expect(out.height, 2625);
+  });
+
+  // P01 T4 (direct): the sampling loop reads a SOURCE buffer bounded to
+  //   2×maxDim. Calling warpPerspectiveToImage on an oversized img.Image must
+  //   downscale the source it samples (super-sampling headroom = 2×cap).
+  test('P01 T4: source long side bounded to 2×maxDim in sampling loop', () {
+    final big = img.Image(width: 8000, height: 6000, numChannels: 3);
+    img.fill(big, color: img.ColorRgb8(180, 100, 60));
+    lastSampledSourceSize = null;
+    warpPerspectiveToImage(big, _kRect, kDefaultFlatMaxDimension);
+    expect(lastSampledSourceSize, isNotNull);
+    // 8000 > 2×3500=7000 → bounded to 7000×5250.
+    expect(lastSampledSourceSize!.$1, 7000);
+    expect(lastSampledSourceSize!.$2, 5250);
+  });
+
+  // P01 T4 (direct): a source already ≤ 2×maxDim is NOT resized — the sampling
+  //   loop reads the original buffer, so normal inputs are byte-identical.
+  test('P01 T4: source ≤ 2×maxDim is not resized', () {
+    final small = img.Image(width: 200, height: 100, numChannels: 3);
+    img.fill(small, color: img.ColorRgb8(180, 100, 60));
+    lastSampledSourceSize = null;
+    warpPerspectiveToImage(small, _kRect, kDefaultFlatMaxDimension);
+    expect(lastSampledSourceSize, (200, 100));
+  });
+
   // 5. EXIF orientation alignment.
   //    Source: 40×80 sensor with Orientation=6 (90° CW) → display is 80×40.
   //    _kRect in display frame: TL(8,4) TR(72,4) BR(72,36) BL(8,36).

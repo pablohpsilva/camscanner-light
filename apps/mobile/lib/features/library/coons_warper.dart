@@ -8,7 +8,15 @@ import 'package:image/image.dart' as img;
 import '../../core/async/with_isolate_timeout.dart';
 import 'crop_corners.dart';
 import 'image_warper.dart';
-import 'perspective_warper.dart' show kDefaultFlatMaxDimension;
+import 'perspective_warper.dart'
+    show kDefaultFlatMaxDimension, kWarpSourceCapMultiplier;
+import 'work_resolution.dart';
+
+/// Test-only: the `(width, height)` of the source buffer the last
+/// [warpCoonsToImage] call actually sampled — the bounded size when the source
+/// exceeded `kWarpSourceCapMultiplier × maxDim`, else the original size.
+@visibleForTesting
+(int, int)? lastSampledSourceSize;
 
 /// Unwarps a curved 8-point crop (4 corners + 4 edge-midpoint deviations) to a
 /// flat rectangle via a bilinearly-blended Coons patch. Pure Dart, runs in a
@@ -144,9 +152,23 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
     outH = math.max(2, (outH * s).round());
   }
 
-  final srcBuf = src.getBytes(order: img.ChannelOrder.rgb);
-  final stride = w * 3;
-  final xMax = (w - 1).toDouble(), yMax = (h - 1).toDouble();
+  // Bound the SOURCE we sample from. The output is already capped above; a
+  // full-res RGB buffer (~57 MB at 19 MP) is wasteful when the output is small.
+  // All Coons geometry (curves, outW/outH) is computed in ORIGINAL src space;
+  // we only rescale the final sample coordinate into the bounded buffer, so
+  // geometry is unchanged. scale==1.0 (source ≤ cap) leaves normal inputs
+  // byte-identical.
+  final wr = computeWorkResolution(w, h, kWarpSourceCapMultiplier * maxDim);
+  final sampleSrc = wr.scale == 1.0
+      ? src
+      : img.copyResize(src, width: wr.targetW, height: wr.targetH);
+  final sw = sampleSrc.width, sh = sampleSrc.height;
+  lastSampledSourceSize = (sw, sh);
+  final sx = sw / w, sy = sh / h;
+
+  final srcBuf = sampleSrc.getBytes(order: img.ChannelOrder.rgb);
+  final stride = sw * 3;
+  final xMax = (sw - 1).toDouble(), yMax = (sh - 1).toDouble();
   final out = Uint8List(outW * outH * 3);
   var o = 0;
   for (int dy = 0; dy < outH; dy++) {
@@ -169,11 +191,12 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
           (1 - v) * tc.dx + v * bc.dx + (1 - u) * lc.dx + u * rc.dx - bx;
       final rawY =
           (1 - v) * tc.dy + v * bc.dy + (1 - u) * lc.dy + u * rc.dy - by;
-      final fx = rawX < 0 ? 0.0 : (rawX > xMax ? xMax : rawX);
-      final fy = rawY < 0 ? 0.0 : (rawY > yMax ? yMax : rawY);
+      final mx = rawX * sx, my = rawY * sy;
+      final fx = mx < 0 ? 0.0 : (mx > xMax ? xMax : mx);
+      final fy = my < 0 ? 0.0 : (my > yMax ? yMax : my);
       final x0 = fx.toInt(), y0 = fy.toInt();
-      final x1 = x0 + 1 < w ? x0 + 1 : x0;
-      final y1 = y0 + 1 < h ? y0 + 1 : y0;
+      final x1 = x0 + 1 < sw ? x0 + 1 : x0;
+      final y1 = y0 + 1 < sh ? y0 + 1 : y0;
       final wx = fx - x0, wy = fy - y0;
       final i00 = y0 * stride + x0 * 3, i10 = y0 * stride + x1 * 3;
       final i01 = y1 * stride + x0 * 3, i11 = y1 * stride + x1 * 3;

@@ -7,6 +7,21 @@ import 'package:image/image.dart' as img;
 import '../../core/async/with_isolate_timeout.dart';
 import 'crop_corners.dart';
 import 'image_warper.dart';
+import 'work_resolution.dart';
+
+/// Super-sampling headroom for the SOURCE buffer that feeds the warp sampling
+/// loop. The rectified OUTPUT is already capped at [kDefaultFlatMaxDimension];
+/// this bounds the SOURCE we sample from to this multiple of that cap so a
+/// ~19 MP capture no longer materializes a ~57 MB full-res RGB buffer for a
+/// small output. 2× keeps enough oversampling that output sharpness (bilinear
+/// down-tap) is visually indistinguishable from sampling the full-res source.
+const int kWarpSourceCapMultiplier = 2;
+
+/// Test-only: the `(width, height)` of the source buffer the last
+/// [warpPerspectiveToImage] call actually sampled — the bounded size when the
+/// source exceeded `kWarpSourceCapMultiplier × maxDim`, else the original size.
+@visibleForTesting
+(int, int)? lastSampledSourceSize;
 
 /// Default cap on the rectified page's long side (px). A document scan is crisp
 /// and fully legible well below the raw sensor resolution, so capping the flat
@@ -111,9 +126,29 @@ img.Image warpPerspectiveToImage(
     if (outH < 2) outH = 2;
   }
 
+  // Bound the SOURCE we sample from. The output is already capped above; a
+  // full-res RGB buffer (~57 MB at 19 MP) is wasteful when the output is small.
+  // Corners are normalized (0..1), so resizing the source needs no corner
+  // adjustment — we just re-denormalize against the bounded dims. Output dims
+  // (outW/outH) come from the ORIGINAL src above, so geometry is unchanged;
+  // scale==1.0 (source already ≤ cap) leaves normal inputs byte-identical.
+  final wr = computeWorkResolution(w, h, kWarpSourceCapMultiplier * maxDim);
+  final sampleSrc = wr.scale == 1.0
+      ? src
+      : img.copyResize(src, width: wr.targetW, height: wr.targetH);
+  final sw = sampleSrc.width, sh = sampleSrc.height;
+  lastSampledSourceSize = (sw, sh);
+
+  // Denormalize corners against the (possibly bounded) source dims so the
+  // homography maps sampled-source pixels → the output rect.
+  final stl = Offset(corners.topLeft.dx * sw, corners.topLeft.dy * sh);
+  final str = Offset(corners.topRight.dx * sw, corners.topRight.dy * sh);
+  final sbr = Offset(corners.bottomRight.dx * sw, corners.bottomRight.dy * sh);
+  final sbl = Offset(corners.bottomLeft.dx * sw, corners.bottomLeft.dy * sh);
+
   // Src → dst homography; invert for inverse mapping (dst pixel → src pixel).
   final hMat = _solveHomography(
-    [tl, tr, br, bl],
+    [stl, str, sbr, sbl],
     [
       const Offset(0, 0),
       Offset(outW.toDouble(), 0),
@@ -123,10 +158,10 @@ img.Image warpPerspectiveToImage(
   );
   final hInv = _invertH3x3(hMat);
 
-  final srcBuf = src.getBytes(order: img.ChannelOrder.rgb);
-  final stride = w * 3;
+  final srcBuf = sampleSrc.getBytes(order: img.ChannelOrder.rgb);
+  final stride = sw * 3;
   final out = Uint8List(outW * outH * 3);
-  final xMax = (w - 1).toDouble(), yMax = (h - 1).toDouble();
+  final xMax = (sw - 1).toDouble(), yMax = (sh - 1).toDouble();
   var o = 0;
   for (var dy = 0; dy < outH; dy++) {
     for (var dx = 0; dx < outW; dx++) {
@@ -134,8 +169,8 @@ img.Image warpPerspectiveToImage(
       final fx = sp.dx < 0 ? 0.0 : (sp.dx > xMax ? xMax : sp.dx);
       final fy = sp.dy < 0 ? 0.0 : (sp.dy > yMax ? yMax : sp.dy);
       final x0 = fx.toInt(), y0 = fy.toInt();
-      final x1 = x0 + 1 < w ? x0 + 1 : x0;
-      final y1 = y0 + 1 < h ? y0 + 1 : y0;
+      final x1 = x0 + 1 < sw ? x0 + 1 : x0;
+      final y1 = y0 + 1 < sh ? y0 + 1 : y0;
       final wx = fx - x0, wy = fy - y0;
       final i00 = y0 * stride + x0 * 3, i10 = y0 * stride + x1 * 3;
       final i01 = y1 * stride + x0 * 3, i11 = y1 * stride + x1 * 3;
