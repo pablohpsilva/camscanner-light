@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert'; // latin1
 import 'dart:io';
 import 'dart:typed_data';
@@ -792,5 +793,60 @@ void main() {
       expect(flat.readAsBytesSync(), fakeFlat);
       expect(proc.calls, greaterThanOrEqualTo(1));
     });
+  });
+
+  group('P02 CMP-10 — rotate compute() is timeout-guarded', () {
+    test(
+      'NORMAL rotate parity: rotates the base and writes new flat bytes',
+      () async {
+        final doc = await repo().createFromCapture(capture);
+
+        // Rotate the single page one quarter-turn CW.
+        await repo().rotatePage(doc.id, 1);
+
+        // The page now carries a rotation and a distinct flat file whose bytes
+        // are a valid, re-encoded JPEG (rotated off the base).
+        final page = (await db.select(db.pages).get()).single;
+        expect(page.rotationQuarterTurns, 1);
+        expect(page.flatRelativePath, isNotNull);
+        final flat = File('${base.path}/${page.flatRelativePath}');
+        expect(flat.existsSync(), isTrue);
+        final bytes = flat.readAsBytesSync();
+        // JPEG SOI marker — proof rotateAndBakeJpeg re-encoded real pixels.
+        expect(bytes.length, greaterThan(2));
+        expect(bytes[0], 0xFF);
+        expect(bytes[1], 0xD8);
+      },
+    );
+
+    test(
+      'TIMEOUT: a wedged rotate isolate throws DocumentSaveException fast',
+      () async {
+        final doc = await repo().createFromCapture(capture);
+
+        // Inject a rotate runner that never completes + a tiny timeout, so the
+        // guarded compute() must surface the existing rotate-error contract
+        // instead of hanging forever.
+        final stuck = DriftDocumentRepository(
+          db: db,
+          scrubber: const JpegExifScrubber(),
+          fileStore: DocumentFileStore(base),
+          clock: clock,
+          pdfBuilder: const PdfBuilder(),
+          warper: FakeImageWarper(),
+          rotateTimeout: const Duration(milliseconds: 50),
+          rotateRunner: (args) => Completer<Uint8List?>().future, // never done
+        );
+
+        await expectLater(
+          stuck.rotatePage(doc.id, 1),
+          throwsA(isA<DocumentSaveException>()),
+        ).timeout(
+          const Duration(seconds: 2),
+          onTimeout: () =>
+              fail('rotatePage hung past its rotateTimeout — not guarded'),
+        );
+      },
+    );
   });
 }

@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:image/image.dart' as img;
+
+import '../../../core/async/with_isolate_timeout.dart';
 
 import '../../scan/captured_image.dart';
 import '../crop_corners.dart';
@@ -27,6 +29,11 @@ import '../pdf/pdf_builder.dart';
 import '../pdf/pdf_encryptor.dart';
 import 'app_database.dart' hide Document;
 
+/// Runs the rotate isolate call for a set of [RotateJpegArgs]. Injectable so a
+/// test can substitute a never-completing runner to exercise the timeout guard;
+/// production defaults to the real `compute(rotateAndBakeJpeg, ...)`.
+typedef RotateRunner = Future<Uint8List?> Function(RotateJpegArgs args);
+
 /// Drift-backed [DocumentRepository]. Scrubs the capture, writes the file, and
 /// inserts the rows inside a single transaction so the DB never holds a partial
 /// record. Stores RELATIVE image paths.
@@ -41,6 +48,18 @@ class DriftDocumentRepository implements DocumentRepository {
   final PdfEncryptor _encryptor;
   final ImageCompressor _compressor;
 
+  /// Upper bound on the rotate decode+rotate+re-encode `compute()` isolate
+  /// (CMP-10). A wedged isolate cannot be killed from Dart, so this only
+  /// detaches the awaiting future; on expiry the rotate surfaces the same
+  /// [DocumentSaveException] as an undecodable base. Injectable so tests can
+  /// shrink it.
+  final Duration rotateTimeout;
+
+  /// Seam for the rotate isolate call (CMP-10). Defaults to the real
+  /// `compute(rotateAndBakeJpeg, ...)`; tests inject a never-completing runner
+  /// to drive the timeout path deterministically.
+  final RotateRunner _rotateRunner;
+
   DriftDocumentRepository({
     required AppDatabase db,
     required ImageMetadataScrubber scrubber,
@@ -52,7 +71,11 @@ class DriftDocumentRepository implements DocumentRepository {
     OcrEngine ocrEngine = const NoOpOcrEngine(),
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
     ImageCompressor compressor = const ImageLibraryCompressor(),
-  }) : _db = db, // ignore: prefer_initializing_formals
+    this.rotateTimeout = const Duration(seconds: 12),
+    @visibleForTesting RotateRunner? rotateRunner,
+  }) : _rotateRunner =
+           rotateRunner ?? ((args) => compute(rotateAndBakeJpeg, args)),
+       _db = db, // ignore: prefer_initializing_formals
        _scrubber = scrubber, // ignore: prefer_initializing_formals
        _fileStore = fileStore, // ignore: prefer_initializing_formals
        _clock = clock, // ignore: prefer_initializing_formals
@@ -603,9 +626,16 @@ class DriftDocumentRepository implements DocumentRepository {
     // orientation itself), so it consumes the base bytes directly.
     Uint8List? rotatedBytes;
     if (quarterTurns != 0) {
-      rotatedBytes = await compute(
-        rotateAndBakeJpeg,
-        RotateJpegArgs(baseBytes, quarterTurns),
+      // Guard the isolate (CMP-10): a wedged native/pure-Dart rotate cannot be
+      // killed from Dart, so on expiry we detach and surface the SAME failure
+      // contract as an undecodable base — callers already handle it (rotate
+      // error UI). The success path is unchanged.
+      rotatedBytes = await withIsolateTimeout(
+        () => _rotateRunner(RotateJpegArgs(baseBytes, quarterTurns)),
+        timeout: rotateTimeout,
+        onTimeout: () => throw const DocumentSaveException(
+          'regenerate: undecodable base image',
+        ),
       );
       if (rotatedBytes == null) {
         throw const DocumentSaveException('regenerate: undecodable base image');
