@@ -66,11 +66,16 @@ void main() {
           pdfPath: '/x/export.pdf',
           name: 'Scan',
           opener: neverOpens,
+          // Long timeout so the spinner is genuinely up mid-open; we still
+          // drain the pending timeout timer at the end so none leaks.
+          openTimeout: const Duration(seconds: 30),
         ),
       ),
     );
     await tester.pump(); // one frame; do NOT settle (opener never completes)
     expect(find.byKey(const Key('pdf-preview-loading')), findsOneWidget);
+    // Drain the injected open timeout so the test leaves no pending timer.
+    await tester.pump(const Duration(seconds: 31));
   });
 
   testWidgets('shows the error state when the document fails to open', (
@@ -90,5 +95,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('pdf-preview-error')), findsOneWidget);
     expect(find.byKey(const Key('pdf-preview-loading')), findsNothing);
+  });
+
+  testWidgets('clears the spinner once a fast opener completes', (
+    tester,
+  ) async {
+    var opened = false;
+    Future<PdfDocument> opensFast(String _) async {
+      opened = true;
+      throw Exception('no native document available in host');
+    }
+
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: PdfPreviewScreen(
+          pdfPath: '/x/export.pdf',
+          name: 'Scan',
+          opener: opensFast,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // opener ran and the spinner cleared (success path resolves synchronously
+    // fast; a real PdfDocument can only be exercised on-device).
+    expect(opened, isTrue);
+    expect(find.byKey(const Key('pdf-preview-loading')), findsNothing);
+  });
+
+  testWidgets('routes into the error state when the opener never returns', (
+    tester,
+  ) async {
+    // An opener whose Future NEVER completes must not spin forever: the
+    // injected openTimeout fires and routes into the existing error state.
+    Future<PdfDocument> neverOpens(String _) => Completer<PdfDocument>().future;
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: PdfPreviewScreen(
+          pdfPath: '/x/export.pdf',
+          name: 'Scan',
+          opener: neverOpens,
+          openTimeout: const Duration(milliseconds: 50),
+        ),
+      ),
+    );
+    await tester.pump(); // initial frame -> loading
+    await tester.pump(const Duration(milliseconds: 100)); // past the timeout
+    expect(find.byKey(const Key('pdf-preview-loading')), findsNothing);
+    expect(find.byKey(const Key('pdf-preview-error')), findsOneWidget);
   });
 }

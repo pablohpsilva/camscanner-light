@@ -23,6 +23,11 @@ class PdfPreviewScreen extends StatefulWidget {
   final PdfOpener opener;
   final ShareChannel share;
   final FeatureFlags features;
+
+  /// Bounds [opener]: a never-returning open (wedged native plugin) must not
+  /// leave the spinner up forever. On expiry the [TimeoutException] falls into
+  /// the existing catch and routes into the error state.
+  final Duration openTimeout;
   const PdfPreviewScreen({
     super.key,
     required this.pdfPath,
@@ -30,6 +35,7 @@ class PdfPreviewScreen extends StatefulWidget {
     this.opener = PdfDocument.openFile,
     this.share = const SystemShareChannel(),
     this.features = const FeatureFlags(),
+    this.openTimeout = const Duration(seconds: 15),
   });
 
   @override
@@ -49,7 +55,9 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
 
   Future<void> _open() async {
     try {
-      final doc = await widget.opener(widget.pdfPath);
+      final doc = await widget
+          .opener(widget.pdfPath)
+          .timeout(widget.openTimeout);
       if (!mounted) {
         doc.close();
         return;
