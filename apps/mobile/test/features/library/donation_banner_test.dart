@@ -3,16 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_banner.dart';
 import 'package:mobile/theme/ream_colors.dart';
 
-import '../../support/ream_pump.dart';
+import '../../support/localized_app.dart';
 
 void main() {
+  Future<void> pumpBanner(WidgetTester tester) async {
+    await tester.pumpWidget(
+      localizedTestApp(home: const Scaffold(body: DonationBanner())),
+    );
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('donation-banner key is present', (tester) async {
-    await pumpReam(tester, const DonationBanner());
+    await pumpBanner(tester);
     expect(find.byKey(const Key('donation-banner')), findsOneWidget);
   });
 
   testWidgets('banner background is amberSoft', (tester) async {
-    await pumpReam(tester, const DonationBanner());
+    await pumpBanner(tester);
 
     // The Material widget wrapping the banner carries the background color.
     final material = tester.widget<Material>(
@@ -27,7 +34,7 @@ void main() {
   });
 
   testWidgets('banner has amber top border', (tester) async {
-    await pumpReam(tester, const DonationBanner());
+    await pumpBanner(tester);
 
     // Find the Container that has the BoxDecoration with the amber border.
     Container? decoratedContainer;
@@ -49,7 +56,7 @@ void main() {
   });
 
   testWidgets('banner copy text uses ink2 color', (tester) async {
-    await pumpReam(tester, const DonationBanner());
+    await pumpBanner(tester);
 
     final text = tester.widget<Text>(find.textContaining('support').first);
     expect(text.style?.color, ReamColors.light.ink2);
@@ -58,7 +65,7 @@ void main() {
   testWidgets('banner shows a heart icon and a trailing chevron', (
     tester,
   ) async {
-    await pumpReam(tester, const DonationBanner());
+    await pumpBanner(tester);
 
     expect(find.byIcon(Icons.favorite), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right), findsOneWidget);
