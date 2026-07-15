@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,6 +7,10 @@ import 'package:image/image.dart' as img;
 import 'package:mobile/features/library/auto_enhancer.dart';
 import 'package:mobile/features/library/color_enhancer.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
+
+/// A runner that never completes — injected to simulate a wedged isolate so the
+/// timeout branch can be exercised deterministically without a real hang.
+Future<Uint8List> _neverCompletes(Uint8List bytes) => Completer<Uint8List>().future;
 
 void main() {
   group('AutoEnhancer', () {
@@ -248,6 +253,25 @@ void main() {
         );
       },
     );
+
+    test(
+      'throws TimeoutException when the runner never completes within the '
+      'injected timeout (so callers fall back to un-enhanced bytes)',
+      () async {
+        final input = Uint8List.fromList(
+          img.encodeJpg(img.Image(width: 4, height: 4), quality: 95),
+        );
+        const enhancer = AutoEnhancer(
+          timeout: Duration(milliseconds: 50),
+          runner: _neverCompletes,
+        );
+        await expectLater(
+          enhancer.enhance(input),
+          throwsA(isA<TimeoutException>()),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
   });
 
   group('ColorEnhancer', () {
@@ -300,6 +324,25 @@ void main() {
         expect(decoded.width, 100);
         expect(decoded.height, 200);
       },
+    );
+
+    test(
+      'throws TimeoutException when the runner never completes within the '
+      'injected timeout (so callers fall back to un-enhanced bytes)',
+      () async {
+        final input = Uint8List.fromList(
+          img.encodeJpg(img.Image(width: 4, height: 4), quality: 95),
+        );
+        const enhancer = ColorEnhancer(
+          timeout: Duration(milliseconds: 50),
+          runner: _neverCompletes,
+        );
+        await expectLater(
+          enhancer.enhance(input),
+          throwsA(isA<TimeoutException>()),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
     );
   });
 

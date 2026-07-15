@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile/features/library/grayscale_enhancer.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
+
+/// A runner that never completes — injected to simulate a wedged isolate so the
+/// timeout branch can be exercised deterministically without a real hang.
+Future<Uint8List> _neverCompletes(Uint8List bytes) => Completer<Uint8List>().future;
 
 void main() {
   group('NoneEnhancer', () {
@@ -69,5 +74,24 @@ void main() {
       expect(decoded.width, 100, reason: '90° CW bake swaps width and height');
       expect(decoded.height, 200);
     });
+
+    test(
+      'throws TimeoutException when the runner never completes within the '
+      'injected timeout (so callers fall back to un-enhanced bytes)',
+      () async {
+        final input = Uint8List.fromList(
+          img.encodeJpg(img.Image(width: 4, height: 4), quality: 95),
+        );
+        const enhancer = GrayscaleEnhancer(
+          timeout: Duration(milliseconds: 50),
+          runner: _neverCompletes,
+        );
+        await expectLater(
+          enhancer.enhance(input),
+          throwsA(isA<TimeoutException>()),
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
   });
 }
