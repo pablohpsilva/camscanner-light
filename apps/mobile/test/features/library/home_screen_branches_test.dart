@@ -11,10 +11,10 @@ import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/id_scan_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/scan_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 /// A repository whose listDocumentSummaries() throws exactly once (the first
 /// cold-start call), then succeeds — so the error screen appears, and a Retry
@@ -38,8 +38,7 @@ void main() {
     ScanDependencies? deps,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: deps ?? grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(repo),

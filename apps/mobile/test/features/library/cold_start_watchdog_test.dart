@@ -16,6 +16,7 @@ import 'package:mobile/features/library/home_screen.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 // createRepository() that never completes — simulates the wedged native DB open.
 LibraryDependencies _hangingLibraryDependencies() => LibraryDependencies(
@@ -28,7 +29,7 @@ void main() {
     'never opens (instead of an endless spinner)',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        localizedTestApp(
           home: HomeScreen(libraryDependencies: _hangingLibraryDependencies()),
         ),
       );
@@ -58,7 +59,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: HomeScreen(
           libraryDependencies: fakeLibraryDependencies(
             FakeDocumentRepository(),

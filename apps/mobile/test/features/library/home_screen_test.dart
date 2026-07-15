@@ -8,11 +8,13 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/scan_screen.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> pumpHome(
@@ -20,8 +22,7 @@ void main() {
     FakeDocumentRepository repo,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(repo),
@@ -72,8 +73,7 @@ void main() {
     // pumpAndSettle must NOT be used after tapping — ScanScreen shows a
     // CircularProgressIndicator which keeps scheduling animation frames.
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: ScanDependencies(
             createDocumentScanner: HangingDocumentScannerService.new,
@@ -211,8 +211,7 @@ void main() {
     final gate = Completer<void>();
     final repo = FakeDocumentRepository(listGate: gate, documents: twoDocs());
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(repo),
@@ -361,6 +360,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(
