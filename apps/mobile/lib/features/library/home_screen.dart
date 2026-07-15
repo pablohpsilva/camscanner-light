@@ -144,7 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _failStartup(String step, Object error) {
     // Always logged so a wedged cold start is diagnosable from device logs.
-    debugPrint('HomeScreen cold-start failed while $step: $error');
+    widget.libraryDependencies.logger().error(
+      error,
+      context: 'HomeScreen cold-start failed while $step',
+    );
     if (!mounted) return;
     setState(() {
       _loading = false;

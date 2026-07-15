@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/logging/app_logger.dart';
 import 'features/feedback/feedback_dependencies.dart';
 import 'features/library/home_screen.dart';
 import 'features/library/library_dependencies.dart';
@@ -13,8 +14,22 @@ import 'theme/ream_theme.dart';
 import 'theme/theme_controller.dart';
 import 'theme/theme_mode_store.dart';
 
+/// Routes uncaught framework errors to [logger] while preserving Flutter's
+/// default debug presentation (red screen / console dump).
+void installGlobalErrorHandling(AppLogger logger) {
+  FlutterError.onError = (details) {
+    logger.error(
+      details.exception,
+      stackTrace: details.stack,
+      context: 'FlutterError',
+    );
+    FlutterError.presentError(details);
+  };
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installGlobalErrorHandling(const PrintAppLogger());
   final store = SharedPrefsThemeModeStore();
   final controller = ThemeController(
     store: store,
