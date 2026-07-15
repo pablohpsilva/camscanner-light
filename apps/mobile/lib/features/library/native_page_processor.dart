@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 
-import 'package:flutter/foundation.dart' show compute;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
+import '../../core/async/with_isolate_timeout.dart';
 import 'auto_enhancer.dart'
     show
         kAutoProxyLongSide,
@@ -41,10 +41,11 @@ class NativePageProcessor implements PageProcessor {
       return null; // bent crop → defer to Dart Coons
     }
     try {
-      return await compute(
+      return await computeWithTimeout(
         _nativeFn,
         _NativeArgs(bytes, corners, mode),
-      ).timeout(timeout);
+        timeout: timeout,
+      );
     } catch (_) {
       return null; // TimeoutException or isolate error → fallback
     }

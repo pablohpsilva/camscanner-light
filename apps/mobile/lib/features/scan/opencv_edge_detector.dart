@@ -6,6 +6,7 @@ import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
+import '../../core/async/with_isolate_timeout.dart';
 import '../library/crop_corners.dart';
 import 'detector_geometry.dart';
 import 'edge_detector.dart';
@@ -41,7 +42,7 @@ class OpenCvEdgeDetector implements EdgeDetector {
   Future<DetectionResult?> detect(Uint8List bytes) async {
     final List<double>? raw;
     try {
-      raw = await _runner(bytes).timeout(timeout);
+      raw = await withIsolateTimeout(() => _runner(bytes), timeout: timeout);
     } on TimeoutException {
       // Native pipeline wedged — return null rather than hang the caller.
       return null;
