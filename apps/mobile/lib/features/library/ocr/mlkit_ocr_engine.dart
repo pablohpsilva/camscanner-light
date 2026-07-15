@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -14,7 +15,20 @@ import 'ocr_result.dart';
 /// ML Kit only runs on a real iOS/Android device (native), so this is exercised by
 /// on-device integration tests; host tests use a fake through the [OcrEngine] seam.
 class MlKitOcrEngine implements OcrEngine {
-  const MlKitOcrEngine();
+  /// Creates the native recognizer. Injectable so host tests can drive the
+  /// timeout wiring with a fake; production default is a real [TextRecognizer].
+  final TextRecognizer Function() recognizerFactory;
+
+  /// Upper bound on a single [TextRecognizer.processImage] call. A wedged
+  /// native recognizer would otherwise hang the OCR future forever. Generous —
+  /// a real page must never trip it; on trip we return the same empty result an
+  /// unreadable image yields (never throw).
+  final Duration timeout;
+
+  const MlKitOcrEngine({
+    this.recognizerFactory = _newTextRecognizer,
+    this.timeout = const Duration(seconds: 20),
+  });
 
   @override
   Future<OcrResult> recognize(Uint8List imageBytes) async {
@@ -26,11 +40,19 @@ class MlKitOcrEngine implements OcrEngine {
     // ML Kit reads from a file path; write the bytes to a short-lived temp file.
     final dir = await Directory.systemTemp.createTemp('mlkit_ocr');
     final file = File('${dir.path}/img.jpg')..writeAsBytesSync(imageBytes);
-    final recognizer = TextRecognizer();
+    final recognizer = recognizerFactory();
     try {
-      final recognized = await recognizer.processImage(
-        InputImage.fromFilePath(file.path),
-      );
+      final RecognizedText recognized;
+      try {
+        recognized = await recognizer
+            .processImage(InputImage.fromFilePath(file.path))
+            .timeout(timeout);
+      } on TimeoutException {
+        // A wedged native recognizer hung past [timeout]: yield the same
+        // "nothing recognized" result an unreadable image gives (the finally
+        // block below still closes the recognizer and cleans up the temp dir).
+        return OcrResult.empty;
+      }
       final words = <OcrWordBox>[];
       if (w > 0 && h > 0) {
         for (final block in recognized.blocks) {
@@ -61,3 +83,7 @@ class MlKitOcrEngine implements OcrEngine {
     }
   }
 }
+
+/// Production default for [MlKitOcrEngine.recognizerFactory]: a real ML Kit
+/// Latin-script recognizer. Top-level so the constructor stays `const`.
+TextRecognizer _newTextRecognizer() => TextRecognizer();
