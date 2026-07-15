@@ -15,6 +15,7 @@ import 'package:mobile/features/feedback/feedback_result.dart';
 import 'package:mobile/features/feedback/feedback_screen.dart';
 import 'package:mobile/features/feedback/feedback_service.dart';
 
+import '../../support/localized_app.dart';
 import '_fakes.dart';
 
 class _StubService extends FeedbackService {
@@ -36,7 +37,7 @@ class _StubService extends FeedbackService {
   }
 }
 
-Widget _host(FeedbackService service) => MaterialApp(
+Widget _host(FeedbackService service) => localizedTestApp(
   home: FeedbackScreen(
     dependencies: FeedbackDependencies(createService: () => service),
   ),
@@ -99,7 +100,7 @@ void main() {
   testWidgets('success result pops the pushed route', (t) async {
     final s = _StubService(const FeedbackSuccess('u'));
     await t.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
@@ -138,7 +139,7 @@ void main() {
   testWidgets('tapping back pops the pushed feedback screen', (t) async {
     final s = _StubService(const FeedbackInvalid());
     await t.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

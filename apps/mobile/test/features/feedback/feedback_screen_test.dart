@@ -11,6 +11,7 @@ import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 import 'package:mobile/theme/widgets/ream_segmented.dart';
 
+import '../../support/localized_app.dart';
 import '_fakes.dart';
 
 class _StubService extends FeedbackService {
@@ -48,7 +49,7 @@ class _PendingService extends FeedbackService {
       Completer<FeedbackResult>().future;
 }
 
-Widget _host(FeedbackService service) => MaterialApp(
+Widget _host(FeedbackService service) => localizedTestApp(
   home: FeedbackScreen(
     dependencies: FeedbackDependencies(createService: () => service),
   ),
@@ -108,9 +109,7 @@ void main() {
   });
 
   testWidgets('feedback uses Ream chrome + segmented category', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(theme: ReamTheme.light(), home: const FeedbackScreen()),
-    );
+    await tester.pumpWidget(localizedTestApp(home: const FeedbackScreen()));
     expect(find.text('Send feedback'), findsOneWidget);
     expect(find.byType(ReamSegmented<String>), findsOneWidget);
     await tester.tap(find.byKey(const Key('segment-idea')));
@@ -141,6 +140,8 @@ void main() {
       await t.pumpWidget(
         MaterialApp(
           theme: ReamTheme.dark(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: FeedbackScreen(
             dependencies: FeedbackDependencies(createService: () => s),
           ),
