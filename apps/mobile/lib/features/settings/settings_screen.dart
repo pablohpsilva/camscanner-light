@@ -38,7 +38,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
-        title: 'Settings',
+        title: context.l10n.settingsTitle,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: AnimatedBuilder(
@@ -46,17 +46,26 @@ class SettingsScreen extends StatelessWidget {
         builder: (context, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const ReamSectionLabel('Appearance'),
+            ReamSectionLabel(context.l10n.settingsSectionAppearance),
             const SizedBox(height: 10),
             ReamSegmented<ThemeMode>(
               key: const Key('settings-theme-mode'),
               expanded: true,
               value: themeController.mode,
               onChanged: themeController.setMode,
-              segments: const [
-                ReamSegment(value: ThemeMode.light, label: 'Light'),
-                ReamSegment(value: ThemeMode.dark, label: 'Dark'),
-                ReamSegment(value: ThemeMode.system, label: 'System'),
+              segments: [
+                ReamSegment(
+                  value: ThemeMode.light,
+                  label: context.l10n.settingsThemeLight,
+                ),
+                ReamSegment(
+                  value: ThemeMode.dark,
+                  label: context.l10n.settingsThemeDark,
+                ),
+                ReamSegment(
+                  value: ThemeMode.system,
+                  label: context.l10n.settingsThemeSystem,
+                ),
               ],
             ),
             const SizedBox(height: 28),
@@ -69,13 +78,13 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _showLanguagePicker(context),
             ),
             const SizedBox(height: 28),
-            const ReamSectionLabel('Feedback & support'),
+            ReamSectionLabel(context.l10n.settingsSectionFeedback),
             const SizedBox(height: 10),
             if (feedbackAvailable)
               _NavRow(
                 key: const Key('settings-feedback'),
                 icon: Icons.chat_bubble_outline,
-                label: 'Send feedback',
+                label: context.l10n.feedbackTitle,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) =>
@@ -87,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
               _NavRow(
                 key: const Key('settings-support'),
                 icon: Icons.favorite_outline,
-                label: 'Support the app',
+                label: context.l10n.settingsSupportApp,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const DonationScreen()),
                 ),
@@ -222,7 +231,7 @@ class _About extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'CamScanner-light',
+          context.l10n.appTitle,
           style: TextStyle(
             fontFamily: 'Figtree',
             fontSize: 14,
@@ -232,7 +241,7 @@ class _About extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Your scans stay on your device — no account, no cloud.',
+          context.l10n.settingsAboutTagline,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'Figtree',
