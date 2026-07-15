@@ -1,6 +1,6 @@
 Feature: Donate to support the app
 
-  Scenario: Open the donation screen from the always-visible home banner
+  Scenario: The home banner opens the donation screen on platforms with donations
     Given the app is launched with camera permission granted and empty storage
-    When I tap the donation banner
-    Then I see the donation disclaimer
+    Then the donation banner matches this platform's donation availability
+    And tapping the donation banner opens the donation disclaimer where available

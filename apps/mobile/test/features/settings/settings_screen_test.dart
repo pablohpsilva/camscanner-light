@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
@@ -68,5 +69,27 @@ void main() {
     expect(find.byKey(const Key('settings-about')), findsOneWidget);
     expect(find.textContaining('CamScanner-light'), findsOneWidget);
     expect(find.textContaining('Ream'), findsNothing);
+  });
+
+  testWidgets('support row is hidden on iOS', (t) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      final c = ThemeController(store: InMemoryThemeModeStore());
+      await t.pumpWidget(_host(c));
+      expect(find.byKey(const Key('settings-support')), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('support row is shown on Android', (t) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final c = ThemeController(store: InMemoryThemeModeStore());
+      await t.pumpWidget(_host(c));
+      expect(find.byKey(const Key('settings-support')), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

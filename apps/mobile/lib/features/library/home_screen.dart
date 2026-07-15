@@ -26,6 +26,7 @@ import 'widgets/empty_documents_view.dart';
 import 'widgets/rename_dialog.dart';
 import 'widgets/sort_pill.dart';
 import '../donation/donation_banner.dart';
+import '../donation/donation_availability.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../settings/settings_screen.dart';
 
@@ -384,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const DonationBanner(),
+      bottomNavigationBar: donationsAvailable ? const DonationBanner() : null,
     );
   }
 
