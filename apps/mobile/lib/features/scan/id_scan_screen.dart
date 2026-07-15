@@ -55,10 +55,6 @@ class _IdScanScreenState extends State<IdScanScreen> {
     setState(() => _step = _Step.back);
     final back = await _scanOne();
     if (!mounted) return;
-    if (back == null) {
-      navigator.pop();
-      return;
-    }
 
     setState(() => _step = _Step.saving);
     const corners = CropCorners.fullFrame;
@@ -74,19 +70,23 @@ class _IdScanScreenState extends State<IdScanScreen> {
       navigator.pop();
       return;
     }
-    final pos = await _saveController.addPage(
-      back,
-      doc.id,
-      corners: corners,
-      enhancer: enhancer,
-    );
-    if (!mounted) return;
-    if (pos == null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.idScanErrorBackRetake)),
+    // The user cancelled the back step: keep the already-captured front rather
+    // than silently discarding it — save it as a single-page document.
+    if (back != null) {
+      final pos = await _saveController.addPage(
+        back,
+        doc.id,
+        corners: corners,
+        enhancer: enhancer,
       );
-      navigator.pop();
-      return;
+      if (!mounted) return;
+      if (pos == null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.idScanErrorBackRetake)),
+        );
+        navigator.pop();
+        return;
+      }
     }
     try {
       await widget.repository.markAsIdCard(doc.id);

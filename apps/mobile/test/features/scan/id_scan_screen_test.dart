@@ -69,7 +69,9 @@ void main() {
     expect(find.byType(IdScanScreen), findsNothing); // popped
   });
 
-  testWidgets('cancel on back saves nothing', (tester) async {
+  testWidgets('cancel on back saves the captured front as a 1-page id card', (
+    tester,
+  ) async {
     final repo = FakeDocumentRepository();
     await tester.pumpWidget(
       _host(
@@ -84,7 +86,11 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(repo.createCalls, 0);
-    expect(repo.markIdCardCalls, isEmpty);
+    // The already-captured front must NOT be silently discarded: it is saved
+    // as a single-page document and still marked as an ID card.
+    expect(repo.createCalls, 1);
+    expect(repo.addPageCalls, 0); // no back page appended
+    expect(repo.markIdCardCalls.length, 1);
+    expect(find.byType(IdScanScreen), findsNothing); // popped
   });
 }
