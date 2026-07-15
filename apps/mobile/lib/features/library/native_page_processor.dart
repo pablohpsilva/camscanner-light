@@ -18,6 +18,7 @@ import 'crop_corners.dart';
 import 'enhancer_mode.dart';
 import 'page_processor.dart';
 import 'perspective_warper.dart' show kDefaultFlatMaxDimension;
+import 'work_resolution.dart';
 
 /// Native OpenCV (dartcv) page pipeline: imdecode → warpPerspective (straight
 /// crops; capped ≤3500) → filter(mode) → imencode. Runs in a [compute] isolate
@@ -65,14 +66,34 @@ Uint8List? _nativeFn(_NativeArgs a) {
     src = cv.imdecode(a.bytes, cv.IMREAD_COLOR);
     if (src.isEmpty) return null;
 
-    // Warp straight crops; full frame passes through unwarped.
+    // Warp straight crops; full frame passes through unwarped but is downscaled
+    // to a bounded working resolution (still ≥ kDefaultFlatMaxDimension) so the
+    // float passes in _autoFlatField don't allocate against an ultra-high-res
+    // Mat. Normal-sized inputs (longest ≤ cap) are cloned unchanged.
     if (a.corners == CropCorners.fullFrame) {
-      warped = src.clone();
+      final wr = computeWorkResolution(
+        src.cols,
+        src.rows,
+        kDefaultFlatMaxDimension,
+      );
+      if (wr.scale == 1.0) {
+        warped = src.clone();
+      } else {
+        warped = cv.resize(
+          src,
+          (wr.targetW, wr.targetH),
+          interpolation: cv.INTER_AREA,
+        );
+      }
     } else {
       warped = _warpStraight(src, a.corners);
     }
 
     // Filter dispatch: auto → flat-field; Color/Grayscale added in Task 6.
+    // For `none` we encode `warped` directly (no redundant full-res clone); it
+    // is owned by the outer finally, so `filtered` stays null and is NOT
+    // disposed here. Every other mode returns a newly-allocated Mat that this
+    // inner finally owns and disposes exactly once.
     final warpedMat = warped;
     cv.Mat? filtered;
     try {
@@ -80,12 +101,13 @@ Uint8List? _nativeFn(_NativeArgs a) {
         EnhancerMode.auto => _autoFlatField(warpedMat),
         EnhancerMode.color => _colorBoost(warpedMat),
         EnhancerMode.grayscale => _grayscale(warpedMat),
-        EnhancerMode.none => warpedMat.clone(),
+        EnhancerMode.none => null,
       };
+      final toEncode = filtered ?? warpedMat;
       final quality = a.mode == EnhancerMode.auto ? 95 : 92;
       final vecParams = cv.VecI32.fromList([cv.IMWRITE_JPEG_QUALITY, quality]);
       try {
-        final (ok, out) = cv.imencode('.jpg', filtered, params: vecParams);
+        final (ok, out) = cv.imencode('.jpg', toEncode, params: vecParams);
         return ok ? out : null;
       } finally {
         vecParams.dispose();
