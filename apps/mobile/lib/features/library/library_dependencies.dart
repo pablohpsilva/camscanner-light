@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/io/temp_file_writer.dart';
 import '../../core/logging/app_logger.dart';
 import 'dart_page_processor.dart';
 import 'document_file_store.dart';
@@ -36,6 +37,7 @@ class LibraryDependencies {
   final FaxProvider fax;
   final FeatureFlags features;
   final AppLogger Function() logger;
+  final TempFileWriter Function() tempFiles;
   const LibraryDependencies({
     this.createRepository = _defaultCreateRepository,
     this.printer = const SystemDocumentPrinter(),
@@ -45,10 +47,13 @@ class LibraryDependencies {
     this.fax = const UnavailableFaxProvider(),
     this.features = const FeatureFlags(),
     this.logger = _defaultLogger,
+    this.tempFiles = _defaultTempFiles,
   });
 }
 
 AppLogger _defaultLogger() => const PrintAppLogger();
+
+TempFileWriter _defaultTempFiles() => const TempFileWriter();
 
 Future<DocumentRepository> _defaultCreateRepository() async {
   final docsDir = await getApplicationDocumentsDirectory();
