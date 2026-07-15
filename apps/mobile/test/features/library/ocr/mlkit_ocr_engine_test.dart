@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -97,5 +98,23 @@ void main() {
     expect(result.text, 'HELLO');
     expect(result.words, isEmpty); // no blocks -> no word boxes
     expect(rec.closed, isTrue);
+  });
+
+  test('recognize cleans up its temp dir after a successful run (async IO)', () async {
+    // Count the engine's own temp dirs before/after: the async write+delete
+    // must leave nothing behind, exactly as the sync version did.
+    int mlkitTempDirs() => Directory.systemTemp
+        .listSync()
+        .whereType<Directory>()
+        .where((d) => d.path.split(Platform.pathSeparator).last.startsWith('mlkit_ocr'))
+        .length;
+
+    final before = mlkitTempDirs();
+    final engine = MlKitOcrEngine(recognizerFactory: () => _FixedRecognizer('OK'));
+
+    final result = await engine.recognize(jpeg);
+
+    expect(result.text, 'OK');
+    expect(mlkitTempDirs(), before, reason: 'temp dir must be deleted in finally');
   });
 }

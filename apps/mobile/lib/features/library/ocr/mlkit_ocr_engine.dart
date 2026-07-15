@@ -39,7 +39,8 @@ class MlKitOcrEngine implements OcrEngine {
 
     // ML Kit reads from a file path; write the bytes to a short-lived temp file.
     final dir = await Directory.systemTemp.createTemp('mlkit_ocr');
-    final file = File('${dir.path}/img.jpg')..writeAsBytesSync(imageBytes);
+    final file = File('${dir.path}/img.jpg');
+    await file.writeAsBytes(imageBytes);
     final recognizer = recognizerFactory();
     try {
       final RecognizedText recognized;
@@ -76,7 +77,7 @@ class MlKitOcrEngine implements OcrEngine {
     } finally {
       await recognizer.close();
       try {
-        dir.deleteSync(recursive: true);
+        await dir.delete(recursive: true);
       } catch (_) {
         /* best-effort temp cleanup */
       }
