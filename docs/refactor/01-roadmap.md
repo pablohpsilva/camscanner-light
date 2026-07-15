@@ -13,16 +13,16 @@ only hard sequencing root is **P00**.
 | **P00** | Shared primitives (`AppLogger`, `withIsolateTimeout`, `TempFileWriter`) | 0 Foundation | S–M | Low | — | host |
 | **P01** | Native pipeline OOM safety | 1 Safety | M | Med | — | Android+iOS |
 | **P02** | Timeouts everywhere | 1 Safety | S–M | Low | P00 | both |
-| **P03** | Persistence atomicity (merge/split txns) | 1 Safety | M | Med | — | both |
+| **P03** | Persistence atomicity (merge/split txns) | 1 Safety | M | Med | P10 (soft, same-file) · P00 | both |
 | **P04** | UI async-safety bugs | 1 Safety | S–M | Med | — | both |
 | **P05** | Decompose the God repository | 2 SOLID | L | Med | (P10 first, soft) | both |
 | **P06** | Extract view controllers from God widgets | 2 SOLID | L | Med | P00 | both |
 | **P07** | Scan orchestration extraction | 2 SOLID | M | Med | — | both |
-| **P08** | Native processor SOLID split + test seam | 2 SOLID | L | Med | P01 (same file) | Android+iOS |
+| **P08** | Native processor SOLID split + test seam | 2 SOLID | L | Med | P01 (soft, same-file) | Android+iOS |
 | **P09** | Image-pipeline DRY & parity | 3 DRY | M–L | Med | (P08 soft) | both (parity) |
 | **P10** | Repository DRY (helpers, temp-export, paths) | 3 DRY | S–M | Low | P00 | both |
 | **P11** | Share-action model + flag gating | 3 DRY | M | Low | (P06 soft) | both |
-| **P12** | Query & scaling (`_summaries`, N+1, sort) | 4 Perf | M | Low | — | host+both |
+| **P12** | Query & scaling (`_summaries`, N+1, sort) | 4 Perf | M | Low | P10 (soft, same-file) | host+both |
 | **P13** | UI image memory & decoding | 4 Perf | M | Med | — | Android+iOS |
 | **P14** | DI consistency, observability & 2°-feature cleanups | 3 Consistency | S–M | Low | P00 | both |
 | **P15** | Hygiene: theme tokens, i18n date, lints, pins | 5 Hygiene | S–M | Low | — | host+both |
@@ -32,49 +32,52 @@ only hard sequencing root is **P00**.
 ## 2. Dependency graph
 
 ```
-P00 ──┬─▶ P02        (timeouts adopt withIsolateTimeout)
-      ├─▶ P06        (runGuarded/AppLogger)
-      ├─▶ P10        (TempFileWriter for _writeTempExport)
-      └─▶ P14        (AppLogger sinks)
+Hard prerequisite (logical — P00 must land before its dependents):
+P00 ──┬─▶ P02   (timeouts adopt withIsolateTimeout + AppLogger)
+      ├─▶ P06   (runGuarded / AppLogger)
+      ├─▶ P10   (TempFileWriter for _writeTempExport; AppLogger)
+      └─▶ P14   (AppLogger sinks)
 
-P01 ──▶ P08          (same file — do OOM hardening before/at the SOLID split)
+Same-file serialization lanes (all members edit ONE file — run one at a time in
+the recommended order to avoid rebases; ordering is convenience, not correctness):
+  native_page_processor.dart    :  P01 → P08 → P09
+  drift_document_repository.dart :  P10 → P03 → P05   (and P12, any time after P10)
 
-soft edges (not blocking; reduce merge friction if ordered):
-  P10 ─▶ P05   (extract repo helpers before splitting the class)
-  P08 ─▶ P09   (split native file before sharing its math)
-  P06 ─▶ P11   (controllers make the share-action wiring cleaner)
+Soft cross-plan edge (reduces friction if ordered):
+  P06 → P11   (controllers make the share-action wiring cleaner)
 
-fully independent (no inbound edges): P03, P04, P07, P12, P13, P15
+Fully independent (no inbound edges, any file): P04, P07, P13, P15
 ```
 
-Only **P00** and **P01** are true prerequisites. Everything else is either independent or has a
-*soft* edge that merely lowers rebase friction.
+**P00 is the only hard logical prerequisite.** The two lanes above are *same-file* serializations:
+their members edit a single file, so land them one at a time in the recommended order to avoid
+painful rebases — but the order is a convenience, not a correctness gate. A safety-first team may
+land P03 (corruption fix) or P12 (query fix) *before* P10 (a low-risk DRY cleanup) and simply
+rebase P10's helpers on top; the P03/P12/P08 plan headers mark these edges "soft, same-file".
 
 ---
 
-## 3. Parallelization waves
+## 3. Execution tracks (parallel lanes, serial within a lane)
 
-Run each wave's plans concurrently (independent files / no shared state); land + verify green
-before starting the next. Within a plan, tasks fan out to further subagents.
+Two files concentrate most of the work, so think in **tracks that run in parallel**, each
+**serialized internally**. Land + verify green at each step; a track never blocks another track,
+and within a plan the tasks fan out to further subagents.
 
-**Wave A — foundation + independent safety (max fan-out)**
-`P00` · `P01` · `P03` · `P04` · `P12` · `P15`
-→ Ships the shared primitives, kills the OOM crash risk and the corruption risk, fixes the async
-bugs, removes the home-load full-table scan, and clears hygiene — all touching disjoint files.
+| Track | Order (serial) | Notes |
+|---|---|---|
+| **Foundation** | `P00` | Must land first; unblocks P02 / P06 / P10 / P14. |
+| **Native pipeline** (`native_page_processor.dart`) | `P01 → P08 → P09` | Safety (OOM) first, then the SOLID split, then DRY/parity. |
+| **Persistence** (`drift_document_repository.dart`) | `P10 → P03 → P05`, then `P12` | DRY helpers → atomicity → the big split; P12 (query) any time after P10. Safety-first? land P03 before P10 and rebase. |
+| **Library UI** | `P06 → P11`; `P13` alongside | Controllers first (needs P00), then the share-action model; image-memory (P13) is independent. |
+| **Independent** (start any time) | `P02`\*, `P04`, `P07`, `P14`\*, `P15` | \*P02 & P14 need P00 first. P04 / P07 / P15 have no inbound edges. |
 
-**Wave B — adopt primitives + structural extractions**
-`P02` (needs P00) · `P06` (needs P00) · `P07` · `P08` (needs P01) · `P10` (needs P00) · `P13`
-→ Timeouts adopted everywhere; the two God widgets and the native file get decomposed; scan
-orchestration extracted; repo DRY helpers landed; viewer image memory bounded.
+**Suggested cadence:** land **P00** first, then run the tracks concurrently, prioritizing the
+**safety** step at the head of each (P01, P03, P04) before the structural/DRY steps. Keep `master`
+green after every step so it is always shippable.
 
-**Wave C — DRY on top of the new structure**
-`P05` (smoother after P10) · `P09` (smoother after P08) · `P11` (smoother after P06) · `P14` (needs P00)
-→ The big repository decomposition, the pipeline parity/DRY, the share-action model, and the DI
-unification + observability sinks.
-
-> Waves are guidance, not gates. A team with capacity can start any independent plan immediately;
-> the waves just keep same-file plans from colliding (notably P01→P08→P09 on the native file, and
-> P10→P05 on the repository).
+> The tracks are guidance, not gates: a team with capacity can start any independent plan or any
+> lane head immediately. The only firm rules are "P00 before its dependents" and "one editor at a
+> time per same-file lane".
 
 ---
 
@@ -84,13 +87,13 @@ unification + observability sinks.
    timeouts (P02), and the async bugs (P04) are the only items that can crash, corrupt, or hang the
    app in the field. They ship first, as small targeted fixes, *before* the large decompositions.
 2. **Foundations enable de-duplication.** `AppLogger`/`withIsolateTimeout`/`TempFileWriter` (P00)
-   are what let P02/P06/P10/P14 collapse the 32-way toast duplication, the 10 unguarded isolates,
+   are what let P02/P06/P10/P14 collapse the 32-way toast duplication, the 8 unguarded isolates,
    and the 7 temp-file sites without inventing the same helper five times.
 3. **Cleanups before the big split.** Extracting the repo's `_requirePage`/`_cloneSourcePage`/
    `_writeTempExport` helpers (P10) shrinks the surface P05 then carves into collaborators.
-4. **Same-file plans are serialized.** P01→P08→P09 all touch `native_page_processor.dart`; P10→P05
-   both touch the repository. Ordering them avoids painful rebases while keeping every *other* plan
-   parallel.
+4. **Same-file plans are serialized.** P01→P08→P09 all edit `native_page_processor.dart`; P10→P03→P05
+   (and P12) all edit `drift_document_repository.dart`. Serializing each lane avoids painful rebases
+   while keeping every *other* track parallel.
 
 ---
 
@@ -109,5 +112,6 @@ For each plan, per the project's non-negotiables:
    For OpenCV host exercises: `bash scripts/setup-cv-host-test.sh` then export the printed paths.
 6. Only then mark the task done; paste the green output. **No "should work."**
 
-The suggested overall sequence: **Wave A → Wave B → Wave C**, verifying green between waves so
+The suggested overall sequence: land **P00**, then run the tracks in §3 concurrently — the
+**safety** step at the head of each first (P01, P03, P04) — verifying green after every step so
 `master` is always shippable.

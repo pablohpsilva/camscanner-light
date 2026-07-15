@@ -38,7 +38,7 @@ adopting them at call sites is deliberately out of scope here.
 |----|------------------|--------------|--------|-------------|
 | LOG-1 | 59 `catch (_)` blocks across `lib/` (verified count) | Errors are swallowed with zero reporting. There is **no `Logger`, no `reportError`, no `FlutterError.onError`, no Crashlytics/Sentry** anywhere in `lib/`. | On-device failures (a wedged crop, a failed export, a swallowed OCR error) leave no diagnosable trace. | latent (hardening — no crash, but blind) |
 | LOG-2 | `home_screen.dart:147` (`debugPrint('HomeScreen cold-start failed while $step: $error')`) | The **only** `debugPrint` in the codebase; ad-hoc, unstructured, not injectable, stripped in release. | Cold-start diagnostics are lost in release builds and can't be routed to a reporter. | latent (hardening) |
-| TMO-1 | 12 `compute()` sites; only 2 guarded — `native_page_processor.dart:44` (`.timeout` at `:47`) and `opencv_edge_detector.dart:20` (guarded at `:44`). 10 UNGUARDED: `warp_enhancer.dart:30`, `perspective_warper.dart:23`, `coons_warper.dart:23`, `drift_document_repository.dart:606`, `auto_enhancer.dart:58`, `color_enhancer.dart:12`, `grayscale_enhancer.dart:14`, `filter_picker_strip.dart:112`. | The timeout pattern is copy-pasted per-site (and mostly missing). No shared helper exists to make "guarded `compute`" the default. | latent (P00 only *defines* the helper; the live risk is fixed in P02) | 
+| TMO-1 | 10 `compute()` sites; only 2 guarded — `native_page_processor.dart:44` (`.timeout` at `:47`) and `opencv_edge_detector.dart:20` (guarded at `:44`). 8 UNGUARDED: `warp_enhancer.dart:30`, `perspective_warper.dart:23`, `coons_warper.dart:23`, `drift_document_repository.dart:606`, `auto_enhancer.dart:58`, `color_enhancer.dart:12`, `grayscale_enhancer.dart:14`, `filter_picker_strip.dart:112`. | The timeout pattern is copy-pasted per-site (and mostly missing). No shared helper exists to make "guarded `compute`" the default. | latent (P00 only *defines* the helper; the live risk is fixed in P02) | 
 | TMP-1 | 7 duplicated `Directory.systemTemp.createTemp` sites — `drift_document_repository.dart:367,400,436,489,538`; `mlkit_ocr_engine.dart:27`; `file_archiver.dart:46` | Temp-dir creation + write + best-effort cleanup is hand-rolled and duplicated 7×; cleanup style differs per site (some `deleteSync`, some `try/catch`). | Duplicated I/O boilerplate; inconsistent cleanup; no single injectable seam for tests to intercept temp writes. | latent (P00 defines + tests; adoption is P10/P14) |
 
 ## Definition of done
@@ -64,7 +64,7 @@ adopting them at call sites is deliberately out of scope here.
 |--------|--------|-------------|
 | Error reporting seam | none (59 silent `catch (_)`) | `AppLogger` interface injectable via all 3 `*Dependencies`; global `FlutterError.onError` installed in `main()` |
 | Ad-hoc logging | 1 raw `debugPrint` in `home_screen.dart:147` | routed through injected `AppLogger` (default still prints in debug) |
-| Guarded `compute` | copy-pasted at 2 sites, missing at 10 | single `withIsolateTimeout<T>()` helper available (adoption deferred to P02) |
+| Guarded `compute` | copy-pasted at 2 sites, missing at 8 | single `withIsolateTimeout<T>()` helper available (adoption deferred to P02) |
 | Temp files | 7 duplicated `createTemp` blocks | `TempFileWriter` service available (adoption deferred to P10/P14) |
 | Call sites | unchanged | **unchanged** (P00 is additive; existing tests untouched) |
 
@@ -195,7 +195,7 @@ adopting them at call sites is deliberately out of scope here.
   platform-override-cleanup project memory.
 - **Risk: scope creep into adoption.** Mitigation: P00 explicitly migrates zero call
   sites; adoption lives in P02/P06/P10/P14. Reviewer rejects any P00 diff that edits one
-  of the 10 `compute()` or 7 `createTemp` sites.
+  of the 8 `compute()` or 7 `createTemp` sites.
 
 ## Verification commands
 

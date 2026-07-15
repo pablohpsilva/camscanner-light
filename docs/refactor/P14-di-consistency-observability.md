@@ -145,7 +145,7 @@ tasks touch different files and are parallel-safe unless noted.
 - **Scope**: At `native_page_processor.dart:48,95` and the enhancer/warper `catch{return bytes}`
   blocks, log via `AppLogger` (P00) distinguishing corrupt-input vs native-crash vs timeout. Keep the
   fallback return semantics identical (still return `bytes`/`null`).
-- **Files**: `lib/features/scan/native_page_processor.dart` (+ enhancer/warper files).
+- **Files**: `lib/features/library/native_page_processor.dart` (+ enhancer/warper files).
 - **Test-first**: unit test asserting a thrown native error is logged with the right tag while the
   fallback still returns the input bytes.
 - **Done**: no behaviour change to the fallback path; logs present. Cross-reference **P10 SAFE-03**
@@ -234,8 +234,8 @@ Run from `apps/mobile/`.
 flutter test test/features/feedback/
 flutter test test/features/donation/
 flutter test test/features/settings/
-flutter test test/features/library/          # library DI + gallery picker relocation
-flutter test test/features/scan/             # native logger sinks
+flutter test test/features/library/          # library DI + gallery picker relocation + native logger sinks
+flutter test test/features/scan/             # scan DI
 
 # BDD stays green (host)
 flutter test test/bdd/

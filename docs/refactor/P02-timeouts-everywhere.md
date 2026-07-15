@@ -44,7 +44,7 @@ timeout path (slow fake → bounded, mapped failure).
 | SF-1b | `feedback_service.dart:69-73` — `await httpClient.post(base.replace(path: '/feedback'), ...)` | POST has **no** `.timeout(...)`. Contrast `feedback_availability.dart:28` which **does** `.timeout(timeout)` (3s default). | Same stall; and because `feedback_screen.dart:60/73` sets `_submitting=true` in a `try/finally`, a hung POST leaves the submit spinner up **forever** (the `finally` only runs when `submit()` returns). | LIVE |
 | OCR-TMO | `mlkit_ocr_engine.dart:31-33` — `await recognizer.processImage(InputImage.fromFilePath(...))` | No timeout on the native ML-Kit call. | A wedged native recognizer hangs the OCR future indefinitely (OCR runs off the UI isolate but still blocks the awaiting flow / any progress UI). | LIVE (robustness) |
 | PDF-TMO | `pdf_preview_screen.dart:52` — `await widget.opener(widget.pdfPath)` | No timeout on the PDF-document open. | A never-returning opener leaves `_loading=true` forever (spinner never resolves; `_error` never set). | LIVE (robustness) |
-| CMP-10 | 10 UNGUARDED `compute()` sites: `warp_enhancer.dart:30`, `perspective_warper.dart:23`, `coons_warper.dart:23`, `drift_document_repository.dart:606`, `auto_enhancer.dart:58`, `color_enhancer.dart:12`, `grayscale_enhancer.dart:14`, `filter_picker_strip.dart:112` | These `compute()` calls have no timeout. `native_page_processor.dart:47` and `opencv_edge_detector.dart:44` are the only guarded ones. | A wedged native/codec isolate (cannot be killed from Dart) hangs the enhance/warp/rotate/thumbnail future. `drift_document_repository.dart:606` is an **unguarded full JPEG decode/encode** in the rotate path. | LIVE (robustness) |
+| CMP-10 | 8 UNGUARDED `compute()` sites: `warp_enhancer.dart:30`, `perspective_warper.dart:23`, `coons_warper.dart:23`, `drift_document_repository.dart:606`, `auto_enhancer.dart:58`, `color_enhancer.dart:12`, `grayscale_enhancer.dart:14`, `filter_picker_strip.dart:112` | These `compute()` calls have no timeout. `native_page_processor.dart:47` and `opencv_edge_detector.dart:44` are the only guarded ones. | A wedged native/codec isolate (cannot be killed from Dart) hangs the enhance/warp/rotate/thumbnail future. `drift_document_repository.dart:606` is an **unguarded full JPEG decode/encode** in the rotate path. | LIVE (robustness) |
 | DART-FALLBACK | `DartPageProcessor` awaits `warpAndEnhance` (`dart_page_processor.dart:44`), `warper.warp` (`:57`), and `enhance(...)` (`:34,:49,:64`) | The pure-Dart fallback pipeline has no timeout of its own; each of those ultimately re-enters an unguarded `compute()` from CMP-10. | Same hang class in the fallback path. | LIVE (robustness) |
 
 ## Definition of done
@@ -58,7 +58,7 @@ timeout path (slow fake → bounded, mapped failure).
 - `mlkit_ocr_engine.dart` `processImage` and `pdf_preview_screen.dart` opener each carry a
   timeout mapped to their existing failure state (empty/failed OCR result; `_error=true`
   preview state).
-- All 10 CMP-10 `compute()` sites route through P00's `withIsolateTimeout`/
+- All 8 CMP-10 `compute()` sites route through P00's `withIsolateTimeout`/
   `computeWithTimeout` with per-site durations; the two already-guarded sites are refactored
   to use the same helper (DRY) **without changing their existing 5s semantics**.
 - Every migrated site has a normal-path test (identical result to today) AND a
@@ -74,7 +74,7 @@ timeout path (slow fake → bounded, mapped failure).
 | Feedback `/challenge` + `/feedback` POST | no timeout → hangs; spinner stuck forever | `.timeout(15s)` → `TimeoutException`→`FeedbackOffline`; spinner clears |
 | ML-Kit `processImage` | no timeout | `.timeout(N s)` → maps to existing empty/failed OCR result |
 | PDF `opener(pdfPath)` | no timeout → spinner forever | `.timeout(N s)` → existing `_error=true` state |
-| 10 `compute()` sites | unbounded | `withIsolateTimeout(..., timeout: <per-site>)` → returns `null`/falls back exactly as today's `catch` |
+| 8 `compute()` sites | unbounded | `withIsolateTimeout(..., timeout: <per-site>)` → returns `null`/falls back exactly as today's `catch` |
 | 2 guarded `compute()` sites | ad-hoc `.timeout` | same 5s semantics, now via shared helper |
 | Success path | (baseline) | **unchanged** — verified by paired normal-path tests |
 

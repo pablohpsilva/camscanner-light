@@ -93,7 +93,7 @@ Legend — **L** = live defect, **~L** = latent (correct today, hardening). Loca
 | P01 | native-none-clone-leak | `native_page_processor.dart:82` | redundant full-res `warpedMat.clone()` for none+crop (waste, not leak) | L |
 | P02 | SF-1 | `feedback_service.dart:44,69-73` | submit POSTs have no `.timeout` (availability does at `:28`) → permanent spinner | L |
 | P02 | no-timeout-native-async | `mlkit_ocr_engine.dart:31-33`, `pdf_preview_screen.dart:52` | ML Kit + PDF opener unbounded | L |
-| P02 | unbounded-compute | 10 of 12 `compute()` sites | Dart isolates + fallback pipeline have no timeout | L |
+| P02 | unbounded-compute | 8 of 10 `compute()` sites | Dart isolates + fallback pipeline have no timeout | L |
 | P03 | SAFE-01 | `drift_document_repository.dart:1024-1058, 1107-1145` | merge copies files outside txn (orphans); split inserts+files fully outside txn (duplicated pages) | L |
 | P03 | SAFE-02 | `drift_document_repository.dart:75-133, 790-838` | heavy IO/scrub/flat held inside the DB write transaction | L |
 | P04 | reorder-race | `page_viewer_screen.dart:409-433` | reorder bypasses the `_editing` single-flight; races concurrent edits | L |
@@ -151,6 +151,7 @@ Legend — **L** = live defect, **~L** = latent (correct today, hardening). Loca
 | P11 | feature-flag-gating | 25 `features.*` reads; OR-chain `:571-578` | per-flag gating scattered; hand-kept OR chain | L |
 | P14 | dependencies-inconsistency | 3 DI styles + `main.dart:48-55` | inconsistent injection conventions | L |
 | P14 | DEAD-1 | `gallery_picker.dart`, `scan_dependencies.dart` | `GalleryPicker` misplaced in scan (only library uses it) | L |
+| P14 | error-swallowing-observability | `native_page_processor.dart:48,95` + enhancer/warper catches | silent `catch{return bytes}` in the pipeline hide native-crash vs corrupt-input vs timeout (repo catches → P10 SAFE-03) | L |
 | P14 | DUP-4 / DUP-3 / SOC-3 / SOC-4 / SF-2 / SF-3 | feedback/donation | env-read dup, nav dup, mapping-in-widget, inline origin, fragile parse, unescaped siteKey | L/~L |
 
 ### Tier 4/5 — Performance & Hygiene
@@ -165,7 +166,7 @@ Legend — **L** = live defect, **~L** = latent (correct today, hardening). Loca
 | P13 | PERF-1-double-read | `capture_review_screen.dart:100,113` | full-res JPEG read off disk twice | L |
 | P13 | PERF-2-detection-wasted | `capture_review_screen.dart:108-125` | detection runs even after user interaction | L |
 | P13 | kSlot-magic-number | `page_thumbnail_strip.dart:56` | `kSlot` derived from unshared literals (drift) | ~L |
-| P15 | theme-token-bypass | 4 non-theme `Color(0x)`, 33 `Colors.`, 36 `TextStyle(` | tokens bypassed | L |
+| P15 | theme-token-bypass | 3 non-theme `Color(0x)` in `lib/features` (+1 in `lib/theme/widgets`), 24 `Colors.`, 28 `TextStyle(` (`lib/features`; 32/36 across all `lib`) | tokens bypassed | L |
 | P15 | dup-date-format | `documents_list_view.dart:166-170` vs `document_grid_card.dart:127-143` | grid uses hardcoded English months → **i18n regression**; different date field | L |
 | P15 | analysis-options-minimal | `analysis_options.yaml` | only `flutter_lints`; no `unawaited_futures` | ~L |
 | P15 | pubspec-loose-pins | `pubspec.yaml:35` | `intl: any` unpinned; 3 PDF stacks | ~L |
@@ -179,7 +180,7 @@ Legend — **L** = live defect, **~L** = latent (correct today, hardening). Loca
 | **Layers** | 2.5 (widget + persistence, logic in screens/repo) | 3 (widget → controllers/use-cases → repository/services) |
 | **Persistence** | 1 God class, 24 methods, 9 collaborators | thin `DriftDocumentRepository` coordinator + `DocumentSearchService`, `DocumentExporter`, `PageOrderingService`, `PageDerivativePipeline`, `PageDao`, `FtsQuerySanitizer` |
 | **Library screens** | 854- & 682-LOC God widgets | thin views + `PageViewerController` / `LibraryController` (+ `SelectionExporter`) |
-| **Async / errors** | ad-hoc try/catch/finally/toast ×32; no logging; 10/12 `compute()` unguarded | `runGuarded`/`AsyncActionController` + `AppLogger` + `FlutterError.onError` + `withIsolateTimeout` |
+| **Async / errors** | ad-hoc try/catch/finally/toast ×32; no logging; 8/10 `compute()` unguarded | `runGuarded`/`AsyncActionController` + `AppLogger` + `FlutterError.onError` + `withIsolateTimeout` |
 | **Native pipeline** | 1 file (warp+3 enhancers+LUT+FFI), OOM float copies, no test seam | split warpers/enhancers + `withRunner` seam + size-bounded working image + shared pure LUT/geometry |
 | **Enhancer-mode map** | 5 switch sites | 1 registry all sites derive from |
 | **State** | loose parallel booleans | `sealed ViewState<T>` + `AsyncStateView` |
@@ -193,7 +194,7 @@ Legend — **L** = live defect, **~L** = latent (correct today, hardening). Loca
 |---|---:|---:|
 | Largest file (LOC) | 1242 | < 400 |
 | God widgets > 500 LOC | 2 | 0 |
-| `compute()` without timeout | 10 / 12 | 0 / 12 |
+| `compute()` without timeout | 8 / 10 | 0 / 10 |
 | Centralized logger / `FlutterError.onError` | none | yes |
 | `showSnackBar` call sites | 32 | ~1 helper + call-throughs |
 | EnhancerMode dispatch sites | 5 | 1 |

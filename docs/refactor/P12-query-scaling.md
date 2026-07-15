@@ -1,6 +1,6 @@
 # P12 — Query & scaling
 
-**Tier 4 (Perf) · Effort M · Risk Low · Depends on: P10 (de-duped page access), coordinate with P05 (`PageDao`) and P06 (`LibraryController`) · Device verification: host + Android AND iOS**
+**Tier 4 (Perf) · Effort M · Risk Low · Depends on: P10 (soft, same-file lane); coordinate P05, P06 · Device verification: host + Android AND iOS**
 
 > **Sequencing:** Independent of the safety/structure work; can run in parallel with P10/P05 but its DB
 > changes are cleanest once `PageDao` (P05) exists — if P05 hasn't landed, apply the query changes

@@ -1,6 +1,6 @@
 # P03 — Persistence atomicity
 
-**Tier 1 (Safety) · Effort M · Risk Med · Depends on: P10 (de-duped merge/split copy loop + `_maxPositionPage`), P00 (AppLogger) · Device verification: Android AND iOS**
+**Tier 1 (Safety) · Effort M · Risk Med · Depends on: P10 (soft, same-file lane) · P00 (AppLogger) · Device verification: Android AND iOS**
 
 > **Sequencing:** Runs **after** P10 lands so the merge/split page-copy logic is already de-duplicated
 > into `_cloneSourcePage`/`_copyPageFiles` and the max-position lookup into `_maxPositionPage` — this

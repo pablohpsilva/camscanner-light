@@ -15,9 +15,11 @@ loose dependency pins. No behaviour change beyond fixing the grid-date localizat
 ## Summary
 
 The Ream design system (`ReamColors`, `ReamTypography`, `context.ream`) is defined but bypassed in a
-handful of spots. There are only **4** non-theme `Color(0x…)` sites and **33** `Colors.*` usages and
-**36** `TextStyle(` constructions that don't route through the tokens. The other 36 `Color(0x…)`
-matches are the legitimate token definitions in `lib/theme/ream_colors.dart` — those stay.
+handful of spots. There are **3** non-theme `Color(0x…)` sites in `lib/features` (+1 in
+`lib/theme/widgets/ream_action_button.dart:31`), **24** `Colors.*` usages, and **28** `TextStyle(`
+constructions in `lib/features` that don't route through the tokens (32 `Colors.*` and 36 `TextStyle(`
+across all `lib`). The other 36 `Color(0x…)` matches are the legitimate token definitions in
+`lib/theme/ream_colors.dart` — those stay.
 
 Separately, the same document renders **different dates** in the list vs the grid: the list uses an
 ISO numeric `DateFormat` while the grid card uses a **hardcoded English `months[]` array**, so the
@@ -37,7 +39,7 @@ tightening will surface **existing** warnings that must be fixed to keep the zer
 
 | ID | Current location | What's wrong | Impact | Live/latent |
 |---|---|---|---|---|
-| **theme-token-bypass** | Non-theme `Color(0x…)`: `page_viewer_screen.dart:739` `Color(0x99000000)`, `document_grid_card.dart:55` `Color(0x14000000)`, `feedback_screen.dart:274` `Color(0xFF201C16)`, `ream_action_button.dart:31`. `Colors.*` = **33** (worst: `capture_review_screen` 6, `crop_overlay` 4, `filter_picker_strip` 3). `TextStyle(` = **36** across 18 files (worst tie: `sort_pill` 5, `feedback_screen` 5; `donation` 4). The other 36 `Color(0x` are legit defs in `lib/theme/ream_colors.dart`. | Hardcoded colors/typography bypass `ReamColors`/`ReamTypography`/`context.ream` | Theme (esp. dark/warm-paper) doesn't apply uniformly; drift from tokens | **live** |
+| **theme-token-bypass** | Non-theme `Color(0x…)` in `lib/features` (3): `page_viewer_screen.dart:739` `Color(0x99000000)`, `document_grid_card.dart:55` `Color(0x14000000)`, `feedback_screen.dart:274` `Color(0xFF201C16)`; plus `lib/theme/widgets/ream_action_button.dart:31` (1, a hardcoded bypass inside `lib/theme/widgets`). `Colors.*` = **24** in `lib/features` (32 across all `lib`) (worst: `capture_review_screen` 6, `crop_overlay` 4, `filter_picker_strip` 3). `TextStyle(` = **28** in `lib/features` (36 across all `lib`, 18 files) (worst tie: `sort_pill` 5, `feedback_screen` 5; `donation` 4). The other 36 `Color(0x` are legit defs in `lib/theme/ream_colors.dart`. | Hardcoded colors/typography bypass `ReamColors`/`ReamTypography`/`context.ream` | Theme (esp. dark/warm-paper) doesn't apply uniformly; drift from tokens | **live** |
 | **dup-date-format** | `documents_list_view.dart` `_formatLocal:166-170` (createdAt, ISO numeric Y-M-D HH:MM) vs `document_grid_card.dart` `_formatDate:127-143` (modifiedAt, **hardcoded English `months[]`**) | Two date formatters; grid isn't localized despite 11-lang i18n; also list shows createdAt, grid shows modifiedAt | Same doc shows different dates list vs grid; grid is a visible **i18n regression** | **live** |
 | **analysis-options-minimal** | `analysis_options.yaml` — only `include: package:flutter_lints/flutter.yaml`, rules block commented out | No `unawaited_futures` etc.; the 12 `unawaited(` usages in `lib/` show intent that's unenforced | Async-safety/style conventions not enforced by the linter | **latent** |
 | **pubspec-loose-pins** | `pubspec.yaml`: `intl: any` (:35) fully unpinned. `opencv_dart` exactly `2.1.0` (:43, correct). PDF stacks: `pdf ^3.11.1` (:48), `printing ^5.13.0` (:49), `pdfx ^2.9.0` (:50), `syncfusion_flutter_pdf ^33.2.15` (:55, only for AES-encrypted export) | `intl: any` can float to a breaking version; syncfusion is a heavy dep for one feature (trade-off to document) | A silent `intl` bump could break date/number formatting; no unused deps found | **latent** |
@@ -46,10 +48,15 @@ tightening will surface **existing** warnings that must be fixed to keep the zer
 
 ## Definition of done
 
-- The **4** non-theme `Color(0x…)` sites, the **33** `Colors.*` usages, and the **36** `TextStyle(`
-  constructions in `lib/features` are mapped to `ReamColors`/`ReamTypography`/`context.ream` (or a new
-  `ReamTypography` size helper) with **pixel-equivalent** output. The 36 legit `Color(0x…)`
-  definitions in `lib/theme/ream_colors.dart` are untouched.
+- The **3** non-theme `Color(0x…)` sites in `lib/features` (+1 in
+  `lib/theme/widgets/ream_action_button.dart:31`), the **24** `Colors.*` usages, and the **28**
+  `TextStyle(` constructions in `lib/features` (32 `Colors.*` and 36 `TextStyle(` across all `lib`) are
+  mapped to `ReamColors`/`ReamTypography`/`context.ream` (or a new `ReamTypography` size helper) with
+  **pixel-equivalent** output. The 36 legit `Color(0x…)` definitions in `lib/theme/ream_colors.dart`
+  are untouched.
+- Guard reconciled so the **only** `Color(0x…)` literals are the palette definitions in
+  `lib/theme/ream_colors.dart`; no hardcoded `Color(0x…)` remains in `lib/features` OR
+  `lib/theme/widgets` (incl. `ream_action_button.dart:31`).
 - A grep/lint guard exists (or is documented) against new `Colors.` / raw `TextStyle(` in
   `lib/features`.
 - List and grid render the **same** date for a given document via one locale-aware `intl`
@@ -69,8 +76,8 @@ tightening will surface **existing** warnings that must be fixed to keep the zer
 
 | Concern | Before | After |
 |---|---|---|
-| Hardcoded colors | 4 non-theme `Color(0x…)` + 33 `Colors.*` | Mapped to `ReamColors`/`context.ream`, pixel-equivalent |
-| Typography | 36 raw `TextStyle(` across 18 files | `ReamTypography` (+ size helpers) |
+| Hardcoded colors | 3 non-theme `Color(0x…)` in `lib/features` (+1 in `lib/theme/widgets/ream_action_button.dart:31`) + 24 `Colors.*` in `lib/features` (32 across all `lib`) | Mapped to `ReamColors`/`context.ream`, pixel-equivalent |
+| Typography | 28 raw `TextStyle(` in `lib/features` (36 across all `lib`, 18 files) | `ReamTypography` (+ size helpers) |
 | Token guard | None | grep/lint guard against `Colors.` / `TextStyle(` in `lib/features` |
 | Date in list vs grid | ISO numeric (list, createdAt) vs hardcoded English months (grid, modifiedAt) | One locale-aware `intl` `DateFormat`, same timestamp, both localized |
 | Lint config | `flutter_lints` only, rules commented out | `unawaited_futures` + strictness rules; zero-warning bar held |
@@ -85,17 +92,20 @@ tightening will surface **existing** warnings that must be fixed to keep the zer
 Independent, subagent-ready. Write the failing test/guard first where applicable, then the change.
 Token-swap tasks are partitioned by file so they run in parallel without collisions.
 
-### Task 1 — Map the 4 non-theme `Color(0x…)` sites to tokens (theme-token-bypass)
+### Task 1 — Map the 3 `lib/features` non-theme `Color(0x…)` sites + `ream_action_button.dart:31` to tokens (theme-token-bypass)
 - **Scope**: `page_viewer_screen.dart:739` (`Color(0x99000000)`), `document_grid_card.dart:55`
-  (`Color(0x14000000)`), `feedback_screen.dart:274` (`Color(0xFF201C16)`), `ream_action_button.dart:31`
+  (`Color(0x14000000)`), `feedback_screen.dart:274` (`Color(0xFF201C16)`), and
+  `lib/theme/widgets/ream_action_button.dart:31`
   → the equivalent `ReamColors`/`context.ream` token (add a token if one doesn't already equal it).
 - **Files**: those 4 files (+ maybe `ream_colors.dart` for a new named token).
 - **Test-first**: golden/widget assertion that the rendered color is unchanged (pixel-equivalent).
-- **Done**: no non-theme `Color(0x…)` outside `lib/theme/`; visual parity.
+- **Done**: the only `Color(0x…)` literals are the palette definitions in `lib/theme/ream_colors.dart`;
+  no hardcoded `Color(0x…)` remains in `lib/features` OR `lib/theme/widgets` (incl.
+  `ream_action_button.dart:31`); visual parity.
 - **Parallel-safe**: yes.
 
-### Task 2 — Replace `Colors.*` usages (33) with tokens (theme-token-bypass)
-- **Scope**: Replace the 33 `Colors.*` usages, worst offenders `capture_review_screen` (6),
+### Task 2 — Replace `Colors.*` usages (24 in `lib/features`) with tokens (theme-token-bypass)
+- **Scope**: Replace the 24 `Colors.*` usages in `lib/features` (32 across all `lib`), worst offenders `capture_review_screen` (6),
   `crop_overlay` (4), `filter_picker_strip` (3), with `ReamColors`/`context.ream` equivalents.
 - **Files**: the ~files containing `Colors.*` in `lib/features`.
 - **Test-first**: `capture_review_screen_test.dart` (510 LOC) stays green; add a color-parity check
@@ -103,7 +113,7 @@ Token-swap tasks are partitioned by file so they run in parallel without collisi
 - **Done**: no `Colors.*` in `lib/features` (or documented exceptions); visual parity.
 - **Parallel-safe**: yes — can split per-file across subagents.
 
-### Task 3 — Route `TextStyle(` (36 across 18 files) through `ReamTypography` (theme-token-bypass)
+### Task 3 — Route `TextStyle(` (28 in `lib/features`; 36 across all `lib`, 18 files) through `ReamTypography` (theme-token-bypass)
 - **Scope**: Replace raw `TextStyle(` constructions (worst: `sort_pill` 5, `feedback_screen` 5,
   `donation` 4) with `ReamTypography`; add `ReamTypography` size helpers where a one-off size is
   needed.

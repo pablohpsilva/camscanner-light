@@ -1,6 +1,6 @@
 # P08 — Native processor SOLID split + test seam
 
-**Tier 2 (SOLID) · Effort L · Risk Med · Depends on: none — but coordinate with P01 & P09 (same file) · Device verification: Android + iOS**
+**Tier 2 (SOLID) · Effort L · Risk Med · Depends on: P01 (soft, same-file lane); coordinate P09 · Device verification: Android + iOS**
 
 ## Global constraints (honored by this plan)
 
