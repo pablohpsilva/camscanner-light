@@ -158,7 +158,7 @@
   "feedbackMessageHint": "Tu comentario",
   "feedbackMessageRequired": "Introduce un mensaje",
   "feedbackEmailLabel": "Correo electrónico (opcional)",
-  "feedbackEmailHint": "you@example.com",
+  "feedbackEmailHint": "tu@ejemplo.com",
   "feedbackEmailInvalid": "Introduce un correo electrónico válido o déjalo en blanco",
   "feedbackEmailPublicNote": "Opcional. Será visible públicamente en GitHub.",
   "feedbackDiagnosticsShow": "¿Qué se enviará?",

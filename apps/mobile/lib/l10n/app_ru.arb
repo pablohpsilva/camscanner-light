@@ -52,7 +52,7 @@
   "donationBitcoinHeading": "Или пожертвуйте в Bitcoin",
   "donationCopyAddress": "Скопировать адрес",
   "donationBannerText": "Нравится приложение? Нажмите, чтобы поддержать",
-  "scanTitle": "Скан",
+  "scanTitle": "Сканирование",
   "scanPagesSaved": "{count, plural, one{Сохранена {count} страница} few{Сохранено {count} страницы} many{Сохранено {count} страниц} other{Сохранено {count} страницы}}",
   "scanErrorReplacePage": "Не удалось заменить страницу. Попробуйте ещё раз.",
   "scanSaveFailed": "Не удалось сохранить скан.",
