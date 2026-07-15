@@ -1,6 +1,6 @@
 # P09 — Image-pipeline DRY & parity
 
-**Tier 3 (DRY) · Effort M–L · Risk Med · Depends on: none · Device verification: Android + iOS (parity-sensitive)**
+**Tier 3 (DRY) · Effort M–L · Risk Med · Depends on: P08 (soft, same-file lane); coordinate P01 · Device verification: Android + iOS (parity-sensitive)**
 
 ## Global constraints (honored by this plan)
 
