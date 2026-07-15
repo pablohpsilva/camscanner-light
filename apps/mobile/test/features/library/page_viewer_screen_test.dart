@@ -25,6 +25,40 @@ class _FlakyPagesRepo extends FakeDocumentRepository {
   }
 }
 
+// A repo whose reorderPages blocks on [reorderGate] so a test can hold the
+// reorder PERSIST "in flight" and attempt a concurrent edit (T1 REORDER-RACE).
+class _GatedReorderRepo extends FakeDocumentRepository {
+  _GatedReorderRepo({required this.reorderGate, required List<PageImage> pages})
+    : super(pages: pages);
+  final Completer<void> reorderGate;
+
+  @override
+  Future<void> reorderPages(int documentId, List<int> orderedPositions) async {
+    lastReorderedPositions = List<int>.unmodifiable(orderedPositions);
+    await reorderGate.future; // hold the persist open
+  }
+}
+
+// A repo whose page list SHRINKS on the second getDocumentPages call — so a
+// reload leaves _current pointing past the end unless it is re-clamped (T5
+// CURRENT-UNCLAMPED). The initial load returns [count] pages; every later
+// reload returns a single page.
+class _ShrinkingRepo extends FakeDocumentRepository {
+  _ShrinkingRepo({required this.initialCount});
+  final int initialCount;
+  int calls = 0;
+
+  @override
+  Future<List<PageImage>> getDocumentPages(int documentId) async {
+    calls++;
+    final count = calls == 1 ? initialCount : 1;
+    return [
+      for (var i = 1; i <= count; i++)
+        PageImage(position: i, imagePath: '/nonexistent/s$i.jpg'),
+    ];
+  }
+}
+
 void main() {
   // Pump the viewer pushed onto a route over a trivial home, so a delete-pop
   // returns to a detectable base screen.
@@ -522,5 +556,146 @@ void main() {
 
     expect(find.text("Couldn't reorder pages"), findsOneWidget);
     expect(find.byType(PageViewerScreen), findsOneWidget);
+  });
+
+  // ── T1 — reorder routes through the single-flight guard (REORDER-RACE) ────
+
+  EditorToolbarButton toolBtn(WidgetTester tester, String k) =>
+      tester.widget<EditorToolbarButton>(find.byKey(Key(k)));
+
+  testWidgets(
+    'T1: a concurrent rotate is REFUSED while a reorder persist is in flight',
+    (tester) async {
+      final gate = Completer<void>();
+      final repo = _GatedReorderRepo(
+        reorderGate: gate,
+        pages: [
+          const PageImage(position: 1, imagePath: '/nonexistent/r1.jpg'),
+          const PageImage(position: 2, imagePath: '/nonexistent/r2.jpg'),
+        ],
+      );
+      await pushViewer(tester, repo);
+
+      // Start a reorder — the persist blocks on the gate (in flight).
+      final rlv = tester.widget<ReorderableListView>(
+        find.byType(ReorderableListView),
+      );
+      rlv.onReorderItem!(1, 0);
+      await tester.pump(); // optimistic setState + kick off _persistReorder
+
+      // While the persist is in flight the toolbar must be single-flighted:
+      // the rotate action is disabled and re-entry is refused.
+      expect(
+        toolBtn(tester, 'page-viewer-rotate').onPressed,
+        isNull,
+        reason: 'reorder persist should hold the single-flight guard',
+      );
+      expect(repo.rotateCalls, 0, reason: 'rotate must not race the reorder');
+
+      // Release the persist; the guard resets and the toolbar re-enables.
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(repo.lastReorderedPositions, [2, 1]); // reorder still persisted
+      expect(
+        toolBtn(tester, 'page-viewer-rotate').onPressed,
+        isNotNull,
+        reason: 'toolbar must re-enable after the persist finishes',
+      );
+
+      // And a rotate now succeeds (guard fully released).
+      await tester.tap(find.byKey(const Key('page-viewer-rotate')));
+      await tester.pumpAndSettle();
+      expect(repo.rotateCalls, 1);
+    },
+  );
+
+  testWidgets('T1: reorder persist failure still shows SnackBar + re-enables', (
+    tester,
+  ) async {
+    // Guarded here too: the fix must PRESERVE the existing failure UX.
+    final repo = FakeDocumentRepository(
+      throwOnReorder: true,
+      pages: [
+        const PageImage(position: 1, imagePath: '/nonexistent/r1.jpg'),
+        const PageImage(position: 2, imagePath: '/nonexistent/r2.jpg'),
+      ],
+    );
+    await pushViewer(tester, repo);
+
+    final rlv = tester.widget<ReorderableListView>(
+      find.byType(ReorderableListView),
+    );
+    rlv.onReorderItem!(1, 0);
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't reorder pages"), findsOneWidget);
+    expect(find.byType(PageViewerScreen), findsOneWidget);
+    // Guard released after failure -> toolbar usable again.
+    expect(toolBtn(tester, 'page-viewer-rotate').onPressed, isNotNull);
+  });
+
+  // ── T5 — _current is clamped centrally on every _pages assignment ─────────
+
+  testWidgets(
+    'T5: a shrinking reload clamps _current so page-scoped actions do not throw',
+    (tester) async {
+      // 3 pages initially; any reload returns 1 page. Move _current to the last
+      // page, then trigger a reload (split) — _current must be re-clamped or
+      // pages[_current] throws RangeError in _confirmAndDeletePage.
+      final repo = _ShrinkingRepo(initialCount: 3);
+      await pushViewer(tester, repo);
+
+      // Navigate to a MIDDLE page (index 1) — split only proceeds when not on
+      // the last page — so _current stays high (1) across the shrink to 1 page.
+      await tester.tap(find.byKey(const Key('page-thumb-1')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
+
+      // Trigger a reload that shrinks the list to 1 page (split → _load()).
+      await tester.tap(find.byKey(const Key('page-viewer-page-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('page-viewer-split')));
+      await tester.pumpAndSettle();
+
+      // Now only 1 page remains. A page-scoped action must operate on the
+      // clamped index (0) without a RangeError.
+      await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
+      await tester.pumpAndSettle();
+
+      // The delete-page confirm dialog opened (proves pages[_current] resolved).
+      expect(
+        find.byKey(const Key('page-viewer-delete-page-confirm')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('T5: delete-page clamp is unchanged (deleting last page)', (
+    tester,
+  ) async {
+    // Regression guard for the removed special-cased delete clamp: deleting a
+    // middle page while on the last page keeps _current valid and shows a page.
+    final repo = FakeDocumentRepository(
+      pages: [
+        const PageImage(position: 1, imagePath: '/nonexistent/d1.jpg'),
+        const PageImage(position: 2, imagePath: '/nonexistent/d2.jpg'),
+      ],
+    );
+    await pushViewer(tester, repo);
+
+    await tester.tap(find.byKey(const Key('page-thumb-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('page-viewer-page-2')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('page-viewer-delete-page-confirm')));
+    await tester.pumpAndSettle();
+
+    // One page remains; _current clamped to 0, showing page 1.
+    expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

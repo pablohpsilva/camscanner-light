@@ -95,6 +95,16 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     super.dispose();
   }
 
+  /// Single point that assigns [_pages] AND keeps [_current] a valid index —
+  /// clamped to `[0, len-1]`, or 0 when empty. Every path that replaces the
+  /// page list (initial/reload, delete, split, merge) routes through here so
+  /// `_pages![_current]` can never go out of range after the list shrinks.
+  /// Call inside a `setState`.
+  void _setPages(List<PageImage> pages) {
+    _pages = pages;
+    _current = pages.isEmpty ? 0 : _current.clamp(0, pages.length - 1);
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -104,7 +114,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       final pages = await widget.repository.getDocumentPages(widget.documentId);
       if (!mounted) return;
       setState(() {
-        _pages = pages;
+        _setPages(pages);
         _loading = false;
       });
     } catch (_) {
@@ -251,7 +261,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         Navigator.of(context).pop(); // document gone → back to Home
         return;
       }
-      if (_current >= remaining) _current = remaining - 1; // clamp
+      // _load() -> _setPages() re-clamps _current to a valid index centrally.
       await _load();
       if (mounted && _controller.hasClients) _controller.jumpToPage(_current);
     } catch (_) {
@@ -407,16 +417,22 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   void _reorderPages(int oldIndex, int newIndex) {
+    // Single-flight: refuse a reorder while a mutating edit is running so the
+    // optimistic reorder can't apply without its persist (which _persistReorder
+    // would then refuse), leaving the UI and DB out of sync.
+    if (_editing) return;
     // onReorderItem (used in PageThumbnailStrip) provides newIndex as the
     // correct insertion index already — no adjustment needed.
     final ordered = List<PageImage>.from(_pages!);
     ordered.insert(newIndex, ordered.removeAt(oldIndex));
-    setState(() => _pages = ordered);
+    setState(() => _pages = ordered); // optimistic, snappy UI
     // ignore: discarded_futures
     _persistReorder(ordered);
   }
 
   Future<void> _persistReorder(List<PageImage> ordered) async {
+    if (_editing) return; // single-flight: don't race an in-flight edit
+    setState(() => _editing = true);
     final l10n = context.l10n;
     try {
       await widget.repository.reorderPages(
@@ -428,7 +444,9 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.viewerReorderPagesError)));
-      _load();
+      await _load(); // rollback to the persisted order
+    } finally {
+      if (mounted) setState(() => _editing = false);
     }
   }
 
