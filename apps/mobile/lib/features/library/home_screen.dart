@@ -7,6 +7,8 @@ import '../scan/captured_image.dart';
 import '../scan/id_scan_screen.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
+import '../../l10n/locale_controller.dart';
+import '../../l10n/locale_store.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/theme_mode_store.dart';
@@ -38,6 +40,7 @@ class HomeScreen extends StatefulWidget {
   final LibraryDependencies libraryDependencies;
   final FeedbackDependencies feedbackDependencies;
   final ThemeController? themeController;
+  final LocaleController? localeController;
 
   const HomeScreen({
     super.key,
@@ -45,6 +48,7 @@ class HomeScreen extends StatefulWidget {
     this.libraryDependencies = const LibraryDependencies(),
     this.feedbackDependencies = const FeedbackDependencies(),
     this.themeController,
+    this.localeController,
   });
 
   // Aggressive cold-start watchdog budget. Every startup step must finish within
@@ -68,6 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ThemeController _themeController =
       widget.themeController ??
       ThemeController(store: InMemoryThemeModeStore());
+  late final LocaleController _localeController =
+      widget.localeController ?? LocaleController(store: InMemoryLocaleStore());
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
@@ -499,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(
           builder: (_) => SettingsScreen(
             themeController: _themeController,
+            localeController: _localeController,
             feedbackDependencies: widget.feedbackDependencies,
             feedbackAvailable: _feedbackAvailable,
           ),

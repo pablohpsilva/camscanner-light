@@ -4,6 +4,8 @@ import 'package:mobile/features/donation/donation_screen.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/feedback/feedback_screen.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
+import 'package:mobile/l10n/locale_controller.dart';
+import 'package:mobile/l10n/locale_store.dart';
 import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 import 'package:mobile/theme/theme_controller.dart';
@@ -41,6 +43,7 @@ void main() {
       dark(
         SettingsScreen(
           themeController: ThemeController(store: InMemoryThemeModeStore()),
+          localeController: LocaleController(store: InMemoryLocaleStore()),
           feedbackDependencies: const FeedbackDependencies(),
         ),
       ),

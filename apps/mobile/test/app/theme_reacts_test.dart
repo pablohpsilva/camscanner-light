@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/l10n/locale_controller.dart';
+import 'package:mobile/l10n/locale_store.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/theme/theme_controller.dart';
 import 'package:mobile/theme/theme_mode_store.dart';
@@ -10,7 +12,12 @@ void main() {
       store: InMemoryThemeModeStore(),
       initial: ThemeMode.dark,
     );
-    await t.pumpWidget(CamScannerApp(themeController: controller));
+    await t.pumpWidget(
+      CamScannerApp(
+        themeController: controller,
+        localeController: LocaleController(store: InMemoryLocaleStore()),
+      ),
+    );
     await t.pumpAndSettle();
 
     MaterialApp appOf() => t.widget<MaterialApp>(find.byType(MaterialApp));

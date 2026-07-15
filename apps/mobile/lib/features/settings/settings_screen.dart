@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/locale_controller.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import '../../theme/widgets/ream_section_label.dart';
@@ -15,12 +16,14 @@ import '../feedback/feedback_screen.dart';
 /// active Ream theme (light or dark).
 class SettingsScreen extends StatelessWidget {
   final ThemeController themeController;
+  final LocaleController localeController;
   final FeedbackDependencies feedbackDependencies;
   final bool feedbackAvailable;
 
   const SettingsScreen({
     super.key,
     required this.themeController,
+    required this.localeController,
     this.feedbackDependencies = const FeedbackDependencies(),
     this.feedbackAvailable = true,
   });
