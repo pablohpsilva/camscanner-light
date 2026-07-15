@@ -6,6 +6,7 @@ import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/scan/widgets/filter_picker_strip.dart';
 
 import '../../../support/fake_scan.dart';
+import '../../../support/localized_app.dart';
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -14,7 +15,7 @@ Future<void> _pump(
   Uint8List? sourceBytes,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: Scaffold(
         body: FilterPickerStrip(
           selectedMode: selectedMode,

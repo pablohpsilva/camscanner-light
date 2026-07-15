@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/scan/widgets/crop_overlay.dart';
 
+import '../../../support/localized_app.dart';
+
 void main() {
   // 400x300 box; image 1000x750 (same 4:3 aspect) => contain rect fills the box
   // exactly: rect = (0,0) 400x300. So normalized (nx,ny) -> (nx*400, ny*300).
@@ -13,7 +15,7 @@ void main() {
   }) async {
     CropCorners? last;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Center(
             child: SizedBox(
@@ -48,7 +50,7 @@ void main() {
         bottomLeft: Offset(0.3, 0.7),
       );
       await tester.pumpWidget(
-        MaterialApp(
+        localizedTestApp(
           home: Scaffold(
             body: Center(
               child: SizedBox(
@@ -113,7 +115,7 @@ void main() {
   ) async {
     CropCorners? out;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Center(
             child: SizedBox(
@@ -145,7 +147,7 @@ void main() {
   testWidgets('dragging past the edge clamps to 0', (tester) async {
     CropCorners? out;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Center(
             child: SizedBox(
@@ -173,14 +175,14 @@ void main() {
 
   testWidgets('empty imageSize renders no handles', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: SizedBox(
             width: 400,
             height: 300,
             child: CropOverlay(
               imageSize: Size.zero,
-              image: ColoredBox(color: Colors.black),
+              image: const ColoredBox(color: Colors.black),
               corners: CropCorners.fullFrame,
               onCornersChanged: _noop,
             ),
@@ -197,7 +199,7 @@ void main() {
     // which snapshots before the drag and would make this assertion vacuous).
     CropCorners? out;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Center(
             child: SizedBox(
@@ -235,7 +237,7 @@ void main() {
 
   testWidgets('default highlightColor is Colors.blue', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: SizedBox(
           width: 400,
           height: 600,
@@ -258,7 +260,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: SizedBox(
           width: 400,
           height: 600,
@@ -290,7 +292,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: SizedBox(
           width: 400,
           height: 600,
@@ -314,7 +316,7 @@ void main() {
 
   group('8 handles', () {
     CropCorners? emitted;
-    Widget harness(CropCorners corners) => MaterialApp(
+    Widget harness(CropCorners corners) => localizedTestApp(
       home: Scaffold(
         body: SizedBox(
           width: 300,

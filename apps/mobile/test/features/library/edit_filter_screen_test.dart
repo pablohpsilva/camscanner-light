@@ -3,13 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/edit_filter_screen.dart';
 import 'package:mobile/features/library/enhancer_mode.dart';
 
+import '../../support/localized_app.dart';
+
 void main() {
   testWidgets('shows the filter strip and returns the selected mode on Save', (
     tester,
   ) async {
     EnhancerMode? popped;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
@@ -50,7 +52,7 @@ void main() {
   testWidgets('back returns null (no change)', (tester) async {
     EnhancerMode? popped = EnhancerMode.auto; // sentinel to detect null
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../library/crop_corners.dart';
 
 class CropOverlay extends StatelessWidget {
@@ -24,6 +25,7 @@ class CropOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return LayoutBuilder(
       key: const Key('crop-overlay'),
       builder: (context, constraints) {
@@ -111,14 +113,14 @@ class CropOverlay extends StatelessWidget {
               ),
             ),
             // Midpoints first so corners (added last) win overlapping hit-tests.
-            buildHandle('top', 'Top edge midpoint', corners.topMid),
-            buildHandle('right', 'Right edge midpoint', corners.rightMid),
-            buildHandle('bottom', 'Bottom edge midpoint', corners.bottomMid),
-            buildHandle('left', 'Left edge midpoint', corners.leftMid),
-            buildHandle('tl', 'Top-left crop corner', corners.topLeft),
-            buildHandle('tr', 'Top-right crop corner', corners.topRight),
-            buildHandle('br', 'Bottom-right crop corner', corners.bottomRight),
-            buildHandle('bl', 'Bottom-left crop corner', corners.bottomLeft),
+            buildHandle('top', l10n.cropHandleTopEdge, corners.topMid),
+            buildHandle('right', l10n.cropHandleRightEdge, corners.rightMid),
+            buildHandle('bottom', l10n.cropHandleBottomEdge, corners.bottomMid),
+            buildHandle('left', l10n.cropHandleLeftEdge, corners.leftMid),
+            buildHandle('tl', l10n.cropHandleTopLeft, corners.topLeft),
+            buildHandle('tr', l10n.cropHandleTopRight, corners.topRight),
+            buildHandle('br', l10n.cropHandleBottomRight, corners.bottomRight),
+            buildHandle('bl', l10n.cropHandleBottomLeft, corners.bottomLeft),
           ],
         );
       },

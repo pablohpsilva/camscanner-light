@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/ream_theme.dart';
 import '../../theme/widgets/ream_back_header.dart';
@@ -104,16 +105,17 @@ class _EditCropScreenState extends State<EditCropScreen> {
         child: Builder(
           builder: (context) {
             final r = context.ream;
+            final l10n = context.l10n;
             return Scaffold(
               appBar: ReamBackHeader(
-                title: 'Review & clean',
+                title: l10n.editCropTitle,
                 backKey: const Key('edit-crop-back'),
                 onBack: () => Navigator.of(context).pop(),
                 trailing: IconButton(
                   key: const Key('edit-crop-accept'),
                   onPressed: () => Navigator.of(context).pop(_corners),
                   icon: Icon(Icons.check, color: r.green),
-                  tooltip: 'Save',
+                  tooltip: l10n.commonSave,
                 ),
               ),
               body: ColoredBox(

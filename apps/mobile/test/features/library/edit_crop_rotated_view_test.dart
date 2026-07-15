@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/edit_crop_screen.dart';
 
+import '../../support/localized_app.dart';
+
 void main() {
   testWidgets('odd quarterTurns wraps the image in a RotatedBox', (
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: EditCropScreen(
           imagePath: '/nonexistent.jpg',
           initialCorners: CropCorners.fullFrame,
