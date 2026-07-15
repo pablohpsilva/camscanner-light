@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Measure host test line coverage under the project policy:
 #   denominator = hand-written Dart under lib/, EXCLUDING generated code
-#   (*.g.dart, *.freezed.dart). Native-only files stay in the denominator.
+#   (*.g.dart, *.freezed.dart, lib/l10n/gen/). Native-only files stay in the denominator.
 #
 # Usage:
 #   bash scripts/coverage.sh            # run full host suite, report filtered %
@@ -37,6 +37,9 @@ python3 - "$GATE" <<'PY'
 import sys
 gate = sys.argv[1] if len(sys.argv) > 1 else ""
 EXCLUDE = ('.g.dart', '.freezed.dart')
+# gen-l10n output is generated per-locale lookup code (not .g.dart-suffixed);
+# same generated-code policy as drift.
+EXCLUDE_DIRS = ('lib/l10n/gen/',)
 recs = []
 cur = None; lf = lh = 0
 for line in open('coverage/lcov.info'):
@@ -45,7 +48,9 @@ for line in open('coverage/lcov.info'):
     elif line.startswith('LF:'): lf = int(line[3:])
     elif line.startswith('LH:'): lh = int(line[3:])
     elif line == 'end_of_record': recs.append((cur, lh, lf))
-inc = [r for r in recs if not any(r[0].endswith(x) for x in EXCLUDE)]
+inc = [r for r in recs
+       if not any(r[0].endswith(x) for x in EXCLUDE)
+       and not any(d in r[0] for d in EXCLUDE_DIRS)]
 tlh = sum(r[1] for r in inc); tlf = sum(r[2] for r in inc)
 pct = tlh / tlf * 100 if tlf else 100.0
 base = ''
