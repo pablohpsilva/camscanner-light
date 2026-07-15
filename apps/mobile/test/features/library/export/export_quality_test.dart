@@ -1,7 +1,11 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/export/export_quality.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   test('preset values are exact', () {
     expect(ExportQuality.original.jpegQuality, isNull);
     expect(ExportQuality.original.maxDimension, isNull);
@@ -20,10 +24,10 @@ void main() {
 
   test('every preset has a label and description', () {
     for (final q in ExportQuality.values) {
-      expect(q.label, isNotEmpty);
-      expect(q.description, isNotEmpty);
+      expect(q.label(l10n), isNotEmpty);
+      expect(q.description(l10n), isNotEmpty);
     }
-    expect(ExportQuality.medium.label, 'Medium');
-    expect(ExportQuality.medium.description, 'Good for email');
+    expect(ExportQuality.medium.label(l10n), 'Medium');
+    expect(ExportQuality.medium.description(l10n), 'Good for email');
   });
 }

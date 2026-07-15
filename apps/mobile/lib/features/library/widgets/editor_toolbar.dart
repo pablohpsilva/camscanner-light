@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../theme/ream_colors.dart';
 import 'editor_toolbar_button.dart';
 
@@ -44,13 +45,14 @@ class EditorToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = context.ream;
+    final l10n = context.l10n;
     final buttons = <Widget>[
       if (showCrop)
         Expanded(
           child: EditorToolbarButton(
             key: const Key('page-viewer-edit'),
             icon: Icons.crop,
-            label: 'Crop',
+            label: l10n.toolbarCrop,
             onPressed: onCrop,
           ),
         ),
@@ -59,7 +61,7 @@ class EditorToolbar extends StatelessWidget {
           child: EditorToolbarButton(
             key: const Key('page-viewer-rotate'),
             icon: Icons.rotate_right,
-            label: 'Rotate',
+            label: l10n.toolbarRotate,
             onPressed: onRotate,
           ),
         ),
@@ -68,7 +70,7 @@ class EditorToolbar extends StatelessWidget {
           child: EditorToolbarButton(
             key: const Key('page-viewer-filter'),
             icon: Icons.tune,
-            label: 'Filter',
+            label: l10n.toolbarFilter,
             onPressed: onFilter,
           ),
         ),
@@ -77,7 +79,7 @@ class EditorToolbar extends StatelessWidget {
           child: EditorToolbarButton(
             key: const Key('page-viewer-view-text'),
             icon: Icons.text_snippet_outlined,
-            label: 'Text',
+            label: l10n.toolbarText,
             onPressed: onText,
           ),
         ),
@@ -86,7 +88,7 @@ class EditorToolbar extends StatelessWidget {
           child: EditorToolbarButton(
             key: const Key('page-viewer-retake'),
             icon: Icons.replay,
-            label: 'Retake',
+            label: l10n.commonRetake,
             onPressed: onRetake,
           ),
         ),
@@ -95,7 +97,7 @@ class EditorToolbar extends StatelessWidget {
           child: EditorToolbarButton(
             key: const Key('page-viewer-share'),
             icon: Icons.ios_share,
-            label: 'Share',
+            label: l10n.commonShare,
             onPressed: onShare,
           ),
         ),
@@ -104,7 +106,7 @@ class EditorToolbar extends StatelessWidget {
           child: EditorToolbarButton(
             key: const Key('page-viewer-delete-page'),
             icon: Icons.delete_outline,
-            label: 'Delete',
+            label: l10n.commonDelete,
             danger: true,
             onPressed: onDelete,
           ),

@@ -7,9 +7,9 @@ import 'package:mobile/features/library/file_archiver.dart';
 import 'package:mobile/features/library/home_screen.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
-import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 /// Recording archiver: captures the zip call, returns a stub file (no I/O).
 class FakeFileArchiver implements FileArchiver {
@@ -50,8 +50,7 @@ void main() {
 
   Future<void> pumpHome(WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: const ScanDependencies(),
           libraryDependencies: deps(),

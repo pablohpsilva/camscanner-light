@@ -6,8 +6,9 @@ import 'package:mobile/features/scan/scan_dependencies.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
-Widget _host(IdScanScreen screen) => MaterialApp(
+Widget _host(IdScanScreen screen) => localizedTestApp(
   home: Builder(
     builder: (context) => Scaffold(
       body: Center(

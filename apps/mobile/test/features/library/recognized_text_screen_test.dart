@@ -8,11 +8,11 @@ import 'package:mobile/theme/ream_theme.dart';
 import 'package:mobile/theme/widgets/confidence_chip.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Widget host(FakeDocumentRepository repo, {String? initialText}) =>
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: RecognizedTextScreen(
           documentId: 1,
           position: 1,
@@ -113,6 +113,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: RecognizedTextScreen(
           documentId: 1,
           position: 1,

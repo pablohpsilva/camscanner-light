@@ -1,17 +1,15 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_banner.dart';
 import 'package:mobile/features/library/home_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 Future<void> _pumpHome(WidgetTester tester) async {
   await tester.pumpWidget(
-    MaterialApp(
-      theme: ReamTheme.light(),
+    localizedTestApp(
       home: HomeScreen(
         dependencies: grantedScanDependencies(),
         libraryDependencies: fakeLibraryDependencies(FakeDocumentRepository()),

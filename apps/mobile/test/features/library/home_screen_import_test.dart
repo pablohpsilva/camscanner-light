@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/home_screen.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
-import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 // All gallery paths are NON-LOADABLE: a real file routed through Image.file in
 // a host widget test leaves a pending dart:io isolate-port read that never
@@ -29,8 +29,7 @@ void main() {
     ScanDependencies? deps,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: deps ?? _deps(),
           libraryDependencies: fakeLibraryDependencies(repo),

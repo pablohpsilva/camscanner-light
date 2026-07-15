@@ -7,6 +7,9 @@ import '../scan/captured_image.dart';
 import '../scan/id_scan_screen.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/locale_controller.dart';
+import '../../l10n/locale_store.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/theme_mode_store.dart';
@@ -38,6 +41,7 @@ class HomeScreen extends StatefulWidget {
   final LibraryDependencies libraryDependencies;
   final FeedbackDependencies feedbackDependencies;
   final ThemeController? themeController;
+  final LocaleController? localeController;
 
   const HomeScreen({
     super.key,
@@ -45,6 +49,7 @@ class HomeScreen extends StatefulWidget {
     this.libraryDependencies = const LibraryDependencies(),
     this.feedbackDependencies = const FeedbackDependencies(),
     this.themeController,
+    this.localeController,
   });
 
   // Aggressive cold-start watchdog budget. Every startup step must finish within
@@ -68,6 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ThemeController _themeController =
       widget.themeController ??
       ThemeController(store: InMemoryThemeModeStore());
+  late final LocaleController _localeController =
+      widget.localeController ?? LocaleController(store: InMemoryLocaleStore());
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
@@ -189,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text("Couldn't import photo")),
+        SnackBar(content: Text(context.l10n.homeErrorImportPhoto)),
       );
       return;
     }
@@ -198,6 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final capturedImage = image;
     final navigator = Navigator.of(context);
+    final l10n = context.l10n;
     final edgeDetector = widget.dependencies.createEdgeDetector();
     final saveController = SaveController(repository: repo);
     await navigator.push(
@@ -219,9 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (!mounted) return;
               if (doc == null) {
                 messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text("Couldn't save document. Try again."),
-                  ),
+                  SnackBar(content: Text(l10n.commonErrorSaveDocument)),
                 );
                 return;
               }
@@ -287,6 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final newName = await showRenameDialog(context, s.document.name);
     if (newName == null) return;
     if (!mounted) return;
+    final l10n = context.l10n;
     try {
       await repo.rename(s.document.id, newName);
       await _refresh(); // refresh the list (no spinner; active sort re-applies)
@@ -294,13 +301,14 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't rename")));
+      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorRename)));
     }
   }
 
   Future<void> _shareDocument(DocumentSummary s) async {
     final repo = _repository;
     if (repo == null || _sharing) return;
+    final l10n = context.l10n;
     _sharing = true;
     try {
       final file = await repo.exportPdf(s.document.id);
@@ -311,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't share")));
+      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorShare)));
     } finally {
       _sharing = false;
     }
@@ -343,6 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
     if (selected.isEmpty) return;
     final ids = selected.map((s) => s.document.id).toList();
+    final l10n = context.l10n;
 
     _sharing = true;
     try {
@@ -366,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't share")));
+      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorShare)));
     } finally {
       _sharing = false;
     }
@@ -440,9 +449,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     key: const Key('library-view-toggle'),
                     value: _viewMode,
                     onChanged: _onViewModeChanged,
-                    segments: const [
-                      ReamSegment(value: LibraryViewMode.list, label: 'List'),
-                      ReamSegment(value: LibraryViewMode.grid, label: 'Grid'),
+                    segments: [
+                      ReamSegment(
+                        value: LibraryViewMode.list,
+                        label: context.l10n.homeViewList,
+                      ),
+                      ReamSegment(
+                        value: LibraryViewMode.grid,
+                        label: context.l10n.homeViewGrid,
+                      ),
                     ],
                   ),
                 ],
@@ -465,7 +480,10 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Documents', style: theme.textTheme.headlineMedium),
+              Text(
+                context.l10n.homeDocumentsTitle,
+                style: theme.textTheme.headlineMedium,
+              ),
               const SizedBox(height: 6),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -473,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.lock_outline, size: 12, color: r.muted),
                   const SizedBox(width: 6),
                   Text(
-                    'Private · on this device',
+                    context.l10n.homePrivateOnDevice,
                     style: TextStyle(
                       fontFamily: 'Figtree',
                       fontSize: 12,
@@ -499,6 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(
           builder: (_) => SettingsScreen(
             themeController: _themeController,
+            localeController: _localeController,
             feedbackDependencies: widget.feedbackDependencies,
             feedbackAvailable: _feedbackAvailable,
           ),
@@ -525,19 +544,19 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         IconButton(
           key: const Key('selection-close'),
-          tooltip: 'Cancel selection',
+          tooltip: context.l10n.homeCancelSelectionTooltip,
           icon: Icon(Icons.close, color: r.ink),
           onPressed: _clearSelection,
         ),
         Expanded(
           child: Text(
-            '${_selectedIds.length} selected',
+            context.l10n.homeSelectedCount(_selectedIds.length),
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
         IconButton(
           key: const Key('selection-export'),
-          tooltip: 'Export',
+          tooltip: context.l10n.homeExportTooltip,
           icon: Icon(Icons.ios_share, color: r.ink),
           onPressed: _exportSelected,
         ),
@@ -553,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
           flex: 3,
           child: ReamActionButton(
             key: const Key('home-scan'),
-            label: 'Scan',
+            label: context.l10n.homeActionScan,
             icon: Icons.add,
             primary: true,
             onPressed: _repository == null ? null : _openScan,
@@ -564,7 +583,7 @@ class _HomeScreenState extends State<HomeScreen> {
           flex: 2,
           child: ReamActionButton(
             key: const Key('home-scan-id'),
-            label: 'ID card',
+            label: context.l10n.homeActionIdCard,
             icon: Icons.badge_outlined,
             onPressed: _repository == null ? null : _openIdScan,
           ),
@@ -574,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
           flex: 2,
           child: ReamActionButton(
             key: const Key('home-import'),
-            label: 'Import',
+            label: context.l10n.homeActionImport,
             icon: Icons.download_outlined,
             onPressed: _repository == null ? null : _onImport,
           ),
@@ -607,7 +626,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_searchResults.isEmpty) {
         return Center(
           key: const Key('documents-search-empty'),
-          child: Text('No documents match "$_query".'),
+          child: Text(context.l10n.homeSearchNoMatch(_query)),
         );
       }
       return _buildDocuments(_searchResults);
@@ -649,12 +668,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(_startupFailure ?? "Couldn't load documents."),
+          Text(_startupFailure ?? context.l10n.homeErrorLoadDocuments),
           const SizedBox(height: 8),
           FilledButton(
             key: const Key('documents-retry'),
             onPressed: _retry,
-            child: const Text('Retry'),
+            child: Text(context.l10n.commonRetry),
           ),
         ],
       ),

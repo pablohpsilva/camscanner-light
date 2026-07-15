@@ -37,12 +37,16 @@ void main() {
     img.fill(red, color: img.ColorRgb8(220, 20, 20));
     baseBytes = Uint8List.fromList(img.encodeJpg(red, quality: 95));
     final now = DateTime.now();
-    id = await db.into(db.documents).insert(
+    id = await db
+        .into(db.documents)
+        .insert(
           DocumentsCompanion.insert(name: 'D', createdAt: now, modifiedAt: now),
         );
     rel = 'documents/$id/page_1.jpg';
     await store.writeRelative(rel, baseBytes);
-    await db.into(db.pages).insert(
+    await db
+        .into(db.pages)
+        .insert(
           PagesCompanion.insert(
             documentId: id,
             position: 1,
@@ -73,17 +77,19 @@ void main() {
     expect(File('${base.path}/$rel').readAsBytesSync(), baseBytes);
   });
 
-  test('no stacking: grayscale then Original yields an un-enhanced display',
-      () async {
-    await repo.updatePageEnhancer(id, 1, EnhancerMode.grayscale);
-    await repo.updatePageEnhancer(id, 1, EnhancerMode.none);
+  test(
+    'no stacking: grayscale then Original yields an un-enhanced display',
+    () async {
+      await repo.updatePageEnhancer(id, 1, EnhancerMode.grayscale);
+      await repo.updatePageEnhancer(id, 1, EnhancerMode.none);
 
-    final pages = await repo.getDocumentPages(id);
-    expect(pages.single.enhancerMode, EnhancerMode.none);
-    // Full-frame + none → display equals the (colored) base, no flat.
-    expect(pages.single.flatImagePath, isNull);
-    expect(pages.single.displayPath, pages.single.imagePath);
-  });
+      final pages = await repo.getDocumentPages(id);
+      expect(pages.single.enhancerMode, EnhancerMode.none);
+      // Full-frame + none → display equals the (colored) base, no flat.
+      expect(pages.single.flatImagePath, isNull);
+      expect(pages.single.displayPath, pages.single.imagePath);
+    },
+  );
 
   test('throws when the page does not exist', () async {
     expect(

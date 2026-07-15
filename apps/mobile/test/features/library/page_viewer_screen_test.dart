@@ -11,6 +11,7 @@ import 'package:mobile/features/library/widgets/editor_toolbar_button.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 // A repo that fails getDocumentPages on the first call, succeeds after — to
 // drive the error -> retry -> loaded transition.
@@ -33,7 +34,7 @@ void main() {
     int id = 1,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => Center(
@@ -327,7 +328,7 @@ void main() {
       ],
     );
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(documentId: 1, name: 'Doc', repository: repo),
       ),
     );

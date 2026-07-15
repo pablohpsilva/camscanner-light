@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/ream_typography.dart';
 import '../../theme/widgets/ream_action_button.dart';
@@ -36,7 +37,7 @@ class DonationScreen extends StatelessWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Couldn't open Ko-fi")));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.donationErrorOpenKofi)));
   }
 
   Future<void> _copyAddress(BuildContext context) async {
@@ -44,7 +45,7 @@ class DonationScreen extends StatelessWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Bitcoin address copied')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.donationBitcoinCopied)));
   }
 
   @override
@@ -53,7 +54,7 @@ class DonationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
-        title: 'Support the app',
+        title: context.l10n.settingsSupportApp,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: ListView(
@@ -62,7 +63,7 @@ class DonationScreen extends StatelessWidget {
           Icon(Icons.favorite, color: r.kofiRed, size: 34),
           const SizedBox(height: 8),
           Text(
-            'No accounts. No cloud.\nNo subscription.',
+            context.l10n.donationHeadline,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Figtree',
@@ -74,9 +75,7 @@ class DonationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'This is a voluntary donation only. You receive no features, '
-            'benefits, or content in return — it simply helps support ongoing '
-            'development.',
+            context.l10n.donationDisclaimer,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Figtree',
@@ -94,8 +93,7 @@ class DonationScreen extends StatelessWidget {
               border: Border.all(color: r.amber),
             ),
             child: Text(
-              'Donating unlocks nothing — every feature is already yours. '
-              'This is genuinely optional.',
+              context.l10n.donationOptionalNote,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Figtree',
@@ -110,7 +108,7 @@ class DonationScreen extends StatelessWidget {
           if (kofiUrl.isNotEmpty) ...[
             ReamActionButton(
               key: const Key('donation-kofi-button'),
-              label: 'Buy me a coffee — Ko-fi',
+              label: context.l10n.donationKofiButton,
               icon: Icons.local_cafe_outlined,
               primary: true,
               fillColor: r.kofiRed,
@@ -153,7 +151,7 @@ class _BitcoinSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Or donate with Bitcoin',
+            context.l10n.donationBitcoinHeading,
             style: TextStyle(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w600,
@@ -189,7 +187,7 @@ class _BitcoinSection extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.copy),
-            label: const Text('Copy address'),
+            label: Text(context.l10n.donationCopyAddress),
           ),
         ],
       ),

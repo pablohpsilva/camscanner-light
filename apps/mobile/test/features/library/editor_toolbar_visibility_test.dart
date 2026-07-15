@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/editor_toolbar.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/theme/ream_theme.dart';
 
 void main() {
@@ -8,26 +9,26 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(bottomNavigationBar: toolbar),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  EditorToolbar build({
-    bool showCrop = true,
-    bool showShare = true,
-  }) => EditorToolbar(
-    onCrop: () {},
-    onRotate: () {},
-    onText: () {},
-    onRetake: () {},
-    onShare: () {},
-    onDelete: () {},
-    onFilter: () {},
-    showCrop: showCrop,
-    showShare: showShare,
-  );
+  EditorToolbar build({bool showCrop = true, bool showShare = true}) =>
+      EditorToolbar(
+        onCrop: () {},
+        onRotate: () {},
+        onText: () {},
+        onRetake: () {},
+        onShare: () {},
+        onDelete: () {},
+        onFilter: () {},
+        showCrop: showCrop,
+        showShare: showShare,
+      );
 
   testWidgets('shows all seven buttons by default', (tester) async {
     await pump(tester, toolbar: build());

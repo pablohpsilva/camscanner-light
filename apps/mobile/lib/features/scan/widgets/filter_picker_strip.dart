@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
+import '../../../l10n/l10n.dart';
 import '../../library/auto_enhancer.dart';
 import '../../library/color_enhancer.dart';
 import '../../library/enhancer_mode.dart';
@@ -28,33 +29,40 @@ Uint8List? _thumbFn(Uint8List bytes) {
 }
 
 // Fixed display order: Auto first (it's the default), then Original, Color,
-// Grayscale. Each entry is (mode, display label, fallback icon, tile key).
+// Grayscale. Each entry is (mode, fallback icon, tile key). The display label
+// is resolved from [mode] in `build` (via `context.l10n`) since a const list
+// can't hold a `BuildContext`-dependent value.
 final _kFilters = [
   (
     mode: EnhancerMode.auto,
-    label: 'Auto',
     icon: Icons.auto_fix_high,
     tileKey: 'filter-tile-auto',
   ),
   (
     mode: EnhancerMode.none,
-    label: 'Original',
     icon: Icons.image_outlined,
     tileKey: 'filter-tile-original',
   ),
   (
     mode: EnhancerMode.color,
-    label: 'Color',
     icon: Icons.color_lens_outlined,
     tileKey: 'filter-tile-color',
   ),
   (
     mode: EnhancerMode.grayscale,
-    label: 'Grayscale',
     icon: Icons.filter_b_and_w_outlined,
     tileKey: 'filter-tile-grayscale',
   ),
 ];
+
+/// Localized label for each [EnhancerMode] as shown in the filter strip.
+/// Resolution happens in `build` (via `context.l10n`).
+String _filterLabel(EnhancerMode mode, AppLocalizations l10n) => switch (mode) {
+  EnhancerMode.auto => l10n.filterAuto,
+  EnhancerMode.none => l10n.filterOriginal,
+  EnhancerMode.color => l10n.filterColor,
+  EnhancerMode.grayscale => l10n.filterGrayscale,
+};
 
 class FilterPickerStrip extends StatefulWidget {
   final EnhancerMode selectedMode;
@@ -134,6 +142,7 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final l10n = context.l10n;
     return Container(
       height: 100,
       color: Colors.black,
@@ -180,7 +189,7 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    f.label,
+                    _filterLabel(f.mode, l10n),
                     style: TextStyle(
                       fontSize: 11,
                       color: isSelected ? Colors.white : Colors.white60,

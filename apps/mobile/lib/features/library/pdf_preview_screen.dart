@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
+import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import 'feature_flags.dart';
@@ -98,7 +99,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
           ? Center(
               key: const Key('pdf-preview-error'),
               child: Text(
-                "Couldn't open the PDF.",
+                context.l10n.pdfPreviewOpenError,
                 style: TextStyle(fontFamily: 'Figtree', color: r.ink2),
               ),
             )

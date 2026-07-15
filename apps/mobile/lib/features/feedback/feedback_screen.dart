@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_back_header.dart';
@@ -9,6 +10,18 @@ import 'feedback_dependencies.dart';
 import 'feedback_result.dart';
 import 'feedback_service.dart';
 import 'turnstile_widget.dart';
+
+/// Localized snackbar message for a [FeedbackResult]. Resolution happens in
+/// `build` (via `context.l10n`) since the switch has no `BuildContext` of its
+/// own — same pattern as `ExportQualityL10n`.
+String _messageFor(FeedbackResult r, AppLocalizations l10n) => switch (r) {
+  FeedbackSuccess() || FeedbackDuplicate() => l10n.feedbackSuccess,
+  FeedbackRateLimited() => l10n.feedbackRateLimited,
+  FeedbackRejectedUnverified() => l10n.feedbackRejectedUnverified,
+  FeedbackOffline() => l10n.feedbackOffline,
+  FeedbackInvalid() => l10n.feedbackInvalid,
+  FeedbackServerError() => l10n.feedbackServerError,
+};
 
 class FeedbackScreen extends StatefulWidget {
   final FeedbackDependencies dependencies;
@@ -62,17 +75,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   void _showResult(FeedbackResult r) {
-    final msg = switch (r) {
-      FeedbackSuccess() ||
-      FeedbackDuplicate() => 'Thanks! Your feedback was sent.',
-      FeedbackRateLimited() =>
-        "You've sent a few already — please try again later.",
-      FeedbackRejectedUnverified() =>
-        "Couldn't verify the app — please try again.",
-      FeedbackOffline() => 'Check your connection and try again.',
-      FeedbackInvalid() => 'Please check your message and try again.',
-      FeedbackServerError() => "Couldn't send right now — please try again.",
-    };
+    final msg = _messageFor(r, context.l10n);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     if (r is FeedbackSuccess || r is FeedbackDuplicate) {
       Navigator.of(context).maybePop();
@@ -102,10 +105,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     final r = context.ream;
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
-        title: 'Send feedback',
+        title: l10n.feedbackTitle,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: SingleChildScrollView(
@@ -115,20 +119,23 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ReamSectionLabel('Type'),
+              ReamSectionLabel(l10n.feedbackTypeLabel),
               const SizedBox(height: 8),
               ReamSegmented<String>(
                 expanded: true,
                 value: _category,
-                segments: const [
-                  ReamSegment(value: 'bug', label: 'Bug'),
-                  ReamSegment(value: 'idea', label: 'Idea'),
-                  ReamSegment(value: 'question', label: 'Question'),
+                segments: [
+                  ReamSegment(value: 'bug', label: l10n.feedbackTypeBug),
+                  ReamSegment(value: 'idea', label: l10n.feedbackTypeIdea),
+                  ReamSegment(
+                    value: 'question',
+                    label: l10n.feedbackTypeQuestion,
+                  ),
                 ],
                 onChanged: (v) => setState(() => _category = v),
               ),
               const SizedBox(height: 16),
-              const ReamSectionLabel('Message'),
+              ReamSectionLabel(l10n.feedbackMessageLabel),
               const SizedBox(height: 8),
               TextFormField(
                 key: const Key('feedback-message'),
@@ -136,33 +143,33 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 maxLines: 5,
                 maxLength: 4000,
                 style: TextStyle(fontFamily: 'Figtree', color: r.ink),
-                decoration: _fieldDecoration(r, 'Your feedback'),
+                decoration: _fieldDecoration(r, l10n.feedbackMessageHint),
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Please enter a message'
+                    ? l10n.feedbackMessageRequired
                     : null,
               ),
               const SizedBox(height: 16),
-              const ReamSectionLabel('Email — optional'),
+              ReamSectionLabel(l10n.feedbackEmailLabel),
               const SizedBox(height: 8),
               TextFormField(
                 key: const Key('feedback-email'),
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 style: TextStyle(fontFamily: 'Figtree', color: r.ink),
-                decoration: _fieldDecoration(r, 'you@example.com'),
+                decoration: _fieldDecoration(r, l10n.feedbackEmailHint),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null;
                   final ok = RegExp(
                     r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
                   ).hasMatch(v.trim());
-                  return ok ? null : 'Enter a valid email or leave it blank';
+                  return ok ? null : l10n.feedbackEmailInvalid;
                 },
               ),
               Padding(
                 key: const Key('feedback-email-warning'),
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Optional. This will be publicly visible on GitHub.',
+                  l10n.feedbackEmailPublicNote,
                   style: TextStyle(fontSize: 12, color: r.muted),
                 ),
               ),
@@ -173,8 +180,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     setState(() => _showDiagnostics = !_showDiagnostics),
                 child: Text(
                   _showDiagnostics
-                      ? 'Hide what will be sent'
-                      : 'What will be sent?',
+                      ? l10n.feedbackDiagnosticsHide
+                      : l10n.feedbackDiagnosticsShow,
                 ),
               ),
               if (_showDiagnostics)
@@ -205,9 +212,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             ),
                           ),
                           const SizedBox(width: 7),
-                          const Text(
-                            'What we include',
-                            style: TextStyle(
+                          Text(
+                            l10n.feedbackDiagnosticsTitle,
+                            style: const TextStyle(
                               fontFamily: 'Figtree',
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -216,10 +223,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Diagnostics attached: app version, OS version, device model, and language. '
-                        'No scanned documents or their contents are ever sent.',
-                        style: TextStyle(
+                      Text(
+                        l10n.feedbackDiagnosticsBody,
+                        style: const TextStyle(
                           fontFamily: 'Figtree',
                           fontSize: 11.5,
                           height: 1.5,
@@ -274,7 +280,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     )
                   : ReamActionButton(
                       key: const Key('feedback-submit'),
-                      label: 'Send report',
+                      label: l10n.feedbackSubmit,
                       primary: true,
                       fillColor: r.ink,
                       onPressed: _submit,

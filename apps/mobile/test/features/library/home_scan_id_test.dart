@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/home_screen.dart';
 import 'package:mobile/features/scan/id_scan_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
-import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   testWidgets('tapping Scan ID opens the ID scan screen', (tester) async {
@@ -14,8 +14,7 @@ void main() {
     // pumpAndSettle must NOT be used after tapping — IdScanScreen shows a
     // CircularProgressIndicator which keeps scheduling animation frames.
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: ScanDependencies(
             createDocumentScanner: HangingDocumentScannerService.new,

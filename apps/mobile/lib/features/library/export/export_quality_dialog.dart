@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import 'export_quality.dart';
 
 /// Shows the export-quality picker and resolves to the chosen [ExportQuality]
@@ -16,9 +17,10 @@ class ExportQualityDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
       key: const Key('export-quality-dialog'),
-      title: const Text('Export quality'),
+      title: Text(l10n.exportQualityTitle),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView(
@@ -27,8 +29,8 @@ class ExportQualityDialog extends StatelessWidget {
             for (final q in ExportQuality.values)
               ListTile(
                 key: Key('export-quality-${q.name}'),
-                title: Text(q.label),
-                subtitle: Text(q.description),
+                title: Text(q.label(l10n)),
+                subtitle: Text(q.description(l10n)),
                 onTap: () => Navigator.of(context).pop(q),
               ),
           ],
@@ -38,7 +40,7 @@ class ExportQualityDialog extends StatelessWidget {
         TextButton(
           key: const Key('export-quality-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.commonCancel),
         ),
       ],
     );

@@ -7,6 +7,7 @@ import 'package:mobile/features/feedback/feedback_screen.dart';
 import 'package:mobile/features/feedback/feedback_service.dart';
 
 import '../features/feedback/_fakes.dart';
+import '../support/localized_app.dart';
 
 /// A [FeedbackService] stub whose [submit] always resolves to a fixed
 /// [FeedbackResult] without any network I/O, so BDD steps can drive the
@@ -40,7 +41,7 @@ Future<void> theFeedbackScreenBackedByAServiceThatRejectsAsInvalid(
 ) async {
   final service = BddStubFeedbackService(const FeedbackInvalid());
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: Builder(
         builder: (context) => Scaffold(
           body: Center(

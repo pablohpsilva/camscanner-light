@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
+
 /// Shows a modal dialog to rename a document. Pre-fills [currentName] (fully
 /// selected) and returns the trimmed new name, or null on cancel OR when the
 /// trimmed value is unchanged (so the caller does no pointless write). Shared by
@@ -50,13 +52,13 @@ class _RenameDialogState extends State<_RenameDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       key: const Key('rename-dialog'),
-      title: const Text('Rename document'),
+      title: Text(context.l10n.renameDialogTitle),
       content: TextField(
         key: const Key('rename-field'),
         controller: _controller,
         autofocus: true,
         maxLength: 100,
-        decoration: const InputDecoration(labelText: 'Name'),
+        decoration: InputDecoration(labelText: context.l10n.renameFieldLabel),
         onChanged: (_) => setState(() {}),
         onSubmitted: (_) {
           if (_canSave) _save();
@@ -66,12 +68,12 @@ class _RenameDialogState extends State<_RenameDialog> {
         TextButton(
           key: const Key('rename-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           key: const Key('rename-save'),
           onPressed: _canSave ? _save : null,
-          child: const Text('Save'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );

@@ -13,6 +13,7 @@ import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> pumpHome(
@@ -20,8 +21,7 @@ void main() {
     FakeDocumentRepository repo,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(repo),
@@ -72,8 +72,7 @@ void main() {
     // pumpAndSettle must NOT be used after tapping — ScanScreen shows a
     // CircularProgressIndicator which keeps scheduling animation frames.
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: ScanDependencies(
             createDocumentScanner: HangingDocumentScannerService.new,
@@ -211,8 +210,7 @@ void main() {
     final gate = Completer<void>();
     final repo = FakeDocumentRepository(listGate: gate, documents: twoDocs());
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(repo),
@@ -360,6 +358,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: ReamTheme.dark(),
         home: HomeScreen(
           dependencies: grantedScanDependencies(),

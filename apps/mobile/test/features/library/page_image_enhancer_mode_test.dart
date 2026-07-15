@@ -25,14 +25,18 @@ void main() {
       warper: const HybridWarper(),
     );
     final now = DateTime.now();
-    final id = await db.into(db.documents).insert(
+    final id = await db
+        .into(db.documents)
+        .insert(
           DocumentsCompanion.insert(name: 'D', createdAt: now, modifiedAt: now),
         );
     await store.writeRelative(
       'documents/$id/page_1.jpg',
       Uint8List.fromList(img.encodeJpg(img.Image(width: 10, height: 10))),
     );
-    await db.into(db.pages).insert(
+    await db
+        .into(db.pages)
+        .insert(
           PagesCompanion.insert(
             documentId: id,
             position: 1,

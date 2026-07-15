@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 DocumentSummary _summary(int id, String name) => DocumentSummary(
   document: Document(
@@ -15,7 +16,11 @@ DocumentSummary _summary(int id, String name) => DocumentSummary(
   thumbnailPath: '/nonexistent/thumb-$id.jpg',
 );
 
-Widget _host(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _host(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
 
 void main() {
   final docs = [_summary(1, 'Alpha'), _summary(2, 'Beta')];

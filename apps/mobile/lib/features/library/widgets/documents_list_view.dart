@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../theme/ream_colors.dart';
 import '../../../theme/ream_typography.dart';
 import '../document_summary.dart';
@@ -83,7 +84,7 @@ class DocumentsListView extends StatelessWidget {
         ? null
         : PopupMenuButton<String>(
             key: Key('document-menu-${d.id}'),
-            tooltip: 'Document options',
+            tooltip: context.l10n.commonDocumentOptions,
             icon: Icon(Icons.more_horiz, color: r.muted),
             onSelected: (v) {
               if (v == 'rename') onRename?.call(s);
@@ -97,10 +98,11 @@ class DocumentsListView extends StatelessWidget {
                 PopupMenuItem<String>(
                   key: Key('document-share-${d.id}'),
                   value: 'share',
-                  child: const Text('Share'),
+                  child: Text(context.l10n.commonShare),
                 ),
               if (onShare != null)
                 ...shareExtraMenuItems(
+                  context: context,
                   showFax: features.fax,
                   showShareLink: features.shareLink,
                   keyPrefix: 'document-${d.id}',
@@ -109,7 +111,7 @@ class DocumentsListView extends StatelessWidget {
                 PopupMenuItem<String>(
                   key: Key('document-rename-${d.id}'),
                   value: 'rename',
-                  child: const Text('Rename'),
+                  child: Text(context.l10n.commonRename),
                 ),
             ],
           );
@@ -145,7 +147,7 @@ class DocumentsListView extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        '${_pages(s.pageCount)} · '
+                        '${context.l10n.commonPageCount(s.pageCount)} · '
                         '${_formatLocal(d.createdAt.toLocal())}',
                         style: ReamTypography.mono(size: 11.5, color: r.muted),
                       ),
@@ -160,8 +162,6 @@ class DocumentsListView extends StatelessWidget {
       ),
     );
   }
-
-  String _pages(int n) => n == 1 ? '1 page' : '$n pages';
 
   String _formatLocal(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');

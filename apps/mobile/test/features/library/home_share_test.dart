@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/home_screen.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
-import 'package:mobile/theme/ream_theme.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   HomeScreen homeWith(FakeDocumentRepository repo, FakeShareChannel share) =>
@@ -30,9 +30,7 @@ void main() {
     (tester) async {
       final repo = FakeDocumentRepository(documents: [doc]);
       final share = FakeShareChannel();
-      await tester.pumpWidget(
-        MaterialApp(theme: ReamTheme.light(), home: homeWith(repo, share)),
-      );
+      await tester.pumpWidget(localizedTestApp(home: homeWith(repo, share)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('document-menu-1')));
@@ -52,9 +50,7 @@ void main() {
   testWidgets('a failing channel shows a share error', (tester) async {
     final repo = FakeDocumentRepository(documents: [doc]);
     final share = FakeShareChannel(throwOnShare: true);
-    await tester.pumpWidget(
-      MaterialApp(theme: ReamTheme.light(), home: homeWith(repo, share)),
-    );
+    await tester.pumpWidget(localizedTestApp(home: homeWith(repo, share)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('document-menu-1')));
@@ -70,9 +66,7 @@ void main() {
   testWidgets('a failing export shows a share error', (tester) async {
     final repo = FakeDocumentRepository(documents: [doc], throwOnExport: true);
     final share = FakeShareChannel();
-    await tester.pumpWidget(
-      MaterialApp(theme: ReamTheme.light(), home: homeWith(repo, share)),
-    );
+    await tester.pumpWidget(localizedTestApp(home: homeWith(repo, share)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('document-menu-1')));
@@ -91,9 +85,7 @@ void main() {
     final gate = Completer<void>();
     final repo = FakeDocumentRepository(documents: [doc], exportGate: gate);
     final share = FakeShareChannel();
-    await tester.pumpWidget(
-      MaterialApp(theme: ReamTheme.light(), home: homeWith(repo, share)),
-    );
+    await tester.pumpWidget(localizedTestApp(home: homeWith(repo, share)));
     await tester.pumpAndSettle();
 
     // First Share — blocks inside exportPdf on the gate.

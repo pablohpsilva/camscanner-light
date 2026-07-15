@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
-import 'package:mobile/features/library/widgets/share_menu_button.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   testWidgets('share menu shows Fax → not available', (tester) async {
@@ -13,7 +13,7 @@ void main() {
       pages: const [PageImage(position: 1, imagePath: '/nonexistent/p.jpg')],
     );
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 1,
           name: 'Scan X',
@@ -30,6 +30,6 @@ void main() {
     expect(find.byKey(const Key('page-viewer-share-link')), findsOneWidget);
     await tester.tap(find.byKey(const Key('page-viewer-fax')));
     await tester.pumpAndSettle();
-    expect(find.text(kFaxUnavailableMessage), findsOneWidget);
+    expect(find.text("Fax isn't available yet"), findsOneWidget);
   });
 }

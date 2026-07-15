@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/feedback/feedback_availability.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/library/home_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
+
+import '../../support/localized_app.dart';
 
 class _StubAvailability implements FeedbackAvailability {
   final bool v;
@@ -12,8 +13,7 @@ class _StubAvailability implements FeedbackAvailability {
   Future<bool> isAvailable() async => v;
 }
 
-Widget _host(bool healthy) => MaterialApp(
-  theme: ReamTheme.light(),
+Widget _host(bool healthy) => localizedTestApp(
   home: HomeScreen(
     feedbackDependencies: FeedbackDependencies(
       createAvailability: () => _StubAvailability(healthy),

@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_screen.dart';
 import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+
+import '../../support/localized_app.dart';
 
 class _MockUrlLauncher extends Fake
     with MockPlatformInterfaceMixin
@@ -41,7 +42,7 @@ void main() {
     required String bitcoinAddress,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: DonationScreen(kofiUrl: kofiUrl, bitcoinAddress: bitcoinAddress),
       ),
     );
@@ -123,8 +124,7 @@ void main() {
 
   testWidgets('donation uses Ream chrome (header + paper bg)', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: const DonationScreen(
           kofiUrl: 'https://ko-fi.com/x',
           bitcoinAddress: 'bc1qtest',

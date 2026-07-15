@@ -7,7 +7,9 @@ import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/widgets/crop_overlay.dart';
 
-Widget _host(Widget child) => MaterialApp(home: child);
+import '../../support/localized_app.dart';
+
+Widget _host(Widget child) => localizedTestApp(home: child);
 
 void main() {
   testWidgets('filter-only mode hides crop overlay and Reset', (tester) async {

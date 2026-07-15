@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
@@ -42,6 +43,7 @@ class _IdScanScreenState extends State<IdScanScreen> {
   Future<void> _run() async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
 
     final front = await _scanOne();
     if (!mounted) return;
@@ -68,9 +70,7 @@ class _IdScanScreenState extends State<IdScanScreen> {
     );
     if (!mounted) return;
     if (doc == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text("Couldn't save the ID. Try again.")),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.idScanErrorSave)));
       navigator.pop();
       return;
     }
@@ -83,12 +83,7 @@ class _IdScanScreenState extends State<IdScanScreen> {
     if (!mounted) return;
     if (pos == null) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Saved the front, but the back failed. Retake it "
-            "from the document.",
-          ),
-        ),
+        SnackBar(content: Text(l10n.idScanErrorBackRetake)),
       );
       navigator.pop();
       return;
@@ -115,13 +110,14 @@ class _IdScanScreenState extends State<IdScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final label = switch (_step) {
-      _Step.front => 'Scan the FRONT of the ID',
-      _Step.back => 'Scan the BACK of the ID',
-      _Step.saving => 'Saving…',
+      _Step.front => l10n.idScanFrontPrompt,
+      _Step.back => l10n.idScanBackPrompt,
+      _Step.saving => l10n.idScanSaving,
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan ID')),
+      appBar: AppBar(title: Text(l10n.idScanTitle)),
       body: Center(
         key: const Key('id-scan-status'),
         child: Column(

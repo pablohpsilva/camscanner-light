@@ -10,6 +10,7 @@ import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
 import 'package:mobile/features/scan/widgets/crop_overlay.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 // Detector whose result is controlled by a Completer — lets tests simulate
 // detection arriving AFTER the user has interacted.
@@ -42,7 +43,7 @@ void main() {
     var accepted = false;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/capture.jpg'),
           onRetake: () => retook = true,
@@ -65,7 +66,7 @@ void main() {
 
   testWidgets('saving disables buttons and shows the spinner', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/x.jpg'),
           onRetake: () {},
@@ -97,7 +98,9 @@ void main() {
   );
 
   testWidgets('shows the crop overlay once the size resolves', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: subject(onAccept: (_, _) {})));
+    await tester.pumpWidget(
+      localizedTestApp(home: subject(onAccept: (_, _) {})),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('crop-overlay')), findsOneWidget);
   });
@@ -107,7 +110,7 @@ void main() {
   ) async {
     final never = Completer<Size>();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subject(onAccept: (_, _) {}, decode: (_) => never.future),
       ),
     );
@@ -119,7 +122,7 @@ void main() {
   testWidgets('Accept passes the current corners', (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(home: subject(onAccept: (c, _) => accepted = c)),
+      localizedTestApp(home: subject(onAccept: (c, _) => accepted = c)),
     );
     await tester.pumpAndSettle();
     await tester.drag(
@@ -136,7 +139,7 @@ void main() {
   testWidgets('Reset restores full-frame corners', (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(home: subject(onAccept: (c, _) => accepted = c)),
+      localizedTestApp(home: subject(onAccept: (c, _) => accepted = c)),
     );
     await tester.pumpAndSettle();
     await tester.drag(
@@ -153,7 +156,7 @@ void main() {
 
   testWidgets('saving disables the overlay and Reset', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: subject(onAccept: (_, _) {}, saving: true)),
+      localizedTestApp(home: subject(onAccept: (_, _) {}, saving: true)),
     );
     // Use pump() not pumpAndSettle(): CircularProgressIndicator is indeterminate
     // and its animation controller never stops, so pumpAndSettle() always times out.
@@ -170,7 +173,7 @@ void main() {
     (tester) async {
       CropCorners? accepted;
       await tester.pumpWidget(
-        MaterialApp(
+        localizedTestApp(
           home: subject(
             onAccept: (c, _) => accepted = c,
             decode: (_) async => throw 'boom',
@@ -193,6 +196,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           navigatorKey: nav,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Builder(
               builder: (ctx) => ElevatedButton(
@@ -251,7 +256,7 @@ void main() {
   testWidgets('detection result pre-fills corners on Accept', (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subjectWithDetector(
           edgeDetector: FakeEdgeDetector(result: highResult),
           onAccept: (c, _) => accepted = c,
@@ -266,7 +271,7 @@ void main() {
 
   testWidgets('high confidence (0.8) → green overlay', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subjectWithDetector(
           edgeDetector: FakeEdgeDetector(result: highResult),
         ),
@@ -284,7 +289,7 @@ void main() {
   ) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subjectWithDetector(
           edgeDetector: FakeEdgeDetector(result: lowResult),
           onAccept: (c, _) => accepted = c,
@@ -307,7 +312,7 @@ void main() {
   ) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subjectWithDetector(
           edgeDetector: FakeEdgeDetector(result: null),
           onAccept: (c, _) => accepted = c,
@@ -327,7 +332,7 @@ void main() {
   testWidgets('no edgeDetector → full-frame corners', (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subjectWithDetector(
           edgeDetector: null,
           onAccept: (c, _) => accepted = c,
@@ -345,7 +350,7 @@ void main() {
   ) async {
     final completer = Completer<DetectionResult?>();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/cap.jpg'),
           onRetake: () {},
@@ -374,7 +379,7 @@ void main() {
   testWidgets('late result discarded after Reset', (tester) async {
     final completer = Completer<DetectionResult?>();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/cap.jpg'),
           onRetake: () {},
@@ -402,7 +407,7 @@ void main() {
   ) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/cap.jpg'),
           onRetake: () {},
@@ -429,7 +434,7 @@ void main() {
   ) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: CaptureReviewScreen(
           image: const CapturedImage('/nonexistent/cap.jpg'),
           onRetake: () {},
@@ -459,7 +464,7 @@ void main() {
         confidence: 0.5,
       );
       await tester.pumpWidget(
-        MaterialApp(
+        localizedTestApp(
           home: subjectWithDetector(
             edgeDetector: FakeEdgeDetector(result: exactResult),
           ),
@@ -476,7 +481,7 @@ void main() {
   testWidgets('green cue persists after Reset', (tester) async {
     CropCorners? accepted;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: subjectWithDetector(
           edgeDetector: FakeEdgeDetector(result: highResult),
           onAccept: (c, _) => accepted = c,

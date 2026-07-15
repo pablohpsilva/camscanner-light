@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../../theme/ream_theme.dart';
 import '../scan/widgets/filter_picker_strip.dart';
 import 'enhancer_mode.dart';
@@ -47,17 +48,18 @@ class _EditFilterScreenState extends State<EditFilterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Theme(
       data: ReamTheme.dark(),
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: EditorTopBar(
-          title: 'Filter',
+          title: l10n.editFilterTitle,
           onBack: () => Navigator.of(context).pop(),
           trailing: TextButton(
             key: const Key('edit-filter-cancel'),
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
         ),
         body: Column(
@@ -87,7 +89,7 @@ class _EditFilterScreenState extends State<EditFilterScreen> {
                   child: FilledButton(
                     key: const Key('edit-filter-save'),
                     onPressed: () => Navigator.of(context).pop(_mode),
-                    child: const Text('Save'),
+                    child: Text(l10n.commonSave),
                   ),
                 ),
               ),

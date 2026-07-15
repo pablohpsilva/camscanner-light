@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import 'document_repository.dart';
 import 'document_summary.dart';
 
@@ -58,9 +59,10 @@ class _MergePickerDialogState extends State<MergePickerDialog> {
   @override
   Widget build(BuildContext context) {
     final others = _others;
+    final l10n = context.l10n;
     return AlertDialog(
       key: const Key('merge-picker-dialog'),
-      title: const Text('Merge another document'),
+      title: Text(l10n.mergeDialogTitle),
       content: SizedBox(
         width: double.maxFinite,
         child: others == null
@@ -69,10 +71,10 @@ class _MergePickerDialogState extends State<MergePickerDialog> {
                 child: Center(child: CircularProgressIndicator()),
               )
             : others.isEmpty
-            ? const Padding(
-                key: Key('merge-picker-empty'),
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('No other documents to merge.'),
+            ? Padding(
+                key: const Key('merge-picker-empty'),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(l10n.mergeDialogEmpty),
               )
             : ListView(
                 shrinkWrap: true,
@@ -81,9 +83,7 @@ class _MergePickerDialogState extends State<MergePickerDialog> {
                     ListTile(
                       key: Key('merge-picker-item-${s.document.id}'),
                       title: Text(s.document.name),
-                      subtitle: Text(
-                        s.pageCount == 1 ? '1 page' : '${s.pageCount} pages',
-                      ),
+                      subtitle: Text(l10n.commonPageCount(s.pageCount)),
                       onTap: () => Navigator.of(context).pop(s.document.id),
                     ),
                 ],
@@ -93,7 +93,7 @@ class _MergePickerDialogState extends State<MergePickerDialog> {
         TextButton(
           key: const Key('merge-picker-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.commonCancel),
         ),
       ],
     );

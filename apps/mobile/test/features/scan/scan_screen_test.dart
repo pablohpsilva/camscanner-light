@@ -8,9 +8,10 @@ import 'package:mobile/features/scan/scan_screen.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 // Push ScanScreen from a host so its final pop() has somewhere to return to.
-Widget _host(ScanScreen screen) => MaterialApp(
+Widget _host(ScanScreen screen) => localizedTestApp(
   home: Builder(
     builder: (context) => Scaffold(
       body: Center(

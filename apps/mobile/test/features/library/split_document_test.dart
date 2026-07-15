@@ -153,13 +153,14 @@ void main() {
                 ..where((t) => t.documentId.equals(id))
                 ..where((t) => t.position.equals(2)))
               .getSingle();
-      await (db.update(db.pages)..where((t) => t.id.equals(movingPage.id)))
-          .write(
-            const PagesCompanion(
-              enhancerMode: Value(1), // EnhancerMode.grayscale
-              rotationQuarterTurns: Value(1),
-            ),
-          );
+      await (db.update(
+        db.pages,
+      )..where((t) => t.id.equals(movingPage.id))).write(
+        const PagesCompanion(
+          enhancerMode: Value(1), // EnhancerMode.grayscale
+          rotationQuarterTurns: Value(1),
+        ),
+      );
 
       final created = await repo.splitAfter(id, 1);
 

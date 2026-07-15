@@ -4,6 +4,7 @@ import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   testWidgets('Share all as images shares one JPG per page', (tester) async {
@@ -15,7 +16,7 @@ void main() {
     );
     final share = FakeShareChannel();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 1,
           name: 'Doc',
@@ -47,7 +48,7 @@ void main() {
     );
     final share = FakeShareChannel();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 1,
           name: 'Doc',

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
+
 /// Shown in the library when the user has no documents yet.
 class EmptyDocumentsView extends StatelessWidget {
   const EmptyDocumentsView({super.key});
@@ -13,15 +15,12 @@ class EmptyDocumentsView extends StatelessWidget {
         children: [
           Icon(Icons.folder_open_outlined, size: 72, color: muted),
           const SizedBox(height: 16),
-          const Text(
-            'No documents yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          Text(
+            context.l10n.homeEmptyTitle,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Tap Scan to create your first document',
-            style: TextStyle(color: muted),
-          ),
+          Text(context.l10n.homeEmptySubtitle, style: TextStyle(color: muted)),
         ],
       ),
     );

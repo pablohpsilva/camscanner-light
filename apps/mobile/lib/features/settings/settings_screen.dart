@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+import '../../l10n/language_autonyms.dart';
+import '../../l10n/locale_controller.dart';
+import '../../l10n/locale_resolution.dart';
+import '../../l10n/locale_store.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import '../../theme/widgets/ream_section_label.dart';
@@ -15,12 +20,14 @@ import '../feedback/feedback_screen.dart';
 /// active Ream theme (light or dark).
 class SettingsScreen extends StatelessWidget {
   final ThemeController themeController;
+  final LocaleController localeController;
   final FeedbackDependencies feedbackDependencies;
   final bool feedbackAvailable;
 
   const SettingsScreen({
     super.key,
     required this.themeController,
+    required this.localeController,
     this.feedbackDependencies = const FeedbackDependencies(),
     this.feedbackAvailable = true,
   });
@@ -31,35 +38,53 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
-        title: 'Settings',
+        title: context.l10n.settingsTitle,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: AnimatedBuilder(
-        animation: themeController,
+        animation: Listenable.merge([themeController, localeController]),
         builder: (context, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const ReamSectionLabel('Appearance'),
+            ReamSectionLabel(context.l10n.settingsSectionAppearance),
             const SizedBox(height: 10),
             ReamSegmented<ThemeMode>(
               key: const Key('settings-theme-mode'),
               expanded: true,
               value: themeController.mode,
               onChanged: themeController.setMode,
-              segments: const [
-                ReamSegment(value: ThemeMode.light, label: 'Light'),
-                ReamSegment(value: ThemeMode.dark, label: 'Dark'),
-                ReamSegment(value: ThemeMode.system, label: 'System'),
+              segments: [
+                ReamSegment(
+                  value: ThemeMode.light,
+                  label: context.l10n.settingsThemeLight,
+                ),
+                ReamSegment(
+                  value: ThemeMode.dark,
+                  label: context.l10n.settingsThemeDark,
+                ),
+                ReamSegment(
+                  value: ThemeMode.system,
+                  label: context.l10n.settingsThemeSystem,
+                ),
               ],
             ),
             const SizedBox(height: 28),
-            const ReamSectionLabel('Feedback & support'),
+            ReamSectionLabel(context.l10n.settingsSectionLanguage),
+            const SizedBox(height: 10),
+            _NavRow(
+              key: const Key('settings-language'),
+              icon: Icons.language,
+              label: _currentLanguageLabel(context),
+              onTap: () => _showLanguagePicker(context),
+            ),
+            const SizedBox(height: 28),
+            ReamSectionLabel(context.l10n.settingsSectionFeedback),
             const SizedBox(height: 10),
             if (feedbackAvailable)
               _NavRow(
                 key: const Key('settings-feedback'),
                 icon: Icons.chat_bubble_outline,
-                label: 'Send feedback',
+                label: context.l10n.feedbackTitle,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) =>
@@ -71,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
               _NavRow(
                 key: const Key('settings-support'),
                 icon: Icons.favorite_outline,
-                label: 'Support the app',
+                label: context.l10n.settingsSupportApp,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const DonationScreen()),
                 ),
@@ -83,6 +108,65 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  String _currentLanguageLabel(BuildContext context) {
+    final override = localeController.localeOverride;
+    return override == null
+        ? context.l10n.settingsLanguageSystem
+        : kLanguageAutonyms[localeTag(override)]!;
+  }
+
+  Future<void> _showLanguagePicker(BuildContext context) async {
+    final choice = await showDialog<_LanguageChoice>(
+      context: context,
+      builder: (context) {
+        final current = localeController.localeOverride;
+        Widget option({
+          required String keySuffix,
+          required String label,
+          required Locale? locale,
+          required bool selected,
+        }) {
+          return SimpleDialogOption(
+            key: Key('language-option-$keySuffix'),
+            onPressed: () => Navigator.pop(context, _LanguageChoice(locale)),
+            child: Row(
+              children: [
+                Expanded(child: Text(label)),
+                if (selected) const Icon(Icons.check, size: 18),
+              ],
+            ),
+          );
+        }
+
+        return SimpleDialog(
+          title: Text(context.l10n.settingsSectionLanguage),
+          children: [
+            option(
+              keySuffix: 'system',
+              label: context.l10n.settingsLanguageSystem,
+              locale: null,
+              selected: current == null,
+            ),
+            for (final locale in kSupportedAppLocales)
+              option(
+                keySuffix: localeTag(locale),
+                label: kLanguageAutonyms[localeTag(locale)]!,
+                locale: locale,
+                selected: current == locale,
+              ),
+          ],
+        );
+      },
+    );
+    if (choice != null) await localeController.setLocale(choice.locale);
+  }
+}
+
+/// Wrapper so `null` (System default) is distinguishable from a dismissed dialog.
+class _LanguageChoice {
+  final Locale? locale;
+  const _LanguageChoice(this.locale);
 }
 
 class _NavRow extends StatelessWidget {
@@ -147,7 +231,7 @@ class _About extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'CamScanner-light',
+          context.l10n.appTitle,
           style: TextStyle(
             fontFamily: 'Figtree',
             fontSize: 14,
@@ -157,7 +241,7 @@ class _About extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Your scans stay on your device — no account, no cloud.',
+          context.l10n.settingsAboutTagline,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'Figtree',

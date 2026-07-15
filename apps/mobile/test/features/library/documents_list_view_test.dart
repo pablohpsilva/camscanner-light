@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 void main() {
   DocumentSummary summary(int id, {int pageCount = 1}) => DocumentSummary(
@@ -21,6 +22,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(
             summaries: [summary(1), summary(2, pageCount: 3)],
@@ -57,6 +60,8 @@ void main() {
     DocumentSummary? opened;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(
             summaries: [summary(1), summary(2, pageCount: 3)],
@@ -77,6 +82,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(summaries: [summary(1)], onRename: (_) {}),
         ),
@@ -89,6 +96,8 @@ void main() {
   testWidgets('omits the rename menu when onRename is null', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: DocumentsListView(summaries: [summary(1)])),
       ),
     );
@@ -102,6 +111,8 @@ void main() {
     DocumentSummary? renamed;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(
             summaries: [summary(2)],
@@ -124,6 +135,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(summaries: [summary(1)], onRename: (_) {}),
         ),
@@ -143,6 +156,8 @@ void main() {
   testWidgets('shows a Share item when onShare is set', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(summaries: [summary(1)], onShare: (_) {}),
         ),
@@ -160,6 +175,8 @@ void main() {
     DocumentSummary? shared;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(
             summaries: [summary(2)],
@@ -183,6 +200,8 @@ void main() {
     DocumentSummary? pressed;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(
             summaries: [summary(1), summary(2)],
@@ -204,6 +223,8 @@ void main() {
     DocumentSummary? opened;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DocumentsListView(
             summaries: [summary(1), summary(2)],

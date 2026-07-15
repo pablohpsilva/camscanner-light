@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../theme/ream_colors.dart';
 import '../../../theme/ream_typography.dart';
 
@@ -22,7 +23,7 @@ class PageCounterPill extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
       child: Text(
-        '$current / $total',
+        context.l10n.viewerPageCounter(current, total),
         style: ReamTypography.mono(
           size: 11,
           weight: FontWeight.w600,

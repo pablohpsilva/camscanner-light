@@ -4,6 +4,7 @@ import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> openMenuAndSplit(WidgetTester tester) async {
@@ -23,7 +24,7 @@ void main() {
       ],
     );
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
       ),
     );
@@ -43,7 +44,7 @@ void main() {
         pages: const [PageImage(position: 1, imagePath: '/a.jpg')],
       );
       await tester.pumpWidget(
-        MaterialApp(
+        localizedTestApp(
           home: PageViewerScreen(documentId: 7, name: 'Doc', repository: repo),
         ),
       );

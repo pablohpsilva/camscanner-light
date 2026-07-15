@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Prompts for a password (obscured). Resolves to the entered password, or null
 /// if cancelled. Protect is disabled until a non-empty password is entered.
 Future<String?> showPasswordDialog(BuildContext context) => showDialog<String>(
@@ -28,13 +30,13 @@ class _PasswordDialogState extends State<PasswordDialog> {
     final canConfirm = _controller.text.trim().isNotEmpty;
     return AlertDialog(
       key: const Key('password-dialog'),
-      title: const Text('Password-protect PDF'),
+      title: Text(context.l10n.passwordDialogTitle),
       content: TextField(
         key: const Key('password-field'),
         controller: _controller,
         autofocus: true,
         obscureText: true,
-        decoration: const InputDecoration(hintText: 'Enter a password'),
+        decoration: InputDecoration(hintText: context.l10n.passwordFieldHint),
         onChanged: (_) => setState(() {}),
         onSubmitted: (v) {
           if (v.trim().isNotEmpty) Navigator.of(context).pop(v);
@@ -44,14 +46,14 @@ class _PasswordDialogState extends State<PasswordDialog> {
         TextButton(
           key: const Key('password-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           key: const Key('password-confirm'),
           onPressed: canConfirm
               ? () => Navigator.of(context).pop(_controller.text)
               : null,
-          child: const Text('Protect'),
+          child: Text(context.l10n.passwordProtectButton),
         ),
       ],
     );

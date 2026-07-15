@@ -156,17 +156,17 @@ void main() {
 
       // Give the source's page a non-default filter + rotation, as if the
       // user had applied a grayscale filter and rotated it once before merging.
-      final sourcePage =
-          await (db.select(db.pages)
-                ..where((t) => t.documentId.equals(source)))
-              .getSingle();
-      await (db.update(db.pages)..where((t) => t.id.equals(sourcePage.id)))
-          .write(
-            const PagesCompanion(
-              enhancerMode: Value(1), // EnhancerMode.grayscale
-              rotationQuarterTurns: Value(1),
-            ),
-          );
+      final sourcePage = await (db.select(
+        db.pages,
+      )..where((t) => t.documentId.equals(source))).getSingle();
+      await (db.update(
+        db.pages,
+      )..where((t) => t.id.equals(sourcePage.id))).write(
+        const PagesCompanion(
+          enhancerMode: Value(1), // EnhancerMode.grayscale
+          rotationQuarterTurns: Value(1),
+        ),
+      );
 
       await repo.mergeInto(target, source);
 

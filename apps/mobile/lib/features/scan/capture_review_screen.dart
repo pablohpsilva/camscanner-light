@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../library/crop_corners.dart';
 import '../library/enhancer_for_mode.dart';
 import '../library/enhancer_mode.dart';
@@ -137,10 +138,11 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final size = _imageSize;
     final canCrop = size != null && !widget.saving;
     return Scaffold(
-      appBar: AppBar(title: const Text('Review')),
+      appBar: AppBar(title: Text(l10n.captureReviewTitle)),
       body: Column(
         children: [
           Expanded(
@@ -196,7 +198,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                 key: const Key('review-retake'),
                 onPressed: widget.saving ? null : widget.onRetake,
                 icon: const Icon(Icons.replay),
-                label: const Text('Retake'),
+                label: Text(l10n.commonRetake),
               ),
               if (widget.enableCrop)
                 TextButton(
@@ -208,7 +210,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                           _corners = CropCorners.fullFrame;
                         })
                       : null,
-                  child: const Text('Reset'),
+                  child: Text(l10n.captureReviewReset),
                 ),
               FilledButton.icon(
                 key: const Key('review-accept'),
@@ -216,7 +218,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                     ? null
                     : () => widget.onAccept(_corners, enhancerForMode(_mode)),
                 icon: const Icon(Icons.check),
-                label: const Text('Accept'),
+                label: Text(l10n.captureReviewAccept),
               ),
             ],
           ),

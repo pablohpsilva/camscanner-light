@@ -696,8 +696,10 @@ void main() {
   test('createFromCapture stores the enhancer mode and keeps the base '
       'unfiltered (full-frame)', () async {
     final r = repo(warper: FakeImageWarper());
-    final doc =
-        await r.createFromCapture(capture, enhancer: const GrayscaleEnhancer());
+    final doc = await r.createFromCapture(
+      capture,
+      enhancer: const GrayscaleEnhancer(),
+    );
     final pages = await r.getDocumentPages(doc.id);
     // Mode persisted; a grayscale flat exists; base is NOT the flat.
     expect(pages.single.enhancerMode, EnhancerMode.grayscale);

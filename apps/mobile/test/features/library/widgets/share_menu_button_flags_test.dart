@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/share_menu_button.dart';
 
+import '../../../support/localized_app.dart';
+
 Future<void> _pump(
   WidgetTester tester, {
   bool showFax = true,
   bool showShareLink = true,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: Scaffold(
         body: ShareMenuButton(
           buttonKey: const Key('smb'),

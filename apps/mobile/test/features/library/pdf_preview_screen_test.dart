@@ -7,13 +7,14 @@ import 'package:mobile/theme/ream_colors.dart';
 import 'package:mobile/theme/ream_theme.dart';
 import 'package:pdfx/pdfx.dart';
 
+import '../../support/localized_app.dart';
+
 void main() {
   testWidgets('PDF viewer uses Ream chrome (header title + paper bg)', (
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ReamTheme.light(),
+      localizedTestApp(
         home: PdfPreviewScreen(
           pdfPath: '/nonexistent.pdf',
           name: 'Lease Agreement',
@@ -36,6 +37,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ReamTheme.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: PdfPreviewScreen(
           pdfPath: '/nonexistent.pdf',
           name: 'Lease Agreement',
@@ -58,7 +61,7 @@ void main() {
     // An opener that never completes -> stays in loading.
     Future<PdfDocument> neverOpens(String _) => Completer<PdfDocument>().future;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PdfPreviewScreen(
           pdfPath: '/x/export.pdf',
           name: 'Scan',
@@ -76,7 +79,7 @@ void main() {
     Future<PdfDocument> throws(String _) async =>
         throw StateError('cannot open');
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PdfPreviewScreen(
           pdfPath: '/x/export.pdf',
           name: 'Scan',
