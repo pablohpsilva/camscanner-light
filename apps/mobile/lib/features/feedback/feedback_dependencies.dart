@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import '../../core/logging/app_logger.dart';
 import 'attestation_provider.dart';
 import 'diagnostics.dart';
 import 'feedback_availability.dart';
@@ -9,6 +10,8 @@ import 'feedback_service.dart';
 typedef FeedbackServiceFactory = FeedbackService Function();
 typedef FeedbackAvailabilityFactory = FeedbackAvailability Function();
 
+AppLogger _defaultLogger() => const PrintAppLogger();
+
 /// Composition root for the Feedback feature (parallel to LibraryDependencies).
 ///
 /// Production builds a [FeedbackService] wired with platform implementations.
@@ -16,6 +19,7 @@ typedef FeedbackAvailabilityFactory = FeedbackAvailability Function();
 /// production constructors.
 class FeedbackDependencies {
   final FeedbackConfig config;
+  final AppLogger Function() logger;
   final FeedbackServiceFactory? _createService;
   final FeedbackAvailabilityFactory? _createAvailability;
 
@@ -24,6 +28,7 @@ class FeedbackDependencies {
       workerUrl: String.fromEnvironment('FEEDBACK_WORKER_URL'),
       turnstileSiteKey: String.fromEnvironment('TURNSTILE_SITE_KEY'),
     ),
+    this.logger = _defaultLogger,
     // Named createService/createAvailability (not this._createService) so the
     // public constructor API keeps those names; the fields are deliberately
     // private (only service()/availability() expose the built collaborator).

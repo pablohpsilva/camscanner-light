@@ -1,3 +1,4 @@
+import '../../core/logging/app_logger.dart';
 import 'cunning_document_scanner_service.dart';
 import 'document_scanner_service.dart';
 import 'edge_detector.dart';
@@ -15,16 +16,20 @@ EdgeDetector _defaultEdgeDetector() => const OpenCvEdgeDetector();
 
 GalleryPicker _defaultGalleryPicker() => const ImagePickerGalleryPicker();
 
+AppLogger _defaultLogger() => const PrintAppLogger();
+
 /// Composition root for the Scan feature. Production uses the defaults; tests
 /// inject fakes. Const-constructible so it can be a default widget argument.
 class ScanDependencies {
   final DocumentScannerServiceFactory createDocumentScanner;
   final EdgeDetectorFactory createEdgeDetector;
   final GalleryPickerFactory createGalleryPicker;
+  final AppLogger Function() logger;
 
   const ScanDependencies({
     this.createDocumentScanner = _defaultDocumentScanner,
     this.createEdgeDetector = _defaultEdgeDetector,
     this.createGalleryPicker = _defaultGalleryPicker,
+    this.logger = _defaultLogger,
   });
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/logging/app_logger.dart';
 import 'dart_page_processor.dart';
 import 'document_file_store.dart';
 import 'document_printer.dart';
@@ -34,6 +35,7 @@ class LibraryDependencies {
   final LinkShareChannel linkShare;
   final FaxProvider fax;
   final FeatureFlags features;
+  final AppLogger Function() logger;
   const LibraryDependencies({
     this.createRepository = _defaultCreateRepository,
     this.printer = const SystemDocumentPrinter(),
@@ -42,8 +44,11 @@ class LibraryDependencies {
     this.linkShare = const UnavailableLinkShareChannel(),
     this.fax = const UnavailableFaxProvider(),
     this.features = const FeatureFlags(),
+    this.logger = _defaultLogger,
   });
 }
+
+AppLogger _defaultLogger() => const PrintAppLogger();
 
 Future<DocumentRepository> _defaultCreateRepository() async {
   final docsDir = await getApplicationDocumentsDirectory();
