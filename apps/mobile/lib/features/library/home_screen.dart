@@ -374,9 +374,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // The banner's own SafeArea absorbs the bottom inset when shown; without
+    // it (iOS, guideline 3.1.1) the body must clear the home indicator itself.
+    final banner = donationsAvailable ? const DonationBanner() : null;
     return Scaffold(
       body: SafeArea(
-        bottom: false,
+        bottom: banner == null,
         child: Column(
           children: [
             _buildHeader(context),
@@ -385,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: donationsAvailable ? const DonationBanner() : null,
+      bottomNavigationBar: banner,
     );
   }
 
@@ -582,8 +585,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (i > 0) spaced.add(const SizedBox(width: 8));
       spaced.add(buttons[i]);
     }
+    // With the donation banner below, 8px suffices (the banner adds its own
+    // height); without it this padding is all that separates the row from the
+    // screen edge on inset-less devices, so keep a real gap.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 10, 16, donationsAvailable ? 8 : 16),
       child: Row(children: spaced),
     );
   }

@@ -11,6 +11,13 @@ Feature: Donation entry points respect the platform
     Then I do not see the support row
     And the platform override is cleared
 
+  Scenario: Home actions keep clear of the screen bottom on iOS
+    Given the platform is iOS
+    And the device has a bottom safe area inset
+    And the home screen is shown
+    Then the scan actions sit clear of the bottom inset
+    And the platform override is cleared
+
   Scenario: Donation entry points are shown on Android
     Given the platform is Android
     And the home screen is shown
