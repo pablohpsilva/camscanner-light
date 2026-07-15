@@ -208,6 +208,10 @@ void main() {
     }
 
     expect(find.byType(PdfPreviewScreen), findsNothing);
+
+    // The popped preview's 15s open-timeout Timer is still pending (its opener
+    // never completes); fire it so no pending Timer outlives the test.
+    await tester.pump(const Duration(seconds: 16));
   });
 
   testWidgets(

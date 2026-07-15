@@ -37,7 +37,12 @@ Future<Color> _highlightFor(WidgetTester tester, double confidence) async {
     await tester.pump(const Duration(milliseconds: 100));
   }
   final overlay = tester.widget<CropOverlay>(find.byType(CropOverlay));
-  return overlay.highlightColor;
+  final color = overlay.highlightColor;
+  // The embedded FilterPickerStrip arms a 6s thumbnail-timeout Timer on build
+  // (its thumbnail compute runs on a separate isolate that outlives the test);
+  // fire it so flutter_test's pending-timer invariant does not fail.
+  await tester.pump(const Duration(seconds: 7));
+  return color;
 }
 
 void main() {

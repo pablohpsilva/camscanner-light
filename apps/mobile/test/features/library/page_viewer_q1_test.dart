@@ -68,5 +68,9 @@ void main() {
     await tester.pump(); // NOT settle — the pushed pdfx preview hangs settle
     await tester.pump();
     expect(repo.lastExportQuality, ExportQuality.low);
+
+    // The pushed preview's 15s open-timeout Timer is pending (the real pdfx
+    // opener never resolves on host); fire it so no Timer outlives the test.
+    await tester.pump(const Duration(seconds: 16));
   });
 }

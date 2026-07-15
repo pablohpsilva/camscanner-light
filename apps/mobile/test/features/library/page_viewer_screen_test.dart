@@ -195,6 +195,10 @@ void main() {
 
     expect(repo.exportedIds, contains(4));
     expect(find.byType(PdfPreviewScreen), findsOneWidget);
+
+    // The pushed preview's 15s open-timeout Timer is pending (the real pdfx
+    // opener never resolves on host); fire it so no Timer outlives the test.
+    await tester.pump(const Duration(seconds: 16));
   });
 
   testWidgets('export failure shows an error SnackBar and stays', (
@@ -262,6 +266,10 @@ void main() {
         .pump(); // process export completion + navigation (NOT settle — pdfx channel)
     await tester.pump();
     expect(find.byType(PdfPreviewScreen), findsOneWidget);
+
+    // The pushed preview's 15s open-timeout Timer is pending (the real pdfx
+    // opener never resolves on host); fire it so no Timer outlives the test.
+    await tester.pump(const Duration(seconds: 16));
   });
 
   testWidgets('rename: confirming Save updates the AppBar title', (
