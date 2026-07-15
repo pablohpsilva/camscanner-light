@@ -6,6 +6,7 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/share_menu_button.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   testWidgets('share menu shows Fax → not available', (tester) async {
@@ -13,7 +14,7 @@ void main() {
       pages: const [PageImage(position: 1, imagePath: '/nonexistent/p.jpg')],
     );
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 1,
           name: 'Scan X',

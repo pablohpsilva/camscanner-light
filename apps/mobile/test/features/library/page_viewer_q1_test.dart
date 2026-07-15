@@ -4,6 +4,7 @@ import 'package:mobile/features/library/export/export_quality.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 Future<void> _pumpViewer(
   WidgetTester tester,
@@ -11,7 +12,7 @@ Future<void> _pumpViewer(
   FakeShareChannel share,
 ) async {
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: PageViewerScreen(
         repository: repo,
         documentId: 4,

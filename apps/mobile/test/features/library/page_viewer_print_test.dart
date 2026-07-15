@@ -4,6 +4,7 @@ import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> tapPrint(WidgetTester tester) async {
@@ -20,7 +21,7 @@ void main() {
     );
     final printer = FakeDocumentPrinter();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 3,
           name: 'Report',
@@ -45,7 +46,7 @@ void main() {
     );
     final printer = FakeDocumentPrinter();
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 3,
           name: 'Report',

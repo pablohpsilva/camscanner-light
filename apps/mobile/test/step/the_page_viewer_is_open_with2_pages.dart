@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../support/fake_library.dart';
+import '../support/localized_app.dart';
 
 /// Shared repo for H2 BDD steps — read by Then/When steps in this feature.
 FakeDocumentRepository h2Repo = FakeDocumentRepository();
@@ -17,7 +17,7 @@ Future<void> thePageViewerIsOpenWith2Pages(WidgetTester tester) async {
     ],
   );
   await tester.pumpWidget(
-    MaterialApp(
+    localizedTestApp(
       home: PageViewerScreen(documentId: 1, name: 'H2 Doc', repository: h2Repo),
     ),
   );

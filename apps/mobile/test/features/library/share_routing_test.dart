@@ -6,6 +6,7 @@ import 'package:mobile/features/library/pdf_preview_screen.dart';
 import 'package:mobile/features/library/recognized_text_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   testWidgets('PdfPreviewScreen Share routes the PDF through the channel', (
@@ -83,7 +84,7 @@ void main() {
       );
       final share = FakeShareChannel();
       await tester.pumpWidget(
-        MaterialApp(
+        localizedTestApp(
           home: PageViewerScreen(
             documentId: 5,
             name: 'Doc',

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'share_channel.dart';
 
 import '../scan/scan_screen.dart';
@@ -126,6 +127,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   Future<void> _exportPdf() async {
+    final l10n = context.l10n;
     final quality = await showExportQualityDialog(context);
     if (quality == null || !mounted) return;
     setState(() => _exporting = true);
@@ -149,13 +151,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't export PDF")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerExportPdfError)));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
   }
 
   Future<void> _rename() async {
+    final l10n = context.l10n;
     final newName = await showRenameDialog(context, _name);
     if (newName == null) return;
     if (!mounted) return;
@@ -170,25 +173,26 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't rename")));
+      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorRename)));
     }
   }
 
   Future<void> _confirmAndDelete() async {
+    final l10n = context.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: const Text("Delete this document? This can't be undone."),
+        content: Text(l10n.viewerDeleteDocumentConfirm),
         actions: [
           TextButton(
             key: const Key('page-viewer-delete-cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             key: const Key('page-viewer-delete-confirm'),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -204,11 +208,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't delete")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerDeleteDocumentError)));
     }
   }
 
   Future<void> _confirmAndDeletePage() async {
+    final l10n = context.l10n;
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
     final page = pages[_current];
@@ -218,19 +223,19 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       builder: (ctx) => AlertDialog(
         content: Text(
           isLast
-              ? 'This is the only page. Deleting it removes the whole document.'
-              : "Delete this page? This can't be undone.",
+              ? l10n.viewerDeletePageOnlyPageWarning
+              : l10n.viewerDeletePageConfirm,
         ),
         actions: [
           TextButton(
             key: const Key('page-viewer-delete-page-cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             key: const Key('page-viewer-delete-page-confirm'),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -253,11 +258,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't delete page")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerDeletePageError)));
     }
   }
 
   Future<void> _exportPageAsImage() async {
+    final l10n = context.l10n;
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
     final page = pages[_current];
@@ -275,13 +281,14 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't share image")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerShareImageError)));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
   }
 
   Future<void> _exportAllImages() async {
+    final l10n = context.l10n;
     final quality = await showExportQualityDialog(context);
     if (quality == null || !mounted) return;
     setState(() => _exporting = true);
@@ -298,29 +305,31 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't share images")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerShareImagesError)));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
   }
 
   Future<void> _print() async {
+    final l10n = context.l10n;
     try {
       final file = await widget.repository.exportPdf(widget.documentId);
       await widget.printer.printPdf(file, name: _name);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sent to printer')));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerPrintSuccess)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't print")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerPrintError)));
     }
   }
 
   Future<void> _protect() async {
+    final l10n = context.l10n;
     final password = await showPasswordDialog(context);
     if (password == null || password.isEmpty || !mounted) return;
     try {
@@ -331,13 +340,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Protected PDF ready')));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerProtectPdfSuccess)));
       unawaited(_shareQuietly(file));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't protect PDF")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerProtectPdfError)));
     }
   }
 
@@ -408,6 +417,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   Future<void> _persistReorder(List<PageImage> ordered) async {
+    final l10n = context.l10n;
     try {
       await widget.repository.reorderPages(
         widget.documentId,
@@ -417,7 +427,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't reorder pages")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerReorderPagesError)));
       _load();
     }
   }
@@ -453,12 +463,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final page = pages[_current];
     await _runEdit(
       () => widget.repository.rotatePage(widget.documentId, page.position),
-      "Couldn't rotate",
+      context.l10n.viewerRotateError,
     );
   }
 
   Future<void> _editCrop(PageImage pg) async {
     if (_editing) return;
+    final l10n = context.l10n;
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
         builder: (_) => EditCropScreen(
@@ -475,12 +486,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         pg.position,
         corners,
       ),
-      "Couldn't update crop",
+      l10n.viewerCropError,
     );
   }
 
   Future<void> _editFilter(PageImage pg) async {
     if (_editing) return;
+    final l10n = context.l10n;
     final mode = await Navigator.of(context).push<EnhancerMode>(
       MaterialPageRoute<EnhancerMode>(
         builder: (_) => EditFilterScreen(
@@ -496,38 +508,38 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         pg.position,
         mode,
       ),
-      "Couldn't change filter",
+      l10n.viewerFilterError,
     );
   }
 
   Future<void> _splitAfter() async {
+    final l10n = context.l10n;
     final pages = _pages;
     if (pages == null || pages.isEmpty) return;
     if (_current >= pages.length - 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This is the last page — nothing to split after.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerSplitLastPageWarning)));
       return;
     }
     final page = pages[_current];
     try {
       await widget.repository.splitAfter(widget.documentId, page.position);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Split into a new document')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerSplitSuccess)));
       await _load();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't split")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerSplitError)));
     }
   }
 
   Future<void> _mergeAnother() async {
+    final l10n = context.l10n;
     final sourceId = await showMergePicker(
       context,
       widget.repository,
@@ -542,7 +554,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't merge")));
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerMergeError)));
     }
   }
 
@@ -570,6 +582,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   Widget? _buildOverflowMenu() {
     final f = widget.features;
     if (!(f.rename || f.merge || f.split || f.deleteDocument)) return null;
+    final l10n = context.l10n;
     return PopupMenuButton<String>(
       key: const Key('page-viewer-page-menu'),
       enabled: !_actionsDisabled,
@@ -581,28 +594,28 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       },
       itemBuilder: (_) => [
         if (f.rename)
-          const PopupMenuItem<String>(
+          PopupMenuItem<String>(
             value: 'rename',
-            key: Key('page-viewer-rename'),
-            child: Text('Rename'),
+            key: const Key('page-viewer-rename'),
+            child: Text(l10n.commonRename),
           ),
         if (f.merge)
-          const PopupMenuItem<String>(
+          PopupMenuItem<String>(
             value: 'merge',
-            key: Key('page-viewer-merge'),
-            child: Text('Merge another document…'),
+            key: const Key('page-viewer-merge'),
+            child: Text(l10n.viewerMenuMerge),
           ),
         if (f.split)
-          const PopupMenuItem<String>(
+          PopupMenuItem<String>(
             value: 'split',
-            key: Key('page-viewer-split'),
-            child: Text('Split after this page'),
+            key: const Key('page-viewer-split'),
+            child: Text(l10n.viewerMenuSplit),
           ),
         if (f.deleteDocument)
-          const PopupMenuItem<String>(
+          PopupMenuItem<String>(
             value: 'delete',
-            key: Key('page-viewer-delete'),
-            child: Text('Delete document'),
+            key: const Key('page-viewer-delete'),
+            child: Text(l10n.viewerMenuDeleteDocument),
           ),
       ],
     );
@@ -613,6 +626,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   /// link/fax "extras". Item keys match the old overflow menu so behavior tests
   /// only change which control opens the menu.
   Future<void> _openShareMenu() async {
+    final l10n = context.l10n;
     final value = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -624,49 +638,49 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               ListTile(
                 key: const Key('page-viewer-export'),
                 leading: const Icon(Icons.picture_as_pdf),
-                title: const Text('Export PDF'),
+                title: Text(l10n.viewerShareExportPdf),
                 onTap: () => Navigator.of(ctx).pop('export-pdf'),
               ),
             if (widget.features.shareImage)
               ListTile(
                 key: const Key('page-viewer-export-image'),
                 leading: const Icon(Icons.image_outlined),
-                title: const Text('Share as image'),
+                title: Text(l10n.viewerShareAsImage),
                 onTap: () => Navigator.of(ctx).pop('export-image'),
               ),
             if (widget.features.exportAllImages)
               ListTile(
                 key: const Key('page-viewer-export-all-images'),
                 leading: const Icon(Icons.collections_outlined),
-                title: const Text('Share all as images'),
+                title: Text(l10n.viewerShareAllAsImages),
                 onTap: () => Navigator.of(ctx).pop('export-all-images'),
               ),
             if (widget.features.print)
               ListTile(
                 key: const Key('page-viewer-print'),
                 leading: const Icon(Icons.print_outlined),
-                title: const Text('Print'),
+                title: Text(l10n.viewerSharePrint),
                 onTap: () => Navigator.of(ctx).pop('print'),
               ),
             if (widget.features.protectWithPassword)
               ListTile(
                 key: const Key('page-viewer-protect'),
                 leading: const Icon(Icons.lock_outline),
-                title: const Text('Protect with password'),
+                title: Text(l10n.viewerShareProtect),
                 onTap: () => Navigator.of(ctx).pop('protect'),
               ),
             if (widget.features.shareLink)
               ListTile(
                 key: const Key('page-viewer-share-link'),
                 leading: const Icon(Icons.link),
-                title: const Text('Share link'),
+                title: Text(l10n.shareLink),
                 onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
               ),
             if (widget.features.fax)
               ListTile(
                 key: const Key('page-viewer-fax'),
                 leading: const Icon(Icons.print),
-                title: const Text('Fax'),
+                title: Text(l10n.shareFax),
                 onTap: () => Navigator.of(ctx).pop(kFaxValue),
               ),
           ],
@@ -760,25 +774,28 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     );
   }
 
-  Widget _buildError() => Center(
-    key: const Key('page-viewer-error'),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text("Couldn't load this document."),
-        const SizedBox(height: 8),
-        FilledButton(
-          key: const Key('page-viewer-retry'),
-          onPressed: _load,
-          child: const Text('Retry'),
-        ),
-      ],
-    ),
-  );
+  Widget _buildError() {
+    final l10n = context.l10n;
+    return Center(
+      key: const Key('page-viewer-error'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(l10n.viewerLoadError),
+          const SizedBox(height: 8),
+          FilledButton(
+            key: const Key('page-viewer-retry'),
+            onPressed: _load,
+            child: Text(l10n.commonRetry),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildEmpty() => const Center(
-    key: Key('page-viewer-empty'),
-    child: Text('This document has no pages.'),
+  Widget _buildEmpty() => Center(
+    key: const Key('page-viewer-empty'),
+    child: Text(context.l10n.viewerEmptyPages),
   );
 
   Widget _buildPages(List<PageImage> pages) {

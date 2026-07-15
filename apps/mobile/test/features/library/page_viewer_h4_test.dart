@@ -7,6 +7,7 @@ import 'package:mobile/features/scan/scan_screen.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> pushViewer(
@@ -15,7 +16,7 @@ void main() {
     ScanDependencies? deps,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Center(
             child: ElevatedButton(

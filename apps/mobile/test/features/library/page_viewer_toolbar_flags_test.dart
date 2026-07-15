@@ -5,6 +5,7 @@ import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> pumpViewer(
@@ -15,7 +16,7 @@ void main() {
       pages: const [PageImage(position: 1, imagePath: '/nonexistent/p.jpg')],
     );
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: PageViewerScreen(
           documentId: 1,
           name: 'Scan X',

@@ -4,6 +4,7 @@ import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_screen.dart';
 
 import '../../support/fake_library.dart';
+import '../../support/localized_app.dart';
 
 void main() {
   Future<void> pushViewer(
@@ -12,7 +13,7 @@ void main() {
     FakeShareChannel share,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedTestApp(
         home: Builder(
           builder: (context) => Center(
             child: ElevatedButton(
