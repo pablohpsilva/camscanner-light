@@ -3,6 +3,37 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/l10n/locale_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
+
+/// Fake platform implementation whose [getAll] always throws, so we can
+/// prove [SharedPrefsLocaleStore.load] swallows a store read failure and
+/// falls back to `null` (System default) instead of propagating.
+class _ThrowingSharedPreferencesStore extends SharedPreferencesStorePlatform {
+  @override
+  Future<bool> clear() => throw UnsupportedError('not used by this test');
+
+  @override
+  Future<bool> clearWithParameters(ClearParameters parameters) =>
+      throw UnsupportedError('not used by this test');
+
+  @override
+  Future<Map<String, Object>> getAll() =>
+      throw StateError('simulated store read failure');
+
+  @override
+  Future<Map<String, Object>> getAllWithParameters(
+    GetAllParameters parameters,
+  ) => throw StateError('simulated store read failure');
+
+  @override
+  Future<bool> remove(String key) =>
+      throw UnsupportedError('not used by this test');
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) =>
+      throw UnsupportedError('not used by this test');
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +70,22 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     expect(await SharedPrefsLocaleStore().load(), isNull);
     SharedPreferences.setMockInitialValues({'app_locale': 'xx_YY'});
+    expect(await SharedPrefsLocaleStore().load(), isNull);
+  });
+
+  test('SharedPrefsLocaleStore.load falls back to System default (null) '
+      'when the underlying store read throws', () async {
+    final original = SharedPreferencesStorePlatform.instance;
+    // SharedPreferences.getInstance() caches its result in a static
+    // completer; reset it so this test actually reaches the (throwing)
+    // platform instead of reusing a previous test's cached instance.
+    SharedPreferences.resetStatic();
+    SharedPreferencesStorePlatform.instance = _ThrowingSharedPreferencesStore();
+    addTearDown(() {
+      SharedPreferencesStorePlatform.instance = original;
+      SharedPreferences.resetStatic();
+    });
+
     expect(await SharedPrefsLocaleStore().load(), isNull);
   });
 

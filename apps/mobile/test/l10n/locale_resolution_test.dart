@@ -1,7 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/l10n/language_autonyms.dart';
 import 'package:mobile/l10n/locale_resolution.dart';
+import 'package:mobile/l10n/locale_store.dart';
 
 void main() {
   test('supported list has the 11 locales, en first', () {
@@ -9,6 +12,26 @@ void main() {
     expect(kSupportedAppLocales.first, const Locale('en'));
     expect(kSupportedAppLocales, contains(const Locale('pt', 'BR')));
     expect(kSupportedAppLocales, contains(const Locale('lb')));
+  });
+
+  test(
+    'AppLocalizations.supportedLocales stays in sync with kSupportedAppLocales '
+    '(guardrail: catches an ARB added without being offered/resolved, or '
+    'vice versa)',
+    () {
+      expect(
+        AppLocalizations.supportedLocales.toSet(),
+        kSupportedAppLocales.toSet(),
+      );
+    },
+  );
+
+  test('kLanguageAutonyms stays in sync with kSupportedAppLocales '
+      '(guardrail: catches an autonym-map drift)', () {
+    expect(
+      kLanguageAutonyms.keys.toSet(),
+      kSupportedAppLocales.map(localeTag).toSet(),
+    );
   });
 
   test('override wins over device locales', () {

@@ -82,6 +82,9 @@ dev_dependencies:
   # Used by the donation Ko-fi launch-mode test to mock UrlLauncherPlatform.
   url_launcher_platform_interface: ^2.3.2
   plugin_platform_interface: ^2.1.8
+  # Used by the locale-store test to mock SharedPreferencesStorePlatform
+  # (simulates a store read failure without a raw method-channel mock).
+  shared_preferences_platform_interface: ^2.4.1
 
 # opencv_dart 2.x native-assets module config: the app only uses core + imgproc
 # + imgcodecs (perspective warp, filters, contours, decode/encode). Excluding the

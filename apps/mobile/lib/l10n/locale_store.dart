@@ -30,10 +30,15 @@ class SharedPrefsLocaleStore implements LocaleStore {
 
   @override
   Future<Locale?> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final tag = prefs.getString(_key);
-    if (tag == null || tag == 'system') return null;
-    return localeFromTag(tag);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final tag = prefs.getString(_key);
+      if (tag == null || tag == 'system') return null;
+      return localeFromTag(tag);
+    } catch (_) {
+      // Store read failure -> controller falls back to System default.
+      return null;
+    }
   }
 
   @override
