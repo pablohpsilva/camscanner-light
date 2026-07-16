@@ -85,21 +85,17 @@ class SettingsScreen extends StatelessWidget {
                 key: const Key('settings-feedback'),
                 icon: Icons.chat_bubble_outline,
                 label: context.l10n.feedbackTitle,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        FeedbackScreen(dependencies: feedbackDependencies),
-                  ),
-                ),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(FeedbackScreen.route(feedbackDependencies)),
               ),
             if (donationsAvailable)
               _NavRow(
                 key: const Key('settings-support'),
                 icon: Icons.favorite_outline,
                 label: context.l10n.settingsSupportApp,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const DonationScreen()),
-                ),
+                onTap: () =>
+                    Navigator.of(context).push(DonationScreen.route()),
               ),
             const SizedBox(height: 36),
             _About(key: const Key('settings-about')),

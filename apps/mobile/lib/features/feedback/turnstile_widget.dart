@@ -46,7 +46,7 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         'TurnstileError',
         onMessageReceived: (_) => widget.onToken(null),
       )
-      ..loadHtmlString(_buildHtml(widget.siteKey), baseUrl: widget.baseUrl);
+      ..loadHtmlString(buildTurnstileHtml(widget.siteKey), baseUrl: widget.baseUrl);
   }
 
   @override
@@ -55,9 +55,18 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
   }
 }
 
-String _buildHtml(String siteKey) {
-  // siteKey is an alphanumeric Cloudflare key (e.g. "0x4AAAAAAA…").
-  // Simple interpolation is safe; the key never contains HTML metacharacters.
+/// Turnstile site keys are Cloudflare identifiers drawn only from
+/// `[A-Za-z0-9_-]` (e.g. "0x4AAAAAAA…"). Validating against this charset before
+/// interpolating the key into the `JavaScriptMode.unrestricted` WebView HTML
+/// closes the (build-time-constant, low-risk) raw-interpolation hole (P14 SF-3):
+/// a misconfigured key with any other character is dropped rather than injected.
+@visibleForTesting
+bool isValidTurnstileSiteKey(String siteKey) =>
+    RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(siteKey);
+
+@visibleForTesting
+String buildTurnstileHtml(String siteKey) {
+  final safeKey = isValidTurnstileSiteKey(siteKey) ? siteKey : '';
   return '''<!DOCTYPE html>
 <html>
 <head>
@@ -68,7 +77,7 @@ String _buildHtml(String siteKey) {
 </head>
 <body>
   <div class="cf-turnstile"
-       data-sitekey="$siteKey"
+       data-sitekey="$safeKey"
        data-callback="onOk"
        data-error-callback="onErr"
        data-expired-callback="onExp">

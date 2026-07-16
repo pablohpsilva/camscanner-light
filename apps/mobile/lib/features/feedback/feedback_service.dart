@@ -52,9 +52,13 @@ class FeedbackService {
           .post(base.replace(path: '/challenge'))
           .timeout(timeout);
       if (chalRes.statusCode != 200) return const FeedbackServerError();
-      final challenge =
-          (jsonDecode(chalRes.body) as Map<String, dynamic>)['challenge']
-              as String;
+      // Defensive parse (P14 SF-2): a malformed body or absent/non-string
+      // `challenge` yields a handled FeedbackServerError, consistent with the
+      // response mapping below, instead of a bare cast throwing.
+      final challenge = _json(chalRes)['challenge'];
+      if (challenge is! String || challenge.isEmpty) {
+        return const FeedbackServerError();
+      }
 
       // 2. Attestation over the challenge; null → rely on Turnstile.
       final att = await attestation.attest(challenge);

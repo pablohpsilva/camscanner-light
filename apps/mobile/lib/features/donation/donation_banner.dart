@@ -23,9 +23,7 @@ class DonationBanner extends StatelessWidget {
           ),
           child: InkWell(
             key: const Key('donation-banner'),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const DonationScreen()),
-            ),
+            onTap: () => Navigator.of(context).push(DonationScreen.route()),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(

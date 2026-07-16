@@ -24,10 +24,7 @@ class FeedbackDependencies {
   final FeedbackAvailabilityFactory? _createAvailability;
 
   const FeedbackDependencies({
-    this.config = const FeedbackConfig(
-      workerUrl: String.fromEnvironment('FEEDBACK_WORKER_URL'),
-      turnstileSiteKey: String.fromEnvironment('TURNSTILE_SITE_KEY'),
-    ),
+    this.config = FeedbackConfig.fromEnvironment,
     this.logger = _defaultLogger,
     // Named createService/createAvailability (not this._createService) so the
     // public constructor API keeps those names; the fields are deliberately

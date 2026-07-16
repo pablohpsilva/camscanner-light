@@ -47,6 +47,11 @@ class DonationScreen extends StatelessWidget {
   final DonationUrlOpener openUrl;
   final DonationClipboardWriter copyToClipboard;
 
+  /// The navigation route to this screen (P14 DUP-3) — one definition for the
+  /// donation banner and the settings entry point.
+  static Route<void> route() =>
+      MaterialPageRoute<void>(builder: (_) => const DonationScreen());
+
   Future<void> _openKofi(BuildContext context) async {
     final uri = Uri.tryParse(kofiUrl);
     if (uri == null) return;

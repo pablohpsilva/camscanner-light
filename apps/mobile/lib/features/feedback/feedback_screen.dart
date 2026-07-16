@@ -8,20 +8,9 @@ import '../../theme/widgets/ream_section_label.dart';
 import '../../theme/widgets/ream_segmented.dart';
 import 'feedback_dependencies.dart';
 import 'feedback_result.dart';
+import 'feedback_result_l10n.dart';
 import 'feedback_service.dart';
 import 'turnstile_widget.dart';
-
-/// Localized snackbar message for a [FeedbackResult]. Resolution happens in
-/// `build` (via `context.l10n`) since the switch has no `BuildContext` of its
-/// own — same pattern as `ExportQualityL10n`.
-String _messageFor(FeedbackResult r, AppLocalizations l10n) => switch (r) {
-  FeedbackSuccess() || FeedbackDuplicate() => l10n.feedbackSuccess,
-  FeedbackRateLimited() => l10n.feedbackRateLimited,
-  FeedbackRejectedUnverified() => l10n.feedbackRejectedUnverified,
-  FeedbackOffline() => l10n.feedbackOffline,
-  FeedbackInvalid() => l10n.feedbackInvalid,
-  FeedbackServerError() => l10n.feedbackServerError,
-};
 
 class FeedbackScreen extends StatefulWidget {
   final FeedbackDependencies dependencies;
@@ -30,6 +19,13 @@ class FeedbackScreen extends StatefulWidget {
     super.key,
     this.dependencies = const FeedbackDependencies(),
   });
+
+  /// The navigation route to this screen (P14 DUP-3) — one definition for the
+  /// settings entry point (and any future one).
+  static Route<void> route(FeedbackDependencies dependencies) =>
+      MaterialPageRoute<void>(
+        builder: (_) => FeedbackScreen(dependencies: dependencies),
+      );
 
   @override
   State<FeedbackScreen> createState() => _FeedbackScreenState();
@@ -75,7 +71,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   void _showResult(FeedbackResult r) {
-    final msg = _messageFor(r, context.l10n);
+    final msg = r.message(context.l10n);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     if (r is FeedbackSuccess || r is FeedbackDuplicate) {
       Navigator.of(context).maybePop();
@@ -243,12 +239,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
                 TurnstileWidget(
                   siteKey: widget.dependencies.config.turnstileSiteKey,
-                  baseUrl: () {
-                    final url = widget.dependencies.config.workerUrl;
-                    if (url.isEmpty) return 'https://localhost';
-                    final u = Uri.parse(url);
-                    return '${u.scheme}://${u.host}';
-                  }(),
+                  baseUrl: widget.dependencies.config.turnstileOrigin,
                   onToken: (t) => setState(() => _turnstileToken = t),
                 ),
               if (widget.dependencies.config.turnstileSiteKey.isNotEmpty)
