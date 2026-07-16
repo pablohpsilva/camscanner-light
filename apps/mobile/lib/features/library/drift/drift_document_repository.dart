@@ -26,23 +26,31 @@ import '../search/document_search_service.dart';
 import '../warp_enhancer.dart';
 import '../ocr/ocr_engine.dart';
 import '../ocr/ocr_result.dart';
+import '../ocr/ocr_service.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import 'app_database.dart' hide Document;
 import 'page_dao.dart';
 
-/// Drift-backed [DocumentRepository]. Scrubs the capture and writes the file
-/// OUTSIDE any transaction (so the write lock is never held across slow image
-/// work — P03 SAFE-02), then inserts the rows in a short transaction. Multi-row
-/// ops (`mergeInto`/`splitAfter`) commit all their row mutations atomically and
-/// clean up any append-only files on rollback (P03 SAFE-01). Stores RELATIVE
-/// image paths.
+/// Drift-backed [DocumentRepository] — the ONLY persistence type the widget
+/// layer sees. After P05 this is a thin COORDINATOR: it owns the capture-save /
+/// page-edit write path (create/add/replace/crop/rotate/enhance) and trivial
+/// document ops (rename/delete/markAsIdCard), and delegates the rest to focused
+/// collaborators — [DocumentSearchService] (listing + FTS/LIKE search),
+/// [DocumentExporter] (all export formats + the concrete PDF/compression
+/// impls), [PageOrderingService] (reorder/delete/merge/split with their P03
+/// atomicity), [PageDerivativePipeline] (flat regeneration), [PageDao] (page-row
+/// queries), and [OcrService] (page OCR).
+///
+/// Its own write path keeps the P03 discipline: the capture is scrubbed and the
+/// file written OUTSIDE any transaction (so the write lock is never held across
+/// slow image work — SAFE-02), then the rows are inserted in a short
+/// transaction. Stores RELATIVE image paths.
 class DriftDocumentRepository implements DocumentRepository {
   final AppDatabase _db;
   final ImageMetadataScrubber _scrubber;
   final DocumentFileStore _fileStore;
   final DateTime Function() _clock;
-  final OcrEngine _ocrEngine;
 
   /// Owns every export format + the concrete PDF-encryption/compression impls
   /// (P05 T05.4 / SOLID-02), so the persistence layer no longer constructs or
@@ -68,6 +76,9 @@ class DriftDocumentRepository implements DocumentRepository {
   /// Multi-row page ordering: reorder/delete/merge/split with their P03
   /// atomicity boundaries (P05 T05.6).
   final PageOrderingService _ordering;
+
+  /// Page OCR + the fire-and-forget post-save trigger (P05 T05.7).
+  final OcrService _ocr;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -102,6 +113,13 @@ class DriftDocumentRepository implements DocumentRepository {
          clock,
          logger,
        ),
+       _ocr = OcrService(
+         db,
+         fileStore,
+         PageDao(db, fileStore),
+         ocrEngine,
+         logger,
+       ),
        _exporter =
            exporter ??
            DocumentExporter(
@@ -109,8 +127,7 @@ class DriftDocumentRepository implements DocumentRepository {
              fileStore: fileStore,
              pdfBuilder: pdfBuilder,
              scrubber: scrubber,
-           ),
-       _ocrEngine = ocrEngine; // ignore: prefer_initializing_formals
+           );
 
   @override
   Future<Document> createFromCapture(
@@ -192,7 +209,7 @@ class DriftDocumentRepository implements DocumentRepository {
             ),
           );
       await _deleteTempSource(capture.path);
-      _triggerOcr(docId, 1);
+      _ocr.trigger(docId, 1);
       return Document(
         id: docId,
         name: name,
@@ -216,25 +233,9 @@ class DriftDocumentRepository implements DocumentRepository {
   Future<List<PageImage>> getDocumentPages(int documentId) =>
       _pageDao.getDocumentPages(documentId);
 
-  // Intentionally does NOT bump documents.modifiedAt: OCR is a derived,
-  // re-runnable cache, not user content, and a background run must not reorder
-  // the library by recency. Each run OVERWRITES the page's cached OCR (so a
-  // NoOp/failed pass clears it) — when O2 adds a real engine + auto-run, guard
-  // the trigger so a no-text pass can't wipe previously recognized text.
   @override
-  Future<void> runOcr(int documentId, int position) async {
-    final row = await _requirePage(documentId, position, 'runOcr');
-    // Recognize the DISPLAY image (flat derivative if present, else original).
-    final srcRel = row.flatRelativePath ?? row.relativeImagePath;
-    final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
-    final result = await _ocrEngine.recognize(bytes);
-    await (_db.update(_db.pages)..where((t) => t.id.equals(row.id))).write(
-      PagesCompanion(
-        ocrText: Value(result.text),
-        ocrBoxes: Value(result.encodeBoxes()),
-      ),
-    );
-  }
+  Future<void> runOcr(int documentId, int position) =>
+      _ocr.runOcr(documentId, position);
 
   @override
   Future<void> deleteDocument(int documentId) async {
@@ -507,7 +508,7 @@ class DriftDocumentRepository implements DocumentRepository {
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
       });
       await _deleteTempSource(capture.path);
-      _triggerOcr(documentId, newPosition);
+      _ocr.trigger(documentId, newPosition);
       return newPosition;
     } catch (e) {
       if (e is DocumentSaveException) rethrow;
@@ -581,17 +582,6 @@ class DriftDocumentRepository implements DocumentRepository {
   @override
   Future<Document> splitAfter(int documentId, int position) =>
       _ordering.splitAfter(documentId, position);
-
-  /// Fire-and-forget OCR after a save. Swallows errors — OCR must never fail a
-  /// save — and does not run for the NoOp engine (skips wasted work in tests).
-  void _triggerOcr(int documentId, int position) {
-    if (_ocrEngine is NoOpOcrEngine) return;
-    // ignore: discarded_futures
-    runOcr(documentId, position).catchError((Object e, StackTrace st) {
-      // OCR is a re-runnable cache: never fail a save, but no longer silent.
-      _logger.error(e, stackTrace: st, context: 'background OCR failed');
-    });
-  }
 
   String _defaultName(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
