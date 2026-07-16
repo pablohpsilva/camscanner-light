@@ -13,6 +13,12 @@ class DocumentFileStore {
   String relativeFor(int docId, int position) =>
       'documents/$docId/page_$position.jpg';
 
+  /// Collision-avoiding image path for a page copied INTO [docId] during a
+  /// merge, keyed by its [sourceDocId]/[sourcePosition] so two merged sources
+  /// can't clash. Keeps the merge naming convention in the store (P10 SAFE-05).
+  String mergedRelativeFor(int docId, int sourceDocId, int sourcePosition) =>
+      'documents/$docId/page_m${sourceDocId}_$sourcePosition.jpg';
+
   String flatRelativeFor(int docId, int position) =>
       'documents/$docId/page_${position}_flat.jpg';
 

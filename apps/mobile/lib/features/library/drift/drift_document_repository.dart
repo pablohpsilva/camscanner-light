@@ -731,6 +731,51 @@ class DriftDocumentRepository implements DocumentRepository {
             ..limit(1))
           .getSingleOrNull();
 
+  /// Copies [src]'s base image (and its flat derivative, if any) to [imageRel]
+  /// (+ the matching flat path), appending every written relative path to
+  /// [written] for rollback cleanup. Returns the new flat path, or null when
+  /// [src] had none. Shared by mergeInto/splitAfter (P10 DUP-02).
+  Future<String?> _copyPageFiles(
+    Page src,
+    String imageRel,
+    List<String> written,
+  ) async {
+    final srcBytes = await _fileStore
+        .absoluteFor(src.relativeImagePath)
+        .readAsBytes();
+    await _fileStore.writeRelative(imageRel, srcBytes);
+    written.add(imageRel);
+    if (src.flatRelativePath == null) return null;
+    final flatBytes = await _fileStore
+        .absoluteFor(src.flatRelativePath!)
+        .readAsBytes();
+    final flatRel = _fileStore.flatForImage(imageRel);
+    await _fileStore.writeRelative(flatRel, flatBytes);
+    written.add(flatRel);
+    return flatRel;
+  }
+
+  /// A [PagesCompanion] cloning ALL carried columns of [src] under a new
+  /// [documentId]/[position] with the copied [imageRel]/[flatRel] paths, so a
+  /// future column is added in ONE place, not two (P10 DUP-02).
+  PagesCompanion _cloneSourcePage(
+    Page src, {
+    required int documentId,
+    required int position,
+    required String imageRel,
+    required String? flatRel,
+  }) => PagesCompanion.insert(
+    documentId: documentId,
+    position: position,
+    relativeImagePath: imageRel,
+    corners: Value(src.corners),
+    flatRelativePath: Value(flatRel),
+    ocrText: Value(src.ocrText),
+    ocrBoxes: Value(src.ocrBoxes),
+    rotationQuarterTurns: Value(src.rotationQuarterTurns),
+    enhancerMode: Value(src.enhancerMode),
+  );
+
   @override
   Future<void> updatePageCorners(
     int documentId,
@@ -893,24 +938,29 @@ class DriftDocumentRepository implements DocumentRepository {
   @override
   Future<int> deletePage(int documentId, int position) async {
     final row = await _requirePage(documentId, position, 'deletePage');
-    final rows =
-        await (_db.select(_db.pages)
-              ..where((t) => t.documentId.equals(documentId))
-              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-            .get();
-    final remaining = rows.length - 1;
+    // Count pages with one aggregate (was: fetch every row just to count) so we
+    // can tell "only page" from "renumber survivors" (P10 CPLX-02).
+    final countExp = _db.pages.id.count();
+    final total =
+        (await (_db.selectOnly(_db.pages)
+                  ..addColumns([countExp])
+                  ..where(_db.pages.documentId.equals(documentId)))
+                .getSingle())
+            .read(countExp) ??
+        0;
+    final remaining = total - 1;
 
     await _db.transaction(() async {
       await (_db.delete(_db.pages)..where((t) => t.id.equals(row.id))).go();
       if (remaining > 0) {
-        // Renumber survivors whose position was above the deleted one: -1.
-        for (final r in rows) {
-          if (r.id == row.id) continue;
-          if (r.position > position) {
-            await (_db.update(_db.pages)..where((t) => t.id.equals(r.id)))
-                .write(PagesCompanion(position: Value(r.position - 1)));
-          }
-        }
+        // Renumber survivors above the deleted position in ONE bulk UPDATE
+        // (was O(pages) round-trips). `updates:` keeps drift streams live.
+        await _db.customUpdate(
+          'UPDATE pages SET position = position - 1 '
+          'WHERE document_id = ? AND position > ?',
+          variables: [Variable.withInt(documentId), Variable.withInt(position)],
+          updates: {_db.pages},
+        );
         await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
       } else {
@@ -1044,33 +1094,19 @@ class DriftDocumentRepository implements DocumentRepository {
       var k = 0;
       for (final src in sourcePages) {
         k++;
-        final imageRel =
-            'documents/$targetDocumentId/page_m${sourceDocumentId}_${src.position}.jpg';
-        final srcBytes = await _fileStore
-            .absoluteFor(src.relativeImagePath)
-            .readAsBytes();
-        await _fileStore.writeRelative(imageRel, srcBytes);
-        written.add(imageRel);
-        String? flatRel;
-        if (src.flatRelativePath != null) {
-          final flatBytes = await _fileStore
-              .absoluteFor(src.flatRelativePath!)
-              .readAsBytes();
-          flatRel = _fileStore.flatForImage(imageRel);
-          await _fileStore.writeRelative(flatRel, flatBytes);
-          written.add(flatRel);
-        }
+        final imageRel = _fileStore.mergedRelativeFor(
+          targetDocumentId,
+          sourceDocumentId,
+          src.position,
+        );
+        final flatRel = await _copyPageFiles(src, imageRel, written);
         inserts.add(
-          PagesCompanion.insert(
+          _cloneSourcePage(
+            src,
             documentId: targetDocumentId,
             position: targetMax + k,
-            relativeImagePath: imageRel,
-            corners: Value(src.corners),
-            flatRelativePath: Value(flatRel),
-            ocrText: Value(src.ocrText),
-            ocrBoxes: Value(src.ocrBoxes),
-            rotationQuarterTurns: Value(src.rotationQuarterTurns),
-            enhancerMode: Value(src.enhancerMode),
+            imageRel: imageRel,
+            flatRel: flatRel,
           ),
         );
       }
@@ -1148,32 +1184,15 @@ class DriftDocumentRepository implements DocumentRepository {
       var k = 0;
       for (final src in moved) {
         k++;
-        final imageRel = 'documents/$newId/page_$k.jpg';
-        final bytes = await _fileStore
-            .absoluteFor(src.relativeImagePath)
-            .readAsBytes();
-        await _fileStore.writeRelative(imageRel, bytes);
-        written.add(imageRel);
-        String? flatRel;
-        if (src.flatRelativePath != null) {
-          final flatBytes = await _fileStore
-              .absoluteFor(src.flatRelativePath!)
-              .readAsBytes();
-          flatRel = _fileStore.flatForImage(imageRel);
-          await _fileStore.writeRelative(flatRel, flatBytes);
-          written.add(flatRel);
-        }
+        final imageRel = _fileStore.relativeFor(newId, k);
+        final flatRel = await _copyPageFiles(src, imageRel, written);
         inserts.add(
-          PagesCompanion.insert(
+          _cloneSourcePage(
+            src,
             documentId: newId,
             position: k,
-            relativeImagePath: imageRel,
-            corners: Value(src.corners),
-            flatRelativePath: Value(flatRel),
-            ocrText: Value(src.ocrText),
-            ocrBoxes: Value(src.ocrBoxes),
-            rotationQuarterTurns: Value(src.rotationQuarterTurns),
-            enhancerMode: Value(src.enhancerMode),
+            imageRel: imageRel,
+            flatRel: flatRel,
           ),
         );
       }

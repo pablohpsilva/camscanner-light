@@ -16,6 +16,17 @@ void main() {
     expect(store.relativeFor(7, 1), 'documents/7/page_1.jpg');
   });
 
+  test('mergedRelativeFor keys the copy by source doc + position (P10)', () {
+    final store = DocumentFileStore(base);
+    // Freeze the collision-avoiding merge naming convention.
+    expect(store.mergedRelativeFor(7, 3, 2), 'documents/7/page_m3_2.jpg');
+    // Two different sources merged into the same target never collide.
+    expect(
+      store.mergedRelativeFor(7, 4, 2),
+      isNot(store.mergedRelativeFor(7, 3, 2)),
+    );
+  });
+
   test('writeRelative creates dirs and writes bytes', () async {
     final store = DocumentFileStore(base);
     final rel = store.relativeFor(7, 1);
