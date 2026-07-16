@@ -1,32 +1,42 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
+import '../share/share_action.dart';
 
 /// Menu values for the shared "extra" share actions.
 const String kShareLinkValue = 'share-link';
 const String kFaxValue = 'fax';
 
-/// The shared Share-link (+ Fax unless [showFax] is false) menu entries.
-/// [keyPrefix] namespaces the item keys so multiple menus stay unique
-/// (e.g. 'document-42', 'page-viewer', 'share-menu').
+/// The shared Share-link (+ Fax unless [showFax] is false) menu entries, built
+/// from the [ShareAction] model (P11) so the keys and labels have a single
+/// source. Dispatch stays string-valued because these popups mix
+/// share/rename/link/fax in one `PopupMenuButton<String>`; [showShareLink] /
+/// [showFax] gate the two extras independently (a surface may pass raw booleans,
+/// not a FeatureFlags). [keyPrefix] namespaces the item keys so multiple menus
+/// stay unique (e.g. 'document-42', 'page-viewer', 'share-menu').
 List<PopupMenuEntry<String>> shareExtraMenuItems({
   required BuildContext context,
   required bool showFax,
   required String keyPrefix,
   bool showShareLink = true,
-}) => [
-  if (showShareLink)
-    PopupMenuItem<String>(
-      value: kShareLinkValue,
-      key: Key('$keyPrefix-share-link'),
-      child: Text(context.l10n.shareLink),
-    ),
-  if (showFax)
-    PopupMenuItem<String>(
-      value: kFaxValue,
-      key: Key('$keyPrefix-fax'),
-      child: Text(context.l10n.shareFax),
-    ),
-];
+}) {
+  final l10n = context.l10n;
+  bool included(ShareActionKind kind) =>
+      kind == ShareActionKind.fax ? showFax : showShareLink;
+  return [
+    for (final action in const [
+      ShareAction(ShareActionKind.shareLink),
+      ShareAction(ShareActionKind.fax),
+    ])
+      if (included(action.kind))
+        PopupMenuItem<String>(
+          value: action.kind == ShareActionKind.fax
+              ? kFaxValue
+              : kShareLinkValue,
+          key: action.keyFor(keyPrefix),
+          child: Text(action.label(l10n)),
+        ),
+  ];
+}
 
 /// Handles a tap on a shared extra action. This release only ships the
 /// not-available path: it shows the "…isn't available yet" SnackBar. When a real
