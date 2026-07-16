@@ -9,7 +9,7 @@ import '../../../core/logging/app_logger.dart';
 
 import '../../scan/captured_image.dart';
 import '../crop_corners.dart';
-import '../document.dart';
+import '../document.dart' hide Page;
 import '../document_file_store.dart';
 import '../document_repository.dart';
 import '../document_summary.dart';
@@ -333,11 +333,7 @@ class DriftDocumentRepository implements DocumentRepository {
             imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
             corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
             rotationQuarterTurns: pg.rotationQuarterTurns,
-            enhancerMode:
-                (pg.enhancerMode >= 0 &&
-                    pg.enhancerMode < EnhancerMode.values.length)
-                ? EnhancerMode.values[pg.enhancerMode]
-                : EnhancerMode.none,
+            enhancerMode: EnhancerMode.fromIndex(pg.enhancerMode),
             flatImagePath: pg.flatRelativePath == null
                 ? null
                 : _fileStore.absoluteFor(pg.flatRelativePath!).path,
@@ -355,15 +351,7 @@ class DriftDocumentRepository implements DocumentRepository {
   // the trigger so a no-text pass can't wipe previously recognized text.
   @override
   Future<void> runOcr(int documentId, int position) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row == null) {
-      throw DocumentSaveException('runOcr: no page ($documentId, $position)');
-    }
+    final row = await _requirePage(documentId, position, 'runOcr');
     // Recognize the DISPLAY image (flat derivative if present, else original).
     final srcRel = row.flatRelativePath ?? row.relativeImagePath;
     final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
@@ -509,17 +497,12 @@ class DriftDocumentRepository implements DocumentRepository {
     int position, {
     ExportQuality quality = ExportQuality.original,
   }) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row == null) {
-      throw DocumentExportException(
-        'exportImage failed: no page ($documentId, $position)',
-      );
-    }
+    final row = await _requirePage(
+      documentId,
+      position,
+      'exportImage failed',
+      export: true,
+    );
     try {
       // Display image: the flattened derivative when present, else the original.
       final srcRel = row.flatRelativePath ?? row.relativeImagePath;
@@ -561,17 +544,12 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<File> exportRecognizedText(int documentId, int position) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row == null) {
-      throw DocumentExportException(
-        'exportText failed: no page ($documentId, $position)',
-      );
-    }
+    final row = await _requirePage(
+      documentId,
+      position,
+      'exportText failed',
+      export: true,
+    );
     final text = row.ocrText;
     if (text == null || text.trim().isEmpty) {
       throw const DocumentExportException(
@@ -721,10 +699,37 @@ class DriftDocumentRepository implements DocumentRepository {
     );
   }
 
-  static EnhancerMode _modeOf(int index) =>
-      (index >= 0 && index < EnhancerMode.values.length)
-      ? EnhancerMode.values[index]
-      : EnhancerMode.none;
+  /// Fetches the ([documentId], [position]) page row or throws (P10 DUP-01).
+  /// [op] is the message prefix; when [export] is true the failure is a
+  /// [DocumentExportException] (the export methods), else a
+  /// [DocumentSaveException]. Single source of the "require page" pattern.
+  Future<Page> _requirePage(
+    int documentId,
+    int position,
+    String op, {
+    bool export = false,
+  }) async {
+    final row =
+        await (_db.select(_db.pages)..where(
+              (t) =>
+                  t.documentId.equals(documentId) & t.position.equals(position),
+            ))
+            .getSingleOrNull();
+    if (row != null) return row;
+    final message = '$op: no page ($documentId, $position)';
+    throw export
+        ? DocumentExportException(message)
+        : DocumentSaveException(message);
+  }
+
+  /// Highest-position page row for [documentId], or null when it has none
+  /// (P10 DUP-01). Callers decide whether "no pages" is an error.
+  Future<Page?> _maxPositionPage(int documentId) =>
+      (_db.select(_db.pages)
+            ..where((p) => p.documentId.equals(documentId))
+            ..orderBy([(p) => OrderingTerm.desc(p.position)])
+            ..limit(1))
+          .getSingleOrNull();
 
   @override
   Future<void> updatePageCorners(
@@ -732,24 +737,14 @@ class DriftDocumentRepository implements DocumentRepository {
     int position,
     CropCorners corners,
   ) async {
-    final page =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (page == null) {
-      throw DocumentSaveException(
-        'updatePageCorners: no page ($documentId, $position)',
-      );
-    }
+    final page = await _requirePage(documentId, position, 'updatePageCorners');
     // Corners arrive already in the DISPLAY frame (post-rotation) from the
     // editor; rotation is unchanged by a crop.
     final flatRel = await _writeFlat(
       relativeImagePath: page.relativeImagePath,
       quarterTurns: page.rotationQuarterTurns,
       corners: corners,
-      mode: _modeOf(page.enhancerMode),
+      mode: EnhancerMode.fromIndex(page.enhancerMode),
       existingFlatRel: page.flatRelativePath,
     );
     final isFullFrame = corners == CropCorners.fullFrame;
@@ -766,17 +761,7 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<void> rotatePage(int documentId, int position) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row == null) {
-      throw DocumentSaveException(
-        'rotatePage: no page ($documentId, $position)',
-      );
-    }
+    final row = await _requirePage(documentId, position, 'rotatePage');
     final turns = (row.rotationQuarterTurns + 1) % 4;
     // Keep the same physical crop in the newly-rotated display frame.
     final corners = (CropCorners.tryParse(row.corners) ?? CropCorners.fullFrame)
@@ -786,7 +771,7 @@ class DriftDocumentRepository implements DocumentRepository {
       relativeImagePath: row.relativeImagePath,
       quarterTurns: turns,
       corners: corners,
-      mode: _modeOf(row.enhancerMode),
+      mode: EnhancerMode.fromIndex(row.enhancerMode),
       existingFlatRel: row.flatRelativePath,
     );
 
@@ -820,17 +805,7 @@ class DriftDocumentRepository implements DocumentRepository {
     int position,
     EnhancerMode mode,
   ) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row == null) {
-      throw DocumentSaveException(
-        'updatePageEnhancer: no page ($documentId, $position)',
-      );
-    }
+    final row = await _requirePage(documentId, position, 'updatePageEnhancer');
     final corners = CropCorners.tryParse(row.corners) ?? CropCorners.fullFrame;
     final flatRel = await _writeFlat(
       relativeImagePath: row.relativeImagePath,
@@ -859,12 +834,7 @@ class DriftDocumentRepository implements DocumentRepository {
     try {
       // Short read for the next position — no lock held across image work
       // (P03 SAFE-02).
-      final maxRow =
-          await (_db.select(_db.pages)
-                ..where((p) => p.documentId.equals(documentId))
-                ..orderBy([(p) => OrderingTerm.desc(p.position)])
-                ..limit(1))
-              .getSingleOrNull();
+      final maxRow = await _maxPositionPage(documentId);
       if (maxRow == null) {
         throw DocumentSaveException('document $documentId has no pages');
       }
@@ -922,17 +892,7 @@ class DriftDocumentRepository implements DocumentRepository {
 
   @override
   Future<int> deletePage(int documentId, int position) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row == null) {
-      throw DocumentSaveException(
-        'deletePage: no page ($documentId, $position)',
-      );
-    }
+    final row = await _requirePage(documentId, position, 'deletePage');
     final rows =
         await (_db.select(_db.pages)
               ..where((t) => t.documentId.equals(documentId))
@@ -990,18 +950,7 @@ class DriftDocumentRepository implements DocumentRepository {
     ImageEnhancer? enhancer,
   }) async {
     try {
-      final row =
-          await (_db.select(_db.pages)..where(
-                (t) =>
-                    t.documentId.equals(documentId) &
-                    t.position.equals(position),
-              ))
-              .getSingleOrNull();
-      if (row == null) {
-        throw DocumentSaveException(
-          'replacePage: no page ($documentId, $position)',
-        );
-      }
+      final row = await _requirePage(documentId, position, 'replacePage');
 
       final raw = await File(capture.path).readAsBytes();
       final Uint8List scrubbed = _scrubber.scrub(ensureJpegBytes(raw));
@@ -1081,12 +1030,7 @@ class DriftDocumentRepository implements DocumentRepository {
     }
     final written = <String>[];
     try {
-      final maxRow =
-          await (_db.select(_db.pages)
-                ..where((p) => p.documentId.equals(targetDocumentId))
-                ..orderBy([(p) => OrderingTerm.desc(p.position)])
-                ..limit(1))
-              .getSingleOrNull();
+      final maxRow = await _maxPositionPage(targetDocumentId);
       final targetMax = maxRow?.position ?? 0;
       final sourcePages =
           await (_db.select(_db.pages)
