@@ -22,6 +22,7 @@ import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
 import '../page_processor.dart';
+import '../search/fts_query_sanitizer.dart';
 import '../warp_enhancer.dart';
 import '../ocr/ocr_engine.dart';
 import '../ocr/ocr_result.dart';
@@ -191,30 +192,20 @@ class DriftDocumentRepository implements DocumentRepository {
   @override
   Future<List<DocumentSummary>> listDocumentSummaries() => _summaries();
 
-  // FTS5 operator characters stripped from every term before it reaches MATCH.
-  static final RegExp _ftsOps = RegExp(r'''["*:^()\-]''');
-  static const Set<String> _ftsKeywords = {'and', 'or', 'not', 'near'};
-
-  // Raw query → safe search terms: operator chars removed, bareword boolean
-  // keywords dropped, empties discarded. Never yields FTS syntax.
-  List<String> _searchTerms(String q) => q
-      .split(RegExp(r'\s+'))
-      .map((t) => t.replaceAll(_ftsOps, ''))
-      .where((t) => t.isNotEmpty && !_ftsKeywords.contains(t.toLowerCase()))
-      .toList();
+  // Pure, exhaustively-tested FTS query sanitization (P05 SAFE-06). Static const
+  // — no per-instance state; T05.6 moves it into DocumentSearchService.
+  static const FtsQuerySanitizer _sanitizer = FtsQuerySanitizer();
 
   @override
   Future<List<DocumentSummary>> searchDocuments(String query) async {
     final q = query.trim();
     if (q.isEmpty) return _summaries();
-    final terms = _searchTerms(q);
+    final sanitized = _sanitizer.sanitize(query);
     // Trigram MATCH needs every term >= 3 chars; anything shorter (or a query
     // that sanitizes to nothing) falls back to the unranked LIKE scan so short
     // words still match as substrings.
-    if (terms.isEmpty || terms.any((t) => t.length < 3)) {
-      return _searchByLike(q);
-    }
-    return _searchRanked(q, terms);
+    if (sanitized.useLike) return _searchByLike(q);
+    return _searchRanked(q, sanitized.matchExpr);
   }
 
   // Unranked substring search (pre-FTS O5 behavior): name OR any page ocr_text
@@ -241,9 +232,8 @@ class DriftDocumentRepository implements DocumentRepository {
   // name matches ordered first. Returns summaries in relevance order.
   Future<List<DocumentSummary>> _searchRanked(
     String q,
-    List<String> terms,
+    String matchExpr,
   ) async {
-    final matchExpr = terms.map((t) => '"$t"').join(' AND ');
     final rows = await _db
         .customSelect(
           'SELECT rowid AS did, bm25(doc_fts) AS score '
