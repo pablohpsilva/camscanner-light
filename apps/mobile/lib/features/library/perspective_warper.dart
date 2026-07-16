@@ -179,7 +179,9 @@ img.Image warpPerspectiveToImage(
             srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
         final bot =
             srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
-        out[o + ch] = (top + (bot - top) * wy).round().clamp(0, 255);
+        // Bilinear interp of in-[0,255] bytes stays in [0,255], so .round()
+        // alone is exact — the old .clamp(0,255) was a proven no-op (P09).
+        out[o + ch] = (top + (bot - top) * wy).round();
       }
       o += 3;
     }

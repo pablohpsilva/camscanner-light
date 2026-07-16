@@ -170,13 +170,26 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
   final stride = sw * 3;
   final xMax = (sw - 1).toDouble(), yMax = (sh - 1).toDouble();
   final out = Uint8List(outW * outH * 3);
+
+  // Precompute the top/bottom edge curves per COLUMN (P09 perf): top(u)/bottom(u)
+  // depend only on the column u, so evaluating them inside the pixel loop was
+  // outW*outH redundant quadratic-Bézier evals. Mirrors the per-row left/right
+  // hoist below; arithmetically identical.
+  final topPts = List<Offset>.filled(outW, Offset.zero);
+  final botPts = List<Offset>.filled(outW, Offset.zero);
+  for (int dx = 0; dx < outW; dx++) {
+    final u = dx / (outW - 1);
+    topPts[dx] = top(u);
+    botPts[dx] = bottom(u);
+  }
+
   var o = 0;
   for (int dy = 0; dy < outH; dy++) {
     final v = dy / (outH - 1);
     final lc = left(v), rc = right(v);
     for (int dx = 0; dx < outW; dx++) {
       final u = dx / (outW - 1);
-      final tc = top(u), bc = bottom(u);
+      final tc = topPts[dx], bc = botPts[dx];
       final bx =
           (1 - u) * (1 - v) * tl.dx +
           u * (1 - v) * tr.dx +
@@ -203,7 +216,9 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
       for (var ch = 0; ch < 3; ch++) {
         final t = srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
         final b = srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
-        out[o + ch] = (t + (b - t) * wy).round().clamp(0, 255);
+        // Bilinear interp of in-[0,255] bytes stays in [0,255], so .round()
+        // alone is exact — the old .clamp(0,255) was a proven no-op (P09).
+        out[o + ch] = (t + (b - t) * wy).round();
       }
       o += 3;
     }
