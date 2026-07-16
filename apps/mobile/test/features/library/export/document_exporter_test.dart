@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
@@ -12,6 +13,23 @@ import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/pdf/pdf_encryptor.dart';
+
+/// Records every SELECT so a test can count per-table query fan-out (P12 PERF-02).
+class _SelectSpy extends QueryInterceptor {
+  final statements = <String>[];
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) {
+    statements.add(statement);
+    return super.runSelect(executor, statement, args);
+  }
+
+  int selectsOn(String table) =>
+      statements.where((s) => s.contains('"$table"')).length;
+}
 
 /// A PdfBuilder that returns fixed bytes (or throws a supplied error).
 class _FakePdfBuilder extends PdfBuilder {
@@ -41,11 +59,13 @@ class _RecordingEncryptor implements PdfEncryptor {
 
 void main() {
   late AppDatabase db;
+  late _SelectSpy spy;
   late Directory base;
   late DocumentFileStore store;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
+    spy = _SelectSpy();
+    db = AppDatabase(NativeDatabase.memory().interceptWith(spy));
     base = Directory.systemTemp.createTempSync('exporter');
     store = DocumentFileStore(base);
   });
@@ -84,6 +104,17 @@ void main() {
           ocrText: Value(ocrText),
         ),
       );
+
+  // Seeds a page whose image file actually exists on disk (a tiny real JPEG),
+  // so the image-export path can read/compress/scrub it.
+  Future<void> addPageWithFile(int docId, int pos) async {
+    final rel = store.relativeFor(docId, pos);
+    await store.writeRelative(
+      rel,
+      img.encodeJpg(img.Image(width: 8, height: 8)),
+    );
+    await addPage(docId, pos);
+  }
 
   group('exportPdf', () {
     test('writes a temp PDF named from the sanitized document name', () async {
@@ -181,6 +212,39 @@ void main() {
       expect(
         () => exporter().exportRecognizedText(id, 1),
         throwsA(isA<DocumentExportException>()),
+      );
+    });
+  });
+
+  group('query fan-out (P12 PERF-02)', () {
+    test(
+      'PERF-02b: exportPdf reads the documents row ONCE (was twice)',
+      () async {
+        final id = await newDoc('Doc', idCard: true);
+        await addPage(id, 1);
+        spy.statements.clear();
+        await exporter().exportPdf(id);
+        expect(
+          spy.selectsOn('documents'),
+          1,
+          reason: 'isIdCard + filename must share one doc fetch',
+        );
+      },
+    );
+
+    test('PERF-02a: exportAllPagesAsImages reads the pages table ONCE '
+        '(no per-page re-select)', () async {
+      final id = await newDoc('Doc');
+      await addPageWithFile(id, 1);
+      await addPageWithFile(id, 2);
+      await addPageWithFile(id, 3);
+      spy.statements.clear();
+      final files = await exporter().exportAllPagesAsImages(id);
+      expect(files.length, 3);
+      expect(
+        spy.selectsOn('pages'),
+        1,
+        reason: 'pages loaded once; no per-page requirePage re-select',
       );
     });
   });

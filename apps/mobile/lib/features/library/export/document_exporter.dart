@@ -51,14 +51,14 @@ class DocumentExporter {
       throw const DocumentExportException('export failed: no pages');
     }
     try {
+      final doc = await _docRow(documentId); // ONE doc fetch (PERF-02b)
       final bytes = await _pdfBuilder.build(
         pages,
         quality: quality,
-        idCardLayout: await _isIdCard(documentId),
+        idCardLayout: doc?.isIdCard ?? false,
       );
       final dir = await Directory.systemTemp.createTemp('pdf_export');
-      final safeName = await _pdfFileNameFor(documentId);
-      final file = File('${dir.path}/$safeName');
+      final file = File('${dir.path}/${_sanitizeName(doc?.name)}.pdf');
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
@@ -111,14 +111,14 @@ class DocumentExporter {
       throw const DocumentExportException('protect failed: no pages');
     }
     try {
+      final doc = await _docRow(documentId); // ONE doc fetch (PERF-02b)
       final bytes = await _pdfBuilder.build(
         pages,
-        idCardLayout: await _isIdCard(documentId),
+        idCardLayout: doc?.isIdCard ?? false,
       );
       final encrypted = await _encryptor.encrypt(bytes, password);
       final dir = await Directory.systemTemp.createTemp('pdf_protect');
-      final safeName = await _pdfFileNameFor(documentId);
-      final file = File('${dir.path}/$safeName');
+      final file = File('${dir.path}/${_sanitizeName(doc?.name)}.pdf');
       await file.writeAsBytes(encrypted);
       return file;
     } catch (e) {
@@ -138,25 +138,15 @@ class DocumentExporter {
       'exportImage failed',
       export: true,
     );
-    try {
-      // Display image: the flattened derivative when present, else the original.
-      final srcRel = row.flatRelativePath ?? row.relativeImagePath;
-      final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
-      final compressed = await _compressor.compress(bytes, quality);
-      final scrubbed = _scrubber.scrub(compressed); // privacy: always scrub
-      // Privacy: write to the OS temp/cache dir, NOT the persistent document
-      // store. The store is included in Google/iCloud backups and would let
-      // export derivatives accumulate there forever; temp is self-purging and
-      // backup-excluded (same temp-file discipline as the PDF/text exports).
-      final dir = await Directory.systemTemp.createTemp('img_export');
-      final base = await _exportBaseName(documentId);
-      final file = File('${dir.path}/${base}_page_$position.jpg');
-      await file.writeAsBytes(scrubbed, flush: true);
-      return file;
-    } catch (e) {
-      if (e is DocumentExportException) rethrow;
-      throw DocumentExportException('exportImage failed: $e');
-    }
+    // Display image: the flattened derivative when present, else the original.
+    final srcRel = row.flatRelativePath ?? row.relativeImagePath;
+    final base = await _exportBaseName(documentId);
+    return _writePageImageFile(
+      _fileStore.absoluteFor(srcRel).path,
+      base,
+      position,
+      quality,
+    );
   }
 
   Future<List<File>> exportAllPagesAsImages(
@@ -167,13 +157,48 @@ class DocumentExporter {
     if (pages.isEmpty) {
       throw const DocumentExportException('exportAll failed: no pages');
     }
+    // Reuse the already-loaded pages + one base-name fetch — no per-page row
+    // re-select (PERF-02a).
+    final base = await _exportBaseName(documentId);
     final files = <File>[];
     for (final page in pages) {
       files.add(
-        await exportPageAsImage(documentId, page.position, quality: quality),
+        await _writePageImageFile(
+          page.displayPath,
+          base,
+          page.position,
+          quality,
+        ),
       );
     }
     return files;
+  }
+
+  /// Compresses + scrubs the display image at [displayAbsPath] and writes it to
+  /// a temp `<base>_page_<position>.jpg`. Shared by the single- and all-pages
+  /// image exports so a page row is selected at most once (PERF-02a).
+  ///
+  /// Privacy: writes to the OS temp/cache dir, NOT the persistent document store
+  /// (which is backed up to Google/iCloud) — temp is self-purging and
+  /// backup-excluded, same discipline as the PDF/text exports.
+  Future<File> _writePageImageFile(
+    String displayAbsPath,
+    String baseName,
+    int position,
+    ExportQuality quality,
+  ) async {
+    try {
+      final bytes = await File(displayAbsPath).readAsBytes();
+      final compressed = await _compressor.compress(bytes, quality);
+      final scrubbed = _scrubber.scrub(compressed); // privacy: always scrub
+      final dir = await Directory.systemTemp.createTemp('img_export');
+      final file = File('${dir.path}/${baseName}_page_$position.jpg');
+      await file.writeAsBytes(scrubbed, flush: true);
+      return file;
+    } catch (e) {
+      if (e is DocumentExportException) rethrow;
+      throw DocumentExportException('exportImage failed: $e');
+    }
   }
 
   Future<File> exportRecognizedText(int documentId, int position) async {
@@ -201,25 +226,23 @@ class DocumentExporter {
     }
   }
 
-  Future<bool> _isIdCard(int documentId) async {
-    final row = await (_db.select(
-      _db.documents,
-    )..where((d) => d.id.equals(documentId))).getSingleOrNull();
-    return row?.isIdCard ?? false;
-  }
+  /// The documents row for [documentId], fetched ONCE per export so callers
+  /// thread `name`/`isIdCard` instead of re-querying per helper (PERF-02b).
+  Future<Document?> _docRow(int documentId) => (_db.select(
+    _db.documents,
+  )..where((d) => d.id.equals(documentId))).getSingleOrNull();
 
-  /// Sanitized base name (no extension) from the document's name; 'document'
-  /// when the name is empty/unknown. Shared by all export filename builders.
-  Future<String> _exportBaseName(int documentId) async {
-    final doc = await (_db.select(
-      _db.documents,
-    )..where((d) => d.id.equals(documentId))).getSingleOrNull();
-    final base = (doc?.name ?? 'document')
+  /// Sanitized base name (no extension) from an already-fetched document [name];
+  /// 'document' when empty/unknown. Pure — shared by every filename builder.
+  String _sanitizeName(String? name) {
+    final base = (name ?? 'document')
         .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
         .trim();
     return base.isEmpty ? 'document' : base;
   }
 
-  Future<String> _pdfFileNameFor(int documentId) async =>
-      '${await _exportBaseName(documentId)}.pdf';
+  /// Sanitized base name for [documentId] — one doc fetch (PERF-02b). Used by
+  /// the image/text exports, which need only the name.
+  Future<String> _exportBaseName(int documentId) async =>
+      _sanitizeName((await _docRow(documentId))?.name);
 }
