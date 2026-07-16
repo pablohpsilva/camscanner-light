@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
 import '../../theme/ream_typography.dart';
+import '../../core/ui/error_snack.dart';
 import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import 'donation_config.dart';
@@ -35,9 +36,7 @@ class DonationScreen extends StatelessWidget {
       // fall through to failure feedback
     }
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.donationErrorOpenKofi)));
+    context.showErrorSnack(context.l10n.donationErrorOpenKofi);
   }
 
   Future<void> _copyAddress(BuildContext context) async {

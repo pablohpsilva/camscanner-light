@@ -6,6 +6,7 @@ import 'share_channel.dart';
 
 import '../../l10n/l10n.dart';
 import '../../theme/ream_colors.dart';
+import '../../core/ui/error_snack.dart';
 import '../../theme/widgets/confidence_chip.dart';
 import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_back_header.dart';
@@ -78,9 +79,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.ocrErrorRecognize)));
+      context.showErrorSnack(l10n.ocrErrorRecognize);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -107,9 +106,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
       await widget.share.share([file.path], subject: widget.name);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.ocrErrorExport)));
+      context.showErrorSnack(l10n.ocrErrorExport);
     }
   }
 

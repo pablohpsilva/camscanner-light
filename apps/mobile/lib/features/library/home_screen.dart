@@ -218,15 +218,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _shareDocument(DocumentSummary s) async {
     final l10n = context.l10n;
     final result = await _lib.shareDocument(s);
-    if (result == false && mounted)
+    if (result == false && mounted) {
       context.showErrorSnack(l10n.commonErrorShare);
+    }
   }
 
   Future<void> _exportSelected() async {
     final l10n = context.l10n;
     final result = await _lib.exportSelected();
-    if (result == false && mounted)
+    if (result == false && mounted) {
       context.showErrorSnack(l10n.commonErrorShare);
+    }
   }
 
   void _onViewModeChanged(LibraryViewMode mode) =>

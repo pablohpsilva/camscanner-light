@@ -19,9 +19,9 @@ class SelectionExporter {
     required DocumentRepository repository,
     required ShareChannel share,
     required FileArchiver archiver,
-  }) : _repository = repository,
-       _share = share,
-       _archiver = archiver;
+  }) : _repository = repository, // ignore: prefer_initializing_formals
+       _share = share, // ignore: prefer_initializing_formals
+       _archiver = archiver; // ignore: prefer_initializing_formals
 
   /// Exports [selected] (must be non-empty) and hands it to the share sheet.
   /// One document → a single PDF with its name as the subject; many → a
