@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show compute, visibleForTesting;
-import 'package:image/image.dart' as img;
 
 import '../../../core/async/with_isolate_timeout.dart';
 import '../../../core/logging/app_logger.dart';
@@ -21,6 +19,7 @@ import '../ensure_jpeg.dart';
 import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
+import '../jpeg_rotator.dart';
 import '../page_processor.dart';
 import '../search/fts_query_sanitizer.dart';
 import '../warp_enhancer.dart';
@@ -30,11 +29,6 @@ import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import '../pdf/pdf_encryptor.dart';
 import 'app_database.dart' hide Document;
-
-/// Runs the rotate isolate call for a set of [RotateJpegArgs]. Injectable so a
-/// test can substitute a never-completing runner to exercise the timeout guard;
-/// production defaults to the real `compute(rotateAndBakeJpeg, ...)`.
-typedef RotateRunner = Future<Uint8List?> Function(RotateJpegArgs args);
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture and writes the file
 /// OUTSIDE any transaction (so the write lock is never held across slow image
@@ -65,10 +59,10 @@ class DriftDocumentRepository implements DocumentRepository {
   /// shrink it.
   final Duration rotateTimeout;
 
-  /// Seam for the rotate isolate call (CMP-10). Defaults to the real
-  /// `compute(rotateAndBakeJpeg, ...)`; tests inject a never-completing runner
-  /// to drive the timeout path deterministically.
-  final RotateRunner _rotateRunner;
+  /// Seam for the rotate isolate call (CMP-10 / P05 TEST-01). Defaults to the
+  /// real `compute(rotateAndBakeJpeg, ...)`; tests inject a fake (e.g. a
+  /// never-completing rotator) to drive the timeout path deterministically.
+  final JpegRotator _rotator;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -83,9 +77,8 @@ class DriftDocumentRepository implements DocumentRepository {
     ImageCompressor compressor = const ImageLibraryCompressor(),
     this.rotateTimeout = const Duration(seconds: 12),
     AppLogger logger = const PrintAppLogger(),
-    @visibleForTesting RotateRunner? rotateRunner,
-  }) : _rotateRunner =
-           rotateRunner ?? ((args) => compute(rotateAndBakeJpeg, args)),
+    JpegRotator rotator = const ComputeJpegRotator(),
+  }) : _rotator = rotator, // ignore: prefer_initializing_formals
        _logger = logger, // ignore: prefer_initializing_formals
        _db = db, // ignore: prefer_initializing_formals
        _scrubber = scrubber, // ignore: prefer_initializing_formals
@@ -627,7 +620,7 @@ class DriftDocumentRepository implements DocumentRepository {
       // contract as an undecodable base — callers already handle it (rotate
       // error UI). The success path is unchanged.
       rotatedBytes = await withIsolateTimeout(
-        () => _rotateRunner(RotateJpegArgs(baseBytes, quarterTurns)),
+        () => _rotator.rotate(baseBytes, quarterTurns),
         timeout: rotateTimeout,
         onTimeout: () => throw const DocumentSaveException(
           'regenerate: undecodable base image',
@@ -1304,30 +1297,4 @@ class DriftDocumentRepository implements DocumentRepository {
       throw const DocumentSaveException('markAsIdCard: document not found');
     }
   }
-}
-
-/// Arguments for [rotateAndBakeJpeg] — must be a top-level type so it can cross
-/// the isolate boundary used by `compute`.
-class RotateJpegArgs {
-  final Uint8List bytes;
-  final int quarterTurns;
-  const RotateJpegArgs(this.bytes, this.quarterTurns);
-}
-
-/// Isolate entrypoint (top-level, for `compute`): decode [args.bytes], bake EXIF
-/// orientation into the pixels (see _writeFlat's note — matches every other
-/// pixel path), rotate 90°*quarterTurns clockwise, and re-encode as JPEG.
-/// Returns null if the bytes can't be decoded. Full-res decode/rotate/encode is
-/// CPU-heavy, so this runs off the UI isolate to keep edits from freezing it.
-Uint8List? rotateAndBakeJpeg(RotateJpegArgs args) {
-  img.Image? decoded;
-  try {
-    decoded = img.decodeImage(args.bytes);
-  } catch (_) {
-    decoded = null;
-  }
-  if (decoded == null) return null;
-  final upright = img.bakeOrientation(decoded);
-  final rotated = img.copyRotate(upright, angle: 90 * args.quarterTurns);
-  return Uint8List.fromList(img.encodeJpg(rotated, quality: 95));
 }

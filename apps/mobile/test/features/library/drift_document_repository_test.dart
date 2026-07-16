@@ -15,11 +15,19 @@ import 'package:mobile/features/library/drift/drift_document_repository.dart';
 import 'package:mobile/features/library/image_metadata_scrubber.dart';
 import 'package:mobile/features/library/image_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
+import 'package:mobile/features/library/jpeg_rotator.dart';
 import 'package:mobile/features/library/page_processor.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
 import '../../support/fake_library.dart';
+
+/// A rotator whose rotate never completes — drives the timeout-guard test.
+class _StuckJpegRotator implements JpegRotator {
+  @override
+  Future<Uint8List?> rotate(Uint8List bytes, int quarterTurns) =>
+      Completer<Uint8List?>().future; // never done
+}
 
 /// A scrubber that throws — to drive the crash-safety rollback test.
 class _ThrowingScrubber implements ImageMetadataScrubber {
@@ -835,7 +843,7 @@ void main() {
           pdfBuilder: const PdfBuilder(),
           warper: FakeImageWarper(),
           rotateTimeout: const Duration(milliseconds: 50),
-          rotateRunner: (args) => Completer<Uint8List?>().future, // never done
+          rotator: _StuckJpegRotator(),
         );
 
         await expectLater(
