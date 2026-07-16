@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-import '../library/crop_corners.dart';
 import '../library/document_repository.dart';
 import '../library/image_enhancer.dart';
 import '../library/save_controller.dart';
 import 'captured_image.dart';
 import 'document_scanner_service.dart';
+import 'scan_batch_controller.dart';
 import 'scan_dependencies.dart';
 
 /// Guided 2-step ID capture: scan the front, then the back, then save both as a
@@ -30,6 +30,7 @@ enum _Step { front, back, saving }
 class _IdScanScreenState extends State<IdScanScreen> {
   late final DocumentScannerService _scanner;
   late final SaveController _saveController;
+  late final ScanBatchController _batch;
   _Step _step = _Step.front;
 
   @override
@@ -37,6 +38,7 @@ class _IdScanScreenState extends State<IdScanScreen> {
     super.initState();
     _scanner = widget.dependencies.createDocumentScanner();
     _saveController = SaveController(repository: widget.repository);
+    _batch = ScanBatchController(_saveController);
     WidgetsBinding.instance.addPostFrameCallback((_) => _run());
   }
 
@@ -57,43 +59,39 @@ class _IdScanScreenState extends State<IdScanScreen> {
     if (!mounted) return;
 
     setState(() => _step = _Step.saving);
-    const corners = CropCorners.fullFrame;
-    const enhancer = NoneEnhancer();
-    final doc = await _saveController.save(
-      front,
-      corners: corners,
-      enhancer: enhancer,
+    // Save front (+ back when captured) via the shared batch use-case (P07). The
+    // user cancelling the back step keeps the already-captured front rather than
+    // discarding it — a single-page doc. The ID scan's own error strings and the
+    // markAsIdCard finish stay here as this flow's policy.
+    final pages = back == null ? [front] : [front, back];
+    final result = await _batch.saveBatch(
+      pages,
+      const NoneEnhancer(),
+      active: () => mounted,
     );
     if (!mounted) return;
-    if (doc == null) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.idScanErrorSave)));
-      navigator.pop();
-      return;
-    }
-    // The user cancelled the back step: keep the already-captured front rather
-    // than silently discarding it — save it as a single-page document.
-    if (back != null) {
-      final pos = await _saveController.addPage(
-        back,
-        doc.id,
-        corners: corners,
-        enhancer: enhancer,
-      );
-      if (!mounted) return;
-      if (pos == null) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.idScanErrorBackRetake)),
-        );
+    switch (result) {
+      case ScanBatchCancelled():
+        return;
+      case ScanBatchSaveFailed():
+        messenger.showSnackBar(SnackBar(content: Text(l10n.idScanErrorSave)));
         navigator.pop();
         return;
-      }
+      case ScanBatchSaved(:final documentId, :final failedPageIndices):
+        if (failedPageIndices.isNotEmpty) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.idScanErrorBackRetake)),
+          );
+          navigator.pop();
+          return;
+        }
+        try {
+          await widget.repository.markAsIdCard(documentId);
+        } catch (_) {
+          // Non-fatal: the doc is saved; it just exports with the default layout.
+        }
+        if (mounted) navigator.pop();
     }
-    try {
-      await widget.repository.markAsIdCard(doc.id);
-    } catch (_) {
-      // Non-fatal: the doc is saved; it just exports with the default layout.
-    }
-    if (mounted) navigator.pop();
   }
 
   /// One single-page scan; null when the user cancelled (empty result).

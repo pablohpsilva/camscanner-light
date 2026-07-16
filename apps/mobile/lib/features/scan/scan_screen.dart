@@ -8,6 +8,7 @@ import '../library/save_controller.dart';
 import 'capture_review_screen.dart';
 import 'captured_image.dart';
 import 'document_scanner_service.dart';
+import 'scan_batch_controller.dart';
 import 'scan_dependencies.dart';
 
 /// Launches the OS document scanner, applies one filter to the whole batch,
@@ -33,6 +34,7 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   late final DocumentScannerService _scanner;
   late final SaveController _saveController;
+  late final ScanBatchController _batch;
   int _pageCount = 0;
   List<CapturedImage>? _pages;
   ImageEnhancer? _enhancer;
@@ -43,6 +45,7 @@ class _ScanScreenState extends State<ScanScreen> {
     super.initState();
     _scanner = widget.dependencies.createDocumentScanner();
     _saveController = SaveController(repository: widget.repository);
+    _batch = ScanBatchController(_saveController);
     WidgetsBinding.instance.addPostFrameCallback((_) => _run());
   }
 
@@ -122,29 +125,27 @@ class _ScanScreenState extends State<ScanScreen> {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
-    final doc = await _saveController.save(
-      pages.first,
-      corners: CropCorners.fullFrame,
-      enhancer: enhancer,
+    // Batch save/add-page mechanics live in the shared use-case (P07); this
+    // screen keeps the policy: a live page-count title, and the retry UI on a
+    // first-page failure. A failed subsequent page is tolerated (as before).
+    final result = await _batch.saveBatch(
+      pages,
+      enhancer,
+      active: () => mounted,
+      onProgress: (count) {
+        if (mounted) setState(() => _pageCount = count);
+      },
     );
     if (!mounted) return;
-    if (doc == null) {
-      setState(() => _saveFailed = true);
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorSaveDocument)),
-      );
-      return;
-    }
-    setState(() => _pageCount = 1);
-    for (var i = 1; i < pages.length; i++) {
-      final pos = await _saveController.addPage(
-        pages[i],
-        doc.id,
-        corners: CropCorners.fullFrame,
-        enhancer: enhancer,
-      );
-      if (!mounted) return;
-      if (pos != null) setState(() => _pageCount = pos);
+    switch (result) {
+      case ScanBatchCancelled():
+      case ScanBatchSaved():
+        break;
+      case ScanBatchSaveFailed():
+        setState(() => _saveFailed = true);
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.commonErrorSaveDocument)),
+        );
     }
   }
 
