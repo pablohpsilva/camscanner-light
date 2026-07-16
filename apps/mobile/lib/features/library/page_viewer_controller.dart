@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/painting.dart' show PaintingBinding;
 
 import '../scan/captured_image.dart';
 import 'crop_corners.dart';
@@ -9,6 +8,7 @@ import 'document_printer.dart';
 import 'document_repository.dart';
 import 'enhancer_mode.dart';
 import 'export/export_quality.dart';
+import 'image_cache_invalidator.dart';
 import 'image_enhancer.dart';
 import 'page_image.dart';
 import 'share_channel.dart';
@@ -27,8 +27,13 @@ class PageViewerController extends ChangeNotifier {
   final DocumentRepository _repository;
   final DocumentPrinter _printer;
   final ShareChannel _share;
-  final VoidCallback _clearImageCache;
+  final ImageCacheInvalidator _invalidator;
   final int documentId;
+
+  /// The `cacheWidth` the widget decodes the display image at (set from
+  /// MediaQuery in build), so [reloadAfterEdit] can evict the exact
+  /// ResizeImage variant, not just the bare FileImage (P13 task 1/2).
+  int? displayCacheWidth;
 
   PageViewerController({
     required DocumentRepository repository,
@@ -36,19 +41,12 @@ class PageViewerController extends ChangeNotifier {
     required String name,
     DocumentPrinter printer = const SystemDocumentPrinter(),
     ShareChannel share = const SystemShareChannel(),
-    VoidCallback? clearImageCache,
+    ImageCacheInvalidator invalidator = const ScopedImageCacheInvalidator(),
   }) : _repository = repository, // ignore: prefer_initializing_formals
        _printer = printer, // ignore: prefer_initializing_formals
        _share = share, // ignore: prefer_initializing_formals
        _name = name, // ignore: prefer_initializing_formals
-       _clearImageCache = clearImageCache ?? _defaultClearImageCache;
-
-  /// Clears the global image cache: a regenerated flat reuses its file path and
-  /// FileImage caches by path, so a stale frame would otherwise show.
-  static void _defaultClearImageCache() {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-  }
+       _invalidator = invalidator; // ignore: prefer_initializing_formals
 
   ViewState<List<PageImage>> _state = const Loading();
   ViewState<List<PageImage>> get state => _state;
@@ -106,10 +104,15 @@ class PageViewerController extends ChangeNotifier {
     _state = loaded.isEmpty ? const Empty() : Loaded(loaded);
   }
 
-  /// Clears the image cache, bumps the epoch (forces a fresh decode of a
-  /// same-path regenerated flat), then reloads.
+  /// Evicts ONLY the edited page's cached image (scoped — not a global clear,
+  /// P13), bumps the epoch (forces a fresh decode of a same-path regenerated
+  /// flat), then reloads. Called before the reload, while [currentPage] still
+  /// points at the just-edited page whose flat was regenerated at the same path.
   Future<void> reloadAfterEdit() async {
-    _clearImageCache();
+    final page = currentPage;
+    if (page != null) {
+      _invalidator.evict(page.displayPath, cacheWidth: displayCacheWidth);
+    }
     _imageEpoch++;
     if (_disposed) return;
     await load();

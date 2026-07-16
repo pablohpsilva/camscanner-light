@@ -38,10 +38,11 @@ import 'widgets/share_menu_button.dart';
 /// view — dialogs, navigation, l10n toasts, and rendering only — that drives
 /// the controller through a `ListenableBuilder`.
 ///
-/// Decodes full-resolution (no cacheWidth) so zoom is usable — its Image is a
-/// FileImage, NOT a ResizeImage. NOTE: this is not memory-safe for many pages;
-/// when multi-page capture lands, add decode management (screen-width cacheWidth
-/// + offscreen dispose).
+/// The display image decodes at a bounded `cacheWidth` (screen × dpr ×
+/// [_maxDisplayZoom]) rather than the full 12.5 MP capture — sharp up to full
+/// pinch-zoom while avoiding the fit-to-screen full-res decode (P13). An edit
+/// evicts only that page's cached image via [ImageCacheInvalidator] (scoped,
+/// not a global clear).
 class PageViewerScreen extends StatefulWidget {
   final int documentId;
   final String name;
@@ -615,7 +616,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     child: Text(context.l10n.viewerEmptyPages),
   );
 
+  // Max pinch-zoom. The display image is decoded at `screen×dpr×_maxDisplayZoom`
+  // (below), so it stays sharp up to full zoom while NOT decoding the whole
+  // 12.5 MP capture for the fit-to-screen view (P13 full-res-decode).
+  static const double _maxDisplayZoom = 2.5;
+
   Widget _buildPages(List<PageImage> pages) {
+    final mq = MediaQuery.of(context);
+    // Bound the decode to what max-zoom actually needs (memory) while keeping
+    // zoom sharp. cacheWidth > the source is a no-op, so small flats decode
+    // native.
+    final cacheWidth = (mq.size.width * mq.devicePixelRatio * _maxDisplayZoom)
+        .round();
+    // Hand the width to the controller so a scoped evict on the next edit
+    // targets the exact ResizeImage variant (P13 task 1/2).
+    _pvc.displayCacheWidth = cacheWidth;
     return Column(
       children: [
         Expanded(
@@ -629,11 +644,13 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                   final pg = pages[i];
                   return InteractiveViewer(
                     key: Key('page-viewer-page-${pg.position}'),
+                    maxScale: _maxDisplayZoom,
                     child: Image.file(
                       File(pg.displayPath),
                       // Key includes the edit epoch so a same-path regenerated
                       // flat forces a fresh decode instead of showing stale.
                       key: ValueKey('${pg.displayPath}#${_pvc.imageEpoch}'),
+                      cacheWidth: cacheWidth,
                       fit: BoxFit.contain,
                       errorBuilder: (c, e, s) => const Center(
                         child: Icon(Icons.broken_image_outlined, size: 64),

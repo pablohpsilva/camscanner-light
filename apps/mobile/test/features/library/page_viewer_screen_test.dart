@@ -95,7 +95,8 @@ void main() {
   }
 
   testWidgets(
-    'loaded: full-res FileImage (NOT ResizeImage); strip replaces indicator',
+    'loaded: display image decodes at a bounded cacheWidth (ResizeImage, '
+    'P13); strip replaces indicator',
     (tester) async {
       await pushViewer(tester, FakeDocumentRepository());
 
@@ -103,24 +104,29 @@ void main() {
       expect(find.byType(InteractiveViewer), findsOneWidget);
       expect(find.byKey(const Key('page-viewer-page-1')), findsOneWidget);
 
-      // The full-res image is the one inside the InteractiveViewer (NOT the strip thumbnail).
-      final fullRes = tester.widget<Image>(
+      // The display image is the one inside the InteractiveViewer (NOT the strip
+      // thumbnail). P13 full-res-decode: it no longer decodes at full resolution
+      // for the fit-to-screen view — it is a ResizeImage bounded to
+      // screen×dpr×maxZoom (still sharp up to full pinch-zoom).
+      final display = tester.widget<Image>(
         find.descendant(
           of: find.byKey(const Key('page-viewer-page-1')),
           matching: find.byType(Image),
         ),
       );
       expect(
-        fullRes.image,
-        isA<FileImage>(),
-        reason:
-            'viewer decodes full-res; NOT a ResizeImage like strip thumbnails',
+        display.image,
+        isA<ResizeImage>(),
+        reason: 'fit-to-screen view is bounded, not a full-res decode',
       );
+      final resize = display.image as ResizeImage;
+      expect(resize.width, isNotNull);
+      expect(resize.width! > 0, isTrue);
       expect(
-        (fullRes.image as FileImage).file.path,
+        (resize.imageProvider as FileImage).file.path,
         '/nonexistent/page-1-1.jpg',
       );
-      expect(fullRes.errorBuilder, isNotNull);
+      expect(display.errorBuilder, isNotNull);
 
       // Strip replaces old text indicator.
       expect(find.byKey(const Key('page-thumbnail-strip')), findsOneWidget);

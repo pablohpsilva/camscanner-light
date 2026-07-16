@@ -1,10 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/export/export_quality.dart';
+import 'package:mobile/features/library/image_cache_invalidator.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/page_viewer_controller.dart';
 import 'package:mobile/features/library/view_state.dart';
 
 import '../../support/fake_library.dart';
+
+/// Records scoped cache evictions so a test can assert reloadAfterEdit invalidates
+/// only the edited page's path (P13), not a global clear.
+class _SpyInvalidator implements ImageCacheInvalidator {
+  final evicted = <String>[];
+  @override
+  void evict(String path, {int? cacheWidth}) => evicted.add(path);
+}
 
 /// Unit tests for the page-viewer orchestration (P06 tasks 5-8) — NO widget is
 /// pumped; the controller is a plain ChangeNotifier like SaveController.
@@ -19,7 +28,7 @@ void main() {
         repository: repo,
         documentId: 1,
         name: 'Doc',
-        clearImageCache: () {},
+        invalidator: _SpyInvalidator(),
       );
 
   group('load', () {
@@ -43,20 +52,25 @@ void main() {
     });
   });
 
-  test('reloadAfterEdit clears the image cache and bumps the epoch', () async {
-    var cleared = 0;
-    final c = PageViewerController(
-      repository: FakeDocumentRepository(pages: threePages()),
-      documentId: 1,
-      name: 'Doc',
-      clearImageCache: () => cleared++,
-    );
-    await c.load();
-    final epoch = c.imageEpoch;
-    await c.reloadAfterEdit();
-    expect(cleared, 1);
-    expect(c.imageEpoch, epoch + 1);
-  });
+  test(
+    'reloadAfterEdit evicts ONLY the edited page path + bumps the epoch',
+    () async {
+      final spy = _SpyInvalidator();
+      final c = PageViewerController(
+        repository: FakeDocumentRepository(pages: threePages()),
+        documentId: 1,
+        name: 'Doc',
+        invalidator: spy,
+      );
+      await c.load();
+      final epoch = c.imageEpoch;
+      await c.reloadAfterEdit();
+      expect(spy.evicted, [
+        '/nonexistent/p1.jpg',
+      ], reason: 'scoped, not global');
+      expect(c.imageEpoch, epoch + 1);
+    },
+  );
 
   group('deletePage', () {
     test(
