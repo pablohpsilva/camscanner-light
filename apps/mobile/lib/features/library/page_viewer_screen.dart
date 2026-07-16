@@ -103,13 +103,15 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       context.showErrorSnack(l10n.viewerExportPdfError);
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => PdfPreviewScreen(
-          pdfPath: file.path,
-          name: _pvc.name,
-          share: widget.share,
-          features: widget.features,
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PdfPreviewScreen(
+            pdfPath: file.path,
+            name: _pvc.name,
+            share: widget.share,
+            features: widget.features,
+          ),
         ),
       ),
     );

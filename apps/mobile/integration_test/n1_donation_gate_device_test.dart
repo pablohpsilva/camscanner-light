@@ -14,7 +14,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('donation entry points match the platform rules', (tester) async {
-    app.main();
+    await app.main();
     await tester.pumpAndSettle();
 
     final matcher = Platform.isIOS ? findsNothing : findsOneWidget;

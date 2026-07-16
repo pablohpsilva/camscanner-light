@@ -21,8 +21,10 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # P15: enforce the async-safety convention that was previously only manual
+    # (the 12 `unawaited(...)` call sites show the intent). A bare fire-and-forget
+    # Future must be explicitly `unawaited(...)` or awaited.
+    unawaited_futures: true
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

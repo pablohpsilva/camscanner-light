@@ -18,7 +18,7 @@ void main() {
 
   testWidgets('cold start: home library is usable within 10s', (tester) async {
     final sw = Stopwatch()..start();
-    app.main();
+    await app.main();
 
     // Poll for the home to finish loading. We consider the app "usable" once
     // the loading spinner is gone AND the Documents app bar is on screen.

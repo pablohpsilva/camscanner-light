@@ -14,7 +14,7 @@ void main() {
   testWidgets(
     'A1: app renders the Documents home (empty state + Scan) on device',
     (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       expect(find.text('Documents'), findsOneWidget);

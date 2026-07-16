@@ -59,7 +59,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
           .opener(widget.pdfPath)
           .timeout(widget.openTimeout);
       if (!mounted) {
-        doc.close();
+        unawaited(doc.close());
         return;
       }
       setState(() {
