@@ -9,32 +9,11 @@ import '../library/crop_corners.dart';
 import '../library/enhancer_for_mode.dart';
 import '../library/enhancer_mode.dart';
 import '../library/image_enhancer.dart';
+import '../library/image_size_resolver.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
 import 'widgets/filter_picker_strip.dart';
-
-Future<Size> _resolveImageSize(String path) {
-  final completer = Completer<Size>();
-  final stream = FileImage(File(path)).resolve(ImageConfiguration.empty);
-  late final ImageStreamListener listener;
-  listener = ImageStreamListener(
-    (info, _) {
-      if (!completer.isCompleted) {
-        completer.complete(
-          Size(info.image.width.toDouble(), info.image.height.toDouble()),
-        );
-      }
-      stream.removeListener(listener);
-    },
-    onError: (e, st) {
-      if (!completer.isCompleted) completer.completeError(e);
-      stream.removeListener(listener);
-    },
-  );
-  stream.addListener(listener);
-  return completer.future;
-}
 
 Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
 
@@ -56,7 +35,7 @@ class CaptureReviewScreen extends StatefulWidget {
     required this.onAccept,
     this.saving = false,
     this.enableCrop = true,
-    this.decodeImageSize = _resolveImageSize,
+    this.decodeImageSize = resolveImageSize,
     this.readBytes = _defaultReadBytes, // NEW
     this.edgeDetector, // NEW
   });

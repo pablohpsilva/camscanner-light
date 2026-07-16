@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -10,31 +9,7 @@ import '../../theme/ream_theme.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import '../scan/widgets/crop_overlay.dart';
 import 'crop_corners.dart';
-
-/// Resolves the EXIF-applied natural size of the image at [path].
-/// Uses the same approach as CaptureReviewScreen — the framework decoder bakes
-/// the Orientation tag so this size matches the displayed image.
-Future<Size> _resolveImageSize(String path) {
-  final completer = Completer<Size>();
-  final stream = FileImage(File(path)).resolve(ImageConfiguration.empty);
-  late final ImageStreamListener listener;
-  listener = ImageStreamListener(
-    (info, _) {
-      if (!completer.isCompleted) {
-        completer.complete(
-          Size(info.image.width.toDouble(), info.image.height.toDouble()),
-        );
-      }
-      stream.removeListener(listener);
-    },
-    onError: (e, st) {
-      if (!completer.isCompleted) completer.completeError(e);
-      stream.removeListener(listener);
-    },
-  );
-  stream.addListener(listener);
-  return completer.future;
-}
+import 'image_size_resolver.dart';
 
 /// Full-screen crop editor. Shows the original JPEG (at [imagePath]) with a
 /// draggable [CropOverlay] seeded from [initialCorners]. Accept pops with the
@@ -54,7 +29,7 @@ class EditCropScreen extends StatefulWidget {
     required this.imagePath,
     required this.initialCorners,
     this.quarterTurns = 0,
-    this.decodeImageSize = _resolveImageSize,
+    this.decodeImageSize = resolveImageSize,
   });
 
   @override
