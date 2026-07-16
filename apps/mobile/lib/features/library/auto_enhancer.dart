@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 
 import '../../core/async/with_isolate_timeout.dart';
 import 'image_enhancer.dart';
+import 'oriented_enhance.dart';
 
 /// Long side (px) of the proxy on which the illumination field is estimated.
 /// The shadow gradient is low-frequency, so a moderate proxy captures it
@@ -74,20 +75,9 @@ class AutoEnhancer implements ImageEnhancer {
 }
 
 // Top-level function required by compute() (must be isolate-sendable).
-Uint8List _autoFn(Uint8List bytes) {
-  try {
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return bytes;
-    // The EXIF scrubber keeps the Orientation tag; encodeJpg strips EXIF, so
-    // bake orientation into pixels first. Safe no-op for already-flat bytes.
-    final baked = img.bakeOrientation(decoded);
-    return Uint8List.fromList(
-      img.encodeJpg(autoEnhanceOriented(baked), quality: 95),
-    );
-  } catch (_) {
-    return bytes;
-  }
-}
+// Auto finishes at q95; the shared body (P09) bakes orientation + guards decode.
+Uint8List _autoFn(Uint8List bytes) =>
+    runOrientedEnhance(bytes, autoEnhanceOriented, quality: 95);
 
 /// Applies the flat-field + finishing pass to an already-oriented image and
 /// returns the result as a new [img.Image] (no decode/encode — the caller owns

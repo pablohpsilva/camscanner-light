@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 
 import '../../core/async/with_isolate_timeout.dart';
 import 'image_enhancer.dart';
+import 'oriented_enhance.dart';
 
 class ColorEnhancer implements ImageEnhancer {
   const ColorEnhancer({this.timeout = const Duration(seconds: 12), this.runner});
@@ -27,18 +28,8 @@ class ColorEnhancer implements ImageEnhancer {
   }
 }
 
-Uint8List _colorFn(Uint8List bytes) {
-  try {
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return bytes;
-    final oriented = img.bakeOrientation(decoded);
-    return Uint8List.fromList(
-      img.encodeJpg(colorEnhanceOriented(oriented), quality: 92),
-    );
-  } catch (_) {
-    return bytes;
-  }
-}
+Uint8List _colorFn(Uint8List bytes) =>
+    runOrientedEnhance(bytes, colorEnhanceOriented, quality: 92);
 
 /// Applies the colour boost in place to an already-oriented image and returns
 /// it (no decode/encode — the caller owns those, enabling a fused warp+enhance

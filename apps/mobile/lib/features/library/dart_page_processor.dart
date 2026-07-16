@@ -1,13 +1,10 @@
 import 'dart:typed_data';
 
-import 'auto_enhancer.dart';
-import 'color_enhancer.dart';
 import 'coons_warper.dart';
 import 'crop_corners.dart';
+import 'enhancer_for_mode.dart';
 import 'enhancer_mode.dart';
-import 'grayscale_enhancer.dart';
 import 'hybrid_warper.dart';
-import 'image_enhancer.dart';
 import 'image_warper.dart';
 import 'page_processor.dart';
 import 'perspective_warper.dart';
@@ -31,7 +28,7 @@ class DartPageProcessor implements PageProcessor {
     if (isFullFrame) {
       if (mode == EnhancerMode.none) return null; // nothing to do
       try {
-        return await _enhancerFor(mode).enhance(bytes);
+        return await enhancerForMode(mode).enhance(bytes);
       } catch (_) {
         return null;
       }
@@ -46,7 +43,7 @@ class DartPageProcessor implements PageProcessor {
       // Warp failed → de-shadow the un-warped frame (never lose the page).
       if (mode == EnhancerMode.none) return null;
       try {
-        return await _enhancerFor(mode).enhance(bytes);
+        return await enhancerForMode(mode).enhance(bytes);
       } catch (_) {
         return null;
       }
@@ -61,16 +58,9 @@ class DartPageProcessor implements PageProcessor {
     final base = warped ?? bytes;
     if (mode == EnhancerMode.none) return warped; // null if warp made nothing
     try {
-      return await _enhancerFor(mode).enhance(base);
+      return await enhancerForMode(mode).enhance(base);
     } catch (_) {
       return base;
     }
   }
-
-  ImageEnhancer _enhancerFor(EnhancerMode mode) => switch (mode) {
-    EnhancerMode.auto => const AutoEnhancer(),
-    EnhancerMode.color => const ColorEnhancer(),
-    EnhancerMode.grayscale => const GrayscaleEnhancer(),
-    EnhancerMode.none => const NoneEnhancer(),
-  };
 }
