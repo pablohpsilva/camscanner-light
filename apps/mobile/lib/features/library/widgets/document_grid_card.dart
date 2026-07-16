@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/library/document_date_format.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/document_thumbnail.dart';
 import 'package:mobile/theme/ream_colors.dart';
@@ -36,7 +37,11 @@ class DocumentGridCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final doc = summary.document;
 
-    final shortDate = _formatDate(doc.modifiedAt);
+    // createdAt (matching the list) + locale-aware compact date (P15).
+    final shortDate = formatDocumentDateCompact(
+      doc.createdAt.toLocal(),
+      Localizations.localeOf(context).toString(),
+    );
     final metaText = '${summary.pageCount}p · $shortDate';
 
     // The card uses an IntrinsicWidth to make the thumbnail's AspectRatio
@@ -124,23 +129,6 @@ class DocumentGridCard extends StatelessWidget {
     );
   }
 
-  static String _formatDate(DateTime dt) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[dt.month - 1]} ${dt.day}';
-  }
 }
 
 /// Fills the thumbnail area: shows [DocumentThumbnail] sized to fill, or a

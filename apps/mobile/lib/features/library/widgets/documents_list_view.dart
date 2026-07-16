@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
 import '../../../theme/ream_colors.dart';
 import '../../../theme/ream_typography.dart';
+import '../document_date_format.dart';
 import '../document_summary.dart';
 import '../feature_flags.dart';
 import 'document_thumbnail.dart';
@@ -148,7 +149,7 @@ class DocumentsListView extends StatelessWidget {
                       const SizedBox(height: 5),
                       Text(
                         '${context.l10n.commonPageCount(s.pageCount)} · '
-                        '${_formatLocal(d.createdAt.toLocal())}',
+                        '${formatDocumentDateDetailed(d.createdAt.toLocal(), Localizations.localeOf(context).toString())}',
                         style: ReamTypography.mono(size: 11.5, color: r.muted),
                       ),
                     ],
@@ -161,11 +162,5 @@ class DocumentsListView extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatLocal(DateTime t) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${t.year}-${two(t.month)}-${two(t.day)} '
-        '${two(t.hour)}:${two(t.minute)}';
   }
 }
