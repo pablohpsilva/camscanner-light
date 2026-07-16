@@ -260,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_lib.sharing)
                 const Positioned.fill(
                   child: ColoredBox(
-                    color: Color(0x66000000),
+                    color: kReamScrimMedium,
                     child: Center(
                       key: Key('home-sharing'),
                       child: CircularProgressIndicator(),

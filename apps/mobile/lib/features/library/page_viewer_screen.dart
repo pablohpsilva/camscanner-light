@@ -9,6 +9,7 @@ import 'share_channel.dart';
 import '../../core/ui/error_snack.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
+import '../../theme/ream_colors.dart';
 import '../../theme/ream_theme.dart';
 import 'crop_corners.dart';
 import 'document_printer.dart';
@@ -505,7 +506,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 if (_pvc.editing)
                   const Positioned.fill(
                     child: ColoredBox(
-                      color: Color(0x99000000),
+                      color: kReamScrimStrong,
                       child: Center(
                         key: Key('page-viewer-editing'),
                         child: CircularProgressIndicator(),

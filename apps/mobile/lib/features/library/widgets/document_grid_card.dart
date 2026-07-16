@@ -57,7 +57,7 @@ class DocumentGridCard extends StatelessWidget {
           border: Border.all(color: ream.line, width: 1),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x14000000),
+              color: kReamCardShadow,
               blurRadius: 6,
               offset: Offset(0, 2),
             ),

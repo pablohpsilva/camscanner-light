@@ -259,10 +259,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                ThemeData.estimateBrightnessForColor(r.ink) ==
-                                        Brightness.dark
-                                    ? Colors.white
-                                    : const Color(0xFF201C16),
+                                reamInkOnFill(r.ink),
                               ),
                             ),
                           ),

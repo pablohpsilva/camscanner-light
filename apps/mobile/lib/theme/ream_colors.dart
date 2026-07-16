@@ -145,6 +145,23 @@ class ReamColors extends ThemeExtension<ReamColors> {
   }
 }
 
+/// Theme-INDEPENDENT overlay constants (P15). A scrim dims content the same
+/// whether the page is warm-paper or dark, and a card shadow is alpha-black in
+/// both — so these are plain named consts, not theme-varying tokens. They live
+/// here so the ONLY `Color(0x…)` literals in the app are in this file.
+const Color kReamScrimStrong = Color(0x99000000); // ~60% black — modal/busy dim
+const Color kReamScrimMedium = Color(0x66000000); // ~40% black — lighter dim
+const Color kReamCardShadow = Color(0x14000000); // ~8% black — subtle card shadow
+
+/// The contrasting "ink" to place on a [fill] of arbitrary brightness (P15):
+/// white on dark fills, warm near-black on bright fills. Theme-independent — it
+/// depends only on the fill's luminance. Dedups the identical brightness ternary
+/// that lived in `ream_action_button` and `feedback_screen`.
+Color reamInkOnFill(Color fill) =>
+    ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
+    ? Colors.white
+    : const Color(0xFF201C16);
+
 /// Terse access: `context.ream.green`.
 ///
 /// Falls back to [ReamColors.light] when no [ReamColors] extension is

@@ -25,10 +25,7 @@ class ReamActionButton extends StatelessWidget {
     final r = context.ream;
     final enabled = onPressed != null;
     final fill = primary ? (fillColor ?? r.greenDeep) : r.surface;
-    final onPrimary =
-        ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
-        ? Colors.white
-        : const Color(0xFF201C16); // warm near-black for light fills
+    final onPrimary = reamInkOnFill(fill);
     final child = primary
         ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
