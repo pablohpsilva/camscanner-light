@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:image/image.dart' as img;
 
 import '../../core/async/with_isolate_timeout.dart';
+import 'bilinear_sampler.dart';
 import 'crop_corners.dart';
 import 'image_warper.dart';
 import 'perspective_warper.dart'
@@ -167,14 +168,12 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
   final sx = sw / w, sy = sh / h;
 
   final srcBuf = sampleSrc.getBytes(order: img.ChannelOrder.rgb);
-  final stride = sw * 3;
-  final xMax = (sw - 1).toDouble(), yMax = (sh - 1).toDouble();
   final out = Uint8List(outW * outH * 3);
 
-  // Precompute the top/bottom edge curves per COLUMN (P09 perf): top(u)/bottom(u)
-  // depend only on the column u, so evaluating them inside the pixel loop was
-  // outW*outH redundant quadratic-Bézier evals. Mirrors the per-row left/right
-  // hoist below; arithmetically identical.
+  // Precompute the four edge curves once (P09 perf): top/bottom per COLUMN and
+  // left/right per ROW — each depends only on its own axis, so evaluating them
+  // inside the pixel loop was outW*outH redundant quadratic-Bézier evals. The
+  // mapper below just indexes these O(1); arithmetically identical.
   final topPts = List<Offset>.filled(outW, Offset.zero);
   final botPts = List<Offset>.filled(outW, Offset.zero);
   for (int dx = 0; dx < outW; dx++) {
@@ -182,14 +181,27 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
     topPts[dx] = top(u);
     botPts[dx] = bottom(u);
   }
-
-  var o = 0;
+  final leftPts = List<Offset>.filled(outH, Offset.zero);
+  final rightPts = List<Offset>.filled(outH, Offset.zero);
   for (int dy = 0; dy < outH; dy++) {
     final v = dy / (outH - 1);
-    final lc = left(v), rc = right(v);
-    for (int dx = 0; dx < outW; dx++) {
-      final u = dx / (outW - 1);
+    leftPts[dy] = left(v);
+    rightPts[dy] = right(v);
+  }
+
+  // Shared inverse-bilinear loop (P09); the mapper is the Coons-patch blend
+  // (source coord in ORIGINAL space, rescaled by sx/sy into the bounded buffer).
+  sampleBilinearInto(
+    out: out,
+    srcBuf: srcBuf,
+    sw: sw,
+    sh: sh,
+    outW: outW,
+    outH: outH,
+    mapToSrc: (dx, dy) {
+      final u = dx / (outW - 1), v = dy / (outH - 1);
       final tc = topPts[dx], bc = botPts[dx];
+      final lc = leftPts[dy], rc = rightPts[dy];
       final bx =
           (1 - u) * (1 - v) * tl.dx +
           u * (1 - v) * tr.dx +
@@ -204,25 +216,9 @@ img.Image warpCoonsToImage(img.Image src, CropCorners c, int maxDim) {
           (1 - v) * tc.dx + v * bc.dx + (1 - u) * lc.dx + u * rc.dx - bx;
       final rawY =
           (1 - v) * tc.dy + v * bc.dy + (1 - u) * lc.dy + u * rc.dy - by;
-      final mx = rawX * sx, my = rawY * sy;
-      final fx = mx < 0 ? 0.0 : (mx > xMax ? xMax : mx);
-      final fy = my < 0 ? 0.0 : (my > yMax ? yMax : my);
-      final x0 = fx.toInt(), y0 = fy.toInt();
-      final x1 = x0 + 1 < sw ? x0 + 1 : x0;
-      final y1 = y0 + 1 < sh ? y0 + 1 : y0;
-      final wx = fx - x0, wy = fy - y0;
-      final i00 = y0 * stride + x0 * 3, i10 = y0 * stride + x1 * 3;
-      final i01 = y1 * stride + x0 * 3, i11 = y1 * stride + x1 * 3;
-      for (var ch = 0; ch < 3; ch++) {
-        final t = srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
-        final b = srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
-        // Bilinear interp of in-[0,255] bytes stays in [0,255], so .round()
-        // alone is exact — the old .clamp(0,255) was a proven no-op (P09).
-        out[o + ch] = (t + (b - t) * wy).round();
-      }
-      o += 3;
-    }
-  }
+      return Offset(rawX * sx, rawY * sy);
+    },
+  );
   return img.Image.fromBytes(
     width: outW,
     height: outH,

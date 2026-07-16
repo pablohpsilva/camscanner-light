@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:image/image.dart' as img;
 
 import '../../core/async/with_isolate_timeout.dart';
+import 'bilinear_sampler.dart';
 import 'crop_corners.dart';
 import 'image_warper.dart';
 import 'work_resolution.dart';
@@ -159,33 +160,18 @@ img.Image warpPerspectiveToImage(
   final hInv = _invertH3x3(hMat);
 
   final srcBuf = sampleSrc.getBytes(order: img.ChannelOrder.rgb);
-  final stride = sw * 3;
   final out = Uint8List(outW * outH * 3);
-  final xMax = (sw - 1).toDouble(), yMax = (sh - 1).toDouble();
-  var o = 0;
-  for (var dy = 0; dy < outH; dy++) {
-    for (var dx = 0; dx < outW; dx++) {
-      final sp = _applyH(hInv, dx.toDouble(), dy.toDouble());
-      final fx = sp.dx < 0 ? 0.0 : (sp.dx > xMax ? xMax : sp.dx);
-      final fy = sp.dy < 0 ? 0.0 : (sp.dy > yMax ? yMax : sp.dy);
-      final x0 = fx.toInt(), y0 = fy.toInt();
-      final x1 = x0 + 1 < sw ? x0 + 1 : x0;
-      final y1 = y0 + 1 < sh ? y0 + 1 : y0;
-      final wx = fx - x0, wy = fy - y0;
-      final i00 = y0 * stride + x0 * 3, i10 = y0 * stride + x1 * 3;
-      final i01 = y1 * stride + x0 * 3, i11 = y1 * stride + x1 * 3;
-      for (var ch = 0; ch < 3; ch++) {
-        final top =
-            srcBuf[i00 + ch] + (srcBuf[i10 + ch] - srcBuf[i00 + ch]) * wx;
-        final bot =
-            srcBuf[i01 + ch] + (srcBuf[i11 + ch] - srcBuf[i01 + ch]) * wx;
-        // Bilinear interp of in-[0,255] bytes stays in [0,255], so .round()
-        // alone is exact — the old .clamp(0,255) was a proven no-op (P09).
-        out[o + ch] = (top + (bot - top) * wy).round();
-      }
-      o += 3;
-    }
-  }
+  // Shared inverse-bilinear loop (P09); only the source mapper — here the
+  // inverse homography — is warper-specific.
+  sampleBilinearInto(
+    out: out,
+    srcBuf: srcBuf,
+    sw: sw,
+    sh: sh,
+    outW: outW,
+    outH: outH,
+    mapToSrc: (dx, dy) => _applyH(hInv, dx.toDouble(), dy.toDouble()),
+  );
   return img.Image.fromBytes(
     width: outW,
     height: outH,
