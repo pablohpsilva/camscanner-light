@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 
 import '../scan/capture_review_screen.dart';
 import '../scan/captured_image.dart';
 import '../scan/id_scan_screen.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
+import '../../core/ui/error_snack.dart';
 import '../../l10n/l10n.dart';
 import '../../l10n/locale_controller.dart';
 import '../../l10n/locale_store.dart';
@@ -16,9 +16,8 @@ import '../../theme/theme_mode_store.dart';
 import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_search_field.dart';
 import '../../theme/widgets/ream_segmented.dart';
-import 'document_repository.dart';
-import 'document_sort.dart';
 import 'document_summary.dart';
+import 'library_controller.dart';
 import 'library_dependencies.dart';
 import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
@@ -33,9 +32,10 @@ import '../donation/donation_availability.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../settings/settings_screen.dart';
 
-/// The app's home: the document library. Builds the repository, lists saved
-/// documents (name + date), and opens the camera. Reloads the list whenever the
-/// camera flow returns (a save may have happened).
+/// The app's home: the document library. All library state + orchestration lives
+/// in [LibraryController] (P06); this widget keeps navigation, dialogs, the
+/// view-mode toggle, and the injected theme/locale controllers, and drives the
+/// controller through a `ListenableBuilder`.
 class HomeScreen extends StatefulWidget {
   final ScanDependencies dependencies;
   final LibraryDependencies libraryDependencies;
@@ -63,17 +63,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  DocumentRepository? _repository;
-  List<DocumentSummary> _summaries = const [];
-  // The full list sorted by [_sort], cached so the whole-library sort runs only
-  // when [_summaries] or [_sort] changes — NOT on every unrelated setState
-  // (search keystroke, selection toggle, view-mode switch). P12 sort-on-build.
-  List<DocumentSummary> _sortedSummaries = const [];
-  bool _loading = true;
-  bool _error = false;
-  DocumentSort _sort = DocumentSort.initial;
+  late final LibraryController _lib = LibraryController(
+    dependencies: widget.libraryDependencies,
+    coldStartStepTimeout: HomeScreen.coldStartStepTimeout,
+  );
+
   bool _feedbackAvailable = false;
   LibraryViewMode _viewMode = LibraryViewMode.list;
+
   // Own (and therefore dispose) a controller ONLY when we constructed the
   // fallback; an injected controller is the caller's to dispose (P06 task 4).
   late final bool _ownsThemeController = widget.themeController == null;
@@ -85,20 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
       widget.localeController ?? LocaleController(store: InMemoryLocaleStore());
 
   final TextEditingController _searchController = TextEditingController();
-  String _query = '';
-  // The FTS results for the current non-empty query. Kept separate from
-  // [_summaries] (the full list) so clearing the query restores the full list
-  // without a re-query.
-  List<DocumentSummary> _searchResults = const [];
-  bool _sharing = false;
-  final Set<int> _selectedIds = <int>{};
-  bool get _selectionMode => _selectedIds.isNotEmpty;
-  bool get _searching => _query.trim().isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    // ignore: discarded_futures
+    _lib.init();
     _probeFeedback();
   }
 
@@ -112,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _lib.dispose();
     // Dispose only the controllers WE created (P06 task 4) — never an injected
     // one, which the caller still owns and may reuse.
     if (_ownsThemeController) _themeController.dispose();
@@ -119,70 +109,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Set when a startup step failed or timed out, so the error screen can name
-  // the stuck step (and it's logged for on-device diagnosis).
-  String? _startupFailure;
-
-  Future<void> _init() async {
-    try {
-      final repo = await widget.libraryDependencies.createRepository().timeout(
-        HomeScreen.coldStartStepTimeout,
-      );
-      if (!mounted) return;
-      _repository = repo;
-      await _load();
-    } catch (e) {
-      _failStartup('opening the library', e);
-    }
-  }
-
-  Future<void> _load() async {
-    final repo = _repository;
-    if (repo == null) return;
-    try {
-      final docs = await repo.listDocumentSummaries().timeout(
-        HomeScreen.coldStartStepTimeout,
-      );
-      if (!mounted) return;
-      setState(() {
-        _summaries = docs;
-        _sortedSummaries = sortDocuments(
-          docs,
-          _sort,
-        ); // cache off the build path
-        _loading = false;
-        _startupFailure = null;
-      });
-    } catch (e) {
-      _failStartup('loading your documents', e);
-    }
-  }
-
-  void _failStartup(String step, Object error) {
-    // Always logged so a wedged cold start is diagnosable from device logs.
-    widget.libraryDependencies.logger().error(
-      error,
-      context: 'HomeScreen cold-start failed while $step',
-    );
-    if (!mounted) return;
-    setState(() {
-      _loading = false;
-      _error = true;
-      _startupFailure = 'Startup timed out while $step.';
-    });
-  }
-
-  void _retry() {
-    setState(() {
-      _error = false;
-      _loading = true;
-      _startupFailure = null;
-    });
-    _init();
-  }
-
   Future<void> _openScan() async {
-    final repo = _repository;
+    final repo = _lib.repository;
     if (repo == null) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -190,11 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ScanScreen(dependencies: widget.dependencies, repository: repo),
       ),
     );
-    await _refresh(); // a save may have happened while we were away
+    await _lib.refresh(); // a save may have happened while we were away
   }
 
   Future<void> _openIdScan() async {
-    final repo = _repository;
+    final repo = _lib.repository;
     if (repo == null) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -202,11 +130,11 @@ class _HomeScreenState extends State<HomeScreen> {
             IdScanScreen(dependencies: widget.dependencies, repository: repo),
       ),
     );
-    await _refresh();
+    await _lib.refresh();
   }
 
   Future<void> _onImport() async {
-    final repo = _repository;
+    final repo = _lib.repository;
     if (repo == null) return;
     final messenger = ScaffoldMessenger.of(context);
     CapturedImage? image;
@@ -251,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return;
               }
               navigator.pop();
-              await _refresh();
+              await _lib.refresh();
             },
           ),
         ),
@@ -261,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openDocument(DocumentSummary s) async {
-    final repo = _repository;
+    final repo = _lib.repository;
     if (repo == null) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -276,166 +204,72 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-    await _refresh(); // a delete may have happened in the viewer
+    await _lib.refresh(); // a delete may have happened in the viewer
   }
 
-  Future<void> _onQueryChanged(String value) async {
-    final repo = _repository;
-    setState(() => _query = value);
-    if (value.trim().isEmpty) {
-      // Empty query restores the full (sorted) list; no re-query needed.
-      setState(() => _searchResults = const []);
-      return;
-    }
-    if (repo == null) return;
-    try {
-      final results = await repo.searchDocuments(value);
-      if (!mounted || value != _query) return; // race guard: newer query wins
-      setState(() => _searchResults = results);
-    } catch (_) {
-      if (mounted) setState(() => _error = true);
-    }
+  Future<void> _renameDocument(DocumentSummary s) async {
+    final newName = await showRenameDialog(context, s.document.name);
+    if (newName == null || !mounted) return;
+    final l10n = context.l10n;
+    final ok = await _lib.rename(s.document.id, newName);
+    if (!ok && mounted) context.showErrorSnack(l10n.commonErrorRename);
   }
 
-  // After returning from a push, re-apply search if active, else reload.
-  Future<void> _refresh() => _searching ? _onQueryChanged(_query) : _load();
+  Future<void> _shareDocument(DocumentSummary s) async {
+    final l10n = context.l10n;
+    final result = await _lib.shareDocument(s);
+    if (result == false && mounted)
+      context.showErrorSnack(l10n.commonErrorShare);
+  }
 
-  void _onSortCriterion(SortCriterion c) => setState(() {
-    _sort = nextSort(_sort, c);
-    _sortedSummaries = sortDocuments(_summaries, _sort); // recompute the cache
-  });
+  Future<void> _exportSelected() async {
+    final l10n = context.l10n;
+    final result = await _lib.exportSelected();
+    if (result == false && mounted)
+      context.showErrorSnack(l10n.commonErrorShare);
+  }
 
   void _onViewModeChanged(LibraryViewMode mode) =>
       setState(() => _viewMode = mode);
 
-  Future<void> _renameDocument(DocumentSummary s) async {
-    final repo = _repository;
-    if (repo == null) return;
-    final newName = await showRenameDialog(context, s.document.name);
-    if (newName == null) return;
-    if (!mounted) return;
-    final l10n = context.l10n;
-    try {
-      await repo.rename(s.document.id, newName);
-      await _refresh(); // refresh the list (no spinner; active sort re-applies)
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorRename)));
-    }
-  }
-
-  Future<void> _shareDocument(DocumentSummary s) async {
-    final repo = _repository;
-    if (repo == null || _sharing) return;
-    final l10n = context.l10n;
-    setState(() => _sharing = true);
-    try {
-      final file = await repo.exportPdf(s.document.id);
-      await widget.libraryDependencies.share.share([
-        file.path,
-      ], subject: s.document.name);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorShare)));
-    } finally {
-      if (mounted) setState(() => _sharing = false);
-    }
-  }
-
-  void _toggleSelect(DocumentSummary s) {
-    setState(() {
-      final id = s.document.id;
-      if (!_selectedIds.remove(id)) _selectedIds.add(id);
-    });
-  }
-
-  void _startSelection(DocumentSummary s) {
-    setState(() => _selectedIds.add(s.document.id));
-  }
-
-  void _clearSelection() => setState(() => _selectedIds.clear());
-
-  // The documents currently on screen, in display order (search order when
-  // searching, else the active sort). Selection export follows this order.
-  List<DocumentSummary> get _displayed =>
-      _searching ? _searchResults : _sortedSummaries;
-
-  Future<void> _exportSelected() async {
-    final repo = _repository;
-    if (repo == null || _sharing) return;
-    final selected = _displayed
-        .where((s) => _selectedIds.contains(s.document.id))
-        .toList();
-    if (selected.isEmpty) return;
-    final ids = selected.map((s) => s.document.id).toList();
-    final l10n = context.l10n;
-
-    setState(() => _sharing = true);
-    try {
-      final share = widget.libraryDependencies.share;
-      if (ids.length == 1) {
-        final file = await repo.exportPdf(ids.first);
-        await share.share([file.path], subject: selected.first.document.name);
-      } else {
-        final files = await repo.exportSeparatePdfs(ids);
-        // Reuse the repo's sanitized per-doc PDF names as zip entry names (DRY).
-        final entryNames = [for (final f in files) p.basename(f.path)];
-        final zip = await widget.libraryDependencies.archiver.zip(
-          files,
-          archiveName: 'documents.zip',
-          entryNames: entryNames,
-        );
-        await share.share([zip.path], mimeType: 'application/zip');
-      }
-      if (mounted) _clearSelection();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorShare)));
-    } finally {
-      if (mounted) setState(() => _sharing = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // The banner's own SafeArea absorbs the bottom inset when shown; without
-    // it (iOS, guideline 3.1.1) the body must clear the home indicator itself.
-    final banner = donationsAvailable ? const DonationBanner() : null;
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            bottom: banner == null,
-            child: Column(
-              children: [
-                _buildHeader(context),
-                Expanded(child: _buildBody()),
-                if (!_selectionMode) _buildActionRow(context),
-              ],
-            ),
-          ),
-          // Busy overlay while a share/export runs — blocks input and signals
-          // progress so the user isn't left tapping a frozen UI. Mirrors the
-          // page viewer's mid-edit overlay.
-          if (_sharing)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Color(0x66000000),
-                child: Center(
-                  key: Key('home-sharing'),
-                  child: CircularProgressIndicator(),
+    return ListenableBuilder(
+      listenable: _lib,
+      builder: (context, _) {
+        // The banner's own SafeArea absorbs the bottom inset when shown; without
+        // it (iOS, guideline 3.1.1) the body must clear the home indicator.
+        final banner = donationsAvailable ? const DonationBanner() : null;
+        return Scaffold(
+          body: Stack(
+            children: [
+              SafeArea(
+                bottom: banner == null,
+                child: Column(
+                  children: [
+                    _buildHeader(context),
+                    Expanded(child: _buildBody()),
+                    if (!_lib.selectionMode) _buildActionRow(context),
+                  ],
                 ),
               ),
-            ),
-        ],
-      ),
-      bottomNavigationBar: banner,
+              // Busy overlay while a share/export runs — blocks input and signals
+              // progress so the user isn't left tapping a frozen UI.
+              if (_lib.sharing)
+                const Positioned.fill(
+                  child: ColoredBox(
+                    color: Color(0x66000000),
+                    child: Center(
+                      key: Key('home-sharing'),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          bottomNavigationBar: banner,
+        );
+      },
     );
   }
 
@@ -444,11 +278,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // search the list is in FTS relevance order and the sort pill is inert, so
   // it is hidden to avoid confusion.
   bool get _showControls =>
-      !_loading &&
-      !_error &&
-      !_selectionMode &&
-      !_searching &&
-      _summaries.isNotEmpty;
+      !_lib.loading &&
+      !_lib.error &&
+      !_lib.selectionMode &&
+      !_lib.searching &&
+      _lib.summaries.isNotEmpty;
 
   Widget _buildHeader(BuildContext context) {
     final r = context.ream;
@@ -467,14 +301,14 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _selectionMode
+            _lib.selectionMode
                 ? _buildSelectionBar(context)
                 : _buildTitleRow(context),
-            if (!_selectionMode) ...[
+            if (!_lib.selectionMode) ...[
               const SizedBox(height: 14),
               ReamSearchField(
                 controller: _searchController,
-                onChanged: _onQueryChanged,
+                onChanged: _lib.onQueryChanged,
               ),
             ],
             if (_showControls) ...[
@@ -482,7 +316,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SortPill(sort: _sort, onCriterionSelected: _onSortCriterion),
+                  SortPill(
+                    sort: _lib.sort,
+                    onCriterionSelected: _lib.setSortCriterion,
+                  ),
                   ReamSegmented<LibraryViewMode>(
                     key: const Key('library-view-toggle'),
                     value: _viewMode,
@@ -584,11 +421,11 @@ class _HomeScreenState extends State<HomeScreen> {
           key: const Key('selection-close'),
           tooltip: context.l10n.homeCancelSelectionTooltip,
           icon: Icon(Icons.close, color: r.ink),
-          onPressed: _clearSelection,
+          onPressed: _lib.clearSelection,
         ),
         Expanded(
           child: Text(
-            context.l10n.homeSelectedCount(_selectedIds.length),
+            context.l10n.homeSelectedCount(_lib.selectedIds.length),
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
@@ -598,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icon(Icons.ios_share, color: r.ink),
           // Disabled while a share/export is already in flight — the re-entry
           // guard is now visibly disabled instead of silently swallowing taps.
-          onPressed: _sharing ? null : _exportSelected,
+          onPressed: _lib.sharing ? null : _exportSelected,
         ),
       ],
     );
@@ -606,6 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildActionRow(BuildContext context) {
     final f = widget.libraryDependencies.features;
+    final ready = _lib.repository != null;
     final buttons = <Widget>[
       if (f.scan)
         Expanded(
@@ -615,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: context.l10n.homeActionScan,
             icon: Icons.add,
             primary: true,
-            onPressed: _repository == null ? null : _openScan,
+            onPressed: ready ? _openScan : null,
           ),
         ),
       if (f.idCard)
@@ -625,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
             key: const Key('home-scan-id'),
             label: context.l10n.homeActionIdCard,
             icon: Icons.badge_outlined,
-            onPressed: _repository == null ? null : _openIdScan,
+            onPressed: ready ? _openIdScan : null,
           ),
         ),
       if (f.import)
@@ -635,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
             key: const Key('home-import'),
             label: context.l10n.homeActionImport,
             icon: Icons.download_outlined,
-            onPressed: _repository == null ? null : _onImport,
+            onPressed: ready ? _onImport : null,
           ),
         ),
     ];
@@ -654,26 +492,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBody() {
-    if (_loading) {
+    if (_lib.loading) {
       return const Center(
         key: Key('documents-loading'),
         child: CircularProgressIndicator(),
       );
     }
-    if (_error) return _buildError();
+    if (_lib.error) return _buildError();
 
-    if (_searching) {
-      if (_searchResults.isEmpty) {
+    if (_lib.searching) {
+      if (_lib.searchResults.isEmpty) {
         return Center(
           key: const Key('documents-search-empty'),
-          child: Text(context.l10n.homeSearchNoMatch(_query)),
+          child: Text(context.l10n.homeSearchNoMatch(_lib.query)),
         );
       }
-      return _buildDocuments(_searchResults);
+      return _buildDocuments(_lib.searchResults);
     }
 
-    if (_summaries.isEmpty) return const EmptyDocumentsView();
-    return _buildDocuments(_sortedSummaries);
+    if (_lib.summaries.isEmpty) return const EmptyDocumentsView();
+    return _buildDocuments(_lib.sortedSummaries);
   }
 
   Widget _buildDocuments(List<DocumentSummary> docs) {
@@ -683,10 +521,10 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpen: _openDocument,
         onRename: _renameDocument,
         onShare: _shareDocument,
-        selectionMode: _selectionMode,
-        selectedIds: _selectedIds,
-        onToggleSelect: _toggleSelect,
-        onLongPress: _startSelection,
+        selectionMode: _lib.selectionMode,
+        selectedIds: _lib.selectedIds,
+        onToggleSelect: _lib.toggleSelect,
+        onLongPress: _lib.startSelection,
       );
     }
     return DocumentsListView(
@@ -694,10 +532,10 @@ class _HomeScreenState extends State<HomeScreen> {
       onOpen: _openDocument,
       onRename: _renameDocument,
       onShare: _shareDocument,
-      selectionMode: _selectionMode,
-      selectedIds: _selectedIds,
-      onToggleSelect: _toggleSelect,
-      onLongPress: _startSelection,
+      selectionMode: _lib.selectionMode,
+      selectedIds: _lib.selectedIds,
+      onToggleSelect: _lib.toggleSelect,
+      onLongPress: _lib.startSelection,
       features: widget.libraryDependencies.features,
     );
   }
@@ -708,11 +546,11 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(_startupFailure ?? context.l10n.homeErrorLoadDocuments),
+          Text(_lib.startupFailure ?? context.l10n.homeErrorLoadDocuments),
           const SizedBox(height: 8),
           FilledButton(
             key: const Key('documents-retry'),
-            onPressed: _retry,
+            onPressed: _lib.retry,
             child: Text(context.l10n.commonRetry),
           ),
         ],
