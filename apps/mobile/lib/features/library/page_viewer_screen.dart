@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'share_channel.dart';
 
+import '../../core/ui/error_snack.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
 import '../../theme/ream_theme.dart';
@@ -19,9 +20,11 @@ import 'feature_flags.dart';
 import 'export/export_quality_dialog.dart';
 import 'merge_picker_dialog.dart';
 import 'page_image.dart';
+import 'page_viewer_controller.dart';
 import 'password_dialog.dart';
 import 'pdf_preview_screen.dart';
 import 'recognized_text_screen.dart';
+import 'view_state.dart';
 import 'widgets/editor_toolbar.dart';
 import 'widgets/editor_top_bar.dart';
 import 'widgets/page_counter_pill.dart';
@@ -30,10 +33,10 @@ import 'widgets/rename_dialog.dart';
 import 'widgets/share_menu_button.dart';
 
 /// Full-screen page viewer: pinch-zoom + pan over a document's page(s).
-/// Multi-page-ready (PageView; one page today). Loads pages on init and shows
-/// loading / error+retry / empty / loaded. The delete action confirms, deletes
-/// (row + files), and pops back to the list. The SCREEN owns the delete
-/// sequence; the dialog only returns the user's choice.
+/// Multi-page-ready (PageView; one page today). All state + repository
+/// orchestration lives in [PageViewerController] (P06); this widget is a thin
+/// view — dialogs, navigation, l10n toasts, and rendering only — that drives
+/// the controller through a `ListenableBuilder`.
 ///
 /// Decodes full-resolution (no cacheWidth) so zoom is usable — its Image is a
 /// FileImage, NOT a ResizeImage. NOTE: this is not memory-safe for many pages;
@@ -64,127 +67,57 @@ class PageViewerScreen extends StatefulWidget {
 
 class _PageViewerScreenState extends State<PageViewerScreen> {
   final PageController _controller = PageController();
-  List<PageImage>? _pages;
-  bool _loading = true;
-  bool _error = false;
-  bool _exporting = false;
-  // True while a mutating edit (rotate/crop/retake) is running. Edits are
-  // single-flight: the toolbar is disabled and re-entry is refused so
-  // overlapping full-res regenerations can't race (which made the image
-  // appear to "revert" — 4x90 = 360).
-  bool _editing = false;
-  // Bumped on every edit so the displayed Image gets a new key and is forced
-  // to re-decode. A regenerated flat reuses its file PATH, and FileImage is
-  // keyed by path — so clearing the image cache alone leaves the mounted Image
-  // element showing its already-decoded (stale) frame. The changing key
-  // recreates the element, which (with the cache cleared) reads fresh bytes.
-  int _imageEpoch = 0;
-  int _current = 0;
-  late String _name;
+  late final PageViewerController _pvc;
 
   @override
   void initState() {
     super.initState();
-    _name = widget.name;
-    _load();
+    _pvc = PageViewerController(
+      repository: widget.repository,
+      documentId: widget.documentId,
+      name: widget.name,
+      printer: widget.printer,
+      share: widget.share,
+    );
+    // ignore: discarded_futures
+    _pvc.load();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _pvc.dispose();
     super.dispose();
-  }
-
-  /// Single point that assigns [_pages] AND keeps [_current] a valid index —
-  /// clamped to `[0, len-1]`, or 0 when empty. Every path that replaces the
-  /// page list (initial/reload, delete, split, merge) routes through here so
-  /// `_pages![_current]` can never go out of range after the list shrinks.
-  /// Call inside a `setState`.
-  void _setPages(List<PageImage> pages) {
-    _pages = pages;
-    _current = pages.isEmpty ? 0 : _current.clamp(0, pages.length - 1);
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final pages = await widget.repository.getDocumentPages(widget.documentId);
-      if (!mounted) return;
-      setState(() {
-        _setPages(pages);
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = true;
-      });
-    }
-  }
-
-  Future<void> _reloadAfterEdit() async {
-    // The regenerated flat reuses its file path; FileImage caches by path, so
-    // clear the cache before reloading or the stale image would show.
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-    _imageEpoch++; // force the displayed Image to re-decode (see field doc)
-    if (!mounted) return;
-    await _load();
   }
 
   Future<void> _exportPdf() async {
     final l10n = context.l10n;
     final quality = await showExportQualityDialog(context);
     if (quality == null || !mounted) return;
-    setState(() => _exporting = true);
-    try {
-      final file = await widget.repository.exportPdf(
-        widget.documentId,
-        quality: quality,
-      );
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => PdfPreviewScreen(
-            pdfPath: file.path,
-            name: _name,
-            share: widget.share,
-            features: widget.features,
-          ),
-        ),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerExportPdfError)));
-    } finally {
-      if (mounted) setState(() => _exporting = false);
+    final file = await _pvc.exportPdf(quality);
+    if (!mounted) return;
+    if (file == null) {
+      context.showErrorSnack(l10n.viewerExportPdfError);
+      return;
     }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PdfPreviewScreen(
+          pdfPath: file.path,
+          name: _pvc.name,
+          share: widget.share,
+          features: widget.features,
+        ),
+      ),
+    );
   }
 
   Future<void> _rename() async {
     final l10n = context.l10n;
-    final newName = await showRenameDialog(context, _name);
-    if (newName == null) return;
-    if (!mounted) return;
-    try {
-      final updated = await widget.repository.rename(
-        widget.documentId,
-        newName,
-      );
-      if (!mounted) return;
-      setState(() => _name = updated.name);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorRename)));
-    }
+    final newName = await showRenameDialog(context, _pvc.name);
+    if (newName == null || !mounted) return;
+    final ok = await _pvc.rename(newName);
+    if (!ok && mounted) context.showErrorSnack(l10n.commonErrorRename);
   }
 
   Future<void> _confirmAndDelete() async {
@@ -208,26 +141,22 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ),
     );
     if (ok != true) return;
-    try {
-      await widget.repository.deleteDocument(widget.documentId);
-      if (!mounted) return;
+    final deleted = await _pvc.deleteDocument();
+    if (!mounted) return;
+    if (deleted) {
       Navigator.of(
         context,
       ).pop(); // leave the viewer -> Home._load() reflects it
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerDeleteDocumentError)));
+    } else {
+      context.showErrorSnack(l10n.viewerDeleteDocumentError);
     }
   }
 
   Future<void> _confirmAndDeletePage() async {
     final l10n = context.l10n;
-    final pages = _pages;
-    if (pages == null || pages.isEmpty) return;
-    final page = pages[_current];
-    final isLast = pages.length == 1;
+    final page = _pvc.currentPage;
+    if (page == null) return;
+    final isLast = _pvc.pages.length == 1;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -251,90 +180,48 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ),
     );
     if (ok != true) return;
-    try {
-      final remaining = await widget.repository.deletePage(
-        widget.documentId,
-        page.position,
-      );
-      if (!mounted) return;
-      if (remaining == 0) {
-        Navigator.of(context).pop(); // document gone → back to Home
-        return;
-      }
-      // _load() -> _setPages() re-clamps _current to a valid index centrally.
-      await _load();
-      if (mounted && _controller.hasClients) _controller.jumpToPage(_current);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerDeletePageError)));
+    final remaining = await _pvc.deletePage(page.position);
+    if (!mounted) return;
+    if (remaining == null) {
+      context.showErrorSnack(l10n.viewerDeletePageError);
+      return;
     }
+    if (remaining == 0) {
+      Navigator.of(context).pop(); // document gone → back to Home
+      return;
+    }
+    // _pvc.deletePage reloaded + re-clamped current centrally.
+    if (_controller.hasClients) _controller.jumpToPage(_pvc.current);
   }
 
   Future<void> _exportPageAsImage() async {
     final l10n = context.l10n;
-    final pages = _pages;
-    if (pages == null || pages.isEmpty) return;
-    final page = pages[_current];
+    final page = _pvc.currentPage;
+    if (page == null) return;
     final quality = await showExportQualityDialog(context);
     if (quality == null || !mounted) return;
-    setState(() => _exporting = true);
-    try {
-      final file = await widget.repository.exportPageAsImage(
-        widget.documentId,
-        page.position,
-        quality: quality,
-      );
-      await widget.share.share([file.path], subject: _name);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerShareImageError)));
-    } finally {
-      if (mounted) setState(() => _exporting = false);
-    }
+    final ok = await _pvc.exportPageAsImageAndShare(page.position, quality);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerShareImageError);
   }
 
   Future<void> _exportAllImages() async {
     final l10n = context.l10n;
     final quality = await showExportQualityDialog(context);
     if (quality == null || !mounted) return;
-    setState(() => _exporting = true);
-    try {
-      final files = await widget.repository.exportAllPagesAsImages(
-        widget.documentId,
-        quality: quality,
-      );
-      await widget.share.share(
-        files.map((f) => f.path).toList(),
-        subject: _name,
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerShareImagesError)));
-    } finally {
-      if (mounted) setState(() => _exporting = false);
-    }
+    final ok = await _pvc.exportAllImagesAndShare(quality);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerShareImagesError);
   }
 
   Future<void> _print() async {
     final l10n = context.l10n;
-    try {
-      final file = await widget.repository.exportPdf(widget.documentId);
-      await widget.printer.printPdf(file, name: _name);
-      if (!mounted) return;
+    final ok = await _pvc.printDocument();
+    if (!mounted) return;
+    if (ok) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.viewerPrintSuccess)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerPrintError)));
+    } else {
+      context.showErrorSnack(l10n.viewerPrintError);
     }
   }
 
@@ -342,42 +229,27 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     final l10n = context.l10n;
     final password = await showPasswordDialog(context);
     if (password == null || password.isEmpty || !mounted) return;
-    try {
-      final file = await widget.repository.exportProtectedPdf(
-        widget.documentId,
-        password,
-      );
-      if (!mounted) return;
+    final file = await _pvc.protect(password);
+    if (!mounted) return;
+    if (file != null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.viewerProtectPdfSuccess)));
-      unawaited(_shareQuietly(file));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerProtectPdfError)));
-    }
-  }
-
-  Future<void> _shareQuietly(File file) async {
-    try {
-      await widget.share.share([file.path], subject: _name);
-    } catch (_) {
-      /* share unavailable (e.g. host test) — ignore */
+      unawaited(_pvc.shareQuietly(file));
+    } else {
+      context.showErrorSnack(l10n.viewerProtectPdfError);
     }
   }
 
   void _viewText() {
-    final pages = _pages;
-    if (pages == null || pages.isEmpty) return;
-    final page = pages[_current];
+    final page = _pvc.currentPage;
+    if (page == null) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => RecognizedTextScreen(
           documentId: widget.documentId,
           position: page.position,
-          name: _name,
+          name: _pvc.name,
           initialText: page.ocrText,
           repository: widget.repository,
           share: widget.share,
@@ -387,106 +259,49 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
   }
 
   Future<void> _retakePage() async {
-    final pages = _pages;
-    if (pages == null || pages.isEmpty || _editing) return;
-    final page = pages[_current];
+    final page = _pvc.currentPage;
+    if (page == null || _pvc.editing) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ScanScreen(
           dependencies: widget.dependencies,
           repository: widget.repository,
-          onCapture: (image, corners, enhancer) async {
-            try {
-              await widget.repository.replacePage(
-                widget.documentId,
-                page.position,
-                image,
-                corners: corners,
-                enhancer: enhancer,
-              );
-              return true;
-            } catch (_) {
-              return false;
-            }
-          },
+          onCapture: (image, corners, enhancer) => _pvc.replacePage(
+            page.position,
+            image,
+            corners: corners,
+            enhancer: enhancer,
+          ),
         ),
       ),
     );
     if (!mounted) return;
-    await _reloadAfterEdit();
+    await _pvc.reloadAfterEdit();
   }
 
   void _reorderPages(int oldIndex, int newIndex) {
-    // Single-flight: refuse a reorder while a mutating edit is running so the
-    // optimistic reorder can't apply without its persist (which _persistReorder
-    // would then refuse), leaving the UI and DB out of sync.
-    if (_editing) return;
-    // onReorderItem (used in PageThumbnailStrip) provides newIndex as the
-    // correct insertion index already — no adjustment needed.
-    final ordered = List<PageImage>.from(_pages!);
-    ordered.insert(newIndex, ordered.removeAt(oldIndex));
-    setState(() => _pages = ordered); // optimistic, snappy UI
+    final messenger = ScaffoldMessenger.of(context);
+    final errorText = context.l10n.viewerReorderPagesError;
     // ignore: discarded_futures
-    _persistReorder(ordered);
-  }
-
-  Future<void> _persistReorder(List<PageImage> ordered) async {
-    if (_editing) return; // single-flight: don't race an in-flight edit
-    setState(() => _editing = true);
-    final l10n = context.l10n;
-    try {
-      await widget.repository.reorderPages(
-        widget.documentId,
-        ordered.map((p) => p.position).toList(),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerReorderPagesError)));
-      await _load(); // rollback to the persisted order
-    } finally {
-      if (mounted) setState(() => _editing = false);
-    }
-  }
-
-  /// Runs a single mutating edit with single-flight protection: refuses
-  /// re-entry while another edit is running, flips [_editing] (which disables
-  /// the toolbar + shows a busy overlay), reloads on success, and surfaces
-  /// [failMessage] on failure. Callers do their own navigation (e.g. opening
-  /// the crop editor) BEFORE calling this with the resolved edit closure.
-  Future<void> _runEdit(
-    Future<void> Function() edit,
-    String failMessage,
-  ) async {
-    if (_editing) return; // single-flight
-    setState(() => _editing = true);
-    try {
-      await edit();
-      if (!mounted) return;
-      await _reloadAfterEdit();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(failMessage)));
-    } finally {
-      if (mounted) setState(() => _editing = false);
-    }
-  }
-
-  Future<void> _rotatePage() async {
-    final pages = _pages;
-    if (pages == null || pages.isEmpty || _editing) return;
-    final page = pages[_current];
-    await _runEdit(
-      () => widget.repository.rotatePage(widget.documentId, page.position),
-      context.l10n.viewerRotateError,
+    unawaited(
+      _pvc.reorder(oldIndex, newIndex).then((ok) {
+        if (!ok && mounted) {
+          messenger.showSnackBar(SnackBar(content: Text(errorText)));
+        }
+      }),
     );
   }
 
+  Future<void> _rotatePage() async {
+    final page = _pvc.currentPage;
+    if (page == null || _pvc.editing) return;
+    final err = context.l10n.viewerRotateError;
+    final ok = await _pvc.rotatePage(page.position);
+    if (!ok && mounted) context.showErrorSnack(err);
+  }
+
   Future<void> _editCrop(PageImage pg) async {
-    if (_editing) return;
+    if (_pvc.editing) return;
     final l10n = context.l10n;
     final corners = await Navigator.of(context).push<CropCorners>(
       MaterialPageRoute<CropCorners>(
@@ -498,18 +313,12 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ),
     );
     if (corners == null || !mounted) return;
-    await _runEdit(
-      () => widget.repository.updatePageCorners(
-        widget.documentId,
-        pg.position,
-        corners,
-      ),
-      l10n.viewerCropError,
-    );
+    final ok = await _pvc.updateCorners(pg.position, corners);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerCropError);
   }
 
   Future<void> _editFilter(PageImage pg) async {
-    if (_editing) return;
+    if (_pvc.editing) return;
     final l10n = context.l10n;
     final mode = await Navigator.of(context).push<EnhancerMode>(
       MaterialPageRoute<EnhancerMode>(
@@ -520,39 +329,27 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       ),
     );
     if (mode == null || !mounted) return;
-    await _runEdit(
-      () => widget.repository.updatePageEnhancer(
-        widget.documentId,
-        pg.position,
-        mode,
-      ),
-      l10n.viewerFilterError,
-    );
+    final ok = await _pvc.updateEnhancer(pg.position, mode);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerFilterError);
   }
 
   Future<void> _splitAfter() async {
     final l10n = context.l10n;
-    final pages = _pages;
-    if (pages == null || pages.isEmpty) return;
-    if (_current >= pages.length - 1) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerSplitLastPageWarning)));
+    final pages = _pvc.pages;
+    if (pages.isEmpty) return;
+    if (_pvc.current >= pages.length - 1) {
+      context.showErrorSnack(l10n.viewerSplitLastPageWarning);
       return;
     }
-    final page = pages[_current];
-    try {
-      await widget.repository.splitAfter(widget.documentId, page.position);
-      if (!mounted) return;
+    final page = pages[_pvc.current];
+    final ok = await _pvc.splitAfter(page.position);
+    if (!mounted) return;
+    if (ok) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.viewerSplitSuccess)));
-      await _load();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerSplitError)));
+    } else {
+      context.showErrorSnack(l10n.viewerSplitError);
     }
   }
 
@@ -564,23 +361,21 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
       widget.documentId,
     );
     if (sourceId == null || !mounted) return;
-    try {
-      await widget.repository.mergeInto(widget.documentId, sourceId);
-      if (!mounted) return;
-      await _load();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.viewerMergeError)));
-    }
+    final ok = await _pvc.mergeInto(sourceId);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerMergeError);
   }
 
   /// True when page-scoped actions (crop, share, delete-page, overflow…) should
-  /// be disabled: while loading, in the error state, mid-export, or with no
-  /// pages. Mirrors the guard the old AppBar controls used.
-  bool get _actionsDisabled =>
-      _loading || _error || _exporting || _editing || (_pages?.isEmpty ?? true);
+  /// be disabled: while loading, in the error state, mid-export, mid-edit, or
+  /// with no pages.
+  bool get _actionsDisabled {
+    final s = _pvc.state;
+    return s is Loading ||
+        s is ErrorState ||
+        _pvc.exporting ||
+        _pvc.editing ||
+        _pvc.pages.isEmpty;
+  }
 
   /// The Share toolbar button appears only when the umbrella `share` flag is on
   /// AND at least one share sub-action is enabled — so an empty share sheet can
@@ -725,67 +520,71 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = _pages;
-    final hasPages = pages != null && pages.isNotEmpty;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Theme(
         data: ReamTheme.dark(),
-        child: Scaffold(
-          appBar: EditorTopBar(
-            title: _name,
-            onBack: () => Navigator.of(context).pop(),
-            trailing: _buildOverflowMenu(),
-          ),
-          body: Stack(
-            children: [
-              _loading
-                  ? const Center(
-                      key: Key('page-viewer-loading'),
-                      child: CircularProgressIndicator(),
-                    )
-                  : _error
-                  ? _buildError()
-                  : !hasPages
-                  ? _buildEmpty()
-                  : _buildPages(pages),
-              // Busy overlay while a mutating edit runs — blocks input and
-              // signals progress so the user isn't left tapping a frozen UI.
-              if (_editing)
-                const Positioned.fill(
-                  child: ColoredBox(
-                    color: Color(0x99000000),
-                    child: Center(
-                      key: Key('page-viewer-editing'),
-                      child: CircularProgressIndicator(),
+        child: ListenableBuilder(
+          listenable: _pvc,
+          builder: (context, _) => Scaffold(
+            appBar: EditorTopBar(
+              title: _pvc.name,
+              onBack: () => Navigator.of(context).pop(),
+              trailing: _buildOverflowMenu(),
+            ),
+            body: Stack(
+              children: [
+                switch (_pvc.state) {
+                  Loading() => const Center(
+                    key: Key('page-viewer-loading'),
+                    child: CircularProgressIndicator(),
+                  ),
+                  ErrorState() => _buildError(),
+                  Empty() => _buildEmpty(),
+                  Loaded(:final data) => _buildPages(data),
+                },
+                // Busy overlay while a mutating edit runs — blocks input and
+                // signals progress so the user isn't left tapping a frozen UI.
+                if (_pvc.editing)
+                  const Positioned.fill(
+                    child: ColoredBox(
+                      color: Color(0x99000000),
+                      child: Center(
+                        key: Key('page-viewer-editing'),
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          bottomNavigationBar: EditorToolbar(
-            showCrop: widget.features.crop,
-            showRotate: widget.features.rotate,
-            showFilter: widget.features.filter,
-            showText: widget.features.viewText,
-            showRetake: widget.features.retake,
-            showShare: _showShareButton,
-            showDelete: widget.features.deletePage,
-            onCrop: _actionsDisabled
-                ? null
-                : () => _editCrop(_pages![_current]),
-            onRotate: _actionsDisabled ? null : () => unawaited(_rotatePage()),
-            onText: _actionsDisabled ? null : _viewText,
-            onRetake: _actionsDisabled ? null : () => unawaited(_retakePage()),
-            onShare: _actionsDisabled
-                ? null
-                : () => unawaited(_openShareMenu()),
-            onDelete: _actionsDisabled
-                ? null
-                : () => unawaited(_confirmAndDeletePage()),
-            onFilter: _actionsDisabled
-                ? null
-                : () => unawaited(_editFilter(_pages![_current])),
+              ],
+            ),
+            bottomNavigationBar: EditorToolbar(
+              showCrop: widget.features.crop,
+              showRotate: widget.features.rotate,
+              showFilter: widget.features.filter,
+              showText: widget.features.viewText,
+              showRetake: widget.features.retake,
+              showShare: _showShareButton,
+              showDelete: widget.features.deletePage,
+              onCrop: _actionsDisabled
+                  ? null
+                  : () => _editCrop(_pvc.pages[_pvc.current]),
+              onRotate: _actionsDisabled
+                  ? null
+                  : () => unawaited(_rotatePage()),
+              onText: _actionsDisabled ? null : _viewText,
+              onRetake: _actionsDisabled
+                  ? null
+                  : () => unawaited(_retakePage()),
+              onShare: _actionsDisabled
+                  ? null
+                  : () => unawaited(_openShareMenu()),
+              onDelete: _actionsDisabled
+                  ? null
+                  : () => unawaited(_confirmAndDeletePage()),
+              onFilter: _actionsDisabled
+                  ? null
+                  : () => unawaited(_editFilter(_pvc.pages[_pvc.current])),
+            ),
           ),
         ),
       ),
@@ -803,7 +602,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
           const SizedBox(height: 8),
           FilledButton(
             key: const Key('page-viewer-retry'),
-            onPressed: _load,
+            onPressed: () => unawaited(_pvc.load()),
             child: Text(l10n.commonRetry),
           ),
         ],
@@ -825,7 +624,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
               PageView.builder(
                 controller: _controller,
                 itemCount: pages.length,
-                onPageChanged: (i) => setState(() => _current = i),
+                onPageChanged: _pvc.setCurrent,
                 itemBuilder: (context, i) {
                   final pg = pages[i];
                   return InteractiveViewer(
@@ -834,7 +633,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                       File(pg.displayPath),
                       // Key includes the edit epoch so a same-path regenerated
                       // flat forces a fresh decode instead of showing stale.
-                      key: ValueKey('${pg.displayPath}#$_imageEpoch'),
+                      key: ValueKey('${pg.displayPath}#${_pvc.imageEpoch}'),
                       fit: BoxFit.contain,
                       errorBuilder: (c, e, s) => const Center(
                         child: Icon(Icons.broken_image_outlined, size: 64),
@@ -849,7 +648,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                   right: 12,
                   child: PageCounterPill(
                     key: const Key('page-viewer-page-counter'),
-                    current: _current + 1,
+                    current: _pvc.current + 1,
                     total: pages.length,
                   ),
                 ),
@@ -858,7 +657,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
         ),
         PageThumbnailStrip(
           pages: pages,
-          currentIndex: _current,
+          currentIndex: _pvc.current,
           onTap: (i) => _controller.animateToPage(
             i,
             duration: const Duration(milliseconds: 300),
