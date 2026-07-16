@@ -141,8 +141,13 @@ class DriftDocumentRepository implements DocumentRepository {
             mode: mode,
             existingFlatRel: null,
           );
-        } catch (_) {
+        } catch (e, st) {
           flatRel = null; // IO/regen failure — save proceeds with base only
+          _logger.error(
+            e,
+            stackTrace: st,
+            context: 'createFromCapture: flat regen failed, saved base only',
+          );
         }
       } catch (e) {
         // Base write failed: roll back the reserved document row + its dir so
@@ -402,6 +407,7 @@ class DriftDocumentRepository implements DocumentRepository {
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
+      if (e is DocumentExportException) rethrow; // uniform rethrow (P10 DUP-04)
       throw DocumentExportException('export failed: $e');
     }
   }
@@ -563,6 +569,7 @@ class DriftDocumentRepository implements DocumentRepository {
       await file.writeAsString(text);
       return file;
     } catch (e) {
+      if (e is DocumentExportException) rethrow; // uniform rethrow (P10 DUP-04)
       throw DocumentExportException('exportText failed: $e');
     }
   }
@@ -901,8 +908,13 @@ class DriftDocumentRepository implements DocumentRepository {
           mode: mode,
           existingFlatRel: null,
         );
-      } catch (_) {
+      } catch (e, st) {
         flatRel = null;
+        _logger.error(
+          e,
+          stackTrace: st,
+          context: 'addPageToDocument: flat regen failed, saved base only',
+        );
       }
 
       // Short transaction: insert the page row + bump modifiedAt.
@@ -1263,7 +1275,10 @@ class DriftDocumentRepository implements DocumentRepository {
   void _triggerOcr(int documentId, int position) {
     if (_ocrEngine is NoOpOcrEngine) return;
     // ignore: discarded_futures
-    runOcr(documentId, position).catchError((_) {});
+    runOcr(documentId, position).catchError((Object e, StackTrace st) {
+      // OCR is a re-runnable cache: never fail a save, but no longer silent.
+      _logger.error(e, stackTrace: st, context: 'background OCR failed');
+    });
   }
 
   String _defaultName(DateTime t) {
@@ -1278,8 +1293,9 @@ class DriftDocumentRepository implements DocumentRepository {
       if (await f.exists() && path.contains(Directory.systemTemp.path)) {
         await f.delete();
       }
-    } catch (_) {
-      /* best-effort */
+    } catch (e, st) {
+      // Best-effort: a lingering temp capture is harmless, but log it.
+      _logger.error(e, stackTrace: st, context: 'temp capture cleanup failed');
     }
   }
 
