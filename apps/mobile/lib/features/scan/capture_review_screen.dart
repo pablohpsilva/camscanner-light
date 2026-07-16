@@ -74,6 +74,9 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
       false; // NEW: true once user touches a handle or taps Reset
   EnhancerMode _mode = EnhancerMode.auto;
   Uint8List? _sourceBytes;
+  // The source JPEG is read off disk ONCE (P13 PERF-1): both the _sourceBytes
+  // setter and _runDetection await this single future instead of re-reading.
+  late final Future<Uint8List> _bytesFuture;
 
   // Three tiers: confident (green), best-guess-please-check (amber), and
   // fallback/full-frame (blue). Low-confidence detections still snap the dots
@@ -88,6 +91,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   @override
   void initState() {
     super.initState();
+    _bytesFuture = widget.readBytes(widget.image.path); // single read (PERF-1)
     widget
         .decodeImageSize(widget.image.path)
         .then((size) {
@@ -96,8 +100,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
         })
         .catchError((_) {});
     _runDetection(); // NEW — concurrent with decodeImageSize
-    widget
-        .readBytes(widget.image.path)
+    _bytesFuture
         .then((b) {
           if (!mounted) return;
           setState(() => _sourceBytes = b);
@@ -110,7 +113,10 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
     final detector = widget.edgeDetector;
     if (detector == null) return;
     try {
-      final bytes = await widget.readBytes(widget.image.path);
+      final bytes = await _bytesFuture; // reuse the single read (PERF-1)
+      // Skip the ~5 s detection isolate entirely if the user already dragged a
+      // handle or hit Reset while the bytes were loading (P13 PERF-2).
+      if (!mounted || _userInteracted) return;
       final result = await detector.detect(bytes);
       if (!mounted || _userInteracted) return;
       if (result != null) {
