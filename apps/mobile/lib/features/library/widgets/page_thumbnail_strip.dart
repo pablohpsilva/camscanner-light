@@ -5,6 +5,15 @@ import 'package:flutter/material.dart';
 import '../../../theme/ream_colors.dart';
 import '../page_image.dart';
 
+/// Thumbnail tile geometry — the SINGLE source for the tile size + its scroll
+/// advance (P13 kSlot-magic-number). Auto-scroll targeting derives from these,
+/// so a tile-size tweak can't silently drift the scroll off by a slot.
+const double kTileWidth = 56;
+const double kTileHeight = 80;
+const double kTileMargin = 4; // symmetric horizontal margin per tile
+const double kSlot = kTileWidth + 2 * kTileMargin; // one tile's scroll advance
+const double kThumbListPad = 8; // ListView horizontal padding start
+
 /// Horizontal scrollable strip of page thumbnails for [PageViewerScreen].
 /// [currentIndex] is 0-based (matching [PageController]). Auto-scrolls to
 /// keep the active tile visible when [currentIndex] changes.
@@ -53,9 +62,7 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
 
   void _scrollToCurrent() {
     if (!_scrollController.hasClients) return;
-    const double kSlot = 64.0; // 56 tile + 4 left margin + 4 right margin
-    const double kPad = 8.0; // ListView horizontal padding start
-    final target = (kPad + widget.currentIndex * kSlot).clamp(
+    final target = (kThumbListPad + widget.currentIndex * kSlot).clamp(
       0.0,
       _scrollController.position.maxScrollExtent,
     );
@@ -75,8 +82,8 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
     final ream = context.ream;
     final dpr = MediaQuery.of(context).devicePixelRatio;
     final placeholder = Container(
-      width: 56,
-      height: 80,
+      width: kTileWidth,
+      height: kTileHeight,
       color: ream.surface,
       child: Icon(Icons.description_outlined, color: ream.muted),
     );
@@ -84,8 +91,8 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
       onTap: () => widget.onTap(index),
       child: Container(
         key: Key('page-thumb-$index'),
-        width: 56,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: kTileWidth,
+        margin: const EdgeInsets.symmetric(horizontal: kTileMargin),
         foregroundDecoration: isSelected
             ? BoxDecoration(
                 border: Border.all(color: ream.green, width: 2),
@@ -96,10 +103,10 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
           borderRadius: BorderRadius.circular(4),
           child: Image.file(
             File(page.displayPath),
-            width: 56,
-            height: 80,
+            width: kTileWidth,
+            height: kTileHeight,
             fit: BoxFit.cover,
-            cacheWidth: (56 * dpr).round(),
+            cacheWidth: (kTileWidth * dpr).round(),
             errorBuilder: (_, _, _) => placeholder,
           ),
         ),
