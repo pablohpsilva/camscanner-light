@@ -7,14 +7,32 @@ import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/search/document_search_service.dart';
 
+/// Records every SELECT statement drift runs, so a test can assert the SHAPE of
+/// the first-page-thumbnail query (P12 PERF-01) — no full `SELECT * FROM pages`
+/// scan.
+class _SelectSpy extends QueryInterceptor {
+  final statements = <String>[];
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) {
+    statements.add(statement);
+    return super.runSelect(executor, statement, args);
+  }
+}
+
 void main() {
   late AppDatabase db;
+  late _SelectSpy spy;
   late Directory base;
   late DocumentFileStore store;
   late DocumentSearchService service;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
+    spy = _SelectSpy();
+    db = AppDatabase(NativeDatabase.memory().interceptWith(spy));
     base = Directory.systemTemp.createTempSync('search_svc');
     store = DocumentFileStore(base);
     service = DocumentSearchService(db, store);
@@ -76,6 +94,52 @@ void main() {
         );
       },
     );
+
+    test(
+      'thumbnail is the LOWEST-position page (multi-page precedence)',
+      () async {
+        final id = await newDoc('Doc', DateTime.utc(2026, 1, 1));
+        await addPage(id, 2); // insert out of order to prove MIN(position) wins
+        await addPage(id, 1, flatRel: 'documents/$id/page_1_flat.jpg');
+        final s = (await service.listSummaries()).single;
+        expect(
+          s.thumbnailPath,
+          store.absoluteFor('documents/$id/page_1_flat.jpg').path,
+        );
+      },
+    );
+
+    test('a document with no pages has a null thumbnail', () async {
+      await newDoc('Empty', DateTime.utc(2026, 1, 1));
+      expect((await service.listSummaries()).single.thumbnailPath, isNull);
+    });
+
+    test('PERF-01: the first-page query aggregates (MIN(position)), not a full '
+        'pages scan', () async {
+      final id = await newDoc('Doc', DateTime.utc(2026, 1, 1));
+      await addPage(id, 1);
+      await addPage(id, 2);
+      await addPage(id, 3);
+      spy.statements.clear();
+      await service.listSummaries();
+      final lower = spy.statements.map((s) => s.toLowerCase());
+      expect(
+        lower.any((s) => s.contains('min(position)')),
+        isTrue,
+        reason: 'first-page path must come from a MIN(position) aggregate',
+      );
+      // No unconditional full-table page scan just to find the first page.
+      expect(
+        lower.any(
+          (s) =>
+              s.contains('from "pages"') &&
+              s.contains('order by') &&
+              !s.contains('min('),
+        ),
+        isFalse,
+        reason: 'must not SELECT every page row just to find the first',
+      );
+    });
   });
 
   group('search', () {

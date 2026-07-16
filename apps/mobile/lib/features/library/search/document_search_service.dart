@@ -116,17 +116,10 @@ class DocumentSearchService {
     }
     final rows = await query.get();
 
-    // (2) lowest-position page path per document — one query, no N+1.
-    final pages = await (_db.select(
-      _db.pages,
-    )..orderBy([(t) => OrderingTerm.asc(t.position)])).get();
-    final firstPathByDoc = <int, String>{};
-    for (final pg in pages) {
-      firstPathByDoc.putIfAbsent(
-        pg.documentId,
-        () => pg.flatRelativePath ?? pg.relativeImagePath,
-      );
-    }
+    // (2) first-page (lowest position) path per document — ONE aggregate query
+    // (PERF-01), restricted to onlyIds when set, so we never scan the pages of
+    // documents we aren't showing.
+    final firstPathByDoc = await _firstPagePaths(onlyIds);
 
     return rows.map((row) {
       final d = row.readTable(_db.documents);
@@ -142,5 +135,33 @@ class DocumentSearchService {
         thumbnailPath: rel == null ? null : _fileStore.absoluteFor(rel).path,
       );
     }).toList();
+  }
+
+  /// First-page (lowest `position`) display path per document (PERF-01). Uses
+  /// SQLite's bare-column MIN/MAX rule: `flat`/`img` are read from the row with
+  /// `MIN(position)` in each `document_id` group, so ONE aggregate row per
+  /// document is returned instead of scanning every page. Restricted to
+  /// [onlyIds] when set. Preserves the `flat ?? image` precedence.
+  Future<Map<int, String>> _firstPagePaths(Set<int>? onlyIds) async {
+    if (onlyIds != null && onlyIds.isEmpty) return const {};
+    final where = onlyIds == null
+        ? ''
+        : 'WHERE document_id IN (${List.filled(onlyIds.length, '?').join(', ')}) ';
+    final rows = await _db
+        .customSelect(
+          'SELECT document_id AS did, MIN(position) AS mp, '
+          'flat_relative_path AS flat, relative_image_path AS img '
+          'FROM pages ${where}GROUP BY document_id',
+          variables: onlyIds == null
+              ? const []
+              : [for (final id in onlyIds) Variable.withInt(id)],
+          readsFrom: {_db.pages},
+        )
+        .get();
+    return {
+      for (final r in rows)
+        r.read<int>('did'):
+            r.readNullable<String>('flat') ?? r.read<String>('img'),
+    };
   }
 }
