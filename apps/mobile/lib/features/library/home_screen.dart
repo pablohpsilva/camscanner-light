@@ -74,9 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentSort _sort = DocumentSort.initial;
   bool _feedbackAvailable = false;
   LibraryViewMode _viewMode = LibraryViewMode.list;
+  // Own (and therefore dispose) a controller ONLY when we constructed the
+  // fallback; an injected controller is the caller's to dispose (P06 task 4).
+  late final bool _ownsThemeController = widget.themeController == null;
   late final ThemeController _themeController =
       widget.themeController ??
       ThemeController(store: InMemoryThemeModeStore());
+  late final bool _ownsLocaleController = widget.localeController == null;
   late final LocaleController _localeController =
       widget.localeController ?? LocaleController(store: InMemoryLocaleStore());
 
@@ -108,6 +112,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    // Dispose only the controllers WE created (P06 task 4) — never an injected
+    // one, which the caller still owns and may reuse.
+    if (_ownsThemeController) _themeController.dispose();
+    if (_ownsLocaleController) _localeController.dispose();
     super.dispose();
   }
 
