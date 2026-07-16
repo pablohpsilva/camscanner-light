@@ -29,6 +29,7 @@ import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
 import '../pdf/pdf_encryptor.dart';
 import 'app_database.dart' hide Document;
+import 'page_dao.dart';
 
 /// Drift-backed [DocumentRepository]. Scrubs the capture and writes the file
 /// OUTSIDE any transaction (so the write lock is never held across slow image
@@ -56,6 +57,9 @@ class DriftDocumentRepository implements DocumentRepository {
   /// injectable rotate isolate + its CMP-10 timeout.
   final PageDerivativePipeline _pipeline;
 
+  /// Single home for page-row queries + row→PageImage mapping (P05 T05.3).
+  final PageDao _pageDao;
+
   DriftDocumentRepository({
     required AppDatabase db,
     required ImageMetadataScrubber scrubber,
@@ -82,6 +86,7 @@ class DriftDocumentRepository implements DocumentRepository {
          rotator: rotator,
          rotateTimeout: rotateTimeout,
        ),
+       _pageDao = PageDao(db, fileStore),
        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
        _encryptor = encryptor, // ignore: prefer_initializing_formals
        _compressor = compressor; // ignore: prefer_initializing_formals
@@ -304,29 +309,8 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<List<PageImage>> getDocumentPages(int documentId) async {
-    final pages =
-        await (_db.select(_db.pages)
-              ..where((t) => t.documentId.equals(documentId))
-              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-            .get();
-    return pages
-        .map(
-          (pg) => PageImage(
-            position: pg.position,
-            imagePath: _fileStore.absoluteFor(pg.relativeImagePath).path,
-            corners: CropCorners.tryParse(pg.corners) ?? CropCorners.fullFrame,
-            rotationQuarterTurns: pg.rotationQuarterTurns,
-            enhancerMode: EnhancerMode.fromIndex(pg.enhancerMode),
-            flatImagePath: pg.flatRelativePath == null
-                ? null
-                : _fileStore.absoluteFor(pg.flatRelativePath!).path,
-            ocrText: pg.ocrText,
-            ocrWords: OcrResult.decodeBoxes(pg.ocrBoxes),
-          ),
-        )
-        .toList();
-  }
+  Future<List<PageImage>> getDocumentPages(int documentId) =>
+      _pageDao.getDocumentPages(documentId);
 
   // Intentionally does NOT bump documents.modifiedAt: OCR is a derived,
   // re-runnable cache, not user content, and a background run must not reorder
@@ -622,36 +606,18 @@ class DriftDocumentRepository implements DocumentRepository {
   }
 
   /// Fetches the ([documentId], [position]) page row or throws (P10 DUP-01).
-  /// [op] is the message prefix; when [export] is true the failure is a
-  /// [DocumentExportException] (the export methods), else a
-  /// [DocumentSaveException]. Single source of the "require page" pattern.
+  /// Delegates to [PageDao] (P05 T05.3).
   Future<Page> _requirePage(
     int documentId,
     int position,
     String op, {
     bool export = false,
-  }) async {
-    final row =
-        await (_db.select(_db.pages)..where(
-              (t) =>
-                  t.documentId.equals(documentId) & t.position.equals(position),
-            ))
-            .getSingleOrNull();
-    if (row != null) return row;
-    final message = '$op: no page ($documentId, $position)';
-    throw export
-        ? DocumentExportException(message)
-        : DocumentSaveException(message);
-  }
+  }) => _pageDao.requirePage(documentId, position, op, export: export);
 
   /// Highest-position page row for [documentId], or null when it has none
-  /// (P10 DUP-01). Callers decide whether "no pages" is an error.
+  /// (P10 DUP-01). Delegates to [PageDao] (P05 T05.3).
   Future<Page?> _maxPositionPage(int documentId) =>
-      (_db.select(_db.pages)
-            ..where((p) => p.documentId.equals(documentId))
-            ..orderBy([(p) => OrderingTerm.desc(p.position)])
-            ..limit(1))
-          .getSingleOrNull();
+      _pageDao.maxPositionPage(documentId);
 
   /// Copies [src]'s base image (and its flat derivative, if any) to [imageRel]
   /// (+ the matching flat path), appending every written relative path to
@@ -867,27 +833,14 @@ class DriftDocumentRepository implements DocumentRepository {
     final row = await _requirePage(documentId, position, 'deletePage');
     // Count pages with one aggregate (was: fetch every row just to count) so we
     // can tell "only page" from "renumber survivors" (P10 CPLX-02).
-    final countExp = _db.pages.id.count();
-    final total =
-        (await (_db.selectOnly(_db.pages)
-                  ..addColumns([countExp])
-                  ..where(_db.pages.documentId.equals(documentId)))
-                .getSingle())
-            .read(countExp) ??
-        0;
-    final remaining = total - 1;
+    final remaining = await _pageDao.pageCount(documentId) - 1;
 
     await _db.transaction(() async {
       await (_db.delete(_db.pages)..where((t) => t.id.equals(row.id))).go();
       if (remaining > 0) {
         // Renumber survivors above the deleted position in ONE bulk UPDATE
         // (was O(pages) round-trips). `updates:` keeps drift streams live.
-        await _db.customUpdate(
-          'UPDATE pages SET position = position - 1 '
-          'WHERE document_id = ? AND position > ?',
-          variables: [Variable.withInt(documentId), Variable.withInt(position)],
-          updates: {_db.pages},
-        );
+        await _pageDao.renumberAfterDelete(documentId, position);
         await (_db.update(_db.documents)..where((d) => d.id.equals(documentId)))
             .write(DocumentsCompanion(modifiedAt: Value(_clock().toUtc())));
       } else {
