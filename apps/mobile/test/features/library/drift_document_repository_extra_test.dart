@@ -8,6 +8,7 @@ import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/document_repository.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
+import 'package:mobile/features/library/export/document_exporter.dart';
 import 'package:mobile/features/library/image_metadata_scrubber.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
 import 'package:mobile/features/library/ocr/ocr_engine.dart';
@@ -84,16 +85,26 @@ void main() {
     OcrEngine ocrEngine = const NoOpOcrEngine(),
     ImageMetadataScrubber scrubber = const JpegExifScrubber(),
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
-  }) => DriftDocumentRepository(
-    db: db,
-    scrubber: scrubber,
-    fileStore: DocumentFileStore(base),
-    clock: clock,
-    pdfBuilder: const PdfBuilder(),
-    warper: FakeImageWarper(),
-    ocrEngine: ocrEngine,
-    encryptor: encryptor,
-  );
+  }) {
+    final fileStore = DocumentFileStore(base);
+    return DriftDocumentRepository(
+      db: db,
+      scrubber: scrubber,
+      fileStore: fileStore,
+      clock: clock,
+      pdfBuilder: const PdfBuilder(),
+      warper: FakeImageWarper(),
+      ocrEngine: ocrEngine,
+      // The exporter now holds the encryptor (P05 T05.4/SOLID-02).
+      exporter: DocumentExporter(
+        db: db,
+        fileStore: fileStore,
+        pdfBuilder: const PdfBuilder(),
+        scrubber: scrubber,
+        encryptor: encryptor,
+      ),
+    );
+  }
 
   Future<int> seedEmptyDocument(String name) => db
       .into(db.documents)

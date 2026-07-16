@@ -10,8 +10,8 @@ import '../document.dart' hide Page;
 import '../document_file_store.dart';
 import '../document_repository.dart';
 import '../document_summary.dart';
+import '../export/document_exporter.dart';
 import '../export/export_quality.dart';
-import '../export/image_compressor.dart';
 import '../dart_page_processor.dart';
 import '../enhancer_mode.dart';
 import '../ensure_jpeg.dart';
@@ -27,7 +27,6 @@ import '../ocr/ocr_engine.dart';
 import '../ocr/ocr_result.dart';
 import '../page_image.dart';
 import '../pdf/pdf_builder.dart';
-import '../pdf/pdf_encryptor.dart';
 import 'app_database.dart' hide Document;
 import 'page_dao.dart';
 
@@ -42,10 +41,12 @@ class DriftDocumentRepository implements DocumentRepository {
   final ImageMetadataScrubber _scrubber;
   final DocumentFileStore _fileStore;
   final DateTime Function() _clock;
-  final PdfBuilder _pdfBuilder;
   final OcrEngine _ocrEngine;
-  final PdfEncryptor _encryptor;
-  final ImageCompressor _compressor;
+
+  /// Owns every export format + the concrete PDF-encryption/compression impls
+  /// (P05 T05.4 / SOLID-02), so the persistence layer no longer constructs or
+  /// imports them. Built at the composition of this ctor (or injected).
+  final DocumentExporter _exporter;
 
   /// Reports best-effort file-cleanup failures on a rolled-back merge/split
   /// (P03 SAFE-01). Const-defaulted so production wiring is silent-safe and
@@ -69,17 +70,15 @@ class DriftDocumentRepository implements DocumentRepository {
     required ImageWarper warper,
     PageProcessor? pageProcessor,
     OcrEngine ocrEngine = const NoOpOcrEngine(),
-    PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
-    ImageCompressor compressor = const ImageLibraryCompressor(),
     Duration rotateTimeout = const Duration(seconds: 12),
     AppLogger logger = const PrintAppLogger(),
     JpegRotator rotator = const ComputeJpegRotator(),
+    DocumentExporter? exporter,
   }) : _logger = logger, // ignore: prefer_initializing_formals
        _db = db, // ignore: prefer_initializing_formals
        _scrubber = scrubber, // ignore: prefer_initializing_formals
        _fileStore = fileStore, // ignore: prefer_initializing_formals
        _clock = clock, // ignore: prefer_initializing_formals
-       _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
        _pipeline = PageDerivativePipeline(
          fileStore: fileStore,
          processor: pageProcessor ?? DartPageProcessor(warper),
@@ -87,9 +86,15 @@ class DriftDocumentRepository implements DocumentRepository {
          rotateTimeout: rotateTimeout,
        ),
        _pageDao = PageDao(db, fileStore),
-       _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
-       _encryptor = encryptor, // ignore: prefer_initializing_formals
-       _compressor = compressor; // ignore: prefer_initializing_formals
+       _exporter =
+           exporter ??
+           DocumentExporter(
+             db: db,
+             fileStore: fileStore,
+             pdfBuilder: pdfBuilder,
+             scrubber: scrubber,
+           ),
+       _ocrEngine = ocrEngine; // ignore: prefer_initializing_formals
 
   @override
   Future<Document> createFromCapture(
@@ -353,189 +358,36 @@ class DriftDocumentRepository implements DocumentRepository {
   Future<File> exportPdf(
     int documentId, {
     ExportQuality quality = ExportQuality.original,
-  }) async {
-    final pages = await getDocumentPages(documentId);
-    if (pages.isEmpty) {
-      throw const DocumentExportException('export failed: no pages');
-    }
-    try {
-      final bytes = await _pdfBuilder.build(
-        pages,
-        quality: quality,
-        idCardLayout: await _isIdCard(documentId),
-      );
-      final dir = await Directory.systemTemp.createTemp('pdf_export');
-      final safeName = await _pdfFileNameFor(documentId);
-      final file = File('${dir.path}/$safeName');
-      await file.writeAsBytes(bytes);
-      return file;
-    } catch (e) {
-      if (e is DocumentExportException) rethrow; // uniform rethrow (P10 DUP-04)
-      throw DocumentExportException('export failed: $e');
-    }
-  }
-
-  Future<bool> _isIdCard(int documentId) async {
-    final row = await (_db.select(
-      _db.documents,
-    )..where((d) => d.id.equals(documentId))).getSingleOrNull();
-    return row?.isIdCard ?? false;
-  }
+  }) => _exporter.exportPdf(documentId, quality: quality);
 
   @override
-  Future<File> exportCombinedPdf(List<int> documentIds) async {
-    if (documentIds.isEmpty) {
-      throw const DocumentExportException(
-        'combined export failed: no documents',
-      );
-    }
-    final pages = <PageImage>[];
-    for (final id in documentIds) {
-      pages.addAll(await getDocumentPages(id));
-    }
-    if (pages.isEmpty) {
-      throw const DocumentExportException('combined export failed: no pages');
-    }
-    try {
-      final bytes = await _pdfBuilder.build(pages);
-      final dir = await Directory.systemTemp.createTemp('pdf_combined');
-      final file = File('${dir.path}/documents.pdf');
-      await file.writeAsBytes(bytes);
-      return file;
-    } catch (e) {
-      if (e is DocumentExportException) rethrow;
-      throw DocumentExportException('combined export failed: $e');
-    }
-  }
+  Future<File> exportCombinedPdf(List<int> documentIds) =>
+      _exporter.exportCombinedPdf(documentIds);
 
   @override
-  Future<List<File>> exportSeparatePdfs(List<int> documentIds) async {
-    if (documentIds.isEmpty) {
-      throw const DocumentExportException(
-        'separate export failed: no documents',
-      );
-    }
-    final files = <File>[];
-    for (final id in documentIds) {
-      files.add(await exportPdf(id));
-    }
-    return files;
-  }
+  Future<List<File>> exportSeparatePdfs(List<int> documentIds) =>
+      _exporter.exportSeparatePdfs(documentIds);
 
   @override
-  Future<File> exportProtectedPdf(int documentId, String password) async {
-    final pages = await getDocumentPages(documentId);
-    if (pages.isEmpty) {
-      throw const DocumentExportException('protect failed: no pages');
-    }
-    try {
-      final bytes = await _pdfBuilder.build(
-        pages,
-        idCardLayout: await _isIdCard(documentId),
-      );
-      final encrypted = await _encryptor.encrypt(bytes, password);
-      final dir = await Directory.systemTemp.createTemp('pdf_protect');
-      final safeName = await _pdfFileNameFor(documentId);
-      final file = File('${dir.path}/$safeName');
-      await file.writeAsBytes(encrypted);
-      return file;
-    } catch (e) {
-      if (e is DocumentExportException) rethrow;
-      throw DocumentExportException('protect failed: $e');
-    }
-  }
-
-  /// Sanitized base name (no extension) from the document's name; 'document'
-  /// when the name is empty/unknown. Shared by all export filename builders.
-  Future<String> _exportBaseName(int documentId) async {
-    final doc = await (_db.select(
-      _db.documents,
-    )..where((d) => d.id.equals(documentId))).getSingleOrNull();
-    final base = (doc?.name ?? 'document')
-        .replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_')
-        .trim();
-    return base.isEmpty ? 'document' : base;
-  }
-
-  Future<String> _pdfFileNameFor(int documentId) async =>
-      '${await _exportBaseName(documentId)}.pdf';
+  Future<File> exportProtectedPdf(int documentId, String password) =>
+      _exporter.exportProtectedPdf(documentId, password);
 
   @override
   Future<File> exportPageAsImage(
     int documentId,
     int position, {
     ExportQuality quality = ExportQuality.original,
-  }) async {
-    final row = await _requirePage(
-      documentId,
-      position,
-      'exportImage failed',
-      export: true,
-    );
-    try {
-      // Display image: the flattened derivative when present, else the original.
-      final srcRel = row.flatRelativePath ?? row.relativeImagePath;
-      final bytes = await _fileStore.absoluteFor(srcRel).readAsBytes();
-      final compressed = await _compressor.compress(bytes, quality);
-      final scrubbed = _scrubber.scrub(compressed); // privacy: always scrub
-      // Privacy: write to the OS temp/cache dir, NOT the persistent document
-      // store. The store is included in Google/iCloud backups and would let
-      // export derivatives accumulate there forever; temp is self-purging and
-      // backup-excluded (same temp-file discipline as the PDF/text exports).
-      final dir = await Directory.systemTemp.createTemp('img_export');
-      final base = await _exportBaseName(documentId);
-      final file = File('${dir.path}/${base}_page_$position.jpg');
-      await file.writeAsBytes(scrubbed, flush: true);
-      return file;
-    } catch (e) {
-      if (e is DocumentExportException) rethrow;
-      throw DocumentExportException('exportImage failed: $e');
-    }
-  }
+  }) => _exporter.exportPageAsImage(documentId, position, quality: quality);
 
   @override
   Future<List<File>> exportAllPagesAsImages(
     int documentId, {
     ExportQuality quality = ExportQuality.original,
-  }) async {
-    final pages = await getDocumentPages(documentId);
-    if (pages.isEmpty) {
-      throw const DocumentExportException('exportAll failed: no pages');
-    }
-    final files = <File>[];
-    for (final page in pages) {
-      files.add(
-        await exportPageAsImage(documentId, page.position, quality: quality),
-      );
-    }
-    return files;
-  }
+  }) => _exporter.exportAllPagesAsImages(documentId, quality: quality);
 
   @override
-  Future<File> exportRecognizedText(int documentId, int position) async {
-    final row = await _requirePage(
-      documentId,
-      position,
-      'exportText failed',
-      export: true,
-    );
-    final text = row.ocrText;
-    if (text == null || text.trim().isEmpty) {
-      throw const DocumentExportException(
-        'exportText failed: no recognized text',
-      );
-    }
-    try {
-      final dir = await Directory.systemTemp.createTemp('txt_export');
-      final base = await _exportBaseName(documentId);
-      final file = File('${dir.path}/${base}_page_$position.txt');
-      await file.writeAsString(text);
-      return file;
-    } catch (e) {
-      if (e is DocumentExportException) rethrow; // uniform rethrow (P10 DUP-04)
-      throw DocumentExportException('exportText failed: $e');
-    }
-  }
+  Future<File> exportRecognizedText(int documentId, int position) =>
+      _exporter.exportRecognizedText(documentId, position);
 
   @override
   Future<Document> rename(int documentId, String newName) async {

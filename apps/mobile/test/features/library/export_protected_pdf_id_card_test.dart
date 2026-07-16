@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:mobile/features/library/document_file_store.dart';
 import 'package:mobile/features/library/drift/app_database.dart';
 import 'package:mobile/features/library/drift/drift_document_repository.dart';
+import 'package:mobile/features/library/export/document_exporter.dart';
 import 'package:mobile/features/library/export/export_quality.dart';
 import 'package:mobile/features/library/hybrid_warper.dart';
 import 'package:mobile/features/library/jpeg_exif_scrubber.dart';
@@ -61,7 +62,14 @@ void main() {
       clock: DateTime.now,
       pdfBuilder: pdf,
       warper: const HybridWarper(),
-      encryptor: const _PassthroughEncryptor(),
+      // The exporter holds the encryptor + the recording builder (P05 T05.4).
+      exporter: DocumentExporter(
+        db: db,
+        fileStore: store,
+        pdfBuilder: pdf,
+        scrubber: const JpegExifScrubber(),
+        encryptor: const _PassthroughEncryptor(),
+      ),
     );
   });
 
