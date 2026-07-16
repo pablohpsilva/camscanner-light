@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import '../../core/async/with_isolate_timeout.dart';
 import 'image_enhancer.dart';
 import 'oriented_enhance.dart';
+import 'white_point_lut.dart';
 
 /// Long side (px) of the proxy on which the illumination field is estimated.
 /// The shadow gradient is low-frequency, so a moderate proxy captures it
@@ -255,7 +256,6 @@ void _flatten(Uint8List px, int w, int h, Uint8List bg, int bw, int bh) {
 void _whitePointStretch(Uint8List px, int w, int h) {
   final n = w * h;
   if (n == 0) return;
-  final clip = ((n * kAutoWhiteClip).ceil()).clamp(1, n);
 
   final hist = [
     List<int>.filled(256, 0),
@@ -268,28 +268,19 @@ void _whitePointStretch(Uint8List px, int w, int h) {
     hist[2][px[i + 2]]++;
   }
 
-  // Build a lookup table per channel that reproduces the original stretch.
-  final lut = [Uint8List(256), Uint8List(256), Uint8List(256)];
-  for (var ch = 0; ch < 3; ch++) {
-    for (var v = 0; v < 256; v++) {
-      lut[ch][v] = v; // default: identity
-    }
-    // White point: highest value with more than [clip] pixels at or above it.
-    final hc = hist[ch];
-    int hi = 255, cum = 0;
-    while (hi > 0 && cum + hc[hi] < clip) {
-      cum += hc[hi--];
-    }
-    if (hi <= 0) continue;
-    final anchor = (hi * kAutoBlackAnchor).round();
-    if (hi <= anchor) continue;
-    final span = hi - anchor;
-    for (var v = anchor + 1; v < 256; v++) {
-      lut[ch][v] = (anchor + (v - anchor) * 255 ~/ span).clamp(0, 255);
-    }
+  // The per-channel white-point stretch table is now the SAME pure math the
+  // native pipeline uses (P09 parity unify — whitePointLut3Table): a tweak can
+  // no longer drift native↔Dart parity. The flat 768-element BGR-order table
+  // (here fed R,G,B histograms → R,G,B table) is de-interleaved into three
+  // per-channel LUTs applied below. Byte-identical to the old inline stretch.
+  final table = whitePointLut3Table(hist);
+  final l0 = Uint8List(256), l1 = Uint8List(256), l2 = Uint8List(256);
+  for (var v = 0; v < 256; v++) {
+    l0[v] = table[v * 3];
+    l1[v] = table[v * 3 + 1];
+    l2[v] = table[v * 3 + 2];
   }
 
-  final l0 = lut[0], l1 = lut[1], l2 = lut[2];
   for (var i = 0; i < px.length; i += 3) {
     px[i] = l0[px[i]];
     px[i + 1] = l1[px[i + 1]];
