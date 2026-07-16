@@ -65,6 +65,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DocumentRepository? _repository;
   List<DocumentSummary> _summaries = const [];
+  // The full list sorted by [_sort], cached so the whole-library sort runs only
+  // when [_summaries] or [_sort] changes — NOT on every unrelated setState
+  // (search keystroke, selection toggle, view-mode switch). P12 sort-on-build.
+  List<DocumentSummary> _sortedSummaries = const [];
   bool _loading = true;
   bool _error = false;
   DocumentSort _sort = DocumentSort.initial;
@@ -134,6 +138,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() {
         _summaries = docs;
+        _sortedSummaries = sortDocuments(
+          docs,
+          _sort,
+        ); // cache off the build path
         _loading = false;
         _startupFailure = null;
       });
@@ -284,8 +292,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // After returning from a push, re-apply search if active, else reload.
   Future<void> _refresh() => _searching ? _onQueryChanged(_query) : _load();
 
-  void _onSortCriterion(SortCriterion c) =>
-      setState(() => _sort = nextSort(_sort, c));
+  void _onSortCriterion(SortCriterion c) => setState(() {
+    _sort = nextSort(_sort, c);
+    _sortedSummaries = sortDocuments(_summaries, _sort); // recompute the cache
+  });
 
   void _onViewModeChanged(LibraryViewMode mode) =>
       setState(() => _viewMode = mode);
@@ -344,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // The documents currently on screen, in display order (search order when
   // searching, else the active sort). Selection export follows this order.
   List<DocumentSummary> get _displayed =>
-      _searching ? _searchResults : sortDocuments(_summaries, _sort);
+      _searching ? _searchResults : _sortedSummaries;
 
   Future<void> _exportSelected() async {
     final repo = _repository;
@@ -655,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_summaries.isEmpty) return const EmptyDocumentsView();
-    return _buildDocuments(sortDocuments(_summaries, _sort));
+    return _buildDocuments(_sortedSummaries);
   }
 
   Widget _buildDocuments(List<DocumentSummary> docs) {
