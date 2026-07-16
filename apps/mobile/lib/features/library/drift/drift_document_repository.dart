@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 
-import '../../../core/async/with_isolate_timeout.dart';
 import '../../../core/logging/app_logger.dart';
 
 import '../../scan/captured_image.dart';
@@ -20,6 +19,7 @@ import '../image_enhancer.dart';
 import '../image_metadata_scrubber.dart';
 import '../image_warper.dart';
 import '../jpeg_rotator.dart';
+import '../page_derivative_pipeline.dart';
 import '../page_processor.dart';
 import '../search/fts_query_sanitizer.dart';
 import '../warp_enhancer.dart';
@@ -42,7 +42,6 @@ class DriftDocumentRepository implements DocumentRepository {
   final DocumentFileStore _fileStore;
   final DateTime Function() _clock;
   final PdfBuilder _pdfBuilder;
-  final PageProcessor _processor;
   final OcrEngine _ocrEngine;
   final PdfEncryptor _encryptor;
   final ImageCompressor _compressor;
@@ -52,17 +51,10 @@ class DriftDocumentRepository implements DocumentRepository {
   /// tests can inject a recording [SilentAppLogger].
   final AppLogger _logger;
 
-  /// Upper bound on the rotate decode+rotate+re-encode `compute()` isolate
-  /// (CMP-10). A wedged isolate cannot be killed from Dart, so this only
-  /// detaches the awaiting future; on expiry the rotate surfaces the same
-  /// [DocumentSaveException] as an undecodable base. Injectable so tests can
-  /// shrink it.
-  final Duration rotateTimeout;
-
-  /// Seam for the rotate isolate call (CMP-10 / P05 TEST-01). Defaults to the
-  /// real `compute(rotateAndBakeJpeg, ...)`; tests inject a fake (e.g. a
-  /// never-completing rotator) to drive the timeout path deterministically.
-  final JpegRotator _rotator;
+  /// Owns display-derivative ("flat") regeneration (P05 T05.5): enhance ∘
+  /// rotate ∘ crop from the pristine base, holding the page processor and the
+  /// injectable rotate isolate + its CMP-10 timeout.
+  final PageDerivativePipeline _pipeline;
 
   DriftDocumentRepository({
     required AppDatabase db,
@@ -75,17 +67,21 @@ class DriftDocumentRepository implements DocumentRepository {
     OcrEngine ocrEngine = const NoOpOcrEngine(),
     PdfEncryptor encryptor = const SyncfusionPdfEncryptor(),
     ImageCompressor compressor = const ImageLibraryCompressor(),
-    this.rotateTimeout = const Duration(seconds: 12),
+    Duration rotateTimeout = const Duration(seconds: 12),
     AppLogger logger = const PrintAppLogger(),
     JpegRotator rotator = const ComputeJpegRotator(),
-  }) : _rotator = rotator, // ignore: prefer_initializing_formals
-       _logger = logger, // ignore: prefer_initializing_formals
+  }) : _logger = logger, // ignore: prefer_initializing_formals
        _db = db, // ignore: prefer_initializing_formals
        _scrubber = scrubber, // ignore: prefer_initializing_formals
        _fileStore = fileStore, // ignore: prefer_initializing_formals
        _clock = clock, // ignore: prefer_initializing_formals
        _pdfBuilder = pdfBuilder, // ignore: prefer_initializing_formals
-       _processor = pageProcessor ?? DartPageProcessor(warper),
+       _pipeline = PageDerivativePipeline(
+         fileStore: fileStore,
+         processor: pageProcessor ?? DartPageProcessor(warper),
+         rotator: rotator,
+         rotateTimeout: rotateTimeout,
+       ),
        _ocrEngine = ocrEngine, // ignore: prefer_initializing_formals
        _encryptor = encryptor, // ignore: prefer_initializing_formals
        _compressor = compressor; // ignore: prefer_initializing_formals
@@ -587,88 +583,24 @@ class DriftDocumentRepository implements DocumentRepository {
     );
   }
 
-  /// Regenerates the display ("flat") derivative from the PRISTINE base by
-  /// applying enhance ∘ rotate ∘ crop, and returns the new flat's relative path
-  /// (or null when the display equals the base: no rotation, no crop, no
-  /// filter). NEVER writes the base. [corners] are in the display frame
-  /// (post-rotation).
+  /// Regenerates the display ("flat") derivative from the PRISTINE base
+  /// (enhance ∘ rotate ∘ crop) and returns its relative path, or null when the
+  /// display equals the base (no rotation, no crop, no filter). NEVER writes
+  /// the base. [corners] are in the display frame (post-rotation). Delegates to
+  /// [PageDerivativePipeline] (P05 T05.5/CPLX-01).
   Future<String?> _writeFlat({
     required String relativeImagePath,
     required int quarterTurns,
     required CropCorners corners,
     required EnhancerMode mode,
     required String? existingFlatRel,
-  }) async {
-    final baseBytes = await _fileStore
-        .absoluteFor(relativeImagePath)
-        .readAsBytes();
-    final isFullFrame = corners == CropCorners.fullFrame;
-
-    // Fast path: the display equals the pristine base — no image work at all.
-    if (quarterTurns == 0 && isFullFrame && mode == EnhancerMode.none) {
-      await _deleteFlatIfPresent(existingFlatRel);
-      return null;
-    }
-
-    // Rotation needs a full-res decode+rotate+re-encode — run it OFF the UI
-    // isolate (`compute`). quarterTurns == 0 skips it (the processor bakes EXIF
-    // orientation itself), so it consumes the base bytes directly.
-    Uint8List? rotatedBytes;
-    if (quarterTurns != 0) {
-      // Guard the isolate (CMP-10): a wedged native/pure-Dart rotate cannot be
-      // killed from Dart, so on expiry we detach and surface the SAME failure
-      // contract as an undecodable base — callers already handle it (rotate
-      // error UI). The success path is unchanged.
-      rotatedBytes = await withIsolateTimeout(
-        () => _rotator.rotate(baseBytes, quarterTurns),
-        timeout: rotateTimeout,
-        onTimeout: () => throw const DocumentSaveException(
-          'regenerate: undecodable base image',
-        ),
-      );
-      if (rotatedBytes == null) {
-        throw const DocumentSaveException('regenerate: undecodable base image');
-      }
-    }
-    final input = rotatedBytes ?? baseBytes;
-
-    Uint8List? flatBytes;
-    if (isFullFrame) {
-      if (mode == EnhancerMode.none) {
-        // quarterTurns != 0 here (pure pass-through handled above).
-        flatBytes = rotatedBytes;
-      } else {
-        // Full-frame enhancement; fall back to the un-enhanced frame on failure
-        // so a page is never lost.
-        flatBytes =
-            await _processor.process(input, CropCorners.fullFrame, mode) ??
-            input;
-      }
-    } else {
-      // Cropped: the processor warps + enhances in one pass (or two-step for a
-      // stubbed warper). Fall back to the rotated-only image if it makes nothing.
-      flatBytes =
-          await _processor.process(input, corners, mode) ?? rotatedBytes;
-    }
-
-    if (flatBytes == null) {
-      await _deleteFlatIfPresent(existingFlatRel);
-      return null;
-    }
-    final flatRel =
-        existingFlatRel ?? _fileStore.flatForImage(relativeImagePath);
-    await _fileStore.writeRelative(flatRel, flatBytes);
-    return flatRel;
-  }
-
-  Future<void> _deleteFlatIfPresent(String? rel) async {
-    if (rel == null) return;
-    try {
-      await _fileStore.absoluteFor(rel).delete();
-    } on FileSystemException {
-      /* already gone — fine */
-    }
-  }
+  }) => _pipeline.writeFlat(
+    relativeImagePath: relativeImagePath,
+    quarterTurns: quarterTurns,
+    corners: corners,
+    mode: mode,
+    existingFlatRel: existingFlatRel,
+  );
 
   /// Best-effort delete of the append-only files written during a merge/split
   /// that then failed, so a rolled-back op leaves no orphan files (P03 SAFE-01,
