@@ -11,6 +11,21 @@ import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_back_header.dart';
 import 'donation_config.dart';
 
+/// Opens [uri] and returns whether it launched. Injectable (P07 SOC-1) so the
+/// Ko-fi launch-refused / launch-threw branches are testable without the
+/// url_launcher platform channel.
+typedef DonationUrlOpener = Future<bool> Function(Uri uri);
+
+/// Writes [text] to the clipboard. Injectable so the copy branch is testable
+/// without the clipboard platform channel.
+typedef DonationClipboardWriter = Future<void> Function(String text);
+
+// externalApplication keeps payment outside the app (App Store 3.1.1).
+Future<bool> _launchExternal(Uri uri) =>
+    launchUrl(uri, mode: LaunchMode.externalApplication);
+Future<void> _writeClipboard(String text) =>
+    Clipboard.setData(ClipboardData(text: text));
+
 /// Full-screen donation page. Ko-fi opens in the external browser (store-safe:
 /// no in-app payment collection); Bitcoin is display-only (QR + copyable
 /// address). Sections hide when their config value is empty. A prominent
@@ -20,17 +35,23 @@ class DonationScreen extends StatelessWidget {
     super.key,
     this.kofiUrl = DonationConfig.kofiUrl,
     this.bitcoinAddress = DonationConfig.bitcoinAddress,
+    this.openUrl = _launchExternal,
+    this.copyToClipboard = _writeClipboard,
   });
 
   final String kofiUrl;
   final String bitcoinAddress;
 
+  /// URL-open / clipboard seams — production defaults call `launchUrl` /
+  /// `Clipboard.setData`, byte-behaviour-identical to the old inline versions.
+  final DonationUrlOpener openUrl;
+  final DonationClipboardWriter copyToClipboard;
+
   Future<void> _openKofi(BuildContext context) async {
     final uri = Uri.tryParse(kofiUrl);
     if (uri == null) return;
     try {
-      // externalApplication keeps payment outside the app (App Store 3.1.1).
-      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final ok = await openUrl(uri);
       if (ok) return;
     } catch (_) {
       // fall through to failure feedback
@@ -40,7 +61,7 @@ class DonationScreen extends StatelessWidget {
   }
 
   Future<void> _copyAddress(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: bitcoinAddress));
+    await copyToClipboard(bitcoinAddress);
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,

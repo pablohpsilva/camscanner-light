@@ -122,6 +122,80 @@ void main() {
     expect(mock.capturedUrl, 'https://ko-fi.com/example');
   });
 
+  testWidgets('Ko-fi launch refused (returns false) → shows the error snackbar',
+      (tester) async {
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: DonationScreen(
+          kofiUrl: 'https://ko-fi.com/example',
+          bitcoinAddress: '',
+          openUrl: (_) async => false, // launch refused
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('donation-kofi-button')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsOneWidget);
+  });
+
+  testWidgets('Ko-fi launch throwing → shows the error snackbar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: DonationScreen(
+          kofiUrl: 'https://ko-fi.com/example',
+          bitcoinAddress: '',
+          openUrl: (_) async => throw Exception('launch blew up'),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('donation-kofi-button')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsOneWidget);
+  });
+
+  testWidgets('Ko-fi launch success → NO error snackbar', (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: DonationScreen(
+          kofiUrl: 'https://ko-fi.com/example',
+          bitcoinAddress: '',
+          openUrl: (uri) async {
+            opened = uri;
+            return true;
+          },
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('donation-kofi-button')));
+    await tester.pumpAndSettle();
+    expect(opened.toString(), 'https://ko-fi.com/example');
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('copy seam receives the Bitcoin address + shows confirmation', (
+    tester,
+  ) async {
+    String? copied;
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: DonationScreen(
+          kofiUrl: '',
+          bitcoinAddress: 'bc1qexampleaddress',
+          copyToClipboard: (text) async => copied = text,
+        ),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(const Key('donation-bitcoin-copy')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('donation-bitcoin-copy')));
+    await tester.pumpAndSettle();
+    expect(copied, 'bc1qexampleaddress');
+    expect(find.byType(SnackBar), findsOneWidget);
+  });
+
   testWidgets('donation uses Ream chrome (header + paper bg)', (tester) async {
     await tester.pumpWidget(
       localizedTestApp(
