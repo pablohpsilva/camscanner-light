@@ -24,6 +24,7 @@ import 'page_viewer_controller.dart';
 import 'password_dialog.dart';
 import 'pdf_preview_screen.dart';
 import 'recognized_text_screen.dart';
+import 'share/share_action.dart';
 import 'view_state.dart';
 import 'widgets/editor_toolbar.dart';
 import 'widgets/editor_top_bar.dart';
@@ -380,16 +381,9 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
 
   /// The Share toolbar button appears only when the umbrella `share` flag is on
   /// AND at least one share sub-action is enabled — so an empty share sheet can
-  /// never be opened.
-  bool get _showShareButton =>
-      widget.features.share &&
-      (widget.features.exportPdf ||
-          widget.features.shareImage ||
-          widget.features.exportAllImages ||
-          widget.features.print ||
-          widget.features.protectWithPassword ||
-          widget.features.shareLink ||
-          widget.features.fax);
+  /// never be opened. Derived from the ShareAction list (P11), not a
+  /// hand-maintained OR-chain, so a new share action can't drift out of sync.
+  bool get _showShareButton => shouldShowShareButton(widget.features);
 
   /// The overflow (⋯) menu: Rename, Merge, Split, Delete-document. Returns null
   /// (no button) when every item is disabled by its feature flag.
@@ -437,85 +431,47 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
 
   /// The share/export family, shown from the toolbar's Share action: Export PDF,
   /// Share as image, Share all as images, Print, Protect, plus the shared
-  /// link/fax "extras". Item keys match the old overflow menu so behavior tests
-  /// only change which control opens the menu.
+  /// link/fax "extras". Rendered from the single [availableShareActions] list
+  /// and dispatched by [ShareActionKind] (P11) — no per-item `if (features.x)`
+  /// guards, no raw-string dispatch. Item keys/labels are unchanged, so the
+  /// behavior tests only change which control opens the menu.
   Future<void> _openShareMenu() async {
     final l10n = context.l10n;
-    final value = await showModalBottomSheet<String>(
+    final actions = availableShareActions(widget.features);
+    final kind = await showModalBottomSheet<ShareActionKind>(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => SafeArea(
         child: ListView(
           shrinkWrap: true,
           children: [
-            if (widget.features.exportPdf)
+            for (final action in actions)
               ListTile(
-                key: const Key('page-viewer-export'),
-                leading: const Icon(Icons.picture_as_pdf),
-                title: Text(l10n.viewerShareExportPdf),
-                onTap: () => Navigator.of(ctx).pop('export-pdf'),
-              ),
-            if (widget.features.shareImage)
-              ListTile(
-                key: const Key('page-viewer-export-image'),
-                leading: const Icon(Icons.image_outlined),
-                title: Text(l10n.viewerShareAsImage),
-                onTap: () => Navigator.of(ctx).pop('export-image'),
-              ),
-            if (widget.features.exportAllImages)
-              ListTile(
-                key: const Key('page-viewer-export-all-images'),
-                leading: const Icon(Icons.collections_outlined),
-                title: Text(l10n.viewerShareAllAsImages),
-                onTap: () => Navigator.of(ctx).pop('export-all-images'),
-              ),
-            if (widget.features.print)
-              ListTile(
-                key: const Key('page-viewer-print'),
-                leading: const Icon(Icons.print_outlined),
-                title: Text(l10n.viewerSharePrint),
-                onTap: () => Navigator.of(ctx).pop('print'),
-              ),
-            if (widget.features.protectWithPassword)
-              ListTile(
-                key: const Key('page-viewer-protect'),
-                leading: const Icon(Icons.lock_outline),
-                title: Text(l10n.viewerShareProtect),
-                onTap: () => Navigator.of(ctx).pop('protect'),
-              ),
-            if (widget.features.shareLink)
-              ListTile(
-                key: const Key('page-viewer-share-link'),
-                leading: const Icon(Icons.link),
-                title: Text(l10n.shareLink),
-                onTap: () => Navigator.of(ctx).pop(kShareLinkValue),
-              ),
-            if (widget.features.fax)
-              ListTile(
-                key: const Key('page-viewer-fax'),
-                leading: const Icon(Icons.print),
-                title: Text(l10n.shareFax),
-                onTap: () => Navigator.of(ctx).pop(kFaxValue),
+                key: action.keyFor('page-viewer'),
+                leading: Icon(action.icon),
+                title: Text(action.label(l10n)),
+                onTap: () => Navigator.of(ctx).pop(action.kind),
               ),
           ],
         ),
       ),
     );
-    if (value == null || !mounted) return;
-    switch (value) {
-      case 'export-pdf':
+    if (kind == null || !mounted) return;
+    switch (kind) {
+      case ShareActionKind.exportPdf:
         await _exportPdf();
-      case 'export-image':
+      case ShareActionKind.shareImage:
         await _exportPageAsImage();
-      case 'export-all-images':
+      case ShareActionKind.exportAllImages:
         await _exportAllImages();
-      case 'print':
+      case ShareActionKind.print:
         await _print();
-      case 'protect':
+      case ShareActionKind.protect:
         await _protect();
-      case kShareLinkValue:
-      case kFaxValue:
-        if (mounted) handleShareExtra(context, value);
+      case ShareActionKind.shareLink:
+        if (mounted) handleShareExtra(context, kShareLinkValue);
+      case ShareActionKind.fax:
+        if (mounted) handleShareExtra(context, kFaxValue);
     }
   }
 
