@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/logging/app_logger.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/enhancer_mode.dart';
 import 'package:mobile/features/library/native_page_processor.dart';
@@ -123,4 +124,76 @@ void main() {
       expect(seenMode, EnhancerMode.grayscale);
     },
   );
+
+  // P14 Task 5: the previously-silent main-isolate `process()` catch now logs
+  // via an injected AppLogger before returning null (fallback behavior
+  // unchanged). Note: the isolate-side `_nativeFn` catch is deliberately NOT
+  // logged — an injected logger cannot cross the compute() isolate boundary.
+
+  test(
+    'a throwing runner → logs the error exactly once and still returns null',
+    () async {
+      final logger = SilentAppLogger();
+      final processor = NativePageProcessor.withRunner(
+        (_, _, _) async => throw StateError('native boom'),
+        logger: logger,
+      );
+      final result = await processor.process(
+        bytes,
+        CropCorners.fullFrame,
+        EnhancerMode.auto,
+      );
+      expect(result, isNull);
+      expect(logger.records, hasLength(1));
+      final record = logger.records.single;
+      expect(record.error, isStateError);
+      expect(record.stackTrace, isNotNull);
+      expect(record.context, isNotNull);
+      expect(record.context, contains('NativePageProcessor'));
+    },
+  );
+
+  test(
+    'a never-completing runner (timeout) → logs once and returns null',
+    () async {
+      final logger = SilentAppLogger();
+      final processor = NativePageProcessor.withRunner(
+        (_, _, _) => Completer<Uint8List?>().future, // never completes
+        timeout: const Duration(milliseconds: 50),
+        logger: logger,
+      );
+      final result = await processor.process(
+        bytes,
+        CropCorners.fullFrame,
+        EnhancerMode.auto,
+      );
+      expect(result, isNull);
+      expect(logger.records, hasLength(1));
+      expect(logger.records.single.error, isA<TimeoutException>());
+    },
+  );
+
+  test('a successful runner → does NOT log (records stay empty)', () async {
+    final logger = SilentAppLogger();
+    final out = Uint8List.fromList(const [9, 9, 9]);
+    final processor = NativePageProcessor.withRunner(
+      (_, _, _) async => out,
+      logger: logger,
+    );
+    final result = await processor.process(
+      bytes,
+      straightCrop,
+      EnhancerMode.color,
+    );
+    expect(result, same(out));
+    expect(logger.records, isEmpty);
+  });
+
+  test('the default logger is a const PrintAppLogger', () async {
+    expect(const NativePageProcessor().logger, isA<PrintAppLogger>());
+    expect(
+      NativePageProcessor.withRunner((_, _, _) async => null).logger,
+      isA<PrintAppLogger>(),
+    );
+  });
 }

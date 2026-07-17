@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show compute, visibleForTesting;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 
 import '../../core/async/with_isolate_timeout.dart';
+import '../../core/logging/app_logger.dart';
 import 'crop_corners.dart';
 import 'enhancer_mode.dart';
 import 'native_enhancers.dart';
@@ -42,10 +43,13 @@ Future<Uint8List?> _computeRunner(
 /// input, failure, timeout) so a fallback can take over.
 class NativePageProcessor implements PageProcessor {
   final Duration timeout;
+  final AppLogger logger;
   final NativeProcessRunner _runner;
 
-  const NativePageProcessor({this.timeout = const Duration(seconds: 5)})
-    : _runner = _computeRunner;
+  const NativePageProcessor({
+    this.timeout = const Duration(seconds: 5),
+    this.logger = const PrintAppLogger(),
+  }) : _runner = _computeRunner;
 
   /// Test-only: inject a custom [runner] (e.g. a slow/never-completing or
   /// failing stub) to exercise the timeout/fallback handoff without loading
@@ -54,6 +58,7 @@ class NativePageProcessor implements PageProcessor {
   NativePageProcessor.withRunner(
     NativeProcessRunner runner, {
     this.timeout = const Duration(seconds: 5),
+    this.logger = const PrintAppLogger(),
   }) : _runner = runner;
 
   @override
@@ -73,7 +78,18 @@ class NativePageProcessor implements PageProcessor {
         () => _runner(bytes, corners, mode),
         timeout: timeout,
       );
-    } catch (_) {
+    } catch (e, st) {
+      // Previously silent (P14 T5): log the main-isolate failure before
+      // falling back. NOTE: the isolate-side `_nativeFn` catch is a separate,
+      // deliberately-unlogged seam — an injected logger cannot cross the
+      // compute() boundary; only print/developer.log work there.
+      logger.error(
+        e,
+        stackTrace: st,
+        context:
+            'NativePageProcessor.process failed; '
+            'falling back to Dart pipeline',
+      );
       return null; // TimeoutException or isolate error → fallback
     }
   }
