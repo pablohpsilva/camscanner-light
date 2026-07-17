@@ -27,6 +27,7 @@ import 'package:mobile/features/library/pdf_preview_screen.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/l10n/lb_fallback_delegates.dart';
 import 'package:mobile/main.dart' as app;
 
 import '../test/support/fake_library.dart';
@@ -163,7 +164,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: const [
+          ...kLbFallbackDelegates,
+          ...AppLocalizations.localizationsDelegates,
+        ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: CaptureReviewScreen(
           image: capture,
@@ -180,7 +184,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: const [
+          ...kLbFallbackDelegates,
+          ...AppLocalizations.localizationsDelegates,
+        ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: CaptureReviewScreen(
           image: capture,
@@ -210,7 +217,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: const [
+          ...kLbFallbackDelegates,
+          ...AppLocalizations.localizationsDelegates,
+        ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: PdfPreviewScreen(
           pdfPath: pdf.path,
@@ -232,7 +242,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: const [
+          ...kLbFallbackDelegates,
+          ...AppLocalizations.localizationsDelegates,
+        ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: PageViewerScreen(
           documentId: 1,

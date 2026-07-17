@@ -15,6 +15,7 @@ import 'package:mobile/features/library/ocr/mlkit_ocr_engine.dart';
 import 'package:mobile/features/library/pdf/pdf_builder.dart';
 import 'package:mobile/features/library/recognized_text_screen.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/l10n/lb_fallback_delegates.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -75,7 +76,10 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: const [
+          ...kLbFallbackDelegates,
+          ...AppLocalizations.localizationsDelegates,
+        ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: RecognizedTextScreen(
           documentId: docId,

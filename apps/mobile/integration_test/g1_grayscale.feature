@@ -8,5 +8,6 @@ Feature: G1 grayscale scan enhancement
 
   Scenario: No filter — document saved without enhancement
     Given the review screen is open with a captured image
-    When I tap Accept
+    When I tap the original filter tile
+    And I tap Accept
     Then the document is saved without enhancement

@@ -9,6 +9,7 @@ import './../test/step/the_review_screen_is_open_with_a_captured_image.dart';
 import './../test/step/i_toggle_the_grayscale_filter.dart';
 import './../test/step/i_tap_accept.dart';
 import './../test/step/the_document_is_saved_with_grayscale_enhancement.dart';
+import './../test/step/i_tap_the_original_filter_tile.dart';
 import './../test/step/the_document_is_saved_without_enhancement.dart';
 
 void main() {
@@ -26,6 +27,7 @@ void main() {
     testWidgets('''No filter — document saved without enhancement''',
         (tester) async {
       await theReviewScreenIsOpenWithACapturedImage(tester);
+      await iTapTheOriginalFilterTile(tester);
       await iTapAccept(tester);
       await theDocumentIsSavedWithoutEnhancement(tester);
     });
