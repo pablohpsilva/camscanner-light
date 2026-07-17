@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// Taps the Home app-bar import button (key `home-import`, added in Task 8.1),
 /// which picks via the injected gallery picker and opens the crop+filter review
-/// screen. The launch step's `grantedScanDependencies()` wires a
-/// `FakeGalleryPicker` returning a real temp file.
+/// screen. The launch step's library deps (`tempLibraryDependencies`) wire a
+/// `FakeGalleryPicker` returning a real temp file (P14 task 4).
 Future<void> iTapTheImportButton(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('home-import')));
   await tester.pumpAndSettle();

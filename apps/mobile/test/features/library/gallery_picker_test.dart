@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/scan/gallery_picker.dart';
-import 'package:mobile/features/scan/scan_dependencies.dart';
+import 'package:mobile/features/library/gallery_picker.dart';
+import 'package:mobile/features/library/library_dependencies.dart';
 
 import '../../support/fake_scan.dart';
 
 void main() {
   test(
-    'ScanDependencies default gallery picker is ImagePickerGalleryPicker',
+    'LibraryDependencies default gallery picker is ImagePickerGalleryPicker',
     () {
       expect(
-        const ScanDependencies().createGalleryPicker(),
+        const LibraryDependencies().createGalleryPicker(),
         isA<ImagePickerGalleryPicker>(),
       );
     },

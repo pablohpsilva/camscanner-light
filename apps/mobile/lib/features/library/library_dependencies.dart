@@ -21,10 +21,12 @@ import 'pdf/pdf_builder.dart';
 import 'fax_provider.dart';
 import 'feature_flags.dart';
 import 'file_archiver.dart';
+import 'gallery_picker.dart';
 import 'link_share_channel.dart';
 import 'share_channel.dart';
 
 typedef DocumentRepositoryFactory = Future<DocumentRepository> Function();
+typedef GalleryPickerFactory = GalleryPicker Function();
 
 /// Composition root for the Library feature (parallel to ScanDependencies).
 /// Production builds a Drift-backed repository; tests inject a fake factory.
@@ -38,6 +40,12 @@ class LibraryDependencies {
   final FeatureFlags features;
   final AppLogger Function() logger;
   final TempFileWriter Function() tempFiles;
+
+  /// Picks a photo from the device gallery for Home's import action. Lives here
+  /// (not in ScanDependencies) because importing into the library is a library
+  /// concern (P14 task 4).
+  final GalleryPickerFactory createGalleryPicker;
+
   const LibraryDependencies({
     this.createRepository = _defaultCreateRepository,
     this.printer = const SystemDocumentPrinter(),
@@ -48,10 +56,13 @@ class LibraryDependencies {
     this.features = const FeatureFlags(),
     this.logger = _defaultLogger,
     this.tempFiles = _defaultTempFiles,
+    this.createGalleryPicker = _defaultGalleryPicker,
   });
 }
 
 AppLogger _defaultLogger() => const PrintAppLogger();
+
+GalleryPicker _defaultGalleryPicker() => const ImagePickerGalleryPicker();
 
 TempFileWriter _defaultTempFiles() => const TempFileWriter();
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/home_screen.dart';
+import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
@@ -8,31 +9,44 @@ import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
 import '../../support/localized_app.dart';
 
+// The gallery picker moved to LibraryDependencies (P14 task 4); the edge
+// detector stays in ScanDependencies (a genuine scan collaborator).
+ScanDependencies _scanDeps() =>
+    ScanDependencies(createEdgeDetector: FakeEdgeDetector.new);
+
 // All gallery paths are NON-LOADABLE: a real file routed through Image.file in
 // a host widget test leaves a pending dart:io isolate-port read that never
 // resolves under flutter_test's fake-async, hanging pumpAndSettle.  A bad path
 // errors fast (no pending I/O) so the whole test suite stays instant.
-ScanDependencies _deps({bool cancel = false, bool throwOnPick = false}) =>
-    ScanDependencies(
-      createGalleryPicker: () => FakeGalleryPicker(
-        cancel: cancel,
-        throwOnPick: throwOnPick,
-        returnPath: '/nonexistent/import.jpg',
-      ),
-      createEdgeDetector: FakeEdgeDetector.new,
-    );
+LibraryDependencies _libDeps(
+  FakeDocumentRepository repo, {
+  bool cancel = false,
+  bool throwOnPick = false,
+}) => fakeLibraryDependencies(
+  repo,
+  createGalleryPicker: () => FakeGalleryPicker(
+    cancel: cancel,
+    throwOnPick: throwOnPick,
+    returnPath: '/nonexistent/import.jpg',
+  ),
+);
 
 void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
     required FakeDocumentRepository repo,
-    ScanDependencies? deps,
+    bool cancel = false,
+    bool throwOnPick = false,
   }) async {
     await tester.pumpWidget(
       localizedTestApp(
         home: HomeScreen(
-          dependencies: deps ?? _deps(),
-          libraryDependencies: fakeLibraryDependencies(repo),
+          dependencies: _scanDeps(),
+          libraryDependencies: _libDeps(
+            repo,
+            cancel: cancel,
+            throwOnPick: throwOnPick,
+          ),
         ),
       ),
     );
@@ -80,7 +94,7 @@ void main() {
     tester,
   ) async {
     final repo = FakeDocumentRepository();
-    await pumpHome(tester, repo: repo, deps: _deps(cancel: true));
+    await pumpHome(tester, repo: repo, cancel: true);
     await tester.tap(find.byKey(const Key('home-import')));
     await tester.pumpAndSettle();
     expect(find.byType(CaptureReviewScreen), findsNothing);
@@ -91,7 +105,7 @@ void main() {
     tester,
   ) async {
     final repo = FakeDocumentRepository();
-    await pumpHome(tester, repo: repo, deps: _deps(throwOnPick: true));
+    await pumpHome(tester, repo: repo, throwOnPick: true);
     await tester.tap(find.byKey(const Key('home-import')));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't import photo"), findsOneWidget);

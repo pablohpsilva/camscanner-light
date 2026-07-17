@@ -139,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final messenger = ScaffoldMessenger.of(context);
     CapturedImage? image;
     try {
-      image = await widget.dependencies.createGalleryPicker().pick();
+      image = await widget.libraryDependencies.createGalleryPicker().pick();
     } catch (_) {
       if (!mounted) return;
       messenger.showSnackBar(

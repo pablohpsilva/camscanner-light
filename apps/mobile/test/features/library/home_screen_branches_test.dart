@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/home_screen.dart';
+import 'package:mobile/features/library/library_dependencies.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/id_scan_screen.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
@@ -36,12 +37,16 @@ void main() {
     WidgetTester tester,
     FakeDocumentRepository repo, {
     ScanDependencies? deps,
+    GalleryPickerFactory? galleryPicker,
   }) async {
     await tester.pumpWidget(
       localizedTestApp(
         home: HomeScreen(
           dependencies: deps ?? grantedScanDependencies(),
-          libraryDependencies: fakeLibraryDependencies(repo),
+          libraryDependencies: fakeLibraryDependencies(
+            repo,
+            createGalleryPicker: galleryPicker,
+          ),
         ),
       ),
     );
@@ -82,7 +87,6 @@ void main() {
     // exercising the _openScan() -> await push -> _refresh() path.
     final deps = ScanDependencies(
       createDocumentScanner: () => FakeDocumentScannerService(const []),
-      createGalleryPicker: () => const FakeGalleryPicker(),
     );
     await pumpHome(tester, repo, deps: deps);
     final callsBefore = repo.listCalls;
@@ -108,7 +112,6 @@ void main() {
     final deps = ScanDependencies(
       createDocumentScanner: () =>
           FakeSequentialDocumentScannerService(const [[], []]),
-      createGalleryPicker: () => const FakeGalleryPicker(),
     );
     await pumpHome(tester, repo, deps: deps);
     final callsBefore = repo.listCalls;
@@ -128,12 +131,14 @@ void main() {
     tester,
   ) async {
     final repo = FakeDocumentRepository();
-    final deps = ScanDependencies(
-      createGalleryPicker: () =>
+    final deps = ScanDependencies(createEdgeDetector: FakeEdgeDetector.new);
+    await pumpHome(
+      tester,
+      repo,
+      deps: deps,
+      galleryPicker: () =>
           const FakeGalleryPicker(returnPath: '/nonexistent/import.jpg'),
-      createEdgeDetector: FakeEdgeDetector.new,
     );
-    await pumpHome(tester, repo, deps: deps);
 
     await tester.tap(find.byKey(const Key('home-import')));
     await tester.pumpAndSettle();
@@ -150,12 +155,14 @@ void main() {
     'a save failure in the import review shows an error SnackBar and stays open',
     (tester) async {
       final repo = FakeDocumentRepository(throwOnCreate: true);
-      final deps = ScanDependencies(
-        createGalleryPicker: () =>
+      final deps = ScanDependencies(createEdgeDetector: FakeEdgeDetector.new);
+      await pumpHome(
+        tester,
+        repo,
+        deps: deps,
+        galleryPicker: () =>
             const FakeGalleryPicker(returnPath: '/nonexistent/import.jpg'),
-        createEdgeDetector: FakeEdgeDetector.new,
       );
-      await pumpHome(tester, repo, deps: deps);
 
       await tester.tap(find.byKey(const Key('home-import')));
       await tester.pumpAndSettle();

@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:mobile/features/library/gallery_picker.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 import 'package:mobile/features/scan/document_scanner_service.dart';
 import 'package:mobile/features/scan/edge_detector.dart';
-import 'package:mobile/features/scan/gallery_picker.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 
 /// A minimal valid 1×1 JPEG (SOI … EOI). The fake writes this so the review
@@ -47,11 +47,12 @@ class FakeGalleryPicker implements GalleryPicker {
   }
 }
 
-/// Returns [ScanDependencies] wired with an empty [FakeDocumentScannerService]
-/// and a [FakeGalleryPicker]. Used by surviving launch steps and widget tests
-/// that need the Home import/scan entry points wired without hardware.
+/// Returns [ScanDependencies] wired with an empty [FakeDocumentScannerService].
+/// Used by surviving launch steps and widget tests that need the Home scan entry
+/// points wired without hardware. The gallery picker now lives in
+/// [LibraryDependencies] (P14 task 4) — see `fakeLibraryDependencies` /
+/// `tempLibraryDependencies`, which wire a [FakeGalleryPicker] for import flows.
 ScanDependencies grantedScanDependencies() => ScanDependencies(
-  createGalleryPicker: () => const FakeGalleryPicker(),
   createDocumentScanner: () => FakeDocumentScannerService(const []),
 );
 

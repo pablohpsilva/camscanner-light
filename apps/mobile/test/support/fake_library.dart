@@ -28,6 +28,8 @@ import 'package:mobile/features/library/ocr/ocr_engine.dart';
 import 'package:mobile/features/library/ocr/ocr_result.dart';
 import 'package:mobile/features/scan/captured_image.dart';
 
+import 'fake_scan.dart' show FakeGalleryPicker;
+
 /// In-memory fake repository for host tests. Optionally throws, or blocks on a
 /// [gate] so a test can observe the transient `saving` state.
 class FakeDocumentRepository implements DocumentRepository {
@@ -584,11 +586,18 @@ class FakeImageWarper implements ImageWarper {
 }
 
 /// LibraryDependencies whose factory returns the given fake repository.
+/// Optionally overrides the gallery picker for Home's import flow (P14 task 4);
+/// defaults to the production [ImagePickerGalleryPicker] when not supplied.
 LibraryDependencies fakeLibraryDependencies(
   FakeDocumentRepository repo, {
   FeatureFlags features = const FeatureFlags(),
-}) =>
-    LibraryDependencies(createRepository: () async => repo, features: features);
+  GalleryPickerFactory? createGalleryPicker,
+}) => LibraryDependencies(
+  createRepository: () async => repo,
+  features: features,
+  createGalleryPicker:
+      createGalleryPicker ?? const LibraryDependencies().createGalleryPicker,
+);
 
 /// Real DriftDocumentRepository on an in-memory DB + temp file store. Exercises
 /// the real save/scrub/list code paths deterministically with no persistent
@@ -609,6 +618,10 @@ LibraryDependencies tempLibraryDependencies() {
     ),
     printer: FakeDocumentPrinter(),
     share: share,
+    // Import flow (Home) picks through the library deps now (P14 task 4); the
+    // default FakeGalleryPicker writes a real temp JPEG so the on-device import
+    // BDD routes into the crop+filter review screen.
+    createGalleryPicker: () => const FakeGalleryPicker(),
   );
 }
 
@@ -657,5 +670,6 @@ LibraryDependencies persistentLibraryDependencies({
     printer: FakeDocumentPrinter(),
     share: share,
     features: features,
+    createGalleryPicker: () => const FakeGalleryPicker(),
   );
 }
