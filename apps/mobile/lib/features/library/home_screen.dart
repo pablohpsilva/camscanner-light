@@ -241,7 +241,9 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, _) {
         // The banner's own SafeArea absorbs the bottom inset when shown; without
         // it (iOS, guideline 3.1.1) the body must clear the home indicator.
-        final banner = donationsAvailable ? const DonationBanner() : null;
+        final banner = donationEntryPointsAvailable
+            ? const DonationBanner()
+            : null;
         return Scaffold(
           body: Stack(
             children: [
@@ -488,7 +490,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // height); without it this padding is all that separates the row from the
     // screen edge on inset-less devices, so keep a real gap.
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, donationsAvailable ? 8 : 16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        10,
+        16,
+        donationEntryPointsAvailable ? 8 : 16,
+      ),
       child: Row(children: spaced),
     );
   }
