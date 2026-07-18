@@ -185,6 +185,28 @@ class AppLocalizationsRu extends AppLocalizations {
       'Нравится приложение? Нажмите, чтобы поддержать';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Чаевые $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Спасибо ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'Ваша поддержка помогает развивать приложение.';
+
+  @override
+  String get donationTipThankYouClose => 'Закрыть';
+
+  @override
+  String get donationTipUnavailable =>
+      'Чаевые сейчас недоступны. Попробуйте позже.';
+
+  @override
+  String get donationTipError => 'Не удалось отправить чаевые';
+
+  @override
   String get scanTitle => 'Сканирование';
 
   @override

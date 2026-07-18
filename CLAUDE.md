@@ -191,6 +191,27 @@ When asked to "prepare the next version on TestFlight" (or similar), do this:
    ```
    `notarytool` is NOT needed — TestFlight/App Store uploads aren't notarized.
 
+### In-App Purchase tip jar prerequisites (iOS)
+The iOS tip jar (`tip_small`/`tip_medium`/`tip_large`) needs App Store Connect
+setup that lives outside this repo — miss it and StoreKit silently returns
+**zero products**, so the tip jar renders "tips unavailable" for every user
+(no error, no crash — just empty).
+
+- **Create all three consumable IAP products** (`tip_small`, `tip_medium`,
+  `tip_large`) in App Store Connect and **submit them with the build** — new
+  IAPs are reviewed alongside the app binary that first references them, not
+  separately.
+- **The Paid Applications Agreement must be active** in App Store Connect. If
+  it lapses or was never signed, StoreKit returns zero products app-wide —
+  same silent "tips unavailable" symptom, easy to misdiagnose as a code bug.
+- **A sandbox tester account** is required to actually complete a purchase on
+  a physical iPhone (production Apple IDs can't buy sandbox products).
+- Before trusting a store build, run `flutter build ipa --release` **once**
+  and confirm the `in_app_purchase` CocoaPod links cleanly — the pod is in
+  `pubspec.yaml` but has never been archived on this branch. iOS IAP needs no
+  extra entitlement or Xcode capability.
+- Full detail: `docs/superpowers/specs/2026-07-18-ios-iap-tip-jar-design.md`.
+
 ### Must ship RELEASE, never Debug
 A **Debug** IPA crashes ~2–10ms into every cold launch on-device (VSyncClient
 SIGSEGV — Dart JIT needs an attached debugger). Always `--release` (the script does this).

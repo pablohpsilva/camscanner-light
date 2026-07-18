@@ -176,6 +176,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get donationBannerText => '喜欢这款应用？点击支持一下';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return '打赏 $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => '谢谢 ❤️';
+
+  @override
+  String get donationTipThankYouBody => '你的支持让这个应用持续运行。';
+
+  @override
+  String get donationTipThankYouClose => '关闭';
+
+  @override
+  String get donationTipUnavailable => '打赏暂时不可用，请稍后再试。';
+
+  @override
+  String get donationTipError => '无法完成打赏';
+
+  @override
   String get scanTitle => '扫描';
 
   @override

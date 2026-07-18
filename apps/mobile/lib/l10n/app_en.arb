@@ -223,6 +223,21 @@
   "@donationBannerText": {
     "description": "Home banner"
   },
+  "donationTipButtonLabel": "Tip {price}",
+  "@donationTipButtonLabel": {
+    "description": "Tip jar button; {price} is the StoreKit-localized price",
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "donationTipThankYouTitle": "Thank you ❤️",
+  "@donationTipThankYouTitle": { "description": "Tip success dialog title" },
+  "donationTipThankYouBody": "Your support keeps this app going.",
+  "@donationTipThankYouBody": { "description": "Tip success dialog body" },
+  "donationTipThankYouClose": "Close",
+  "@donationTipThankYouClose": { "description": "Dismiss the tip thank-you dialog" },
+  "donationTipUnavailable": "Tips aren't available right now. Please try again later.",
+  "@donationTipUnavailable": { "description": "Shown when the store or products fail to load" },
+  "donationTipError": "Couldn't complete your tip",
+  "@donationTipError": { "description": "Snackbar when a tip purchase fails" },
   "scanTitle": "Scan",
   "@scanTitle": {
     "description": "Scan app bar"

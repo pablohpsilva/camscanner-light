@@ -182,6 +182,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get donationBannerText => '¿Te gusta la app? Toca para apoyarla';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Propina $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Gracias ❤️';
+
+  @override
+  String get donationTipThankYouBody => 'Tu apoyo mantiene esta app en marcha.';
+
+  @override
+  String get donationTipThankYouClose => 'Cerrar';
+
+  @override
+  String get donationTipUnavailable =>
+      'Las propinas no están disponibles ahora mismo. Inténtalo de nuevo más tarde.';
+
+  @override
+  String get donationTipError => 'No se pudo completar la propina';
+
+  @override
   String get scanTitle => 'Escanear';
 
   @override

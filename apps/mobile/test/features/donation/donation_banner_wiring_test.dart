@@ -32,18 +32,20 @@ void main() {
     }
   });
 
-  testWidgets('home screen hides the donation banner on iOS', (tester) async {
+  testWidgets('home screen shows the donation banner on iOS', (tester) async {
+    // App Store guideline 3.1.1: iOS no longer hides every donation entry
+    // point — it shows the IAP tip jar banner instead of the Ko-fi/BTC one.
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
       await _pumpHome(tester);
-      expect(find.byType(DonationBanner), findsNothing);
+      expect(find.byType(DonationBanner), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
   });
 
   testWidgets(
-    'with the banner hidden on iOS, the action row clears the bottom inset',
+    'with the banner shown on iOS, the action row uses the banner-present gap',
     (tester) async {
       // Simulate an iPhone home-indicator inset (34 logical px). Without the
       // donation banner absorbing it, the Scan/ID card/Import row must clear

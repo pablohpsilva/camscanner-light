@@ -183,6 +183,28 @@ class AppLocalizationsLb extends AppLocalizations {
       'Gefält der d\'App? Tipp fir se z\'ënnerstëtzen';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Pourboire $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Merci ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'Däin Ënnerstëtzung hält dës App um Lafen.';
+
+  @override
+  String get donationTipThankYouClose => 'Zoumaachen';
+
+  @override
+  String get donationTipUnavailable =>
+      'Pourboiren sinn am Moment net verfügbar. Probéier w.e.g. méi spéit nach eng Kéier.';
+
+  @override
+  String get donationTipError => 'De Pourboire konnt net ofgeschloss ginn';
+
+  @override
   String get scanTitle => 'Scannen';
 
   @override

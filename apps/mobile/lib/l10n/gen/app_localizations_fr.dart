@@ -185,6 +185,28 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous aimez l\'application ? Appuyez pour la soutenir';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Pourboire $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Merci ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'Votre soutien fait vivre cette application.';
+
+  @override
+  String get donationTipThankYouClose => 'Fermer';
+
+  @override
+  String get donationTipUnavailable =>
+      'Les pourboires ne sont pas disponibles pour le moment. Réessayez plus tard.';
+
+  @override
+  String get donationTipError => 'Impossible de finaliser le pourboire';
+
+  @override
   String get scanTitle => 'Scanner';
 
   @override

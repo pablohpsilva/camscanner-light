@@ -89,13 +89,12 @@ class SettingsScreen extends StatelessWidget {
                   context,
                 ).push(FeedbackScreen.route(feedbackDependencies)),
               ),
-            if (donationsAvailable)
+            if (donationEntryPointsAvailable)
               _NavRow(
                 key: const Key('settings-support'),
                 icon: Icons.favorite_outline,
                 label: context.l10n.settingsSupportApp,
-                onTap: () =>
-                    Navigator.of(context).push(DonationScreen.route()),
+                onTap: () => Navigator.of(context).push(DonationScreen.route()),
               ),
             const SizedBox(height: 36),
             _About(key: const Key('settings-about')),

@@ -75,12 +75,14 @@ void main() {
     expect(find.textContaining('Ream'), findsNothing);
   });
 
-  testWidgets('support row is hidden on iOS', (t) async {
+  testWidgets('support row is shown on iOS', (t) async {
+    // App Store guideline 3.1.1: iOS no longer hides every donation entry
+    // point — the row now opens the IAP tip jar instead of the Ko-fi/BTC body.
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
       final c = ThemeController(store: InMemoryThemeModeStore());
       await t.pumpWidget(_host(c));
-      expect(find.byKey(const Key('settings-support')), findsNothing);
+      expect(find.byKey(const Key('settings-support')), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
