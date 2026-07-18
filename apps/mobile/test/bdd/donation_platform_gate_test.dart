@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../step/the_iap_tip_jar_on_ios.dart';
 import './../step/the_platform_is_ios.dart';
 import './../step/the_home_screen_is_shown.dart';
 import './../step/i_see_the_donation_banner.dart';

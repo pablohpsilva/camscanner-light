@@ -2,8 +2,8 @@ Feature: Donation entry points respect the platform
 
   App Store guideline 3.1.1: donations to the developer must go through
   In-App Purchase on iOS/iPadOS. Both platforms show a donation entry point;
-  the destination screen picks the compliant body per platform (Ko-fi/BTC on
-  Android, the IAP tip jar on iOS).
+  the destination screen picks the compliant body per platform: Ko-fi/BTC
+  on Android, the IAP tip jar on iOS.
 
   Scenario: Donation entry points are shown on iOS
     Given the platform is iOS
