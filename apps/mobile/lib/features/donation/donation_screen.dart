@@ -9,7 +9,11 @@ import '../../theme/ream_typography.dart';
 import '../../core/ui/error_snack.dart';
 import '../../theme/widgets/ream_action_button.dart';
 import '../../theme/widgets/ream_back_header.dart';
+import 'donation_availability.dart';
 import 'donation_config.dart';
+import 'tip_jar/storekit_tip_jar_service.dart';
+import 'tip_jar/tip_jar_body.dart';
+import 'tip_jar/tip_jar_service.dart';
 
 /// Opens [uri] and returns whether it launched. Injectable (P07 SOC-1) so the
 /// Ko-fi launch-refused / launch-threw branches are testable without the
@@ -26,6 +30,8 @@ Future<bool> _launchExternal(Uri uri) =>
 Future<void> _writeClipboard(String text) =>
     Clipboard.setData(ClipboardData(text: text));
 
+TipJarService _defaultTipJar() => StoreKitTipJarService();
+
 /// Full-screen donation page. Ko-fi opens in the external browser (store-safe:
 /// no in-app payment collection); Bitcoin is display-only (QR + copyable
 /// address). Sections hide when their config value is empty. A prominent
@@ -37,6 +43,8 @@ class DonationScreen extends StatelessWidget {
     this.bitcoinAddress = DonationConfig.bitcoinAddress,
     this.openUrl = _launchExternal,
     this.copyToClipboard = _writeClipboard,
+    this.createTipJar = _defaultTipJar,
+    this.tipJarMode,
   });
 
   final String kofiUrl;
@@ -47,10 +55,24 @@ class DonationScreen extends StatelessWidget {
   final DonationUrlOpener openUrl;
   final DonationClipboardWriter copyToClipboard;
 
+  /// Builds the tip-jar service (iOS). Injectable for tests.
+  final TipJarService Function() createTipJar;
+
+  /// Force tip-jar (`true`) or Ko-fi/BTC (`false`) body. `null` → platform
+  /// default (`tipJarAvailable`). Tests pass an explicit value.
+  final bool? tipJarMode;
+
   /// The navigation route to this screen (P14 DUP-3) — one definition for the
   /// donation banner and the settings entry point.
-  static Route<void> route() =>
-      MaterialPageRoute<void>(builder: (_) => const DonationScreen());
+  static Route<void> route({
+    TipJarService Function()? createTipJar,
+    bool? tipJarMode,
+  }) => MaterialPageRoute<void>(
+    builder: (_) => DonationScreen(
+      createTipJar: createTipJar ?? _defaultTipJar,
+      tipJarMode: tipJarMode,
+    ),
+  );
 
   Future<void> _openKofi(BuildContext context) async {
     final uri = Uri.tryParse(kofiUrl);
@@ -76,79 +98,104 @@ class DonationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = context.ream;
+    final showTips = tipJarMode ?? tipJarAvailable;
     return Scaffold(
       backgroundColor: r.paper,
       appBar: ReamBackHeader(
         title: context.l10n.settingsSupportApp,
         onBack: () => Navigator.of(context).maybePop(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Icon(Icons.favorite, color: r.kofiRed, size: 34),
-          const SizedBox(height: 8),
-          Text(
-            context.l10n.donationHeadline,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Figtree',
-              fontWeight: FontWeight.w800,
-              fontSize: 21,
-              height: 1.25,
-              color: r.ink,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            context.l10n.donationDisclaimer,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Figtree',
-              fontSize: 13,
-              height: 1.55,
-              color: r.ink2,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: r.amberSoft,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: r.amber),
-            ),
-            child: Text(
-              context.l10n.donationOptionalNote,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Figtree',
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                height: 1.55,
-                color: r.ink2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (kofiUrl.isNotEmpty) ...[
-            ReamActionButton(
-              key: const Key('donation-kofi-button'),
-              label: context.l10n.donationKofiButton,
-              icon: Icons.local_cafe_outlined,
-              primary: true,
-              fillColor: r.kofiRed,
-              onPressed: () => _openKofi(context),
-            ),
-            const SizedBox(height: 11),
-          ],
-          if (bitcoinAddress.isNotEmpty)
-            _BitcoinSection(
-              key: const Key('donation-bitcoin-section'),
-              address: bitcoinAddress,
-              onCopy: () => _copyAddress(context),
-            ),
-        ],
+      body: showTips
+          ? ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                ..._headerChildren(context),
+                const SizedBox(height: 18),
+                TipJarBody(createService: createTipJar),
+              ],
+            )
+          : _kofiBtcBody(context),
+    );
+  }
+
+  /// Shared hero: favorite icon, headline, disclaimer, and the amber
+  /// "donating unlocks nothing" note. Reused by both the tip-jar and the
+  /// Ko-fi/BTC bodies (DRY).
+  List<Widget> _headerChildren(BuildContext context) {
+    final r = context.ream;
+    return [
+      Icon(Icons.favorite, color: r.kofiRed, size: 34),
+      const SizedBox(height: 8),
+      Text(
+        context.l10n.donationHeadline,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'Figtree',
+          fontWeight: FontWeight.w800,
+          fontSize: 21,
+          height: 1.25,
+          color: r.ink,
+        ),
       ),
+      const SizedBox(height: 10),
+      Text(
+        context.l10n.donationDisclaimer,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'Figtree',
+          fontSize: 13,
+          height: 1.55,
+          color: r.ink2,
+        ),
+      ),
+      const SizedBox(height: 18),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: r.amberSoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: r.amber),
+        ),
+        child: Text(
+          context.l10n.donationOptionalNote,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Figtree',
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            height: 1.55,
+            color: r.ink2,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  Widget _kofiBtcBody(BuildContext context) {
+    final r = context.ream;
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        ..._headerChildren(context),
+        const SizedBox(height: 18),
+        if (kofiUrl.isNotEmpty) ...[
+          ReamActionButton(
+            key: const Key('donation-kofi-button'),
+            label: context.l10n.donationKofiButton,
+            icon: Icons.local_cafe_outlined,
+            primary: true,
+            fillColor: r.kofiRed,
+            onPressed: () => _openKofi(context),
+          ),
+          const SizedBox(height: 11),
+        ],
+        if (bitcoinAddress.isNotEmpty)
+          _BitcoinSection(
+            key: const Key('donation-bitcoin-section'),
+            address: bitcoinAddress,
+            onCopy: () => _copyAddress(context),
+          ),
+      ],
     );
   }
 }

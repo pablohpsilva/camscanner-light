@@ -184,6 +184,28 @@ class AppLocalizationsDe extends AppLocalizations {
       'Gefällt dir die App? Tippe, um sie zu unterstützen';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Trinkgeld $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Danke ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'Deine Unterstützung hält diese App am Laufen.';
+
+  @override
+  String get donationTipThankYouClose => 'Schließen';
+
+  @override
+  String get donationTipUnavailable =>
+      'Trinkgelder sind derzeit nicht verfügbar. Bitte versuche es später erneut.';
+
+  @override
+  String get donationTipError => 'Trinkgeld konnte nicht abgeschlossen werden';
+
+  @override
   String get scanTitle => 'Scannen';
 
   @override

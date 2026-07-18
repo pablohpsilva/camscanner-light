@@ -181,6 +181,28 @@ class AppLocalizationsTr extends AppLocalizations {
       'Uygulamayı beğendin mi? Desteklemek için dokun';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Bahşiş $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Teşekkürler ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'Desteğin bu uygulamayı ayakta tutuyor.';
+
+  @override
+  String get donationTipThankYouClose => 'Kapat';
+
+  @override
+  String get donationTipUnavailable =>
+      'Bahşişler şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String get donationTipError => 'Bahşiş tamamlanamadı';
+
+  @override
   String get scanTitle => 'Tara';
 
   @override

@@ -180,6 +180,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get donationBannerText => 'Enjoying the app? Tap to support it';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Tip $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Thank you ❤️';
+
+  @override
+  String get donationTipThankYouBody => 'Your support keeps this app going.';
+
+  @override
+  String get donationTipThankYouClose => 'Close';
+
+  @override
+  String get donationTipUnavailable =>
+      'Tips aren\'t available right now. Please try again later.';
+
+  @override
+  String get donationTipError => 'Couldn\'t complete your tip';
+
+  @override
   String get scanTitle => 'Scan';
 
   @override

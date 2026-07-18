@@ -194,6 +194,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get donationBannerText => 'هل يعجبك التطبيق؟ اضغط لدعمه';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'إكرامية $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'شكرًا ❤️';
+
+  @override
+  String get donationTipThankYouBody => 'دعمك يبقي هذا التطبيق مستمرًا.';
+
+  @override
+  String get donationTipThankYouClose => 'إغلاق';
+
+  @override
+  String get donationTipUnavailable =>
+      'الإكراميات غير متوفرة حاليًا. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get donationTipError => 'تعذّر إتمام الإكرامية';
+
+  @override
   String get scanTitle => 'مسح ضوئي';
 
   @override

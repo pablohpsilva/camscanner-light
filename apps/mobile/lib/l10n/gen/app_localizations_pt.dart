@@ -183,6 +183,28 @@ class AppLocalizationsPt extends AppLocalizations {
   String get donationBannerText => 'A gostar da aplicação? Toque para a apoiar';
 
   @override
+  String donationTipButtonLabel(String price) {
+    return 'Gorjeta $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Obrigado ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'O teu apoio mantém esta aplicação a funcionar.';
+
+  @override
+  String get donationTipThankYouClose => 'Fechar';
+
+  @override
+  String get donationTipUnavailable =>
+      'As gorjetas não estão disponíveis de momento. Tenta novamente mais tarde.';
+
+  @override
+  String get donationTipError => 'Não foi possível concluir a gorjeta';
+
+  @override
   String get scanTitle => 'Digitalizar';
 
   @override
@@ -726,6 +748,28 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get donationBannerText => 'Está gostando do app? Toque para apoiar';
+
+  @override
+  String donationTipButtonLabel(String price) {
+    return 'Gorjeta $price';
+  }
+
+  @override
+  String get donationTipThankYouTitle => 'Obrigado ❤️';
+
+  @override
+  String get donationTipThankYouBody =>
+      'Seu apoio mantém este app funcionando.';
+
+  @override
+  String get donationTipThankYouClose => 'Fechar';
+
+  @override
+  String get donationTipUnavailable =>
+      'As gorjetas não estão disponíveis no momento. Tente novamente mais tarde.';
+
+  @override
+  String get donationTipError => 'Não foi possível concluir a gorjeta';
 
   @override
   String get scanTitle => 'Digitalizar';

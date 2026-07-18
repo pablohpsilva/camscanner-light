@@ -427,6 +427,42 @@ abstract class AppLocalizations {
   /// **'Enjoying the app? Tap to support it'**
   String get donationBannerText;
 
+  /// Tip jar button; {price} is the StoreKit-localized price
+  ///
+  /// In en, this message translates to:
+  /// **'Tip {price}'**
+  String donationTipButtonLabel(String price);
+
+  /// Tip success dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you ❤️'**
+  String get donationTipThankYouTitle;
+
+  /// Tip success dialog body
+  ///
+  /// In en, this message translates to:
+  /// **'Your support keeps this app going.'**
+  String get donationTipThankYouBody;
+
+  /// Dismiss the tip thank-you dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get donationTipThankYouClose;
+
+  /// Shown when the store or products fail to load
+  ///
+  /// In en, this message translates to:
+  /// **'Tips aren\'t available right now. Please try again later.'**
+  String get donationTipUnavailable;
+
+  /// Snackbar when a tip purchase fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t complete your tip'**
+  String get donationTipError;
+
   /// Scan app bar
   ///
   /// In en, this message translates to:
