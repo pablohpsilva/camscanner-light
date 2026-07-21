@@ -154,7 +154,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'As suas digitalizações ficam no seu dispositivo — sem conta, sem nuvem.';
 
   @override
-  String get donationHeadline => 'Sem contas. Sem nuvem.\\nSem subscrição.';
+  String get donationHeadline => 'Sem contas. Sem nuvem.\nSem subscrição.';
 
   @override
   String get donationDisclaimer =>
@@ -721,7 +721,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Seus documentos digitalizados ficam no seu dispositivo — sem conta, sem nuvem.';
 
   @override
-  String get donationHeadline => 'Sem contas. Sem nuvem.\\nSem assinatura.';
+  String get donationHeadline => 'Sem contas. Sem nuvem.\nSem assinatura.';
 
   @override
   String get donationDisclaimer =>

@@ -155,7 +155,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Ваши сканы остаются на вашем устройстве — без аккаунта, без облака.';
 
   @override
-  String get donationHeadline => 'Без аккаунтов. Без облака.\\nБез подписки.';
+  String get donationHeadline => 'Без аккаунтов. Без облака.\nБез подписки.';
 
   @override
   String get donationDisclaimer =>

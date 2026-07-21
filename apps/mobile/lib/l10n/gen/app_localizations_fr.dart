@@ -155,7 +155,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get donationHeadline =>
-      'Pas de compte. Pas de cloud.\\nPas d\'abonnement.';
+      'Pas de compte. Pas de cloud.\nPas d\'abonnement.';
 
   @override
   String get donationDisclaimer =>

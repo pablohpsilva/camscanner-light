@@ -153,7 +153,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tus escaneos permanecen en tu dispositivo: sin cuenta, sin nube.';
 
   @override
-  String get donationHeadline => 'Sin cuentas. Sin nube.\\nSin suscripción.';
+  String get donationHeadline => 'Sin cuentas. Sin nube.\nSin suscripción.';
 
   @override
   String get donationDisclaimer =>

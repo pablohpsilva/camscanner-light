@@ -165,7 +165,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'تبقى مسحوباتك الضوئية على جهازك — بلا حساب وبلا سحابة.';
 
   @override
-  String get donationHeadline => 'بلا حسابات. بلا سحابة.\\nبلا اشتراك.';
+  String get donationHeadline => 'بلا حسابات. بلا سحابة.\nبلا اشتراك.';
 
   @override
   String get donationDisclaimer =>

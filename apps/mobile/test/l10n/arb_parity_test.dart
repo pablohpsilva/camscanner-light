@@ -56,4 +56,37 @@ void main() {
       expect(_readArb(tag)['@@locale'], tag);
     }
   });
+
+  // A double-backslash `\\n` in an ARB is JSON-decoded to the two literal
+  // characters `\` + `n`, which a Text widget renders verbatim on screen
+  // instead of breaking the line. A real newline must be a single `\n` in the
+  // ARB (decoded to 0x0A). Guard every message value in every locale.
+  test('no message value contains a literal backslash-n instead of a newline', () {
+    for (final tag in _locales) {
+      final arb = _readArb(tag);
+      for (final key in _messageKeys(arb)) {
+        final value = arb[key];
+        if (value is! String) continue;
+        expect(
+          value.contains(r'\n'),
+          isFalse,
+          reason:
+              'app_$tag.arb "$key" contains a literal "\\n" (backslash-n) — '
+              'use a single-backslash newline in the ARB so it renders as a '
+              'line break, not the text \\n',
+        );
+      }
+    }
+  });
+
+  test('donationHeadline breaks onto a second line via a real newline', () {
+    for (final tag in _locales) {
+      final headline = _readArb(tag)['donationHeadline'] as String;
+      expect(
+        headline.contains('\n'),
+        isTrue,
+        reason: 'app_$tag.arb donationHeadline should contain a real newline',
+      );
+    }
+  });
 }

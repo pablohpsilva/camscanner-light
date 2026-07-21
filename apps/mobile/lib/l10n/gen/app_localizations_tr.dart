@@ -151,7 +151,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Taramaların cihazında kalır — hesap yok, bulut yok.';
 
   @override
-  String get donationHeadline => 'Hesap yok. Bulut yok.\\nAbonelik yok.';
+  String get donationHeadline => 'Hesap yok. Bulut yok.\nAbonelik yok.';
 
   @override
   String get donationDisclaimer =>

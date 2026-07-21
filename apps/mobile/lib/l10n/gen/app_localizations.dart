@@ -376,7 +376,7 @@ abstract class AppLocalizations {
   /// Donation hero; keep \n
   ///
   /// In en, this message translates to:
-  /// **'No accounts. No cloud.\\nNo subscription.'**
+  /// **'No accounts. No cloud.\nNo subscription.'**
   String get donationHeadline;
 
   /// Donation body

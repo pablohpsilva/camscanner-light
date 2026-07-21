@@ -153,7 +153,7 @@ class AppLocalizationsLb extends AppLocalizations {
       'Deng Scannen bleiwen op dengem Apparat — kee Konto, keng Cloud.';
 
   @override
-  String get donationHeadline => 'Keng Kontoen. Keng Cloud.\\nKeen Abonnement.';
+  String get donationHeadline => 'Keng Kontoen. Keng Cloud.\nKeen Abonnement.';
 
   @override
   String get donationDisclaimer =>

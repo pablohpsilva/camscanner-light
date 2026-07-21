@@ -187,7 +187,7 @@
   "@settingsAboutTagline": {
     "description": "About footer"
   },
-  "donationHeadline": "No accounts. No cloud.\\nNo subscription.",
+  "donationHeadline": "No accounts. No cloud.\nNo subscription.",
   "@donationHeadline": {
     "description": "Donation hero; keep \\n"
   },

@@ -151,7 +151,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your scans stay on your device — no account, no cloud.';
 
   @override
-  String get donationHeadline => 'No accounts. No cloud.\\nNo subscription.';
+  String get donationHeadline => 'No accounts. No cloud.\nNo subscription.';
 
   @override
   String get donationDisclaimer =>

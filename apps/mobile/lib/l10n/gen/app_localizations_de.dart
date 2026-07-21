@@ -154,7 +154,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Deine Scans bleiben auf deinem Gerät — kein Konto, keine Cloud.';
 
   @override
-  String get donationHeadline => 'Keine Konten. Keine Cloud.\\nKein Abo.';
+  String get donationHeadline => 'Keine Konten. Keine Cloud.\nKein Abo.';
 
   @override
   String get donationDisclaimer =>

@@ -149,7 +149,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAboutTagline => '扫描内容仅保存在本设备——无需账号，不上传云端。';
 
   @override
-  String get donationHeadline => '无需账号。不上传云端。\\n无需订阅。';
+  String get donationHeadline => '无需账号。不上传云端。\n无需订阅。';
 
   @override
   String get donationDisclaimer => '这只是自愿捐赠，您不会因此获得任何功能、权益或内容——它只是帮助支持项目的持续开发。';
