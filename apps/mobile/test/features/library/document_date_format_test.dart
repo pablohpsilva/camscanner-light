@@ -44,4 +44,36 @@ void main() {
       expect(de, isNot(equals(en))); // date-part order differs by locale
     });
   });
+
+  // Regression: `intl` ships date-symbol data for every locale the app supports
+  // EXCEPT Luxembourgish (`lb`). Passing `lb` to DateFormat throws, which blew
+  // up while building every document card — the home screen's document list
+  // rendered as a grey ErrorWidget for Luxembourgish users with any documents.
+  // The formatter must fall back to German (the app already serves German
+  // framework strings for `lb`, see lb_fallback_delegates.dart) not throw.
+  group('Luxembourgish (lb) — intl has no lb date data', () {
+    test('compact format does not throw and matches German', () {
+      expect(() => formatDocumentDateCompact(date, 'lb'), returnsNormally);
+      expect(
+        formatDocumentDateCompact(date, 'lb'),
+        formatDocumentDateCompact(date, 'de'),
+      );
+    });
+
+    test('detailed format does not throw and matches German', () {
+      expect(() => formatDocumentDateDetailed(date, 'lb'), returnsNormally);
+      expect(
+        formatDocumentDateDetailed(date, 'lb'),
+        formatDocumentDateDetailed(date, 'de'),
+      );
+    });
+
+    test('country variant lb_LU also falls back to German', () {
+      expect(() => formatDocumentDateCompact(date, 'lb_LU'), returnsNormally);
+      expect(
+        formatDocumentDateCompact(date, 'lb_LU'),
+        formatDocumentDateCompact(date, 'de'),
+      );
+    });
+  });
 }
