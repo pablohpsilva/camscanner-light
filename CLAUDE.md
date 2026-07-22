@@ -7,6 +7,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Flutter document scanner. Nx monorepo (pnpm), but there is a single app in
 `apps/mobile/` — run all Flutter commands from `apps/mobile/`, not the repo root.
 
+## Load-on-demand detail docs
+
+Keep this file lean. The deep, task-specific how-tos live in `docs/claude/` and
+are loaded only when the task matches. **Before doing one of these, read the
+matching doc — do not reproduce its steps from memory** (that is where stale
+recall causes real damage):
+
+- **Releasing to TestFlight / App Store, or anything IAP** → `docs/claude/ios-release.md`
+- **Installing a build on a real device** → `docs/claude/device-install.md`
+- **Producing an Android release** → `docs/claude/android-release.md`
+- **Reviewing / changing persistence, native pipeline, builds, or IAP** →
+  `docs/claude/review-checklist.md` (this repo's real, recurring failure modes)
+
+## Ground rules (accuracy over confidence)
+
+- **Verify before you reference.** Confirm a file/symbol actually exists
+  (Read/Grep) before naming it in code or in a claim. Don't invent APIs.
+- **Evidence before assertions.** Quote the exact command and its output before
+  saying "done", "fixed", or "passing". No "should work."
+- **Name the platform on every claim.** Host-green ≠ device-verified. Say which.
+- **A negative search is not proof.** An empty `grep`/`rg` may be the rtk proxy
+  hiding matches, not real absence — confirm negatives with `Read`.
+- **Name gaps, never hide them.** If you can't satisfy a requirement, say so
+  explicitly and which platform — do not quietly downgrade the definition of done.
+
 ## NON-NEGOTIABLE: TDD + BDD required, on Android AND iOS
 
 **Nothing is "done" without both TDD and BDD tests, verified green on Android
@@ -77,6 +102,12 @@ flutter test --plain-name 'saves a document'     # one test by name
 flutter test integration_test/k1_rotate_page_device_test.dart -d <device-id>  # on-device
 
 flutter run -d <device-id>      # run the app on a device/simulator
+
+# Builds & release — read the matching docs/claude/ doc first
+flutter build ios --release && flutter install -d <ios-device-id>   # device: BUILD then install
+bash scripts/verify-artifact.sh   # assert a build is Release (not a Debug stub) + print size
+bash scripts/build-ios-release.sh # App Store IPA  (see docs/claude/ios-release.md)
+bash scripts/build-release.sh     # Android split-APK + AAB (see docs/claude/android-release.md)
 ```
 
 ## Architecture
@@ -101,7 +132,7 @@ the bulk of the app), **donation**.
   built in raw SQL inside `_createFts()` so it runs in both `onCreate` and
   `onUpgrade`; **one row per document** (concatenated page OCR) so multi-word
   `MATCH`/AND works across pages. Bump `schemaVersion` + add an `onUpgrade` step
-  for any schema change.
+  for any schema change. (See `docs/claude/review-checklist.md` for the traps.)
 
 - **Image pipeline.** OpenCV work goes through `package:opencv_dart` (dartcv
   FFI, no MethodChannel). The page processor uses a
@@ -128,114 +159,3 @@ editing a `.feature` or adding a step.
   `bash scripts/setup-cv-host-test.sh` and export `DARTCV_LIB_PATH` /
   `DYLD_LIBRARY_PATH` as it prints. OpenCV-dependent failures under a plain host
   run are environmental, not real regressions.
-
-## Installing a build on a physical device (`flutter install` does NOT build)
-
-**Trap that has bitten us:** `flutter install` never compiles. It side-loads
-whatever artifact already sits in `build/` — so `flutter install --release`
-finishes in seconds *without building* and can silently install a **stale Debug**
-`Runner.app` from an earlier run. A Debug Flutter build crashes ~2–10ms into cold
-launch on-device (the VSyncClient SIGSEGV below), so the app "opens then closes"
-even though the install reported success. On Android the same command instead
-fails loudly (`app-release.apk does not exist`) when nothing was pre-built.
-
-**Always BUILD first, then install** — on both platforms:
-
-```bash
-# iOS (physical device)
-flutter build ios --release && flutter install -d <ios-device-id>
-
-# Android
-flutter build apk --release && flutter install -d <android-device-id>
-```
-
-**Verify the artifact is actually Release before trusting it** (Debug vs Release):
-
-```bash
-APP=build/ios/iphoneos/Runner.app
-ls -lh "$APP/Frameworks/App.framework/App"           # Release: multi-MB AOT dylib. Debug: ~34KB stub
-ls "$APP/Frameworks/App.framework/flutter_assets/"   # Debug ONLY has kernel_blob.bin + *_snapshot_data
-```
-
-If `App` is tiny and `kernel_blob.bin` / `vm_snapshot_data` / `isolate_snapshot_data`
-are present, it's a Debug build — do NOT install it, rebuild with `--release`.
-
-Diagnose a launch crash with the on-device crash log: `idevicecrashreport -k <dir>`
-then read the newest `Runner-*.ips`. The Debug-JIT signature is `EXC_BAD_ACCESS`
-(SIGSEGV) in `-[VSyncClient initWithTaskRunner:callback:]` during
-`-[FlutterViewController viewDidLoad]`.
-
-## Shipping a TestFlight / App Store build (iOS)
-
-When asked to "prepare the next version on TestFlight" (or similar), do this:
-
-1. **Bump the build number** in `apps/mobile/pubspec.yaml` — the `+N` suffix of
-   `version: 1.0.0+N`. TestFlight **rejects a build number it has already seen**,
-   so ask the user (or check App Store Connect) for the last uploaded build and
-   increment it. Do not assume `pubspec` is in sync with TestFlight — it may lag.
-
-2. **Build the Release IPA** from repo root:
-   ```bash
-   bash scripts/build-ios-release.sh
-   ```
-   This archives + does an app-store export via `apps/mobile/ios/ExportOptions.plist`
-   (method `app-store-connect`, automatic signing, team `DGLKF29HPV`) and prints the
-   output path and embedded version.
-   Output: `apps/mobile/build/ios/ipa/mobile.ipa`.
-
-3. **The user uploads it themselves** with `xcrun` (do not upload unless they ask):
-   ```bash
-   xcrun altool --upload-app -f apps/mobile/build/ios/ipa/mobile.ipa \
-     -t ios --apiKey <KEY_ID> --apiIssuer <ISSUER_ID>
-   # or:  -u <apple-id> -p <app-specific-password>
-   ```
-   `notarytool` is NOT needed — TestFlight/App Store uploads aren't notarized.
-
-### In-App Purchase tip jar prerequisites (iOS)
-The iOS tip jar (`tip_small`/`tip_medium`/`tip_large`) needs App Store Connect
-setup that lives outside this repo — miss it and StoreKit silently returns
-**zero products**, so the tip jar renders "tips unavailable" for every user
-(no error, no crash — just empty).
-
-- **Create all three consumable IAP products** (`tip_small`, `tip_medium`,
-  `tip_large`) in App Store Connect and **submit them with the build** — new
-  IAPs are reviewed alongside the app binary that first references them, not
-  separately.
-- **The Paid Applications Agreement must be active** in App Store Connect. If
-  it lapses or was never signed, StoreKit returns zero products app-wide —
-  same silent "tips unavailable" symptom, easy to misdiagnose as a code bug.
-- **A sandbox tester account** is required to actually complete a purchase on
-  a physical iPhone (production Apple IDs can't buy sandbox products).
-- Before trusting a store build, run `flutter build ipa --release` **once**
-  and confirm the `in_app_purchase` CocoaPod links cleanly — the pod is in
-  `pubspec.yaml` but has never been archived on this branch. iOS IAP needs no
-  extra entitlement or Xcode capability.
-- Full detail: `docs/superpowers/specs/2026-07-18-ios-iap-tip-jar-design.md`.
-
-### Must ship RELEASE, never Debug
-A **Debug** IPA crashes ~2–10ms into every cold launch on-device (VSyncClient
-SIGSEGV — Dart JIT needs an attached debugger). Always `--release` (the script does this).
-
-### Distribution signing is NOT persistent on this machine
-The export step needs an **Apple Distribution** cert. This machine's keychain often
-has only an *Apple Development* cert and reports "No Accounts", so the export fails
-with `No signing certificate "iOS Distribution" found`. Fix: the user signs an Apple
-ID (paid Developer Program, team `DGLKF29HPV`) into **Xcode → Settings → Accounts** —
-automatic signing then mints the distribution cert/profile on demand. The provisioning
-profiles already in `~/Library/MobileDevice/Provisioning Profiles/` are for a *different*
-app (`lu.luxauto.v2`, team `KW4H5RPWBL`) and are expired — ignore them.
-`flutter build ipa --release` alone still archives fine; only the *export* needs the account.
-
-If export fails on signing, don't guess — tell the user to sign into Xcode, then re-run
-just the export against the existing archive (no re-archive needed):
-```bash
-cd apps/mobile && xcodebuild -exportArchive \
-  -archivePath build/ios/archive/Runner.xcarchive \
-  -exportPath build/ios/ipa \
-  -exportOptionsPlist ios/ExportOptions.plist \
-  -allowProvisioningUpdates
-```
-
-## Android release
-`bash scripts/build-release.sh` — split-per-abi APKs + App Bundle, obfuscated,
-symbols in `apps/mobile/build/symbols/`.
