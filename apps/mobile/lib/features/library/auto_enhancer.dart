@@ -8,7 +8,6 @@ import 'package:image/image.dart' as img;
 import '../../core/async/with_isolate_timeout.dart';
 import 'image_enhancer.dart';
 import 'oriented_enhance.dart';
-import 'white_point_lut.dart';
 
 /// Long side (px) of the proxy on which the illumination field is estimated.
 /// The shadow gradient is low-frequency, so a moderate proxy captures it
@@ -115,7 +114,7 @@ img.Image autoEnhanceOriented(img.Image oriented) {
   final (bg, pw, ph) = _estimateBackground(oriented);
 
   _flatten(pixels, w, h, bg, pw, ph); // divide by bilinearly-sampled white
-  _whitePointStretch(pixels, w, h); // gentle per-channel finish
+  _localContrast(pixels, w, h); // local luma stretch, color preserved
 
   return img.Image.fromBytes(
     width: w,
@@ -263,46 +262,185 @@ void _flatten(Uint8List px, int w, int h, Uint8List bg, int bw, int bh) {
   }
 }
 
-/// Gentle finishing: per channel, pull the near-white top of the range up to a
-/// true 255 (removing residual haze) while leaving everything below
-/// [kAutoBlackAnchor]·whitePoint untouched, so ink and colour are never lifted.
-/// The white point is a high percentile, not the max, so specular outliers do
-/// not set the reference.
-///
-/// All three channel histograms are built in a single pass over the buffer and
-/// applied through per-channel lookup tables in a single pass back — two full
-/// scans total instead of six.
-void _whitePointStretch(Uint8List px, int w, int h) {
-  final n = w * h;
-  if (n == 0) return;
-
-  final hist = [
-    List<int>.filled(256, 0),
-    List<int>.filled(256, 0),
-    List<int>.filled(256, 0),
-  ];
-  for (var i = 0; i < px.length; i += 3) {
-    hist[0][px[i]]++;
-    hist[1][px[i + 1]]++;
-    hist[2][px[i + 2]]++;
+/// Per-channel morphological erosion: each output becomes the MIN over a
+/// (2r+1)^2 window. Separable, same structure as [_maxFilter]. Used on the
+/// single-channel luma proxy to find the local ink (darkest) reference.
+Uint8List _minFilter(Uint8List src, int w, int h, int radius) {
+  if (radius <= 0) return Uint8List.fromList(src);
+  final tmp = Uint8List(src.length);
+  for (var y = 0; y < h; y++) {
+    final row = y * w;
+    for (var x = 0; x < w; x++) {
+      final lo = x - radius < 0 ? 0 : x - radius;
+      final hi = x + radius >= w ? w - 1 : x + radius;
+      var m = 255;
+      for (var xx = lo; xx <= hi; xx++) {
+        final v = src[row + xx];
+        if (v < m) m = v;
+      }
+      tmp[row + x] = m;
+    }
   }
-
-  // The per-channel white-point stretch table is now the SAME pure math the
-  // native pipeline uses (P09 parity unify — whitePointLut3Table): a tweak can
-  // no longer drift native↔Dart parity. The flat 768-element BGR-order table
-  // (here fed R,G,B histograms → R,G,B table) is de-interleaved into three
-  // per-channel LUTs applied below. Byte-identical to the old inline stretch.
-  final table = whitePointLut3Table(hist);
-  final l0 = Uint8List(256), l1 = Uint8List(256), l2 = Uint8List(256);
-  for (var v = 0; v < 256; v++) {
-    l0[v] = table[v * 3];
-    l1[v] = table[v * 3 + 1];
-    l2[v] = table[v * 3 + 2];
+  final out = Uint8List(src.length);
+  for (var y = 0; y < h; y++) {
+    final lo = y - radius < 0 ? 0 : y - radius;
+    final hi = y + radius >= h ? h - 1 : y + radius;
+    for (var x = 0; x < w; x++) {
+      var m = 255;
+      // Vertical pass reads the horizontally-filtered [tmp], not [src] —
+      // mirrors the (correct) two-pass composition in [_maxFilter]. Reading
+      // src here would silently degrade this to a vertical-only filter.
+      for (var yy = lo; yy <= hi; yy++) {
+        final v = tmp[yy * w + x];
+        if (v < m) m = v;
+      }
+      out[y * w + x] = m;
+    }
   }
+  return out;
+}
 
-  for (var i = 0; i < px.length; i += 3) {
-    px[i] = l0[px[i]];
-    px[i + 1] = l1[px[i + 1]];
-    px[i + 2] = l2[px[i + 2]];
+/// Single-channel max (local paper white) — 1-ch analogue of [_maxFilter].
+Uint8List _maxFilter1(Uint8List src, int w, int h, int radius) {
+  if (radius <= 0) return Uint8List.fromList(src);
+  final tmp = Uint8List(src.length);
+  for (var y = 0; y < h; y++) {
+    final row = y * w;
+    for (var x = 0; x < w; x++) {
+      final lo = x - radius < 0 ? 0 : x - radius;
+      final hi = x + radius >= w ? w - 1 : x + radius;
+      var m = 0;
+      for (var xx = lo; xx <= hi; xx++) {
+        final v = src[row + xx];
+        if (v > m) m = v;
+      }
+      tmp[row + x] = m;
+    }
+  }
+  final out = Uint8List(src.length);
+  for (var y = 0; y < h; y++) {
+    final lo = y - radius < 0 ? 0 : y - radius;
+    final hi = y + radius >= h ? h - 1 : y + radius;
+    for (var x = 0; x < w; x++) {
+      var m = 0;
+      // Vertical pass reads the horizontally-filtered [tmp], not [src] — see
+      // the matching comment in [_minFilter].
+      for (var yy = lo; yy <= hi; yy++) {
+        final v = tmp[yy * w + x];
+        if (v > m) m = v;
+      }
+      out[y * w + x] = m;
+    }
+  }
+  return out;
+}
+
+/// Estimates the LOCAL black (ink) and white (paper) luminance reference
+/// fields on a proxy. Returns `(black, white, pw, ph)` as 1-ch proxy buffers.
+(Uint8List, Uint8List, int, int) _estimateLocalRefs(
+  Uint8List px,
+  int w,
+  int h,
+) {
+  // Full-res luma → proxy (average downscale, same discipline as Stage 1).
+  final luma = Uint8List(w * h);
+  for (var i = 0, j = 0; i < px.length; i += 3, j++) {
+    luma[j] = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2])
+        .round()
+        .clamp(0, 255);
+  }
+  final lumaImg = img.Image.fromBytes(
+    width: w,
+    height: h,
+    bytes: luma.buffer,
+    numChannels: 1,
+  );
+  final longest = math.max(w, h);
+  final img.Image proxy;
+  if (longest > kAutoProxyLongSide) {
+    final scale = kAutoProxyLongSide / longest;
+    proxy = img.copyResize(
+      lumaImg,
+      width: math.max(1, (w * scale).round()),
+      height: math.max(1, (h * scale).round()),
+      interpolation: img.Interpolation.average,
+    );
+  } else {
+    proxy = lumaImg;
+  }
+  final pw = proxy.width, ph = proxy.height;
+  final pbuf = proxy.getBytes(order: img.ChannelOrder.red); // 1-ch
+  final black = _blur1(
+    _minFilter(pbuf, pw, ph, kAutoLocalWindowRadius),
+    pw,
+    ph,
+  );
+  final white = _blur1(
+    _maxFilter1(pbuf, pw, ph, kAutoLocalWindowRadius),
+    pw,
+    ph,
+  );
+  return (black, white, pw, ph);
+}
+
+/// Gaussian-blur a 1-ch buffer via the image package (wrap → blur → unwrap),
+/// radius [kAutoLocalBlurRadius], matching the native gaussianBlur.
+Uint8List _blur1(Uint8List src, int w, int h) {
+  final blurred = img.gaussianBlur(
+    img.Image.fromBytes(width: w, height: h, bytes: src.buffer, numChannels: 1),
+    radius: kAutoLocalBlurRadius,
+  );
+  return blurred.getBytes(order: img.ChannelOrder.red);
+}
+
+/// Stage 2: local luminance contrast stretch that preserves colour. Estimates
+/// the local black (ink) and white (paper) luminance references and rescales
+/// each pixel's luma between them, applying the same multiplicative scale to
+/// R/G/B so hue/saturation are preserved. Blank/low-contrast regions (span <
+/// [kAutoLocalMinSpan]) are left untouched so noise is not amplified.
+void _localContrast(Uint8List px, int w, int h) {
+  final (black, white, bw, bh) = _estimateLocalRefs(px, w, h);
+  final sx = bw > 1 ? (bw - 1) / (w - 1) : 0.0;
+  final sy = bh > 1 ? (bh - 1) / (h - 1) : 0.0;
+  for (var y = 0; y < h; y++) {
+    final fy = y * sy;
+    final y0 = fy.toInt();
+    final y1 = y0 + 1 < bh ? y0 + 1 : y0;
+    final wy = fy - y0;
+    final r0 = y0 * bw, r1 = y1 * bw;
+    final o = y * w * 3;
+    for (var x = 0; x < w; x++) {
+      final fx = x * sx;
+      final x0 = fx.toInt();
+      final x1 = x0 + 1 < bw ? x0 + 1 : x0;
+      final wx = fx - x0;
+      // Bilinear sample black & white refs.
+      double sample(Uint8List f) {
+        final t = f[r0 + x0] + (f[r0 + x1] - f[r0 + x0]) * wx;
+        final b = f[r1 + x0] + (f[r1 + x1] - f[r1 + x0]) * wx;
+        return t + (b - t) * wy;
+      }
+
+      final bRef = sample(black);
+      final wRef = sample(white);
+      final span = wRef - bRef;
+      final oi = o + x * 3;
+      final r = px[oi], g = px[oi + 1], b = px[oi + 2];
+      final yLuma = 0.299 * r + 0.587 * g + 0.114 * b;
+      double yout;
+      if (span < kAutoLocalMinSpan) {
+        yout = yLuma;
+      } else {
+        final yPrime = ((yLuma - bRef) * 255.0 / span).clamp(0.0, 255.0);
+        yout = yLuma + kAutoLocalStrength * (yPrime - yLuma);
+      }
+      final scale = yout / (yLuma < 1.0 ? 1.0 : yLuma);
+      final nr = (r * scale).round();
+      final ng = (g * scale).round();
+      final nb = (b * scale).round();
+      px[oi] = nr > 255 ? 255 : (nr < 0 ? 0 : nr);
+      px[oi + 1] = ng > 255 ? 255 : (ng < 0 ? 0 : ng);
+      px[oi + 2] = nb > 255 ? 255 : (nb < 0 ? 0 : nb);
+    }
   }
 }

@@ -8,9 +8,12 @@ import 'package:mobile/features/library/auto_enhancer.dart';
 import 'package:mobile/features/library/color_enhancer.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
 
+import 'local_contrast_fixture.dart';
+
 /// A runner that never completes — injected to simulate a wedged isolate so the
 /// timeout branch can be exercised deterministically without a real hang.
-Future<Uint8List> _neverCompletes(Uint8List bytes) => Completer<Uint8List>().future;
+Future<Uint8List> _neverCompletes(Uint8List bytes) =>
+    Completer<Uint8List>().future;
 
 void main() {
   group('AutoEnhancer', () {
@@ -271,6 +274,83 @@ void main() {
         );
       },
       timeout: const Timeout(Duration(seconds: 5)),
+    );
+
+    test('local contrast rescues faded text on a bright background: text/bg '
+        'contrast increases well beyond the input', () async {
+      final input = brightBgFadedTextJpg();
+      final decodedIn = img.decodeImage(input)!;
+      final (l, t, r, b) = fadedTextRect(decodedIn.width, decodedIn.height);
+
+      // Input contrast: ink column vs paper column inside the block.
+      final inInk = decodedIn
+          .getPixel(l + 4, (t + b) ~/ 2)
+          .luminance
+          .toDouble();
+      final inPaper = decodedIn
+          .getPixel(l + 5, (t + b) ~/ 2)
+          .luminance
+          .toDouble();
+      final inContrast = (inPaper - inInk).abs();
+
+      final output = await const AutoEnhancer().enhance(input);
+      final out = img.decodeImage(output)!;
+      final outInk = out.getPixel(l + 4, (t + b) ~/ 2).luminance.toDouble();
+      final outPaper = out.getPixel(l + 5, (t + b) ~/ 2).luminance.toDouble();
+      final outContrast = (outPaper - outInk).abs();
+
+      expect(
+        outContrast,
+        greaterThan(inContrast * 1.5),
+        reason: 'faded text must gain contrast after local enhancement',
+      );
+      expect(outInk, lessThan(150), reason: 'ink darkens toward black locally');
+      expect(
+        outPaper,
+        greaterThan(220),
+        reason: 'surrounding paper stays near-white',
+      );
+    });
+
+    test(
+      'blank near-white region with noise is not speckled by local contrast',
+      () async {
+        const w = 120, h = 80;
+        final src = img.Image(width: w, height: h, numChannels: 3);
+        // Uniform bright paper + tiny deterministic +/-3 noise, NO ink.
+        var seed = 7;
+        int noise() {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          return (seed % 7) - 3; // -3..3
+        }
+
+        for (final px in src) {
+          final n = noise();
+          px
+            ..r = (245 + n).clamp(0, 255)
+            ..g = (245 + n).clamp(0, 255)
+            ..b = (245 + n).clamp(0, 255);
+        }
+        final output = await const AutoEnhancer().enhance(
+          Uint8List.fromList(img.encodeJpg(src, quality: 95)),
+        );
+        final out = img.decodeImage(output)!;
+        // Collect luma; std must stay small (no noise amplification).
+        final lum = <double>[];
+        for (final px in out) {
+          lum.add(px.luminance.toDouble());
+        }
+        final mean = lum.reduce((a, b) => a + b) / lum.length;
+        final variance =
+            lum.map((s) => (s - mean) * (s - mean)).reduce((a, b) => a + b) /
+            lum.length;
+        expect(mean, greaterThan(230), reason: 'blank paper stays bright');
+        expect(
+          variance,
+          lessThan(80),
+          reason: 'guard prevents noise being stretched into speckle',
+        );
+      },
     );
   });
 
