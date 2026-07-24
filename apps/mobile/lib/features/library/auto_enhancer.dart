@@ -43,6 +43,25 @@ const double kAutoBlackAnchor = 0.55;
 /// from exploding sensor noise into colour speckle.
 const double kAutoMaxGain = 6.0;
 
+/// Radius (proxy px) of the min/max window that estimates the LOCAL ink (min)
+/// and LOCAL paper white (max) luminance under each region. Large enough to
+/// span a text block so the min lands on real ink and the max on real paper.
+const int kAutoLocalWindowRadius = 16;
+
+/// Gaussian radius smoothing the local black/white reference fields into soft
+/// gradients before they are divided out (avoids blocky contrast transitions).
+const int kAutoLocalBlurRadius = 24;
+
+/// Minimum local luminance span (white - black) for a region to be stretched.
+/// Below this the region is blank/uniform paper with no real ink — leave it
+/// untouched so sensor noise is not amplified into speckle.
+const int kAutoLocalMinSpan = 40;
+
+/// Blend of the locally-stretched luma vs the original (0 = off, 1 = full).
+/// < 1 keeps already-clean images looking natural while still rescuing faded
+/// text on bright backgrounds.
+const double kAutoLocalStrength = 0.8;
+
 /// "Scanned document" filter. Flattens uneven illumination (hand/phone
 /// shadows) with a PER-CHANNEL flat-field division — estimate the local paper
 /// white under every region and divide it out — which removes the shadow
