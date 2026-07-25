@@ -113,7 +113,7 @@ abstract class TipJarService {
 ## UI — tip-jar mode states
 
 Rendered inside `DonationScreen` on iOS, reusing the existing header, disclaimer,
-"donations grant no benefits" note, and Ream styling / `ReamActionButton`:
+"donations grant no benefits" note, and App styling / `AppActionButton`:
 
 1. **Loading** — spinner while `loadProducts()` runs.
 2. **Ready** — three tip buttons labelled with StoreKit-localized prices

@@ -106,7 +106,7 @@ class FeatureFlags {
 - **Overflow menu** (rename, merge, split, deleteDocument): build only the
   enabled `PopupMenuItem`s; **hide the overflow button** (`page-viewer-page-menu`)
   entirely when all four are off.
-- **Home buttons** (scan, idCard, import): build each `ReamActionButton` only
+- **Home buttons** (scan, idCard, import): build each `AppActionButton` only
   when its flag is on.
 
 ## Error handling / accepted gaps

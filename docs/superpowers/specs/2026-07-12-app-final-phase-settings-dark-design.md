@@ -1,22 +1,22 @@
-# Ream Final Phase — Settings screen, dark-by-default, dark verification
+# App Final Phase — Settings screen, dark-by-default, dark verification
 
 **Date:** 2026-07-12
 **Status:** design, pending user review
-**Depends on:** Ream design system + Library (Phase 1), document editor (Phase 2a),
+**Depends on:** App design system + Library (Phase 1), document editor (Phase 2a),
 remaining screens (Phase 2, merged `626ed8d`).
 
 ## Goal
 
-Close the Ream redesign's **final phase**: give the app a real, user-selectable
+Close the App redesign's **final phase**: give the app a real, user-selectable
 theme (Light / Dark / System) that **persists**, reached from a proper **Settings
 screen**; make the app render correctly in **dark** on every in-scope screen (dark
-is the **default**); fix the one user-facing "Ream" copy string; and finish the
+is the **default**); fix the one user-facing "App" copy string; and finish the
 carried deferred-minors polish — all under the non-negotiable TDD + BDD-on-both-
 platforms gate.
 
-"Ream" is the internal **design-system codename**, not the product name. The
+"App" is the internal **design-system codename**, not the product name. The
 product name in user-facing copy is **CamScanner-light**. No new user-facing text
-may say "Ream".
+may say "App".
 
 ## Decisions (locked with the user)
 
@@ -40,8 +40,8 @@ In scope:
 |------|--------|
 | Theme control | `ThemeModeStore` interface + `SharedPrefsThemeModeStore` + in-memory fake; `ThemeController` (ChangeNotifier); reactive `MaterialApp`; async `main()` load |
 | Settings | New `lib/features/settings/settings_screen.dart` + `SettingsDependencies`; home gear pushes it |
-| Dark verification | Audit + fix every in-scope light screen so it is correct under `ReamColors.dark` |
-| Copy | `donation_screen` header `Support Ream` → `Support the app` |
+| Dark verification | Audit + fix every in-scope light screen so it is correct under `AppColors.dark` |
+| Copy | `donation_screen` header `Support App` → `Support the app` |
 | Polish | Carried deferred-minors (see below) |
 | Regression | Full BDD integration suite on iOS sim + Android emulator, in dark **and** light |
 
@@ -93,8 +93,8 @@ class ThemeController extends ChangeNotifier {
   dependency params are unchanged.
 - **`CamScannerApp`** takes the `ThemeController`, wraps `MaterialApp` in
   `AnimatedBuilder(animation: controller, builder: ...)`, sets
-  `themeMode: controller.mode`. `theme`/`darkTheme` stay `ReamTheme.light()` /
-  `ReamTheme.dark()`.
+  `themeMode: controller.mode`. `theme`/`darkTheme` stay `AppTheme.light()` /
+  `AppTheme.dark()`.
 
 ### DI
 
@@ -108,13 +108,13 @@ passed into `CamScannerApp`; the Settings screen receives the controller +
 ### Settings screen
 
 `lib/features/settings/settings_screen.dart` — renders under the active theme
-(`final r = context.ream`), light-and-dark clean:
+(`final r = context.appColors`), light-and-dark clean:
 
-- `ReamBackHeader(title: 'Settings')`, back key default.
-- `ReamSectionLabel('Appearance')` + `ReamSegmented<ThemeMode>` with options
+- `AppBackHeader(title: 'Settings')`, back key default.
+- `AppSectionLabel('Appearance')` + `AppSegmented<ThemeMode>` with options
   Light / Dark / System, key `Key('settings-theme-mode')`, value = `controller.mode`,
   onChanged → `controller.setMode(...)`.
-- `ReamSectionLabel('Feedback & support')` + two tappable rows:
+- `AppSectionLabel('Feedback & support')` + two tappable rows:
   - "Send feedback", key `Key('settings-feedback')` → push `FeedbackScreen`
     (only shown when feedback is available, mirroring today's `_feedbackAvailable`).
   - "Support the app", key `Key('settings-support')` → push `DonationScreen`.
@@ -133,7 +133,7 @@ only — no weakened assertions).
 
 ## Dark verification (per in-scope light screen)
 
-Because in-scope screens read `context.ream`, switching the app to dark flips the
+Because in-scope screens read `context.appColors`, switching the app to dark flips the
 palette automatically. Audit + fix, per screen, only these real risks:
 
 - **Status bar:** under dark, `SystemUiOverlayStyle` must render **light** icons.
@@ -144,25 +144,25 @@ palette automatically. Audit + fix, per screen, only these real risks:
 - **Thumbnails / images** on a dark `paper`: ensure a `r.line` border keeps light
   scanned pages from bleeding into dark chrome.
 - **Contrast:** confidence chips, section labels, muted text remain legible on
-  `ReamColors.dark` (tokens already tuned; assert, don't assume).
+  `AppColors.dark` (tokens already tuned; assert, don't assume).
 
 Screens to verify: **home/library** (`home_screen`), **OCR**
 (`recognized_text_screen`), **feedback** (`feedback_screen`), **donation**
 (`donation_screen`), **PDF viewer** (`pdf_preview_screen`), and the shared
-widgets (`confidence_chip`, `ream_action_button`, `ream_search_field`,
-`ream_segmented`, `ream_back_header`, `ream_section_label`).
+widgets (`confidence_chip`, `app_action_button`, `app_search_field`,
+`app_segmented`, `app_back_header`, `app_section_label`).
 
 ## Deferred-minors polish (carried from Phases 1–2)
 
 Fold into a single polish task; each is independently trivial:
-- Widen `ream_colors_test` to assert all **18** tokens (light + dark).
+- Widen `app_colors_test` to assert all **18** tokens (light + dark).
 - Resolve the test-location duplication (`test/theme/widgets/` vs
   `test/features/theme/`) — pick one, move, no orphan.
 - Align list-row meta to "N pages · date" order (grid + design parity).
 - Grid placeholder color → `r.muted`.
 - `feedback` `_fieldDecoration`: differentiate `border` vs `enabledBorder` (or
   document why identical is intended).
-- Private ctors on `ReamTypography` / `ReamTheme`.
+- Private ctors on `AppTypography` / `AppTheme`.
 - Clear the pre-existing 6 `flutter analyze` infos.
 
 ## Testing (per CLAUDE.md — TDD first, verify-then-claim, both platforms)
@@ -179,9 +179,9 @@ Fold into a single polish task; each is independently trivial:
 **Widget (host, TDD):**
 - `SettingsScreen`: renders the three-way selector at `controller.mode`; tapping
   Light/Dark/System calls `setMode`; `settings-feedback`/`settings-support` push
-  the right screens; About row present; no "Ream" text.
-- Per-screen dark tests: pump each in-scope screen under `Theme(ReamTheme.dark())`
-  and assert its `Scaffold` background resolves to `ReamColors.dark.paper` and key
+  the right screens; About row present; no "App" text.
+- Per-screen dark tests: pump each in-scope screen under `Theme(AppTheme.dark())`
+  and assert its `Scaffold` background resolves to `AppColors.dark.paper` and key
   elements use dark tokens (mirrors the Phase-2 light assertions).
 
 **BDD:** new `test/features/settings/t1_theme_settings.feature` — behavior is new,
@@ -221,7 +221,7 @@ FAIL→PASS evidence, then task review.
 1. Settings screen ships; gear pushes it; theme selector persists across relaunch.
 2. App defaults to Dark; every in-scope screen is verified correct in dark on both
    platforms (dark BDD integration run is the evidence).
-3. No user-facing "Ream" text remains; display name is CamScanner-light.
+3. No user-facing "App" text remains; display name is CamScanner-light.
 4. `flutter test` green except the 2 known opencv-env failures; `flutter analyze`
    zero warnings; `dart format lib test` clean; deferred-minors cleared.
 5. No behavior change beyond the theme feature and the settings-nav consolidation;

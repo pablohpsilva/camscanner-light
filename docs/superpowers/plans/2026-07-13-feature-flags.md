@@ -278,13 +278,13 @@ Create `test/features/library/editor_toolbar_visibility_test.dart`:
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/editor_toolbar.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 void main() {
   Future<void> pump(WidgetTester tester, {required Widget toolbar}) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
         home: Scaffold(bottomNavigationBar: toolbar),
       ),
     );
@@ -386,7 +386,7 @@ Replace the `build` method body's `Row(children: [...])` (lines 39-98) so the bu
 ```dart
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final buttons = <Widget>[
       if (showCrop)
         Expanded(
@@ -1081,7 +1081,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/home_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
@@ -1093,7 +1093,7 @@ void main() {
   }) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(
@@ -1150,7 +1150,7 @@ Replace `_buildActionRow` (lines 543-581) with a version that builds only enable
       if (f.scan)
         Expanded(
           flex: 3,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-scan'),
             label: 'Scan',
             icon: Icons.add,
@@ -1161,7 +1161,7 @@ Replace `_buildActionRow` (lines 543-581) with a version that builds only enable
       if (f.idCard)
         Expanded(
           flex: 2,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-scan-id'),
             label: 'ID card',
             icon: Icons.badge_outlined,
@@ -1171,7 +1171,7 @@ Replace `_buildActionRow` (lines 543-581) with a version that builds only enable
       if (f.import)
         Expanded(
           flex: 2,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-import'),
             label: 'Import',
             icon: Icons.download_outlined,

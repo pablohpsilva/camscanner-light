@@ -1,13 +1,13 @@
-# Ream visual redesign — Phase 1: Design System + Library
+# App visual redesign — Phase 1: Design System + Library
 
 **Date:** 2026-07-10
-**Source design:** `Ream Scanner.dc.html` (Claude Design project
+**Source design:** `App Scanner.dc.html` (Claude Design project
 `b1f98d43-afb3-4442-9c2b-f8d1787c2cbc`, direction **1a — warm & clean**).
 **Scope of this spec:** the themable design system + the Library (Home) screen
 re-skin, list **and** grid. Other screens are later cycles (see Roadmap).
 
-**Implementer reference (read first):** `docs/design/ream/README.md` — committed
-design markup (`Ream Scanner.dc.html`), the exact oklch→sRGB color-token table,
+**Implementer reference (read first):** `docs/design/app/README.md` — committed
+design markup (`App Scanner.dc.html`), the exact oklch→sRGB color-token table,
 type rules, screen→file index, and the per-task definition of done. Subagents
 must consult it before writing code.
 
@@ -18,15 +18,15 @@ must consult it before writing code.
   extrapolated from the 1b "scanner HUD" screens but is only wired/verified in
   the final phase.
 - **No rename.** Keep the app name/identity ("CamScanner-light", bundle ids,
-  store listing). Apply the Ream *visual style* only. Do **not** rename the app
+  store listing). Apply the App *visual style* only. Do **not** rename the app
   or churn store assets. Visible copy stays as-is except where a restyle
-  naturally touches it; we do not introduce the literal word "Ream" into UI copy
+  naturally touches it; we do not introduce the literal word "App" into UI copy
   in this phase.
 - **Sequence:** design system + Library first (this spec), then one re-skin
   cycle per remaining screen, then a final app-wide "apply the redesign" phase.
 - **Inline search**, as designed (replaces today's tap-to-open AppBar search
   mode).
-- **Go live in Phase 1:** `MaterialApp` switches to the Ream light theme now; the
+- **Go live in Phase 1:** `MaterialApp` switches to the App light theme now; the
   redesigned Library is what launches. Later screens go live as re-skinned.
 - **Review & clean (screen 04)** is an in-app editor to redesign — but in a
   **later** cycle, not this one.
@@ -51,20 +51,20 @@ must consult it before writing code.
 
 New directory **`lib/theme/`**:
 
-- **`ream_colors.dart`** — `ReamColors extends ThemeExtension<ReamColors>` with a
+- **`app_colors.dart`** — `AppColors extends ThemeExtension<AppColors>` with a
   field per semantic token above (all as `Color`; oklch values converted to
-  sRGB `Color` constants at authoring time). Provides `ReamColors.light` and
-  `ReamColors.dark`, plus `lerp`/`copyWith`. A `BuildContext.ream` extension
-  getter returns `Theme.of(context).extension<ReamColors>()!` for terse access.
+  sRGB `Color` constants at authoring time). Provides `AppColors.light` and
+  `AppColors.dark`, plus `lerp`/`copyWith`. A `BuildContext.appColors` extension
+  getter returns `Theme.of(context).extension<AppColors>()!` for terse access.
   - *What it does:* single source of truth for semantic colors.
-  - *How you use it:* `context.ream.green`, `context.ream.paper`, etc.
+  - *How you use it:* `context.appColors.green`, `context.appColors.paper`, etc.
   - *Depends on:* nothing (pure data).
-- **`ream_typography.dart`** — builds the Figtree `TextTheme` and exposes a
-  `ReamText` helper / `mono(...)` `TextStyle` factory for IBM Plex Mono readouts.
-- **`ream_theme.dart`** — `ReamTheme.light()` / `ReamTheme.dark()` returning
-  `ThemeData`: maps `ReamColors` onto `ColorScheme` (so stock Material widgets
+- **`app_typography.dart`** — builds the Figtree `TextTheme` and exposes a
+  `AppText` helper / `mono(...)` `TextStyle` factory for IBM Plex Mono readouts.
+- **`app_theme.dart`** — `AppTheme.light()` / `AppTheme.dark()` returning
+  `ThemeData`: maps `AppColors` onto `ColorScheme` (so stock Material widgets
   inherit sensible colors), sets `scaffoldBackgroundColor`, `textTheme`, and
-  `extensions: [ReamColors.light|dark]`. `useMaterial3: true` retained.
+  `extensions: [AppColors.light|dark]`. `useMaterial3: true` retained.
 - **Fonts:** add `fonts/Figtree-*.ttf` and `fonts/IBMPlexMono-*.ttf`
   (OFL-licensed) and declare them under `flutter: fonts:` in `pubspec.yaml`.
   Bundled (not runtime-fetched) — the app is offline/private by design. Font
@@ -76,10 +76,10 @@ widget-testable, reused by later screens):
 - `ConfidenceChip({ConfidenceLevel level, String label})` — green/amber/blue pill
   with a leading dot. (Built now as a core primitive; used heavily by later
   capture/review/OCR screens.)
-- `ReamSearchField` — inline search input matching the header style.
-- `ReamSegmented` — two/three-segment toggle (List/Grid; also the sort pill's
+- `AppSearchField` — inline search input matching the header style.
+- `AppSegmented` — two/three-segment toggle (List/Grid; also the sort pill's
   visual base).
-- `ReamActionButton` — the bottom-row buttons (primary filled + secondary
+- `AppActionButton` — the bottom-row buttons (primary filled + secondary
   outlined variants) for Scan / ID card / Import.
 - Document **row** and **grid card** widgets (paper thumbnail framing + title +
   mono meta line).
@@ -97,10 +97,10 @@ the search interaction change.
   - **Settings gear** top-right → opens a menu that includes **Send feedback**
     (preserving today's overflow-menu entry; gated by `_feedbackAvailable` as
     now). This keeps the existing feedback path reachable.
-  - **Inline `ReamSearchField`** (always visible). Typing drives the existing
+  - **Inline `AppSearchField`** (always visible). Typing drives the existing
     FTS search (`repo.searchDocuments`) with the current race-guard. Empty query
     restores the full list. No separate "search mode" AppBar.
-  - Controls row: **sort pill** + **List/Grid `ReamSegmented` toggle**. The sort
+  - Controls row: **sort pill** + **List/Grid `AppSegmented` toggle**. The sort
     pill shows the active criterion + a direction arrow (e.g. "Modified ↓") and
     opens a small menu listing Name / Created / Modified. Selecting a criterion
     calls the existing `nextSort` (re-selecting the active one toggles
@@ -135,13 +135,13 @@ to `documents-search-field`; add `documents-grid`, `library-view-toggle`).
 ## Testing plan (both platforms — non-negotiable)
 
 **TDD (host, `flutter test`):**
-- `ream_colors_test` — light/dark expose all tokens; `lerp` interpolates; the
-  `context.ream` getter resolves from a themed context.
-- `ream_theme_test` — `ThemeData` carries the extension; scaffold background =
+- `app_colors_test` — light/dark expose all tokens; `lerp` interpolates; the
+  `context.appColors` getter resolves from a themed context.
+- `app_theme_test` — `ThemeData` carries the extension; scaffold background =
   paper; `ColorScheme` mapping sane.
 - Component tests: `confidence_chip_test` (three levels render their color +
-  label), `ream_search_field_test`, `ream_segmented_test`,
-  `ream_action_button_test`, `document_grid_view_test`, restyled
+  label), `app_search_field_test`, `app_segmented_test`,
+  `app_action_button_test`, `document_grid_view_test`, restyled
   `donation_banner` test.
 - Updated `HomeScreen` host tests (above) for the new header, inline search,
   list/grid toggle, and bottom action row.
@@ -167,10 +167,10 @@ persistence; capture/ID scan screens; renaming the app; store assets.
 ## Roadmap
 
 1. **Phase 1 (this spec):** design system + Library (list + grid), live on the
-   Ream light theme, green on host + real Android + real iOS.
+   App light theme, green on host + real Android + real iOS.
 2. **Phases 2…N:** one re-skin cycle each (own spec/plan/TDD/BDD): Document
    editor (06), Recognized text/OCR (07), Export PDF (08), Send feedback (09),
    Support/Donation (10), Review & clean editor (04).
-3. **Final phase — "apply the redesign":** switch the whole app onto the Ream
+3. **Final phase — "apply the redesign":** switch the whole app onto the App
    theme app-wide, wire + verify the **dark** theme, and run a cross-screen
    consistency/polish pass with a full-app device regression on both platforms.

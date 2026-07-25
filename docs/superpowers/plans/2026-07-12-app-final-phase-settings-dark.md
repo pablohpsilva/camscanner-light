@@ -1,17 +1,17 @@
-# Ream Final Phase — Settings, dark-by-default, dark verification — Implementation Plan
+# App Final Phase — Settings, dark-by-default, dark verification — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a persisted, user-selectable Light/Dark/System theme via a real Settings screen, make dark the default, verify every in-scope screen in dark on both platforms, and finish carried polish.
 
-**Architecture:** A `ThemeModeStore` (shared_preferences impl + in-memory fake) persists the choice; a `ThemeController extends ChangeNotifier` holds the mode and is created in an async `main()` and passed into `CamScannerApp`, which wraps `MaterialApp` in an `AnimatedBuilder` so `themeMode` is reactive. A new `SettingsScreen` (reached by the home gear) drives the controller. Existing screens read `context.ream`, so dark flips automatically; a small status-bar-overlay fix plus per-screen dark tests close the visual gap.
+**Architecture:** A `ThemeModeStore` (shared_preferences impl + in-memory fake) persists the choice; a `ThemeController extends ChangeNotifier` holds the mode and is created in an async `main()` and passed into `CamScannerApp`, which wraps `MaterialApp` in an `AnimatedBuilder` so `themeMode` is reactive. A new `SettingsScreen` (reached by the home gear) drives the controller. Existing screens read `context.appColors`, so dark flips automatically; a small status-bar-overlay fix plus per-screen dark tests close the visual gap.
 
-**Tech Stack:** Flutter, Material 3, `shared_preferences` (new), `ReamColors` ThemeExtension, `bdd_widget_test`.
+**Tech Stack:** Flutter, Material 3, `shared_preferences` (new), `AppColors` ThemeExtension, `bdd_widget_test`.
 
 ## Global Constraints
 
 - **Pure feature + consolidation only.** No change to OCR, PDF generation, share/print, FeedbackService, DonationConfig, or the drift schema. Only the theme feature and the settings-nav consolidation add/alter behavior.
-- **"Ream" is an internal codename — never user-facing.** Display name is **CamScanner-light**. The only user-facing "Ream" string (`donation_screen` header) is fixed to **"Support the app"**.
+- **"App" is an internal codename — never user-facing.** Display name is **CamScanner-light**. The only user-facing "App" string (`donation_screen` header) is fixed to **"Support the app"**.
 - **Default theme = Dark** when the store has no value.
 - **Only new dependency = `shared_preferences`.** Do NOT add `package_info_plus` (already present but unused here) or any other package. About footer shows no version number.
 - **Scoped `git add`** — named paths only, never `-A`/`.` (repo carries a long-lived WIP pile).
@@ -335,7 +335,7 @@ import 'features/feedback/feedback_dependencies.dart';
 import 'features/library/home_screen.dart';
 import 'features/library/library_dependencies.dart';
 import 'features/scan/scan_dependencies.dart';
-import 'theme/ream_theme.dart';
+import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 import 'theme/theme_mode_store.dart';
 
@@ -387,8 +387,8 @@ class CamScannerApp extends StatelessWidget {
       builder: (context, _) => MaterialApp(
         title: 'CamScanner-light',
         debugShowCheckedModeBanner: false,
-        theme: ReamTheme.light(),
-        darkTheme: ReamTheme.dark(),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
         themeMode: themeController.mode,
         home: HomeScreen(
           dependencies: scanDependencies,
@@ -460,8 +460,8 @@ git commit -m "feat(theme): reactive MaterialApp driven by ThemeController; thre
 - Modify: `test/features/library/home_feedback_menu_test.dart` (new nav path)
 
 **Interfaces:**
-- Consumes: `ThemeController` (Task 2/3), `FeedbackDependencies`, `FeedbackScreen`, `DonationScreen`, `ReamBackHeader`, `ReamSectionLabel`, `ReamSegmented`, `ReamSegment`.
-- Produces: `SettingsScreen({required ThemeController themeController, required FeedbackDependencies feedbackDependencies, bool feedbackAvailable})`; keys `settings-theme-mode`, `settings-feedback`, `settings-support`, `settings-about`; segment keys from `ReamSegmented` are `Key('segment-<ThemeMode.xxx>')`.
+- Consumes: `ThemeController` (Task 2/3), `FeedbackDependencies`, `FeedbackScreen`, `DonationScreen`, `AppBackHeader`, `AppSectionLabel`, `AppSegmented`, `AppSegment`.
+- Produces: `SettingsScreen({required ThemeController themeController, required FeedbackDependencies feedbackDependencies, bool feedbackAvailable})`; keys `settings-theme-mode`, `settings-feedback`, `settings-support`, `settings-about`; segment keys from `AppSegmented` are `Key('segment-<ThemeMode.xxx>')`.
 
 - [ ] **Step 1: Write the failing SettingsScreen test**
 
@@ -472,12 +472,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:mobile/theme/theme_controller.dart';
 import 'package:mobile/theme/theme_mode_store.dart';
 
 Widget _host(ThemeController c, {bool feedbackAvailable = true}) => MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       home: SettingsScreen(
         themeController: c,
         feedbackDependencies: const FeedbackDependencies(),
@@ -523,12 +523,12 @@ void main() {
     expect(find.byKey(const Key('settings-feedback')), findsNothing);
   });
 
-  testWidgets('about footer shows the app name and no "Ream"', (t) async {
+  testWidgets('about footer shows the app name and no "App"', (t) async {
     final c = ThemeController(store: InMemoryThemeModeStore());
     await t.pumpWidget(_host(c));
     expect(find.byKey(const Key('settings-about')), findsOneWidget);
     expect(find.textContaining('CamScanner-light'), findsOneWidget);
-    expect(find.textContaining('Ream'), findsNothing);
+    expect(find.textContaining('App'), findsNothing);
   });
 }
 ```
@@ -564,10 +564,10 @@ Create `lib/features/settings/settings_screen.dart`:
 ```dart
 import 'package:flutter/material.dart';
 
-import '../../theme/ream_colors.dart';
-import '../../theme/widgets/ream_back_header.dart';
-import '../../theme/widgets/ream_section_label.dart';
-import '../../theme/widgets/ream_segmented.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/widgets/app_back_header.dart';
+import '../../theme/widgets/app_section_label.dart';
+import '../../theme/widgets/app_segmented.dart';
 import '../../theme/theme_controller.dart';
 import '../donation/donation_screen.dart';
 import '../feedback/feedback_dependencies.dart';
@@ -575,7 +575,7 @@ import '../feedback/feedback_screen.dart';
 
 /// App settings: theme selection (persisted via [ThemeController]), plus entry
 /// points to feedback and support, and an About footer. Renders under the
-/// active Ream theme (light or dark).
+/// active App theme (light or dark).
 class SettingsScreen extends StatelessWidget {
   final ThemeController themeController;
   final FeedbackDependencies feedbackDependencies;
@@ -590,10 +590,10 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: 'Settings',
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -602,21 +602,21 @@ class SettingsScreen extends StatelessWidget {
         builder: (context, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const ReamSectionLabel('Appearance'),
+            const AppSectionLabel('Appearance'),
             const SizedBox(height: 10),
-            ReamSegmented<ThemeMode>(
+            AppSegmented<ThemeMode>(
               key: const Key('settings-theme-mode'),
               expanded: true,
               value: themeController.mode,
               onChanged: themeController.setMode,
               segments: const [
-                ReamSegment(value: ThemeMode.light, label: 'Light'),
-                ReamSegment(value: ThemeMode.dark, label: 'Dark'),
-                ReamSegment(value: ThemeMode.system, label: 'System'),
+                AppSegment(value: ThemeMode.light, label: 'Light'),
+                AppSegment(value: ThemeMode.dark, label: 'Dark'),
+                AppSegment(value: ThemeMode.system, label: 'System'),
               ],
             ),
             const SizedBox(height: 28),
-            const ReamSectionLabel('Feedback & support'),
+            const AppSectionLabel('Feedback & support'),
             const SizedBox(height: 10),
             if (feedbackAvailable)
               _NavRow(
@@ -655,7 +655,7 @@ class _NavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -700,7 +700,7 @@ class _About extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Column(
       children: [
         Text(
@@ -741,7 +741,7 @@ Replace the whole `_buildSettingsMenu` method (currently a `PopupMenuButton`) wi
 
 ```dart
   Widget _buildSettingsMenu(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return GestureDetector(
       key: const Key('home-settings'),
       onTap: () => Navigator.of(context).push(
@@ -780,7 +780,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/feedback/feedback_availability.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/library/home_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 class _StubAvailability implements FeedbackAvailability {
   final bool v;
@@ -790,7 +790,7 @@ class _StubAvailability implements FeedbackAvailability {
 }
 
 Widget _host(bool healthy) => MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       home: HomeScreen(
         feedbackDependencies: FeedbackDependencies(
           createAvailability: () => _StubAvailability(healthy),
@@ -839,7 +839,7 @@ git commit -m "feat(settings): Settings screen with theme selector; home gear pu
 
 ---
 
-### Task 5: Copy fix — "Support Ream" → "Support the app"
+### Task 5: Copy fix — "Support App" → "Support the app"
 
 **Files:**
 - Modify: `lib/features/donation/donation_screen.dart:56`
@@ -849,32 +849,32 @@ git commit -m "feat(settings): Settings screen with theme selector; home gear pu
 
 - [ ] **Step 1: Check the current test expectation**
 
-Run: `grep -rn "Support Ream\|Support the app" test lib`
-Note whether `donation_screen_test.dart` asserts `'Support Ream'`.
+Run: `grep -rn "Support App\|Support the app" test lib`
+Note whether `donation_screen_test.dart` asserts `'Support App'`.
 
 - [ ] **Step 2: Update the header string**
 
 In `lib/features/donation/donation_screen.dart`, change:
 
 ```dart
-      appBar: ReamBackHeader(
-        title: 'Support Ream',
+      appBar: AppBackHeader(
+        title: 'Support App',
 ```
 to:
 ```dart
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: 'Support the app',
 ```
 
 - [ ] **Step 3: Update any test asserting the old title**
 
-If Step 1 found `find.text('Support Ream')` in `donation_screen_test.dart`, change it to `find.text('Support the app')`. If no test asserts the title, add one:
+If Step 1 found `find.text('Support App')` in `donation_screen_test.dart`, change it to `find.text('Support the app')`. If no test asserts the title, add one:
 
 ```dart
   testWidgets('header reads "Support the app" (no codename)', (t) async {
     await t.pumpWidget(const MaterialApp(home: DonationScreen()));
     expect(find.text('Support the app'), findsOneWidget);
-    expect(find.textContaining('Ream'), findsNothing);
+    expect(find.textContaining('App'), findsNothing);
   });
 ```
 (Match the existing test file's host/imports; reuse its pump helper if present.)
@@ -883,7 +883,7 @@ If Step 1 found `find.text('Support Ream')` in `donation_screen_test.dart`, chan
 
 Run: `flutter test test/features/donation/donation_screen_test.dart`
 Expected: PASS.
-Run: `grep -rn "Support Ream" lib test` → no matches.
+Run: `grep -rn "Support App" lib test` → no matches.
 Run: `flutter test` → green except the 2 opencv-env failures.
 
 - [ ] **Step 5: Analyze, format, commit**
@@ -892,7 +892,7 @@ Run: `flutter test` → green except the 2 opencv-env failures.
 flutter analyze lib/features/donation/donation_screen.dart test/features/donation/donation_screen_test.dart
 dart format lib/features/donation/donation_screen.dart test/features/donation/donation_screen_test.dart
 git add lib/features/donation/donation_screen.dart test/features/donation/donation_screen_test.dart
-git commit -m "fix(donation): rename header to 'Support the app' (Ream is a codename)"
+git commit -m "fix(donation): rename header to 'Support the app' (App is a codename)"
 ```
 
 ---
@@ -900,29 +900,29 @@ git commit -m "fix(donation): rename header to 'Support the app' (Ream is a code
 ### Task 6: Dark verification — status-bar overlay + per-screen dark assertions
 
 **Files:**
-- Modify: `lib/theme/widgets/ream_back_header.dart` (brightness-aware status-bar overlay)
+- Modify: `lib/theme/widgets/app_back_header.dart` (brightness-aware status-bar overlay)
 - Modify: `lib/features/library/home_screen.dart` (status-bar overlay on the home header)
 - Test: `test/theme/dark_screens_test.dart` (create)
-- Test: `test/theme/ream_back_header_overlay_test.dart` (create)
+- Test: `test/theme/app_back_header_overlay_test.dart` (create)
 
 **Interfaces:**
-- Produces: `ReamBackHeader` now wraps its bar in `AnnotatedRegion<SystemUiOverlayStyle>` derived from `Theme.of(context).brightness` (dark theme → light status-bar icons). No API change.
+- Produces: `AppBackHeader` now wraps its bar in `AnnotatedRegion<SystemUiOverlayStyle>` derived from `Theme.of(context).brightness` (dark theme → light status-bar icons). No API change.
 
 - [ ] **Step 1: Write the failing overlay test**
 
-Create `test/theme/ream_back_header_overlay_test.dart`:
+Create `test/theme/app_back_header_overlay_test.dart`:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_back_header.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_back_header.dart';
 
 SystemUiOverlayStyle _overlayOf(WidgetTester t) =>
     t.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
       find.descendant(
-        of: find.byType(ReamBackHeader),
+        of: find.byType(AppBackHeader),
         matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
       ),
     ).value;
@@ -930,16 +930,16 @@ SystemUiOverlayStyle _overlayOf(WidgetTester t) =>
 void main() {
   testWidgets('light theme → dark status-bar icons', (t) async {
     await t.pumpWidget(MaterialApp(
-      theme: ReamTheme.light(),
-      home: const Scaffold(appBar: ReamBackHeader(title: 'X')),
+      theme: AppTheme.light(),
+      home: const Scaffold(appBar: AppBackHeader(title: 'X')),
     ));
     expect(_overlayOf(t).statusBarIconBrightness, Brightness.dark);
   });
 
   testWidgets('dark theme → light status-bar icons', (t) async {
     await t.pumpWidget(MaterialApp(
-      theme: ReamTheme.dark(),
-      home: const Scaffold(appBar: ReamBackHeader(title: 'X')),
+      theme: AppTheme.dark(),
+      home: const Scaffold(appBar: AppBackHeader(title: 'X')),
     ));
     expect(_overlayOf(t).statusBarIconBrightness, Brightness.light);
   });
@@ -948,12 +948,12 @@ void main() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `flutter test test/theme/ream_back_header_overlay_test.dart`
-Expected: FAIL — no `AnnotatedRegion` inside `ReamBackHeader`.
+Run: `flutter test test/theme/app_back_header_overlay_test.dart`
+Expected: FAIL — no `AnnotatedRegion` inside `AppBackHeader`.
 
-- [ ] **Step 3: Make `ReamBackHeader` status-bar aware**
+- [ ] **Step 3: Make `AppBackHeader` status-bar aware**
 
-In `lib/theme/widgets/ream_back_header.dart`, add the import:
+In `lib/theme/widgets/app_back_header.dart`, add the import:
 
 ```dart
 import 'package:flutter/services.dart';
@@ -977,7 +977,7 @@ Wrap the returned `SafeArea` in an `AnnotatedRegion`. Change the `build` return 
 
 - [ ] **Step 4: Run the overlay test**
 
-Run: `flutter test test/theme/ream_back_header_overlay_test.dart`
+Run: `flutter test test/theme/app_back_header_overlay_test.dart`
 Expected: PASS (2 tests).
 
 - [ ] **Step 5: Add the home-header overlay**
@@ -986,7 +986,7 @@ In `lib/features/library/home_screen.dart`, add `import 'package:flutter/service
 
 ```dart
   Widget _buildHeader(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final overlay = Theme.of(context).brightness == Brightness.dark
         ? SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent)
         : SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent);
@@ -1002,7 +1002,7 @@ In `lib/features/library/home_screen.dart`, add `import 'package:flutter/service
 
 - [ ] **Step 6: Write per-screen dark assertions**
 
-Create `test/theme/dark_screens_test.dart`. For each in-scope light screen, pump it under `ReamTheme.dark()` and assert its `Scaffold` background is `ReamColors.dark.paper`. Use minimal hosting; where a screen needs deps, use the same fakes those screens' existing tests use (copy the smallest host from the sibling test file).
+Create `test/theme/dark_screens_test.dart`. For each in-scope light screen, pump it under `AppTheme.dark()` and assert its `Scaffold` background is `AppColors.dark.paper`. Use minimal hosting; where a screen needs deps, use the same fakes those screens' existing tests use (copy the smallest host from the sibling test file).
 
 ```dart
 import 'package:flutter/material.dart';
@@ -1011,8 +1011,8 @@ import 'package:mobile/features/donation/donation_screen.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/feedback/feedback_screen.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:mobile/theme/theme_controller.dart';
 import 'package:mobile/theme/theme_mode_store.dart';
 
@@ -1020,17 +1020,17 @@ Color _scaffoldBg(WidgetTester t) =>
     t.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor!;
 
 void main() {
-  Widget dark(Widget child) => MaterialApp(theme: ReamTheme.dark(), home: child);
+  Widget dark(Widget child) => MaterialApp(theme: AppTheme.dark(), home: child);
 
   testWidgets('DonationScreen uses dark paper', (t) async {
     await t.pumpWidget(dark(const DonationScreen()));
-    expect(_scaffoldBg(t), ReamColors.dark.paper);
+    expect(_scaffoldBg(t), AppColors.dark.paper);
   });
 
   testWidgets('FeedbackScreen uses dark paper', (t) async {
     await t.pumpWidget(dark(const FeedbackScreen()));
     await t.pumpAndSettle();
-    expect(_scaffoldBg(t), ReamColors.dark.paper);
+    expect(_scaffoldBg(t), AppColors.dark.paper);
   });
 
   testWidgets('SettingsScreen uses dark paper', (t) async {
@@ -1038,7 +1038,7 @@ void main() {
       themeController: ThemeController(store: InMemoryThemeModeStore()),
       feedbackDependencies: const FeedbackDependencies(),
     )));
-    expect(_scaffoldBg(t), ReamColors.dark.paper);
+    expect(_scaffoldBg(t), AppColors.dark.paper);
   });
 }
 ```
@@ -1047,16 +1047,16 @@ void main() {
 
 - [ ] **Step 7: Run the dark tests + full suite**
 
-Run: `flutter test test/theme/dark_screens_test.dart test/theme/ream_back_header_overlay_test.dart`
+Run: `flutter test test/theme/dark_screens_test.dart test/theme/app_back_header_overlay_test.dart`
 Expected: PASS.
 Run: `flutter test` → green except the 2 opencv-env failures.
 
 - [ ] **Step 8: Analyze, format, commit**
 
 ```bash
-flutter analyze lib/theme/widgets/ream_back_header.dart lib/features/library/home_screen.dart test/theme/dark_screens_test.dart test/theme/ream_back_header_overlay_test.dart
+flutter analyze lib/theme/widgets/app_back_header.dart lib/features/library/home_screen.dart test/theme/dark_screens_test.dart test/theme/app_back_header_overlay_test.dart
 dart format lib/theme test/theme lib/features/library/home_screen.dart
-git add lib/theme/widgets/ream_back_header.dart lib/features/library/home_screen.dart test/theme/dark_screens_test.dart test/theme/ream_back_header_overlay_test.dart
+git add lib/theme/widgets/app_back_header.dart lib/features/library/home_screen.dart test/theme/dark_screens_test.dart test/theme/app_back_header_overlay_test.dart
 git commit -m "feat(theme): brightness-aware status bar + per-screen dark verification tests"
 ```
 
@@ -1183,12 +1183,12 @@ git commit -m "test(settings): BDD feature for theme selection (t1_theme_setting
 ### Task 8: Deferred-minors polish
 
 **Files (each item independent):**
-- Modify: `test/theme/.../ream_colors_test.dart` (widen to 18 tokens, light + dark)
+- Modify: `test/theme/.../app_colors_test.dart` (widen to 18 tokens, light + dark)
 - Resolve: `test/theme/widgets/` vs `test/features/theme/` duplication
 - Modify: list-row meta order → "N pages · date"
 - Modify: grid placeholder color → `r.muted`
 - Modify: `lib/features/feedback/feedback_screen.dart` `_fieldDecoration`
-- Modify: `lib/theme/ream_typography.dart`, `lib/theme/ream_theme.dart` private ctors
+- Modify: `lib/theme/app_typography.dart`, `lib/theme/app_theme.dart` private ctors
 - Clear the 6 pre-existing `flutter analyze` infos
 
 **Interfaces:** none changed.
@@ -1197,9 +1197,9 @@ git commit -m "test(settings): BDD feature for theme selection (t1_theme_setting
 
 Run: `flutter analyze` and record the 6 infos.
 
-- [ ] **Step 2: Widen `ream_colors_test`**
+- [ ] **Step 2: Widen `app_colors_test`**
 
-Locate it (`grep -rl "ReamColors" test`). Assert all 18 tokens are the exact constants from `lib/theme/ream_colors.dart` for BOTH `ReamColors.light` and `ReamColors.dark`. (Copy the hex values verbatim from that file.) Run the file; PASS.
+Locate it (`grep -rl "AppColors" test`). Assert all 18 tokens are the exact constants from `lib/theme/app_colors.dart` for BOTH `AppColors.light` and `AppColors.dark`. (Copy the hex values verbatim from that file.) Run the file; PASS.
 
 - [ ] **Step 3: De-duplicate the theme test location**
 
@@ -1211,7 +1211,7 @@ In the list-row widget (`grep -rn "pages" lib/features/library/widgets/documents
 
 - [ ] **Step 5: Grid placeholder → `r.muted`**
 
-In the grid placeholder (`grep -rn "placeholder\|Colors\." lib/features/library/widgets/documents_grid_view.dart`), swap the placeholder color to `context.ream.muted`. Adjust the covering test if it asserts the old color. Run → PASS.
+In the grid placeholder (`grep -rn "placeholder\|Colors\." lib/features/library/widgets/documents_grid_view.dart`), swap the placeholder color to `context.appColors.muted`. Adjust the covering test if it asserts the old color. Run → PASS.
 
 - [ ] **Step 6: `_fieldDecoration` border**
 
@@ -1219,7 +1219,7 @@ In `feedback_screen.dart`, make `border` and `enabledBorder` intentionally disti
 
 - [ ] **Step 7: Private constructors**
 
-Add `ReamTypography._();` and `ReamTheme._();` private constructors (these are static-only utility classes). Run their tests + `flutter analyze` → clean.
+Add `AppTypography._();` and `AppTheme._();` private constructors (these are static-only utility classes). Run their tests + `flutter analyze` → clean.
 
 - [ ] **Step 8: Clear remaining analyze infos; full suite**
 
@@ -1273,6 +1273,6 @@ Update `.superpowers/sdd/progress.md`. Hand off to `superpowers:finishing-a-deve
 ## Self-Review
 
 - **Spec coverage:** store+persistence (T1), controller (T2), reactive app + default-dark (T3), Settings screen + gear consolidation (T4), copy fix (T5), dark verification (T6), BDD (T7), deferred-minors (T8), regression+merge (T9). All spec sections mapped.
-- **Type consistency:** `ThemeController({required ThemeModeStore store, ThemeMode initial})`, `setMode`, `SettingsScreen({required ThemeController themeController, FeedbackDependencies, bool feedbackAvailable})`, `ReamSegmented<ThemeMode>` segment keys `Key('segment-ThemeMode.light')` — used consistently in T4 test and T7 steps. `SharedPrefsThemeModeStore.new` tear-off matches the `ThemeModeStoreFactory` typedef.
+- **Type consistency:** `ThemeController({required ThemeModeStore store, ThemeMode initial})`, `setMode`, `SettingsScreen({required ThemeController themeController, FeedbackDependencies, bool feedbackAvailable})`, `AppSegmented<ThemeMode>` segment keys `Key('segment-ThemeMode.light')` — used consistently in T4 test and T7 steps. `SharedPrefsThemeModeStore.new` tear-off matches the `ThemeModeStoreFactory` typedef.
 - **No placeholders:** every code step carries real code; T8's many-small-edits steps name the exact file + grep to locate the line and the concrete change.
 - **Known risk noted:** T7 Step 4 flags that integration-binding tests may not run headless on host; the authoritative run is the device pass in T9.

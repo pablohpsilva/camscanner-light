@@ -931,7 +931,7 @@ Change `initState`'s size resolution to swap for odd turns:
 
 Wrap the image widget in a `RotatedBox`:
 ```dart
-  Widget _imageWidget(ReamColors r) => RotatedBox(
+  Widget _imageWidget(AppColors r) => RotatedBox(
     quarterTurns: widget.quarterTurns,
     child: Image.file(
       File(widget.imagePath),

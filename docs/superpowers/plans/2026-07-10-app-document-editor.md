@@ -1,32 +1,32 @@
-# Ream Document Editor Re-skin — Implementation Plan (Phase 2a)
+# App Document Editor Re-skin — Implementation Plan (Phase 2a)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Re-skin `PageViewerScreen` (the document editor) to the Ream design —
+**Goal:** Re-skin `PageViewerScreen` (the document editor) to the App design —
 a dark viewer with a custom top bar, a 6-icon bottom toolbar, a page-counter pill,
 a green-active thumbnail strip, and all existing actions preserved.
 
-**Architecture:** Wrap the editor subtree in `Theme(ReamTheme.dark())` so
-`context.ream` resolves to dark tokens; build small dark toolbar/topbar/counter
+**Architecture:** Wrap the editor subtree in `Theme(AppTheme.dark())` so
+`context.appColors` resolves to dark tokens; build small dark toolbar/topbar/counter
 widgets (reusing the Phase-1 design system); restructure `PageViewerScreen` to
 compose them; migrate the viewer's host tests + shared BDD steps to the relocated
 controls.
 
-**Tech Stack:** Flutter, the Ream design system (`lib/theme/`), `bdd_widget_test`.
+**Tech Stack:** Flutter, the App design system (`lib/theme/`), `bdd_widget_test`.
 
 ## Global Constraints
 
-Copied from `docs/superpowers/specs/2026-07-10-ream-document-editor-design.md` and
-`docs/design/ream/README.md`. **Every task implicitly includes this.**
+Copied from `docs/superpowers/specs/2026-07-10-app-document-editor-design.md` and
+`docs/design/app/README.md`. **Every task implicitly includes this.**
 
 - Run all Flutter commands from `apps/mobile/`. Package name `mobile`.
-- The editor is **dark**: wrap its `Scaffold` in `Theme(data: ReamTheme.dark())`.
-  Widgets read colors via `context.ream` (dark tokens: `paper #16130E`,
+- The editor is **dark**: wrap its `Scaffold` in `Theme(data: AppTheme.dark())`.
+  Widgets read colors via `context.appColors` (dark tokens: `paper #16130E`,
   `surface #211D16`, `ink #F4F1EA`, `muted #8F887A`, `line #322C22`,
   `green #4FA866`, `deleteRed #F47B74`). Widget tests pump with
-  `pumpReam(tester, child, theme: ReamTheme.dark())`.
+  `pumpApp(tester, child, theme: AppTheme.dark())`.
 - **No behavior change** to any action; **preserve all widget keys** (see the
-  mapping). No literal "Ream" in UI copy. Fonts: Figtree UI / IBMPlexMono readouts.
+  mapping). No literal "App" in UI copy. Fonts: Figtree UI / IBMPlexMono readouts.
 - **Action mapping** (keys unchanged): toolbar = Crop `page-viewer-edit`, Rotate
   `page-viewer-rotate`, Text `page-viewer-view-text`, Retake `page-viewer-retake`,
   Share `page-viewer-share` (new; opens the share/export menu), Delete-page
@@ -56,7 +56,7 @@ Copied from `docs/superpowers/specs/2026-07-10-ream-document-editor-design.md` a
 | **2 Integration** | 6 PageViewerScreen restructure + host-test migration | single owner, serial (big). |
 | **3 Verify** | 7 BDD step migration + regen · 8 device + dark-palette validation | 7 then 8. |
 
-**Strict subagent contract:** identical to Phase 1 — read `docs/design/ream/README.md`
+**Strict subagent contract:** identical to Phase 1 — read `docs/design/app/README.md`
 + your brief first; own only your files; TDD order with pasted FAIL→PASS; real
 assertions (no `skip:`/filler); `flutter analyze` clean; scoped commit; report the
 commands, output, SHA, and any named gap; never claim done with an open gap.
@@ -70,29 +70,29 @@ commands, output, SHA, and any named gap; never claim done with an open gap.
 - Test: `apps/mobile/test/features/library/editor_toolbar_button_test.dart`
 
 **Interfaces:**
-- Consumes: `context.ream`, `pumpReam` (`test/support/ream_pump.dart`).
+- Consumes: `context.appColors`, `pumpApp` (`test/support/app_pump.dart`).
 - Produces: `class EditorToolbarButton extends StatelessWidget` —
   `EditorToolbarButton({required IconData icon, required String label,
   VoidCallback? onPressed, bool danger = false, Key? key})`. Icon over label,
-  vertical, dark. Enabled color `context.ream.ink`; `danger` → `context.ream.deleteRed`;
-  `onPressed == null` → dimmed (`context.ream.muted`), non-tappable.
+  vertical, dark. Enabled color `context.appColors.ink`; `danger` → `context.appColors.deleteRed`;
+  `onPressed == null` → dimmed (`context.appColors.muted`), non-tappable.
 
 - [ ] **Step 1: Failing test**
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:mobile/features/library/widgets/editor_toolbar_button.dart';
-import '../../support/ream_pump.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('renders icon+label and fires onPressed', (tester) async {
     var taps = 0;
-    await pumpReam(tester, EditorToolbarButton(
+    await pumpApp(tester, EditorToolbarButton(
       key: const Key('tb-rotate'), icon: Icons.rotate_right, label: 'Rotate',
-      onPressed: () => taps++), theme: ReamTheme.dark());
+      onPressed: () => taps++), theme: AppTheme.dark());
     expect(find.text('Rotate'), findsOneWidget);
     expect(find.byIcon(Icons.rotate_right), findsOneWidget);
     await tester.tap(find.byKey(const Key('tb-rotate')));
@@ -100,17 +100,17 @@ void main() {
   });
 
   testWidgets('danger uses deleteRed', (tester) async {
-    await pumpReam(tester, EditorToolbarButton(
+    await pumpApp(tester, EditorToolbarButton(
       icon: Icons.delete_outline, label: 'Delete', danger: true,
-      onPressed: () {}), theme: ReamTheme.dark());
+      onPressed: () {}), theme: AppTheme.dark());
     final icon = tester.widget<Icon>(find.byIcon(Icons.delete_outline));
-    expect(icon.color, ReamColors.dark.deleteRed);
+    expect(icon.color, AppColors.dark.deleteRed);
   });
 
   testWidgets('null onPressed dims and does not fire', (tester) async {
-    await pumpReam(tester, const EditorToolbarButton(
+    await pumpApp(tester, const EditorToolbarButton(
       key: Key('tb-x'), icon: Icons.crop, label: 'Crop', onPressed: null),
-      theme: ReamTheme.dark());
+      theme: AppTheme.dark());
     await tester.tap(find.byKey(const Key('tb-x')));
     expect(find.text('Crop'), findsOneWidget); // no throw
   });
@@ -122,7 +122,7 @@ void main() {
 
 ```dart
 import 'package:flutter/material.dart';
-import '../../../theme/ream_colors.dart';
+import '../../../theme/app_colors.dart';
 
 /// One item in the dark editor toolbar: an icon over a small label. [danger]
 /// tints it red (Delete); a null [onPressed] dims and disables it.
@@ -141,7 +141,7 @@ class EditorToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final enabled = onPressed != null;
     final color = !enabled ? r.muted : (danger ? r.deleteRed : r.ink);
     return InkWell(
@@ -181,14 +181,14 @@ class EditorToolbarButton extends StatelessWidget {
   fixed key (caller supplies `page-viewer-page-counter`).
 
 - [ ] **Step 1: Failing test** — pump `PageCounterPill(current: 2, total: 6)` via
-  `pumpReam(..., theme: ReamTheme.dark())`; assert `find.text('2 / 6')` findsOne.
+  `pumpApp(..., theme: AppTheme.dark())`; assert `find.text('2 / 6')` findsOne.
 - [ ] **Step 2: Run — expect FAIL.**
 - [ ] **Step 3: Implement**
 
 ```dart
 import 'package:flutter/material.dart';
-import '../../../theme/ream_colors.dart';
-import '../../../theme/ream_typography.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
 
 /// A small "N / M" page-counter pill overlaid on the editor viewer.
 class PageCounterPill extends StatelessWidget {
@@ -198,7 +198,7 @@ class PageCounterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.55),
@@ -206,7 +206,7 @@ class PageCounterPill extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
       child: Text('$current / $total',
-          style: ReamTypography.mono(size: 11, weight: FontWeight.w600, color: r.ink)),
+          style: AppTypography.mono(size: 11, weight: FontWeight.w600, color: r.ink)),
     );
   }
 }
@@ -228,7 +228,7 @@ class PageCounterPill extends StatelessWidget {
   — `EditorTopBar({required String title, VoidCallback? onBack, Widget? trailing,
   Key? key})`. A dark bar with a back button (`key: Key('page-viewer-back')`,
   `Icons.arrow_back_ios_new`, calls `onBack`), a centered title (Figtree 700,
-  `context.ream.ink`, ellipsis), and an optional `trailing` (the overflow menu).
+  `context.appColors.ink`, ellipsis), and an optional `trailing` (the overflow menu).
   `preferredSize => const Size.fromHeight(kToolbarHeight)`. Use it as the
   Scaffold `appBar`.
 
@@ -237,7 +237,7 @@ class PageCounterPill extends StatelessWidget {
   is present and tapping it fires `onBack`, and a provided `trailing` widget renders.
 - [ ] **Step 2: Run — expect FAIL.**
 - [ ] **Step 3: Implement** a `PreferredSizeWidget` returning a `SafeArea` + `Row`
-  (back / `Expanded` centered title / trailing-or-spacer) on `context.ream.paper`,
+  (back / `Expanded` centered title / trailing-or-spacer) on `context.appColors.paper`,
   height `kToolbarHeight`.
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
   (`feat(library): EditorTopBar`).
@@ -253,17 +253,17 @@ class PageCounterPill extends StatelessWidget {
 **Interfaces:**
 - Unchanged public API + keys (`page-thumbnail-strip`, `page-thumb-$index`,
   `page-thumb-item-$index`). Change: the active tile's border color from
-  `Theme.of(context).colorScheme.primary` to `context.ream.green`; keep the black
-  strip background (works on the dark editor). Placeholder icon → `context.ream.muted`.
+  `Theme.of(context).colorScheme.primary` to `context.appColors.green`; keep the black
+  strip background (works on the dark editor). Placeholder icon → `context.appColors.muted`.
 
 - [ ] **Step 1:** Adjust/add a test asserting the selected tile's
-  `foregroundDecoration` border color is `ReamColors.dark.green` when pumped under
-  `ReamTheme.dark()`. Run → FAIL.
-- [ ] **Step 2:** In `_buildTile`, replace `scheme.primary` with `context.ream.green`
-  and the placeholder colors with `context.ream` tokens (`surface`/`muted`). Import
-  `../../../theme/ream_colors.dart`.
+  `foregroundDecoration` border color is `AppColors.dark.green` when pumped under
+  `AppTheme.dark()`. Run → FAIL.
+- [ ] **Step 2:** In `_buildTile`, replace `scheme.primary` with `context.appColors.green`
+  and the placeholder colors with `context.appColors` tokens (`surface`/`muted`). Import
+  `../../../theme/app_colors.dart`.
 - [ ] **Step 3:** Run → PASS.  **Step 4:** analyze + format + commit
-  (`feat(library): thumbnail strip green active border (Ream)`).
+  (`feat(library): thumbnail strip green active border (App)`).
 
 ---
 
@@ -274,12 +274,12 @@ class PageCounterPill extends StatelessWidget {
 - Test: `apps/mobile/test/features/library/editor_toolbar_test.dart`
 
 **Interfaces:**
-- Consumes: `EditorToolbarButton` (Task 1), `context.ream`.
+- Consumes: `EditorToolbarButton` (Task 1), `context.appColors`.
 - Produces: `class EditorToolbar extends StatelessWidget` —
   `EditorToolbar({required VoidCallback? onCrop, required VoidCallback? onRotate,
   required VoidCallback? onText, required VoidCallback? onRetake,
   required VoidCallback? onShare, required VoidCallback? onDelete, Key? key})`.
-  Renders 6 `EditorToolbarButton`s on `context.ream.paper` with a top `line`
+  Renders 6 `EditorToolbarButton`s on `context.appColors.paper` with a top `line`
   hairline, evenly spaced, with these fixed keys: Crop `page-viewer-edit`
   (`Icons.crop`), Rotate `page-viewer-rotate` (`Icons.rotate_right`), Text
   `page-viewer-view-text` (`Icons.text_snippet_outlined`), Retake
@@ -293,7 +293,7 @@ class PageCounterPill extends StatelessWidget {
   `onDelete`; a null `onCrop` leaves `page-viewer-edit` present but inert.
 - [ ] **Step 2: Run — expect FAIL.**
 - [ ] **Step 3: Implement** a `SafeArea(top:false)` + `Container`
-  (`color: context.ream.paper`, top `Border(top: BorderSide(color: line))`) with a
+  (`color: context.appColors.paper`, top `Border(top: BorderSide(color: line))`) with a
   `Row(mainAxisAlignment: spaceAround)` of the 6 keyed `EditorToolbarButton`s.
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
   (`feat(library): EditorToolbar (6-action dark bar)`).
@@ -318,7 +318,7 @@ class PageCounterPill extends StatelessWidget {
 **Target structure:**
 - Wrap the returned `Scaffold` in
   `AnnotatedRegion<SystemUiOverlayStyle>(value: SystemUiOverlayStyle.light, child:
-  Theme(data: ReamTheme.dark(), child: Scaffold(...)))` — dark editor + light
+  Theme(data: AppTheme.dark(), child: Scaffold(...)))` — dark editor + light
   status-bar icons, both auto-reverting on pop.
 - `appBar: EditorTopBar(title: _name, onBack: () => Navigator.pop(context),
   trailing: <the ⋯ PopupMenuButton>)`. The overflow keeps key
@@ -353,7 +353,7 @@ class PageCounterPill extends StatelessWidget {
   are reached by first tapping `Key('page-viewer-share')` (then the same item key);
   merge/split/rename/delete-document still open `page-viewer-page-menu`. Wrap any
   test pumping `PageViewerScreen` under a bare `MaterialApp` so it still renders
-  (the `context.ream` fallback covers it, but prefer `theme: ReamTheme.light()` at
+  (the `context.appColors` fallback covers it, but prefer `theme: AppTheme.light()` at
   the app level — the screen self-scopes dark). Remove the donation-banner-in-viewer
   assertion. Run the batch and **paste failures**:
 
@@ -367,7 +367,7 @@ cd apps/mobile && flutter test test/features/library/page_viewer_screen_test.dar
 Expected: FAIL (old finders/structure gone).
 
 - [ ] **Step 2: Implement the restructure** per the target above, keeping every
-  handler and enable-guard. Add imports for the new widgets + `ream_theme.dart` +
+  handler and enable-guard. Add imports for the new widgets + `app_theme.dart` +
   `package:flutter/services.dart` (SystemUiOverlayStyle).
 - [ ] **Step 3: Run the migrated tests — expect PASS.** Then the full library test
   batch (all `page_viewer_*`, `delete_page`, `share_routing`, `merge_documents`,
@@ -379,7 +379,7 @@ cd apps/mobile && flutter test && flutter analyze && dart format lib test
 ```
 Expected: green except the 2 known OpenCV-env failures; "No issues found!".
 
-- [ ] **Step 5: Commit** (`feat(library): restructure PageViewerScreen to Ream dark
+- [ ] **Step 5: Commit** (`feat(library): restructure PageViewerScreen to App dark
   editor (top bar, toolbar, counter)`).
 
 ---
@@ -408,7 +408,7 @@ target only (toolbar button or Share menu), not the assertions.
 - [ ] **Step 3:** `flutter analyze` clean; `flutter test` host suite green (2
   opencv-env only). Host does not run `integration_test/` — device is Task 8.
 - [ ] **Step 4:** analyze + format + commit (`test(library): migrate viewer BDD
-  steps to the Ream toolbar/share menu`).
+  steps to the App toolbar/share menu`).
 
 ---
 
@@ -434,9 +434,9 @@ Expected: each PASS. Paste summaries.
 - [ ] **Step 4: Dark-palette check.** `flutter run -d RZCY51D0T1K`, open a document,
   screenshot the editor; confirm contrast of `ink`/`muted`/`line` on the dark
   surface, green active thumb, red Delete, readable page counter. If any token
-  reads poorly, adjust the **dark** set in `lib/theme/ream_colors.dart` (update the
+  reads poorly, adjust the **dark** set in `lib/theme/app_colors.dart` (update the
   token test), re-run the affected host + device tests, and commit
-  (`fix(theme): tune ReamColors.dark for the editor`). Repeat on the iOS sim.
+  (`fix(theme): tune AppColors.dark for the editor`). Repeat on the iOS sim.
 - [ ] **Step 5:** Report exact commands + green output + a screenshot per platform.
   Only then is Phase 2a done.
 

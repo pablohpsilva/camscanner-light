@@ -1,74 +1,74 @@
-# Ream Phase 2 — Remaining Screen Re-skins Implementation Plan
+# App Phase 2 — Remaining Screen Re-skins Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Re-skin five screens (04 Review-crop, 07 OCR text, 08 PDF viewer, 09 Feedback, 10 Donation) into the Ream visual language, changing only presentation — never behavior, wiring, or DI.
+**Goal:** Re-skin five screens (04 Review-crop, 07 OCR text, 08 PDF viewer, 09 Feedback, 10 Donation) into the App visual language, changing only presentation — never behavior, wiring, or DI.
 
-**Architecture:** A task-0 barrier adds/extends shared Ream widgets (`ReamBackHeader`, `ReamSectionLabel`, a `fillColor` variant on `ReamActionButton`, an `expanded` mode on `ReamSegmented`). Then one independent task per screen consumes those widgets. Light screens (07/08/09/10) use `context.ream` tokens directly under the app's light theme; the dark screen (04) wraps its subtree in `Theme(data: ReamTheme.dark())` + `AnnotatedRegion(SystemUiOverlayStyle.light)`, exactly as the shipped editor (`page_viewer_screen.dart:610-618`).
+**Architecture:** A task-0 barrier adds/extends shared App widgets (`AppBackHeader`, `AppSectionLabel`, a `fillColor` variant on `AppActionButton`, an `expanded` mode on `AppSegmented`). Then one independent task per screen consumes those widgets. Light screens (07/08/09/10) use `context.appColors` tokens directly under the app's light theme; the dark screen (04) wraps its subtree in `Theme(data: AppTheme.dark())` + `AnnotatedRegion(SystemUiOverlayStyle.light)`, exactly as the shipped editor (`page_viewer_screen.dart:610-618`).
 
-**Tech Stack:** Flutter, Material 3, `ReamColors` ThemeExtension, Figtree/IBM Plex Mono bundled fonts, `flutter_test` widget tests.
+**Tech Stack:** Flutter, Material 3, `AppColors` ThemeExtension, Figtree/IBM Plex Mono bundled fonts, `flutter_test` widget tests.
 
 ## Global Constraints
 
-- **Pure re-skin only.** No behavior/logic/wiring/DI/callback changes. All existing unit/feature/step tests must stay green with, at most, *minimal noted finder updates* (e.g. a Material `AppBar` title finder → the Ream header). Never weaken an assertion.
-- **Design source of truth:** `docs/design/ream/Ream Scanner.dc.html` (anchors 04 lines 200-234, 07 lines 300-319, 08 lines 321-341, 09 lines 342-374, 10 lines 376-402) and `docs/design/ream/README.md`. Do not re-fetch from the network.
-- **Token access:** `final r = context.ream;` at build scope, then `r.paper`, `r.ink`, etc. No `ReamColors` import needed in screen files. 18 tokens: `paper, surface, surface2, ink, ink2, muted, line, line2, appBg, green, greenDeep, greenSoft, amber, amberSoft, blue, blueSoft, kofiRed, deleteRed`.
-- **Type:** Figtree UI (titles w800, tracking -0.02em); IBM Plex Mono via `ReamTypography.mono(...)` for caps section-labels + technical readouts.
+- **Pure re-skin only.** No behavior/logic/wiring/DI/callback changes. All existing unit/feature/step tests must stay green with, at most, *minimal noted finder updates* (e.g. a Material `AppBar` title finder → the App header). Never weaken an assertion.
+- **Design source of truth:** `docs/design/app/App Scanner.dc.html` (anchors 04 lines 200-234, 07 lines 300-319, 08 lines 321-341, 09 lines 342-374, 10 lines 376-402) and `docs/design/app/README.md`. Do not re-fetch from the network.
+- **Token access:** `final r = context.appColors;` at build scope, then `r.paper`, `r.ink`, etc. No `AppColors` import needed in screen files. 18 tokens: `paper, surface, surface2, ink, ink2, muted, line, line2, appBg, green, greenDeep, greenSoft, amber, amberSoft, blue, blueSoft, kofiRed, deleteRed`.
+- **Type:** Figtree UI (titles w800, tracking -0.02em); IBM Plex Mono via `AppTypography.mono(...)` for caps section-labels + technical readouts.
 - **Preserve all existing widget keys** listed per task so downstream tests and integration steps keep matching.
 - **Verify-then-claim:** each task runs `flutter test <files>`, `flutter analyze` (zero warnings), `dart format lib test`. Paste FAIL→PASS. Scoped `git add` — named paths only, NEVER `-A` (repo carries a long-lived WIP pile).
 - **Commands run from** `apps/mobile/`.
-- **Do NOT touch** `donation_banner.dart` (already Ream), `CropOverlay` gesture code, `FeedbackService`/`DonationConfig`/OCR/PDF/share plumbing, or any `*Dependencies` class.
+- **Do NOT touch** `donation_banner.dart` (already App), `CropOverlay` gesture code, `FeedbackService`/`DonationConfig`/OCR/PDF/share plumbing, or any `*Dependencies` class.
 
 ---
 
-### Task 0: Shared Ream widgets (barrier — merge before screen tasks)
+### Task 0: Shared App widgets (barrier — merge before screen tasks)
 
 **Files:**
-- Create: `lib/theme/widgets/ream_back_header.dart`
-- Create: `lib/theme/widgets/ream_section_label.dart`
-- Modify: `lib/theme/widgets/ream_action_button.dart` (add `fillColor`)
-- Modify: `lib/theme/widgets/ream_segmented.dart` (add `expanded`)
-- Test: `test/theme/widgets/ream_back_header_test.dart`
-- Test: `test/theme/widgets/ream_section_label_test.dart`
-- Test: `test/theme/widgets/ream_action_button_test.dart` (create or extend if present)
-- Test: `test/theme/widgets/ream_segmented_test.dart` (create or extend if present)
+- Create: `lib/theme/widgets/app_back_header.dart`
+- Create: `lib/theme/widgets/app_section_label.dart`
+- Modify: `lib/theme/widgets/app_action_button.dart` (add `fillColor`)
+- Modify: `lib/theme/widgets/app_segmented.dart` (add `expanded`)
+- Test: `test/theme/widgets/app_back_header_test.dart`
+- Test: `test/theme/widgets/app_section_label_test.dart`
+- Test: `test/theme/widgets/app_action_button_test.dart` (create or extend if present)
+- Test: `test/theme/widgets/app_segmented_test.dart` (create or extend if present)
 
 **Interfaces produced (later tasks rely on these exact signatures):**
-- `ReamBackHeader({required String title, VoidCallback? onBack, Widget? trailing, Key? backKey}) implements PreferredSizeWidget` — leading chevron (`Key` = `backKey ?? const Key('ream-back')`), centered Figtree-700 17px title, trailing spacer/`trailing`. `onBack` defaults to `Navigator.maybePop`.
-- `ReamSectionLabel(String text, {Key? key})` — renders `text.toUpperCase()` in `ReamTypography.mono(size: 11, weight: FontWeight.w600, color: r.muted, letterSpacing: 0.3)`.
-- `ReamActionButton(... , Color? fillColor)` — when `primary`, fills `fillColor ?? r.greenDeep` (white label/icon retained). Secondary unchanged.
-- `ReamSegmented(... , bool expanded = false)` — when true, segments are `Expanded` with centered text (full-width equal thirds). Each segment keeps `Key('segment-$value')`.
+- `AppBackHeader({required String title, VoidCallback? onBack, Widget? trailing, Key? backKey}) implements PreferredSizeWidget` — leading chevron (`Key` = `backKey ?? const Key('back')`), centered Figtree-700 17px title, trailing spacer/`trailing`. `onBack` defaults to `Navigator.maybePop`.
+- `AppSectionLabel(String text, {Key? key})` — renders `text.toUpperCase()` in `AppTypography.mono(size: 11, weight: FontWeight.w600, color: r.muted, letterSpacing: 0.3)`.
+- `AppActionButton(... , Color? fillColor)` — when `primary`, fills `fillColor ?? r.greenDeep` (white label/icon retained). Secondary unchanged.
+- `AppSegmented(... , bool expanded = false)` — when true, segments are `Expanded` with centered text (full-width equal thirds). Each segment keeps `Key('segment-$value')`.
 
-- [ ] **Step 1: Write failing test for ReamBackHeader**
+- [ ] **Step 1: Write failing test for AppBackHeader**
 
-`test/theme/widgets/ream_back_header_test.dart`:
+`test/theme/widgets/app_back_header_test.dart`:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_back_header.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_back_header.dart';
 
 void main() {
   testWidgets('shows title, default back key, fires onBack', (tester) async {
     var popped = false;
     await tester.pumpWidget(MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       home: Scaffold(
-        appBar: ReamBackHeader(title: 'Export as PDF', onBack: () => popped = true),
+        appBar: AppBackHeader(title: 'Export as PDF', onBack: () => popped = true),
       ),
     ));
     expect(find.text('Export as PDF'), findsOneWidget);
-    expect(find.byKey(const Key('ream-back')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('ream-back')));
+    expect(find.byKey(const Key('back')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('back')));
     expect(popped, isTrue);
   });
 
   testWidgets('honours a custom backKey', (tester) async {
     await tester.pumpWidget(MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       home: Scaffold(
-        appBar: ReamBackHeader(
+        appBar: AppBackHeader(
           title: 'X',
           backKey: const Key('recognized-text-back'),
           onBack: () {},
@@ -82,26 +82,26 @@ void main() {
 
 - [ ] **Step 2: Run it, verify it fails**
 
-Run: `flutter test test/theme/widgets/ream_back_header_test.dart`
-Expected: FAIL — `ream_back_header.dart` / `ReamBackHeader` not found.
+Run: `flutter test test/theme/widgets/app_back_header_test.dart`
+Expected: FAIL — `app_back_header.dart` / `AppBackHeader` not found.
 
-- [ ] **Step 3: Implement ReamBackHeader**
+- [ ] **Step 3: Implement AppBackHeader**
 
-`lib/theme/widgets/ream_back_header.dart`:
+`lib/theme/widgets/app_back_header.dart`:
 
 ```dart
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
+import '../app_colors.dart';
 
-/// Shared back-header for Ream screens: leading chevron, centered Figtree-700
-/// title, trailing spacer (or [trailing]) for symmetry. Reads [context.ream]
-/// so it renders correctly under both light and dark Ream themes.
-class ReamBackHeader extends StatelessWidget implements PreferredSizeWidget {
+/// Shared back-header for App screens: leading chevron, centered Figtree-700
+/// title, trailing spacer (or [trailing]) for symmetry. Reads [context.appColors]
+/// so it renders correctly under both light and dark App themes.
+class AppBackHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback? onBack;
   final Widget? trailing;
   final Key? backKey;
-  const ReamBackHeader({
+  const AppBackHeader({
     super.key,
     required this.title,
     this.onBack,
@@ -114,7 +114,7 @@ class ReamBackHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     const double sideWidth = kMinInteractiveDimension;
     return SafeArea(
       bottom: false,
@@ -127,7 +127,7 @@ class ReamBackHeader extends StatelessWidget implements PreferredSizeWidget {
               SizedBox(
                 width: sideWidth,
                 child: IconButton(
-                  key: backKey ?? const Key('ream-back'),
+                  key: backKey ?? const Key('back'),
                   icon: const Icon(Icons.arrow_back_ios_new),
                   color: r.ink,
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
@@ -164,24 +164,24 @@ class ReamBackHeader extends StatelessWidget implements PreferredSizeWidget {
 
 - [ ] **Step 4: Run test, verify pass**
 
-Run: `flutter test test/theme/widgets/ream_back_header_test.dart`
+Run: `flutter test test/theme/widgets/app_back_header_test.dart`
 Expected: PASS (2 tests).
 
-- [ ] **Step 5: Write failing test for ReamSectionLabel**
+- [ ] **Step 5: Write failing test for AppSectionLabel**
 
-`test/theme/widgets/ream_section_label_test.dart`:
+`test/theme/widgets/app_section_label_test.dart`:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_section_label.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_section_label.dart';
 
 void main() {
   testWidgets('uppercases the label and uses the mono font', (tester) async {
     await tester.pumpWidget(MaterialApp(
-      theme: ReamTheme.light(),
-      home: const Scaffold(body: ReamSectionLabel('Quality')),
+      theme: AppTheme.light(),
+      home: const Scaffold(body: AppSectionLabel('Quality')),
     ));
     final text = tester.widget<Text>(find.text('QUALITY'));
     expect(text.style!.fontFamily, 'IBMPlexMono');
@@ -191,29 +191,29 @@ void main() {
 
 - [ ] **Step 6: Run it, verify it fails**
 
-Run: `flutter test test/theme/widgets/ream_section_label_test.dart`
+Run: `flutter test test/theme/widgets/app_section_label_test.dart`
 Expected: FAIL — not found.
 
-- [ ] **Step 7: Implement ReamSectionLabel**
+- [ ] **Step 7: Implement AppSectionLabel**
 
-`lib/theme/widgets/ream_section_label.dart`:
+`lib/theme/widgets/app_section_label.dart`:
 
 ```dart
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
-import '../ream_typography.dart';
+import '../app_colors.dart';
+import '../app_typography.dart';
 
 /// A mono, muted, letter-spaced caps section label (e.g. QUALITY, TYPE, MESSAGE).
-class ReamSectionLabel extends StatelessWidget {
+class AppSectionLabel extends StatelessWidget {
   final String text;
-  const ReamSectionLabel(this.text, {super.key});
+  const AppSectionLabel(this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Text(
       text.toUpperCase(),
-      style: ReamTypography.mono(
+      style: AppTypography.mono(
         size: 11,
         weight: FontWeight.w600,
         color: r.muted,
@@ -226,49 +226,49 @@ class ReamSectionLabel extends StatelessWidget {
 
 - [ ] **Step 8: Run test, verify pass**
 
-Run: `flutter test test/theme/widgets/ream_section_label_test.dart`
+Run: `flutter test test/theme/widgets/app_section_label_test.dart`
 Expected: PASS.
 
-- [ ] **Step 9: Add `fillColor` to ReamActionButton (failing test first)**
+- [ ] **Step 9: Add `fillColor` to AppActionButton (failing test first)**
 
-Append to `test/theme/widgets/ream_action_button_test.dart` (create the file with this content if absent):
+Append to `test/theme/widgets/app_action_button_test.dart` (create the file with this content if absent):
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_action_button.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_action_button.dart';
 
 void main() {
   testWidgets('primary honours a custom fillColor', (tester) async {
     await tester.pumpWidget(MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       home: Scaffold(
-        body: ReamActionButton(
+        body: AppActionButton(
           label: 'Send report',
           primary: true,
-          fillColor: ReamColors.light.ink,
+          fillColor: AppColors.light.ink,
           onPressed: () {},
         ),
       ),
     ));
     final material = tester.widget<Material>(
-      find.descendant(of: find.byType(ReamActionButton), matching: find.byType(Material)),
+      find.descendant(of: find.byType(AppActionButton), matching: find.byType(Material)),
     );
-    expect(material.color, ReamColors.light.ink);
+    expect(material.color, AppColors.light.ink);
   });
 }
 ```
 
 - [ ] **Step 10: Run it, verify it fails**
 
-Run: `flutter test test/theme/widgets/ream_action_button_test.dart`
+Run: `flutter test test/theme/widgets/app_action_button_test.dart`
 Expected: FAIL — `fillColor` is not a named parameter.
 
 - [ ] **Step 11: Implement `fillColor`**
 
-In `lib/theme/widgets/ream_action_button.dart`: add the field and use it for the primary fill.
+In `lib/theme/widgets/app_action_button.dart`: add the field and use it for the primary fill.
 
 Add field (next to `primary`):
 ```dart
@@ -287,33 +287,33 @@ to:
 
 - [ ] **Step 12: Run test, verify pass**
 
-Run: `flutter test test/theme/widgets/ream_action_button_test.dart`
+Run: `flutter test test/theme/widgets/app_action_button_test.dart`
 Expected: PASS.
 
-- [ ] **Step 13: Add `expanded` to ReamSegmented (failing test first)**
+- [ ] **Step 13: Add `expanded` to AppSegmented (failing test first)**
 
-Append to `test/theme/widgets/ream_segmented_test.dart` (create with this content if absent):
+Append to `test/theme/widgets/app_segmented_test.dart` (create with this content if absent):
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_segmented.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_segmented.dart';
 
 void main() {
   testWidgets('expanded lays out full-width segments; tap fires onChanged',
       (tester) async {
     String? picked;
     await tester.pumpWidget(MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       home: Scaffold(
-        body: ReamSegmented<String>(
+        body: AppSegmented<String>(
           expanded: true,
           value: 'bug',
           segments: const [
-            ReamSegment(value: 'bug', label: 'Bug'),
-            ReamSegment(value: 'idea', label: 'Idea'),
-            ReamSegment(value: 'question', label: 'Question'),
+            AppSegment(value: 'bug', label: 'Bug'),
+            AppSegment(value: 'idea', label: 'Idea'),
+            AppSegment(value: 'question', label: 'Question'),
           ],
           onChanged: (v) => picked = v,
         ),
@@ -328,12 +328,12 @@ void main() {
 
 - [ ] **Step 14: Run it, verify it fails**
 
-Run: `flutter test test/theme/widgets/ream_segmented_test.dart`
+Run: `flutter test test/theme/widgets/app_segmented_test.dart`
 Expected: FAIL — `expanded` is not a named parameter (and no `Expanded` in tree).
 
 - [ ] **Step 15: Implement `expanded`**
 
-In `lib/theme/widgets/ream_segmented.dart`: add `final bool expanded;` (default `false`) to fields + constructor. Extract the per-segment tappable into a private method and wrap in `Expanded` when `expanded`. Replace the `Row`'s `children` build with:
+In `lib/theme/widgets/app_segmented.dart`: add `final bool expanded;` (default `false`) to fields + constructor. Extract the per-segment tappable into a private method and wrap in `Expanded` when `expanded`. Replace the `Row`'s `children` build with:
 
 ```dart
       child: Row(
@@ -348,8 +348,8 @@ In `lib/theme/widgets/ream_segmented.dart`: add `final bool expanded;` (default 
 and add:
 
 ```dart
-  Widget _segment(BuildContext context, ReamSegment<T> s) {
-    final r = context.ream;
+  Widget _segment(BuildContext context, AppSegment<T> s) {
+    final r = context.appColors;
     final selected = s.value == value;
     return GestureDetector(
       key: Key('segment-${s.value}'),
@@ -385,8 +385,8 @@ Expected: PASS (all widget tests, including any pre-existing ones unchanged).
 ```bash
 flutter analyze lib/theme test/theme
 dart format lib/theme test/theme
-git add lib/theme/widgets/ream_back_header.dart lib/theme/widgets/ream_section_label.dart lib/theme/widgets/ream_action_button.dart lib/theme/widgets/ream_segmented.dart test/theme/widgets/ream_back_header_test.dart test/theme/widgets/ream_section_label_test.dart test/theme/widgets/ream_action_button_test.dart test/theme/widgets/ream_segmented_test.dart
-git commit -m "feat(theme): shared Ream widgets for Phase 2 screens (back header, section label, button fill, segmented expand)"
+git add lib/theme/widgets/app_back_header.dart lib/theme/widgets/app_section_label.dart lib/theme/widgets/app_action_button.dart lib/theme/widgets/app_segmented.dart test/theme/widgets/app_back_header_test.dart test/theme/widgets/app_section_label_test.dart test/theme/widgets/app_action_button_test.dart test/theme/widgets/app_segmented_test.dart
+git commit -m "feat(theme): shared App widgets for Phase 2 screens (back header, section label, button fill, segmented expand)"
 ```
 
 ---
@@ -397,9 +397,9 @@ git commit -m "feat(theme): shared Ream widgets for Phase 2 screens (back header
 - Modify: `lib/features/library/recognized_text_screen.dart`
 - Test: `test/features/library/recognized_text_screen_test.dart` (adjust finders as noted)
 
-**Interfaces consumed:** `ReamBackHeader`, `ConfidenceChip`, `ReamActionButton`.
+**Interfaces consumed:** `AppBackHeader`, `ConfidenceChip`, `AppActionButton`.
 
-**Design:** `.dc.html` lines 300-319. Light `r.paper` bg; Ream header "Recognized text"; when text exists, a green **ConfidenceChip** "Text layer ready · powers search" above the body; `SelectableText` restyled Figtree 13/1.7 `r.ink2`; footer two buttons — **Copy text** (secondary surface) and **Share .txt** (primary, `fillColor: r.ink`).
+**Design:** `.dc.html` lines 300-319. Light `r.paper` bg; App header "Recognized text"; when text exists, a green **ConfidenceChip** "Text layer ready · powers search" above the body; `SelectableText` restyled Figtree 13/1.7 `r.ink2`; footer two buttons — **Copy text** (secondary surface) and **Share .txt** (primary, `fillColor: r.ink`).
 
 **Preserve (keys + behavior):** state machine (`_load`/`_recognize`/`_copy`/`_share`), `Key('recognized-text-loading')`, `Key('recognized-text-body')`, `Key('recognized-text-empty')`, `Key('recognized-text-run')`. The copy + share actions **keep keys** `Key('recognized-text-copy')` and `Key('recognized-text-share')` — moved from `AppBar` actions onto the footer buttons; `_share` still routes through the existing share path.
 
@@ -408,22 +408,22 @@ git commit -m "feat(theme): shared Ream widgets for Phase 2 screens (back header
 In `test/features/library/recognized_text_screen_test.dart`, add (and update any test that located the old `AppBar` title `'Text'` to expect `'Recognized text'`):
 
 ```dart
-testWidgets('OCR screen uses Ream chrome: paper bg, header, confidence chip',
+testWidgets('OCR screen uses App chrome: paper bg, header, confidence chip',
     (tester) async {
   // Build with a fake repository that returns a page with OCR text for
   // (documentId, position) — reuse the harness already in this file.
-  // ... pump RecognizedTextScreen inside MaterialApp(theme: ReamTheme.light()) ...
+  // ... pump RecognizedTextScreen inside MaterialApp(theme: AppTheme.light()) ...
   await tester.pumpAndSettle();
   expect(find.text('Recognized text'), findsOneWidget);
   expect(find.byType(ConfidenceChip), findsOneWidget);
   expect(find.byKey(const Key('recognized-text-copy')), findsOneWidget);
   expect(find.byKey(const Key('recognized-text-share')), findsOneWidget);
   final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-  expect(scaffold.backgroundColor, ReamColors.light.paper);
+  expect(scaffold.backgroundColor, AppColors.light.paper);
 });
 ```
 
-Imports to add: `ream_theme.dart`, `ream_colors.dart`, `theme/widgets/confidence_chip.dart`.
+Imports to add: `app_theme.dart`, `app_colors.dart`, `theme/widgets/confidence_chip.dart`.
 
 - [ ] **Step 2: Run it, verify it fails**
 
@@ -432,16 +432,16 @@ Expected: FAIL — `'Recognized text'` / `ConfidenceChip` / paper bg absent.
 
 - [ ] **Step 3: Re-skin the screen**
 
-In `recognized_text_screen.dart` `build()`: set `Scaffold(backgroundColor: r.paper, ...)` (`final r = context.ream;`), replace `appBar: AppBar(...)` with `appBar: ReamBackHeader(title: 'Recognized text', onBack: () => Navigator.of(context).maybePop(), backKey: const Key('recognized-text-back'))`. Keep the three body states. In the `hasText` branch wrap the scroll body in a `Column` with, at top, `Padding(child: ConfidenceChip(level: ConfidenceLevel.high, label: 'Text layer ready · powers search'))`, then `Expanded(SingleChildScrollView(... SelectableText(text, key: Key('recognized-text-body'), style: TextStyle(fontFamily: 'Figtree', fontSize: 13, height: 1.7, color: r.ink2))))`, then a footer `Row` with two `Expanded` `ReamActionButton`s:
+In `recognized_text_screen.dart` `build()`: set `Scaffold(backgroundColor: r.paper, ...)` (`final r = context.appColors;`), replace `appBar: AppBar(...)` with `appBar: AppBackHeader(title: 'Recognized text', onBack: () => Navigator.of(context).maybePop(), backKey: const Key('recognized-text-back'))`. Keep the three body states. In the `hasText` branch wrap the scroll body in a `Column` with, at top, `Padding(child: ConfidenceChip(level: ConfidenceLevel.high, label: 'Text layer ready · powers search'))`, then `Expanded(SingleChildScrollView(... SelectableText(text, key: Key('recognized-text-body'), style: TextStyle(fontFamily: 'Figtree', fontSize: 13, height: 1.7, color: r.ink2))))`, then a footer `Row` with two `Expanded` `AppActionButton`s:
 
 ```dart
-Expanded(child: ReamActionButton(
+Expanded(child: AppActionButton(
   key: const Key('recognized-text-copy'),
   label: 'Copy text',
   onPressed: (_busy || !hasText) ? null : _copy,
 )),
 const SizedBox(width: 9),
-Expanded(child: ReamActionButton(
+Expanded(child: AppActionButton(
   key: const Key('recognized-text-share'),
   label: 'Share .txt', primary: true, fillColor: r.ink,
   onPressed: (_busy || !hasText) ? null : () => unawaited(_share()),
@@ -461,7 +461,7 @@ Expected: PASS.
 flutter analyze lib/features/library/recognized_text_screen.dart
 dart format lib/features/library/recognized_text_screen.dart test/features/library/recognized_text_screen_test.dart
 git add lib/features/library/recognized_text_screen.dart test/features/library/recognized_text_screen_test.dart
-git commit -m "feat(library): re-skin recognized text (OCR) screen to Ream"
+git commit -m "feat(library): re-skin recognized text (OCR) screen to App"
 ```
 
 ---
@@ -472,9 +472,9 @@ git commit -m "feat(library): re-skin recognized text (OCR) screen to Ream"
 - Modify: `lib/features/library/pdf_preview_screen.dart`
 - Test: `test/features/library/pdf_preview_screen_test.dart`
 
-**Interfaces consumed:** `ReamBackHeader`.
+**Interfaces consumed:** `AppBackHeader`.
 
-**Design:** `.dc.html` lines 321-341 depict a quality/password *options* screen — that flow lives elsewhere (export-quality) and is **out of scope**. This file is the pinch **viewer** of an already-generated PDF. Re-skin its **chrome only**: light `r.paper` bg; Ream header titled with `widget.name`; Ream-styled loading/error states. Keep `PdfViewPinch` and the existing `ShareMenuButton` action untouched.
+**Design:** `.dc.html` lines 321-341 depict a quality/password *options* screen — that flow lives elsewhere (export-quality) and is **out of scope**. This file is the pinch **viewer** of an already-generated PDF. Re-skin its **chrome only**: light `r.paper` bg; App header titled with `widget.name`; App-styled loading/error states. Keep `PdfViewPinch` and the existing `ShareMenuButton` action untouched.
 
 **Preserve (keys + behavior):** `_open` state machine, `Key('pdf-preview-loading')`, `Key('pdf-preview-error')`, `Key('pdf-preview-view')`, `Key('pdf-preview-share')`, the injected `opener`/`share`.
 
@@ -483,10 +483,10 @@ git commit -m "feat(library): re-skin recognized text (OCR) screen to Ream"
 Add to `test/features/library/pdf_preview_screen_test.dart`:
 
 ```dart
-testWidgets('PDF viewer uses Ream chrome (header title + paper bg)',
+testWidgets('PDF viewer uses App chrome (header title + paper bg)',
     (tester) async {
   await tester.pumpWidget(MaterialApp(
-    theme: ReamTheme.light(),
+    theme: AppTheme.light(),
     home: PdfPreviewScreen(
       pdfPath: '/nonexistent.pdf',
       name: 'Lease Agreement',
@@ -495,24 +495,24 @@ testWidgets('PDF viewer uses Ream chrome (header title + paper bg)',
   ));
   await tester.pumpAndSettle();
   expect(find.text('Lease Agreement'), findsOneWidget);
-  expect(find.byKey(const Key('ream-back')), findsOneWidget);
+  expect(find.byKey(const Key('back')), findsOneWidget);
   final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-  expect(scaffold.backgroundColor, ReamColors.light.paper);
+  expect(scaffold.backgroundColor, AppColors.light.paper);
   // error branch still reachable + keyed
   expect(find.byKey(const Key('pdf-preview-error')), findsOneWidget);
 });
 ```
 
-Imports: `ream_theme.dart`, `ream_colors.dart`.
+Imports: `app_theme.dart`, `app_colors.dart`.
 
 - [ ] **Step 2: Run it, verify it fails**
 
 Run: `flutter test test/features/library/pdf_preview_screen_test.dart`
-Expected: FAIL — Ream header/paper bg absent.
+Expected: FAIL — App header/paper bg absent.
 
 - [ ] **Step 3: Re-skin the chrome**
 
-In `pdf_preview_screen.dart` `build()`: `final r = context.ream;`, `Scaffold(backgroundColor: r.paper, appBar: ReamBackHeader(title: widget.name, onBack: () => Navigator.of(context).maybePop(), trailing: ShareMenuButton(buttonKey: const Key('pdf-preview-share'), onShare: () => unawaited(widget.share.share([widget.pdfPath], subject: widget.name)))), body: ...)`. Restyle the error `Text` with `TextStyle(fontFamily: 'Figtree', color: r.ink2)` and keep `Key('pdf-preview-error')`; keep loading + `PdfViewPinch` branches (only the surrounding `Center`/colors change).
+In `pdf_preview_screen.dart` `build()`: `final r = context.appColors;`, `Scaffold(backgroundColor: r.paper, appBar: AppBackHeader(title: widget.name, onBack: () => Navigator.of(context).maybePop(), trailing: ShareMenuButton(buttonKey: const Key('pdf-preview-share'), onShare: () => unawaited(widget.share.share([widget.pdfPath], subject: widget.name)))), body: ...)`. Restyle the error `Text` with `TextStyle(fontFamily: 'Figtree', color: r.ink2)` and keep `Key('pdf-preview-error')`; keep loading + `PdfViewPinch` branches (only the surrounding `Center`/colors change).
 
 - [ ] **Step 4: Run test, verify pass**
 
@@ -525,7 +525,7 @@ Expected: PASS.
 flutter analyze lib/features/library/pdf_preview_screen.dart
 dart format lib/features/library/pdf_preview_screen.dart test/features/library/pdf_preview_screen_test.dart
 git add lib/features/library/pdf_preview_screen.dart test/features/library/pdf_preview_screen_test.dart
-git commit -m "feat(library): re-skin PDF viewer chrome to Ream"
+git commit -m "feat(library): re-skin PDF viewer chrome to App"
 ```
 
 ---
@@ -536,60 +536,60 @@ git commit -m "feat(library): re-skin PDF viewer chrome to Ream"
 - Modify: `lib/features/feedback/feedback_screen.dart`
 - Test: `test/features/feedback/feedback_screen_test.dart`
 
-**Interfaces consumed:** `ReamBackHeader`, `ReamSectionLabel`, `ReamSegmented`, `ReamActionButton`.
+**Interfaces consumed:** `AppBackHeader`, `AppSectionLabel`, `AppSegmented`, `AppActionButton`.
 
-**Design:** `.dc.html` lines 342-374. Light `r.paper` bg; Ream header "Send feedback"; `TYPE` section label + full-width **ReamSegmented** (Bug/Idea/Question); `MESSAGE` label + restyled multiline field; `EMAIL — optional` label + field (`Colors.grey` → `r.muted`); blue "What we include" info card (`r.blueSoft` bg); primary **Send report** button (`fillColor: r.ink`).
+**Design:** `.dc.html` lines 342-374. Light `r.paper` bg; App header "Send feedback"; `TYPE` section label + full-width **AppSegmented** (Bug/Idea/Question); `MESSAGE` label + restyled multiline field; `EMAIL — optional` label + field (`Colors.grey` → `r.muted`); blue "What we include" info card (`r.blueSoft` bg); primary **Send report** button (`fillColor: r.ink`).
 
-**Preserve (keys + behavior):** `_formKey` validation, `_submit`, `_message`/`_email` controllers, `_category` value, the diagnostics disclosure toggle, the Turnstile gate (device-only branch, untouched), `Key('feedback-message')`, `Key('feedback-email')`, `Key('feedback-submit')`, `Key('feedback-diagnostics-toggle')`, `Key('feedback-email-warning')`. **Category control:** replace the `DropdownButtonFormField` with `ReamSegmented`, but keep the same `_category` state + values `bug/idea/question`. The segmented control exposes `Key('segment-bug'|'segment-idea'|'segment-question')`. Update the screen test's category interaction from opening the dropdown to `tester.tap(find.byKey(const Key('segment-idea')))`.
+**Preserve (keys + behavior):** `_formKey` validation, `_submit`, `_message`/`_email` controllers, `_category` value, the diagnostics disclosure toggle, the Turnstile gate (device-only branch, untouched), `Key('feedback-message')`, `Key('feedback-email')`, `Key('feedback-submit')`, `Key('feedback-diagnostics-toggle')`, `Key('feedback-email-warning')`. **Category control:** replace the `DropdownButtonFormField` with `AppSegmented`, but keep the same `_category` state + values `bug/idea/question`. The segmented control exposes `Key('segment-bug'|'segment-idea'|'segment-question')`. Update the screen test's category interaction from opening the dropdown to `tester.tap(find.byKey(const Key('segment-idea')))`.
 
 - [ ] **Step 1: Adjust the failing test**
 
-In `test/features/feedback/feedback_screen_test.dart`: (a) any test asserting the old `AppBar`/dropdown must move to the Ream header + segmented control; (b) add:
+In `test/features/feedback/feedback_screen_test.dart`: (a) any test asserting the old `AppBar`/dropdown must move to the App header + segmented control; (b) add:
 
 ```dart
-testWidgets('feedback uses Ream chrome + segmented category', (tester) async {
+testWidgets('feedback uses App chrome + segmented category', (tester) async {
   await tester.pumpWidget(MaterialApp(
-    theme: ReamTheme.light(),
+    theme: AppTheme.light(),
     home: const FeedbackScreen(),
   ));
   expect(find.text('Send feedback'), findsOneWidget);
-  expect(find.byType(ReamSegmented<String>), findsOneWidget);
+  expect(find.byType(AppSegmented<String>), findsOneWidget);
   await tester.tap(find.byKey(const Key('segment-idea')));
   await tester.pump();
   // Category state now 'idea' — assert via the segmented selection styling or a
   // submit round-trip using the existing FeedbackService fake in this file.
   final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-  expect(scaffold.backgroundColor, ReamColors.light.paper);
+  expect(scaffold.backgroundColor, AppColors.light.paper);
 });
 ```
 
-Imports: `ream_theme.dart`, `ream_colors.dart`, `theme/widgets/ream_segmented.dart`.
+Imports: `app_theme.dart`, `app_colors.dart`, `theme/widgets/app_segmented.dart`.
 
 - [ ] **Step 2: Run it, verify it fails**
 
 Run: `flutter test test/features/feedback/feedback_screen_test.dart`
-Expected: FAIL — header text / `ReamSegmented` absent.
+Expected: FAIL — header text / `AppSegmented` absent.
 
 - [ ] **Step 3: Re-skin the form**
 
-`final r = context.ream;`. `Scaffold(backgroundColor: r.paper, appBar: ReamBackHeader(title: 'Send feedback', onBack: () => Navigator.of(context).maybePop()), body: ...)`. Replace the dropdown block with:
+`final r = context.appColors;`. `Scaffold(backgroundColor: r.paper, appBar: AppBackHeader(title: 'Send feedback', onBack: () => Navigator.of(context).maybePop()), body: ...)`. Replace the dropdown block with:
 
 ```dart
-const ReamSectionLabel('Type'),
+const AppSectionLabel('Type'),
 const SizedBox(height: 8),
-ReamSegmented<String>(
+AppSegmented<String>(
   expanded: true,
   value: _category,
   segments: const [
-    ReamSegment(value: 'bug', label: 'Bug'),
-    ReamSegment(value: 'idea', label: 'Idea'),
-    ReamSegment(value: 'question', label: 'Question'),
+    AppSegment(value: 'bug', label: 'Bug'),
+    AppSegment(value: 'idea', label: 'Idea'),
+    AppSegment(value: 'question', label: 'Question'),
   ],
   onChanged: (v) => setState(() => _category = v),
 ),
 ```
 
-Wrap `MESSAGE` and `EMAIL` fields each with a leading `ReamSectionLabel`; give the message/email `TextFormField`s a Ream `InputDecoration` (`filled: true, fillColor: r.surface`, `OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: r.line))`). Change the email-warning `Text` color `Colors.grey` → `r.muted`. Restyle the diagnostics disclosure (when shown) into a `r.blueSoft` card with a blue dot header. Replace the submit `FilledButton` with `ReamActionButton(key: const Key('feedback-submit'), label: 'Send report', primary: true, fillColor: r.ink, onPressed: _submitting ? null : _submit)` — keep the busy spinner by showing it via `_submitting` (wrap: when submitting, render a keyed disabled button with a small spinner child instead — preserve `Key('feedback-submit')`).
+Wrap `MESSAGE` and `EMAIL` fields each with a leading `AppSectionLabel`; give the message/email `TextFormField`s a App `InputDecoration` (`filled: true, fillColor: r.surface`, `OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: r.line))`). Change the email-warning `Text` color `Colors.grey` → `r.muted`. Restyle the diagnostics disclosure (when shown) into a `r.blueSoft` card with a blue dot header. Replace the submit `FilledButton` with `AppActionButton(key: const Key('feedback-submit'), label: 'Send report', primary: true, fillColor: r.ink, onPressed: _submitting ? null : _submit)` — keep the busy spinner by showing it via `_submitting` (wrap: when submitting, render a keyed disabled button with a small spinner child instead — preserve `Key('feedback-submit')`).
 
 - [ ] **Step 4: Run the feedback tests, verify pass**
 
@@ -602,7 +602,7 @@ Expected: PASS (all feedback unit tests).
 flutter analyze lib/features/feedback/feedback_screen.dart
 dart format lib/features/feedback/feedback_screen.dart test/features/feedback/feedback_screen_test.dart
 git add lib/features/feedback/feedback_screen.dart test/features/feedback/feedback_screen_test.dart
-git commit -m "feat(feedback): re-skin feedback screen to Ream"
+git commit -m "feat(feedback): re-skin feedback screen to App"
 ```
 
 ---
@@ -613,9 +613,9 @@ git commit -m "feat(feedback): re-skin feedback screen to Ream"
 - Modify: `lib/features/donation/donation_screen.dart`
 - Test: `test/features/donation/donation_screen_test.dart`
 
-**Interfaces consumed:** `ReamBackHeader`, `ReamActionButton`.
+**Interfaces consumed:** `AppBackHeader`, `AppActionButton`.
 
-**Design:** `.dc.html` lines 376-402. Light `r.paper` bg; Ream header "Support Ream"; centered ♥ + Figtree-800 headline + `r.ink2` body; amber honest-disclaimer card (`r.amberSoft`); **Ko-fi** button (`ReamActionButton primary, fillColor: r.kofiRed`, icon coffee); Bitcoin card (`r.surface`/`r.line`) with QR (white quiet-zone kept — QR requires it), mono truncated address + green-deep "copy".
+**Design:** `.dc.html` lines 376-402. Light `r.paper` bg; App header "Support App"; centered ♥ + Figtree-800 headline + `r.ink2` body; amber honest-disclaimer card (`r.amberSoft`); **Ko-fi** button (`AppActionButton primary, fillColor: r.kofiRed`, icon coffee); Bitcoin card (`r.surface`/`r.line`) with QR (white quiet-zone kept — QR requires it), mono truncated address + green-deep "copy".
 
 **Preserve (keys + behavior):** `_openKofi`, `_copyAddress`, config-driven visibility (`kofiUrl`/`bitcoinAddress` empty → hidden), `Key('donation-kofi-button')`, `Key('donation-bitcoin-section')`, `Key('donation-bitcoin-copy')`. Replace `Colors.amber.shade700` (heart) with `r.amber`/`r.kofiRed`; keep `Colors.white` **only** as the QR container background (QR readability requires a white quiet zone).
 
@@ -624,19 +624,19 @@ git commit -m "feat(feedback): re-skin feedback screen to Ream"
 Add to `test/features/donation/donation_screen_test.dart`:
 
 ```dart
-testWidgets('donation uses Ream chrome (header + paper bg)', (tester) async {
+testWidgets('donation uses App chrome (header + paper bg)', (tester) async {
   await tester.pumpWidget(MaterialApp(
-    theme: ReamTheme.light(),
+    theme: AppTheme.light(),
     home: const DonationScreen(kofiUrl: 'https://ko-fi.com/x', bitcoinAddress: 'bc1qtest'),
   ));
-  expect(find.text('Support Ream'), findsOneWidget);
+  expect(find.text('Support App'), findsOneWidget);
   expect(find.byKey(const Key('donation-kofi-button')), findsOneWidget);
   final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-  expect(scaffold.backgroundColor, ReamColors.light.paper);
+  expect(scaffold.backgroundColor, AppColors.light.paper);
 });
 ```
 
-Imports: `ream_theme.dart`, `ream_colors.dart`.
+Imports: `app_theme.dart`, `app_colors.dart`.
 
 - [ ] **Step 2: Run it, verify it fails**
 
@@ -645,7 +645,7 @@ Expected: FAIL — header/paper bg absent.
 
 - [ ] **Step 3: Re-skin the screen**
 
-`final r = context.ream;`. `Scaffold(backgroundColor: r.paper, appBar: ReamBackHeader(title: 'Support Ream', onBack: () => Navigator.of(context).maybePop()), body: ListView(...))`. Replace the heart `Icon(Icons.favorite, color: r.kofiRed, size: 34)`; headline `Text('No accounts. No cloud.\nNo subscription.', textAlign: center, style: TextStyle(fontFamily: 'Figtree', fontWeight: FontWeight.w800, fontSize: 21, height: 1.25, color: r.ink))`; body `r.ink2`. Add an amber disclaimer `Container(decoration: BoxDecoration(color: r.amberSoft, borderRadius: BorderRadius.circular(12), border: Border.all(color: r.amber)), ...)` with the existing "no benefits" copy. Ko-fi: `ReamActionButton(key: const Key('donation-kofi-button'), label: 'Buy me a coffee — Ko-fi', icon: Icons.local_cafe_outlined, primary: true, fillColor: r.kofiRed, onPressed: () => _openKofi(context))`. In `_BitcoinSection`, wrap in a `r.surface`/`r.line` card; keep `Container(color: Colors.white, ... QrImageView(...))`; address `ReamTypography.mono(...)`; keep `Key('donation-bitcoin-copy')` on an `OutlinedButton.icon` restyled or a secondary `ReamActionButton`.
+`final r = context.appColors;`. `Scaffold(backgroundColor: r.paper, appBar: AppBackHeader(title: 'Support App', onBack: () => Navigator.of(context).maybePop()), body: ListView(...))`. Replace the heart `Icon(Icons.favorite, color: r.kofiRed, size: 34)`; headline `Text('No accounts. No cloud.\nNo subscription.', textAlign: center, style: TextStyle(fontFamily: 'Figtree', fontWeight: FontWeight.w800, fontSize: 21, height: 1.25, color: r.ink))`; body `r.ink2`. Add an amber disclaimer `Container(decoration: BoxDecoration(color: r.amberSoft, borderRadius: BorderRadius.circular(12), border: Border.all(color: r.amber)), ...)` with the existing "no benefits" copy. Ko-fi: `AppActionButton(key: const Key('donation-kofi-button'), label: 'Buy me a coffee — Ko-fi', icon: Icons.local_cafe_outlined, primary: true, fillColor: r.kofiRed, onPressed: () => _openKofi(context))`. In `_BitcoinSection`, wrap in a `r.surface`/`r.line` card; keep `Container(color: Colors.white, ... QrImageView(...))`; address `AppTypography.mono(...)`; keep `Key('donation-bitcoin-copy')` on an `OutlinedButton.icon` restyled or a secondary `AppActionButton`.
 
 - [ ] **Step 4: Run donation tests, verify pass**
 
@@ -658,7 +658,7 @@ Expected: PASS (donation_screen + config + banner tests unchanged-green).
 flutter analyze lib/features/donation/donation_screen.dart
 dart format lib/features/donation/donation_screen.dart test/features/donation/donation_screen_test.dart
 git add lib/features/donation/donation_screen.dart test/features/donation/donation_screen_test.dart
-git commit -m "feat(donation): re-skin support screen to Ream"
+git commit -m "feat(donation): re-skin support screen to App"
 ```
 
 ---
@@ -669,9 +669,9 @@ git commit -m "feat(donation): re-skin support screen to Ream"
 - Modify: `lib/features/library/edit_crop_screen.dart`
 - Test: `test/features/library/edit_crop_screen_test.dart` (create if absent)
 
-**Interfaces consumed:** `ReamBackHeader`, `ReamTheme.dark`.
+**Interfaces consumed:** `AppBackHeader`, `AppTheme.dark`.
 
-**Design:** `.dc.html` lines 200-234 (dark). The real screen is only a crop editor (image + `CropOverlay` + Accept). **Chrome-only:** dark background via the editor idiom, dark Ream header with an Accept trailing action, themed broken-image icon. **The mockup's confidence chip / filter strip / Add-page-Save footer do not exist in this screen and are NOT added** (that would be new behavior — named gap). **Do not touch** `CropOverlay`, `_resolveImageSize`, gesture/corner logic.
+**Design:** `.dc.html` lines 200-234 (dark). The real screen is only a crop editor (image + `CropOverlay` + Accept). **Chrome-only:** dark background via the editor idiom, dark App header with an Accept trailing action, themed broken-image icon. **The mockup's confidence chip / filter strip / Add-page-Save footer do not exist in this screen and are NOT added** (that would be new behavior — named gap). **Do not touch** `CropOverlay`, `_resolveImageSize`, gesture/corner logic.
 
 **Preserve (keys + behavior):** `Key('edit-crop-image')`, `Key('edit-crop-accept')` (Accept pops with `_corners`), back pops with null, injected `decodeImageSize`.
 
@@ -684,10 +684,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/edit_crop_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 
 void main() {
-  testWidgets('crop editor uses dark Ream chrome + keeps Accept', (tester) async {
+  testWidgets('crop editor uses dark App chrome + keeps Accept', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: EditCropScreen(
         imagePath: '/nonexistent.jpg',
@@ -700,10 +700,10 @@ void main() {
     ));
     await tester.pump();
     expect(find.byKey(const Key('edit-crop-accept')), findsOneWidget);
-    // Body background is the dark Ream paper tone, not raw Colors.black.
+    // Body background is the dark App paper tone, not raw Colors.black.
     final box = tester.widget<ColoredBox>(find.descendant(
       of: find.byType(Scaffold), matching: find.byType(ColoredBox)).first);
-    expect(box.color, ReamColors.dark.paper);
+    expect(box.color, AppColors.dark.paper);
   });
 }
 ```
@@ -713,7 +713,7 @@ void main() {
 - [ ] **Step 2: Run it, verify it fails**
 
 Run: `flutter test test/features/library/edit_crop_screen_test.dart`
-Expected: FAIL — background is `Colors.black`, no Ream header.
+Expected: FAIL — background is `Colors.black`, no App header.
 
 - [ ] **Step 3: Re-skin the chrome**
 
@@ -726,11 +726,11 @@ Widget build(BuildContext context) {
   return AnnotatedRegion<SystemUiOverlayStyle>(
     value: SystemUiOverlayStyle.light,
     child: Theme(
-      data: ReamTheme.dark(),
+      data: AppTheme.dark(),
       child: Builder(builder: (context) {
-        final r = context.ream;
+        final r = context.appColors;
         return Scaffold(
-          appBar: ReamBackHeader(
+          appBar: AppBackHeader(
             title: 'Review & clean',
             backKey: const Key('edit-crop-back'),
             onBack: () => Navigator.of(context).pop(),
@@ -760,7 +760,7 @@ Widget build(BuildContext context) {
 }
 ```
 
-Add imports `package:flutter/services.dart`, `../../theme/ream_colors.dart`, `../../theme/ream_theme.dart`, `../../theme/widgets/ream_back_header.dart`. In `_imageWidget`, change the broken-image icon color `Colors.white54` → a themed muted tone (pass `context.ream.muted` or keep `Colors.white54` as an acceptable dark-on-dark constant — prefer the token). Note: `ReamBackHeader.trailing` is narrow (kMinInteractiveDimension); if "Save" clips, keep the Accept action but shorten to an icon or widen — record the choice in the task review.
+Add imports `package:flutter/services.dart`, `../../theme/app_colors.dart`, `../../theme/app_theme.dart`, `../../theme/widgets/app_back_header.dart`. In `_imageWidget`, change the broken-image icon color `Colors.white54` → a themed muted tone (pass `context.appColors.muted` or keep `Colors.white54` as an acceptable dark-on-dark constant — prefer the token). Note: `AppBackHeader.trailing` is narrow (kMinInteractiveDimension); if "Save" clips, keep the Accept action but shorten to an icon or widen — record the choice in the task review.
 
 - [ ] **Step 4: Run test, verify pass**
 
@@ -773,7 +773,7 @@ Expected: PASS.
 flutter analyze lib/features/library/edit_crop_screen.dart
 dart format lib/features/library/edit_crop_screen.dart test/features/library/edit_crop_screen_test.dart
 git add lib/features/library/edit_crop_screen.dart test/features/library/edit_crop_screen_test.dart
-git commit -m "feat(library): re-skin crop editor chrome to dark Ream"
+git commit -m "feat(library): re-skin crop editor chrome to dark App"
 ```
 
 ---
@@ -800,8 +800,8 @@ Eyeball all five screens against the `.dc.html` anchors. Record result. iOS rema
 
 ## Self-Review
 
-**Spec coverage:** 07/08/09/10 light + 04 dark chrome-only ✓ (Tasks 1-5); shared `ReamBackHeader`/`ReamSectionLabel` + button/segmented variants as task-0 barrier ✓ (Task 0); reuse of `confidence_chip`/`ream_action_button`/`ream_segmented` ✓; `donation_banner` untouched ✓; no new `.feature` files ✓; preserve-behavior + preserve-keys ✓ (per-task lists); TDD-first ✓; on-device eyeball as named gap ✓ (Task 6).
+**Spec coverage:** 07/08/09/10 light + 04 dark chrome-only ✓ (Tasks 1-5); shared `AppBackHeader`/`AppSectionLabel` + button/segmented variants as task-0 barrier ✓ (Task 0); reuse of `confidence_chip`/`app_action_button`/`app_segmented` ✓; `donation_banner` untouched ✓; no new `.feature` files ✓; preserve-behavior + preserve-keys ✓ (per-task lists); TDD-first ✓; on-device eyeball as named gap ✓ (Task 6).
 
 **Placeholder scan:** every step has concrete test code, real widget APIs, exact paths, and run/commit commands. The one deliberate open judgment (04 "Save" trailing fit) is flagged for task review, not left as a silent TODO.
 
-**Type consistency:** `ReamBackHeader({title, onBack, trailing, backKey})`, `ReamSectionLabel(String)`, `ReamActionButton(..., fillColor)`, `ReamSegmented(..., expanded, Key('segment-$value'))`, `ConfidenceChip(level, label)`, `ConfidenceLevel.high` — used identically across tasks 0-5.
+**Type consistency:** `AppBackHeader({title, onBack, trailing, backKey})`, `AppSectionLabel(String)`, `AppActionButton(..., fillColor)`, `AppSegmented(..., expanded, Key('segment-$value'))`, `ConfidenceChip(level, label)`, `ConfidenceLevel.high` — used identically across tasks 0-5.

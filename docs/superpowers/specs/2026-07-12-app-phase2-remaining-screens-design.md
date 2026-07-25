@@ -1,20 +1,20 @@
-# Ream Phase 2 — remaining screen re-skins (04, 07, 08, 09, 10)
+# App Phase 2 — remaining screen re-skins (04, 07, 08, 09, 10)
 
 **Date:** 2026-07-12
 **Status:** design, pending user review
-**Depends on:** Ream design system + Library (Phase 1, shipped), Ream document editor
+**Depends on:** App design system + Library (Phase 1, shipped), App document editor
 (Phase 2a, shipped `5781c3e`).
 
 ## Goal
 
-Apply the **Ream** visual language to the five app screens that Phase 1/2a did not
+Apply the **App** visual language to the five app screens that Phase 1/2a did not
 touch, so the whole app reads as one designed product. This is a **pure re-skin**:
 no behavior, logic, wiring, or callback changes. Every existing test keeps passing;
 each screen's controls, actions, and semantics are unchanged — only the visual
-structure (colors, type, spacing, chrome) moves to Ream.
+structure (colors, type, spacing, chrome) moves to App.
 
-Reference (single source of truth): `docs/design/ream/README.md` and the screen
-anchors in `docs/design/ream/Ream Scanner.dc.html`. Do **not** re-fetch from the
+Reference (single source of truth): `docs/design/app/README.md` and the screen
+anchors in `docs/design/app/App Scanner.dc.html`. Do **not** re-fetch from the
 network.
 
 ## Scope
@@ -30,7 +30,7 @@ In scope — five screens:
 | 04 | Review & clean | `lib/features/library/edit_crop_screen.dart` | Dark, **chrome-only** |
 
 Out of scope:
-- `donation_banner.dart` — **already** on Ream (`context.ream`, `amberSoft/amber/ink2`). Leave it.
+- `donation_banner.dart` — **already** on App (`context.appColors`, `amberSoft/amber/ink2`). Leave it.
 - Capture / ID-card screens (03, 05) — OS scanner owns them.
 - Screen 04 **crop-canvas interaction** (`CropOverlay` gesture/corner-drag logic) —
   chrome-only means we restyle background, header bar, confidence chip, filter strip,
@@ -40,15 +40,15 @@ Out of scope:
 - Any change to `DonationConfig`, `FeedbackService`, OCR, PDF generation, share/print
   plumbing, or the `*Dependencies` DI classes.
 
-## Design language (recap — authoritative values in `docs/design/ream/README.md`)
+## Design language (recap — authoritative values in `docs/design/app/README.md`)
 
-- **Access idiom:** `final r = context.ream;` at build scope, then `r.paper`, `r.ink`,
-  etc. No `ReamColors` import needed in screen files (the extension self-provides and
-  falls back to `ReamColors.light` under bare widget tests).
+- **Access idiom:** `final r = context.appColors;` at build scope, then `r.paper`, `r.ink`,
+  etc. No `AppColors` import needed in screen files (the extension self-provides and
+  falls back to `AppColors.light` under bare widget tests).
 - **Type:** Figtree for UI (titles 800, tracking -0.02em); IBM Plex Mono for technical
   readouts and the caps section-labels (`QUALITY`, `TYPE`, `MESSAGE`, `EMAIL`, page
   counts, IDs).
-- **18 color tokens** available on `ReamColors` (see README table): `paper, surface,
+- **18 color tokens** available on `AppColors` (see README table): `paper, surface,
   surface2, ink, ink2, muted, line, line2, appBg, green, greenDeep, greenSoft, amber,
   amberSoft, blue, blueSoft, kofiRed, deleteRed`.
 - Confidence semantics: green = success/ready, amber = verify/optional, blue = info.
@@ -57,56 +57,56 @@ Out of scope:
 
 Confirmed present:
 - `lib/theme/widgets/confidence_chip.dart` — the green "ready" pill (07, 04).
-- `lib/theme/widgets/ream_action_button.dart` — footer buttons (verify it exposes the
+- `lib/theme/widgets/app_action_button.dart` — footer buttons (verify it exposes the
   fill variants each screen needs: surface/outline, ink, green-deep; if a variant is
   missing, extend this widget rather than inlining a new button).
-- `lib/theme/widgets/ream_segmented.dart` — the segmented control (09 TYPE toggle).
+- `lib/theme/widgets/app_segmented.dart` — the segmented control (09 TYPE toggle).
 - `lib/features/library/widgets/editor_top_bar.dart` and the editor's dark idiom —
   reference for screen 04's dark header.
 
 New **shared** widgets (create once in `lib/theme/widgets/`, reuse across screens) —
 these exist specifically so parallel subagents don't each invent a divergent version:
-- **`ream_back_header.dart`** — the light back-header (leading chevron, centered Figtree
+- **`app_back_header.dart`** — the light back-header (leading chevron, centered Figtree
   700 title, trailing spacer for symmetry). Used by **all four light screens (07, 08, 09,
   10)**. Without this shared widget, four subagents produce four subtly different headers.
   Takes a title `String` and an `onBack` callback (default `Navigator.maybePop`).
-- **`ream_section_label.dart`** — a mono, muted, letter-spaced caps label (`QUALITY`,
+- **`app_section_label.dart`** — a mono, muted, letter-spaced caps label (`QUALITY`,
   `TYPE`, `MESSAGE`, `EMAIL — optional…`). Used by 08 + 09.
 
 A new button fill (green-deep primary for 08, ink primary for 09) should be a **variant
-of `ream_action_button`**, not a bespoke inline container, unless the widget's API makes
+of `app_action_button`**, not a bespoke inline container, unless the widget's API makes
 that materially harder — in which case note it in the task's review.
 
 ## Per-screen design
 
 ### 07 — Recognized text (OCR) · light
-- `Scaffold` bg `r.paper`; Ream back-header (chevron + centered "Recognized text",
-  Figtree 700). Replace the Material `AppBar` with the Ream header treatment used by the
+- `Scaffold` bg `r.paper`; App back-header (chevron + centered "Recognized text",
+  Figtree 700). Replace the Material `AppBar` with the App header treatment used by the
   other light screens (match Library/editor header spacing).
 - Below header: green **confidence_chip** "Text layer ready · powers search" (mono
   micro-label inside), shown when a text layer exists (reuse existing "has OCR" state —
   do not add new state).
 - Body: existing `SelectableText`, restyled — Figtree 400/13, `r.ink2`, line-height 1.7;
   keep selectability and the existing recognize/copy actions intact.
-- Footer: two `ream_action_button`s — **Copy text** (surface + `r.line` border, `r.ink`)
+- Footer: two `app_action_button`s — **Copy text** (surface + `r.line` border, `r.ink`)
   and **Share .txt** (ink fill, surface text). Wire to the *existing* copy/share
   callbacks; do not change what they do.
 
 ### 08 — Export PDF · light
-- `Scaffold` bg `r.paper`; Ream back-header "Export as PDF".
+- `Scaffold` bg `r.paper`; App back-header "Export as PDF".
 - Keep the `PdfViewPinch` preview OR the design's static preview card — **preserve the
   current preview behavior**; only restyle its frame/badge (mono "N pp" badge, `r.ink`
   chip). Do not swap the pdfx viewer for a fake.
-- `QUALITY` mono section-label; the existing quality options rendered as Ream radio rows
+- `QUALITY` mono section-label; the existing quality options rendered as App radio rows
   (selected = `greenSoft` bg + `green` border + check; unselected = `surface` + `line`).
   Bind to the **existing** quality state/enum — no new options.
 - Password-protect toggle restyled (keep the existing toggle wiring).
-- Primary **Preview & share PDF** = green-deep `ream_action_button`; wire to existing
+- Primary **Preview & share PDF** = green-deep `app_action_button`; wire to existing
   `ShareMenuButton`/share action.
 
 ### 09 — Send feedback · light
-- `Scaffold` bg `r.paper`; Ream back-header "Send feedback".
-- `TYPE` section-label + **ream_segmented** (Bug / Idea / Question) bound to the existing
+- `Scaffold` bg `r.paper`; App back-header "Send feedback".
+- `TYPE` section-label + **app_segmented** (Bug / Idea / Question) bound to the existing
   category value (currently a `DropdownButtonFormField` — replace the *control* with the
   segmented widget but keep the same underlying form field / value + validation).
 - `MESSAGE` label + restyled multiline `TextFormField` (surface, `r.line`, Figtree).
@@ -114,17 +114,17 @@ that materially harder — in which case note it in the task's review.
   `r.muted`.
 - Blue "What we include" disclosure card (`blueSoft` bg, blue dot, existing diagnostics
   copy). `TurnstileWidget` stays exactly as wired (device-only).
-- Primary **Send report** = ink `ream_action_button`; wire to existing submit.
+- Primary **Send report** = ink `app_action_button`; wire to existing submit.
 
 ### 10 — Support / donation · light
-- `Scaffold` bg `r.paper`; Ream back-header "Support Ream".
+- `Scaffold` bg `r.paper`; App back-header "Support App".
 - Centered ♥ + headline "No accounts. No cloud. No subscription." (Figtree 800) +
   body (`r.ink2`). Replace `Colors.amber.shade700` heart with `r.amber`/`r.kofiRed` per
   design.
 - Amber honest-disclaimer card (`amberSoft`, existing "unlocks nothing" copy).
 - **Ko-fi** button = `kofiRed` fill (keep existing launch wiring / `DonationConfig`).
 - Bitcoin card (`surface`, `line`): QR (`Colors.white` → keep white *only inside the QR
-  quiet-zone*, which QR needs; frame it in Ream), mono truncated address + green-deep
+  quiet-zone*, which QR needs; frame it in App), mono truncated address + green-deep
   "copy" (keep existing copy-to-clipboard action).
 
 ### 04 — Review & clean · dark, **chrome-only**
@@ -143,13 +143,13 @@ that materially harder — in which case note it in the task's review.
 
 Per screen:
 1. **TDD (host, required):** write/adjust a failing widget test first that asserts the
-   Ream structure — e.g. background resolves to `context.ream.paper` (light) or the dark
-   tone (04), the Ream header/title is present, the confidence chip / segmented / section
+   App structure — e.g. background resolves to `context.appColors.paper` (light) or the dark
+   tone (04), the App header/title is present, the confidence chip / segmented / section
    labels render, and the footer buttons carry their existing keys/labels. Then implement
    to green.
 2. **Preserve existing tests:** every current unit/feature/step test for the screen must
    stay green with **no semantic change** to its expectations. If a re-skin forces a
-   finder change (e.g. a Material `AppBar` title finder → the Ream header), update the
+   finder change (e.g. a Material `AppBar` title finder → the App header), update the
    finder minimally and note it; never weaken an assertion.
 3. **BDD:** these are pure re-skins of already-shipped behavior. Existing `.feature`
    files (04 `e1_crop`, 07 `o4_recognized_text`, 08 `c2_pdf_preview`, 10 via
@@ -168,11 +168,11 @@ Per screen:
 
 - **One spec (this file) → one plan → parallel subagents**, one subagent per screen.
   The five screen files are independent; the only shared surface is the optional
-  `ream_section_label` widget.
-- **Sequencing:** the shared widgets (`ream_back_header`, `ream_section_label`, any
-  `ream_action_button` variant) are **task 0** — created + tested + merged *before* the
+  `app_section_label` widget.
+- **Sequencing:** the shared widgets (`app_back_header`, `app_section_label`, any
+  `app_action_button` variant) are **task 0** — created + tested + merged *before* the
   parallel screen tasks start, so all screens build on stable shared code. Since
-  `ream_back_header` is used by all four light screens, this task-0 barrier is required,
+  `app_back_header` is used by all four light screens, this task-0 barrier is required,
   not optional. Only screen 04 (dark, its own header idiom) is independent of it.
 - Each subagent: TDD order, scoped `git add` (named paths only, never `-A` — the repo
   carries a long-lived WIP pile), `flutter analyze` clean, `dart format`, paste the

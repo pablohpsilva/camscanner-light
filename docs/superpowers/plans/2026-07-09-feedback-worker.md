@@ -1600,7 +1600,7 @@ export async function handleFeedback(request: Request, env: Env, deps: Deps): Pr
     await putCached(env, input.idempotencyKey, { issueUrl });
     return json({ ok: true, issueUrl }, 201);
   } catch {
-    return json({ error: "upstream_failed" }, 502);
+    return json({ error: "upstapp_failed" }, 502);
   }
 }
 

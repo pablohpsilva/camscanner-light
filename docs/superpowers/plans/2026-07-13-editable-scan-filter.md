@@ -976,7 +976,7 @@ git commit -m "feat(library): store pristine unfiltered base + enhancerMode at c
 
 **Interfaces:**
 - Consumes: `FilterPickerStrip` (`lib/features/scan/widgets/filter_picker_strip.dart`); `EnhancerMode`.
-- Produces: `EditFilterScreen({Key?, required String imagePath, required EnhancerMode initialMode})`. Pops an `EnhancerMode` on Save (key `edit-filter-save`), pops `null` on back. Uses `ReamTheme.dark()`. Strip carries key `filter-picker-strip`; Save button key `edit-filter-save`.
+- Produces: `EditFilterScreen({Key?, required String imagePath, required EnhancerMode initialMode})`. Pops an `EnhancerMode` on Save (key `edit-filter-save`), pops `null` on back. Uses `AppTheme.dark()`. Strip carries key `filter-picker-strip`; Save button key `edit-filter-save`.
 
 - [ ] **Step 1: Write the failing widget test.** Create `test/features/library/edit_filter_screen_test.dart`:
 
@@ -1078,7 +1078,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../../theme/ream_theme.dart';
+import '../../theme/app_theme.dart';
 import '../scan/widgets/filter_picker_strip.dart';
 import 'enhancer_mode.dart';
 import 'widgets/editor_top_bar.dart';
@@ -1123,7 +1123,7 @@ class _EditFilterScreenState extends State<EditFilterScreen> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: ReamTheme.dark(),
+      data: AppTheme.dark(),
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: EditorTopBar(
@@ -1212,7 +1212,7 @@ git commit -m "feat(library): EditFilterScreen — pick a page's filter"
 ```dart
     testWidgets('tapping filter fires onFilter', (tester) async {
       var filterCount = 0;
-      await pumpReam(
+      await pumpApp(
         tester,
         EditorToolbar(
           onCrop: () {},
@@ -1223,7 +1223,7 @@ git commit -m "feat(library): EditFilterScreen — pick a page's filter"
           onDelete: () {},
           onFilter: () => filterCount++,
         ),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
       await tester.tap(find.byKey(const Key('page-viewer-filter')));
       await tester.pump();

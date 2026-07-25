@@ -1,13 +1,13 @@
-# Ream Design System + Library — Implementation Plan (Phase 1)
+# App Design System + Library — Implementation Plan (Phase 1)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the themable Ream design system (`lib/theme/`) and re-skin the
+**Goal:** Build the themable App design system (`lib/theme/`) and re-skin the
 Library (Home) screen — inline search, new grid view, bottom action row — live on
-the Ream light theme, green on host + real Android + real iOS.
+the App light theme, green on host + real Android + real iOS.
 
-**Architecture:** A `ReamColors` `ThemeExtension` holds every semantic token; a
-`ReamTheme` builds light/dark `ThemeData` and registers it on `MaterialApp`.
+**Architecture:** A `AppColors` `ThemeExtension` holds every semantic token; a
+`AppTheme` builds light/dark `ThemeData` and registers it on `MaterialApp`.
 Small, independently-tested reusable widgets (`lib/theme/widgets/`) compose the
 restructured `HomeScreen`. Existing `HomeScreen` state/data-flow is preserved;
 only presentation + the search interaction change.
@@ -17,15 +17,15 @@ only presentation + the search interaction change.
 
 ## Global Constraints
 
-Copied verbatim from `docs/design/ream/README.md` and `CLAUDE.md`. **Every task
+Copied verbatim from `docs/design/app/README.md` and `CLAUDE.md`. **Every task
 implicitly includes this section.**
 
 - **Run all Flutter commands from `apps/mobile/`** (not repo root).
 - **Direction 1a warm & clean (light).** Dark theme is a stub this phase (real
   values, but not verified live). Do not implement capture/ID-scan screens.
-- **No rename.** Keep app name/ids/copy; introduce no literal "Ream" in UI copy.
+- **No rename.** Keep app name/ids/copy; introduce no literal "App" in UI copy.
 - **Colors:** use only the approved constants in the token table
-  (`docs/design/ream/README.md`). Flutter `Color` cannot parse oklch — the hex
+  (`docs/design/app/README.md`). Flutter `Color` cannot parse oklch — the hex
   values in that table are authoritative. ±1/channel tolerance.
 - **Type:** Figtree (family `Figtree`) for UI; IBM Plex Mono (family
   `IBMPlexMono`) for technical readouts only.
@@ -47,8 +47,8 @@ earlier ones. **Never run two tasks that write the same file concurrently.**
 
 | Wave | Tasks | Parallel? | Shared/owned files |
 |------|-------|-----------|--------------------|
-| **0 Foundation** | 1 Fonts · 2 ReamColors · 3 Typography · 4 Theme+wire · 5 Test helper | **Serial** (small; touch `pubspec.yaml`, `main.dart`, new `lib/theme/*` root). Order: 1→2→3→4; 5 any time after 2. | `pubspec.yaml`, `lib/main.dart`, `lib/theme/ream_colors.dart`, `ream_typography.dart`, `ream_theme.dart`, `test/support/ream_pump.dart` |
-| **1 Widgets** | 6 ConfidenceChip · 7 ReamSearchField · 8 ReamSegmented · 9 ReamActionButton · 10 DocumentGridCard · 11 DocumentsGridView · 12 SortPill · 13 DonationBanner restyle | **Parallel** (each creates its own new file + test; 11 depends on 10 so run 11 after 10). 13 modifies an existing file+test, disjoint from others. | one new `lib/theme/widgets/<x>.dart` + `test/features/theme/<x>_test.dart` each; 13 → `lib/features/donation/donation_banner.dart` |
+| **0 Foundation** | 1 Fonts · 2 AppColors · 3 Typography · 4 Theme+wire · 5 Test helper | **Serial** (small; touch `pubspec.yaml`, `main.dart`, new `lib/theme/*` root). Order: 1→2→3→4; 5 any time after 2. | `pubspec.yaml`, `lib/main.dart`, `lib/theme/app_colors.dart`, `app_typography.dart`, `app_theme.dart`, `test/support/app_pump.dart` |
+| **1 Widgets** | 6 ConfidenceChip · 7 AppSearchField · 8 AppSegmented · 9 AppActionButton · 10 DocumentGridCard · 11 DocumentsGridView · 12 SortPill · 13 DonationBanner restyle | **Parallel** (each creates its own new file + test; 11 depends on 10 so run 11 after 10). 13 modifies an existing file+test, disjoint from others. | one new `lib/theme/widgets/<x>.dart` + `test/features/theme/<x>_test.dart` each; 13 → `lib/features/donation/donation_banner.dart` |
 | **2 Integration** | 14 HomeScreen restructure + host-test updates · 15 DocumentsListView restyle | **Serial, single owner** — both waves touch `home_screen.dart`/list view + their tests. Do 15 then 14, one agent. | `lib/features/library/home_screen.dart`, `widgets/documents_list_view.dart`, all `test/features/library/home_*_test.dart` |
 | **3 Verify** | 16 BDD features + steps + build_runner · 17 Host gate (analyze/format/full suite) · 18 Device run (Android+iOS) | 16→17 serial; 18 gated on real devices. | `integration_test/*.feature`, `test/step/*`, generated `*_test.dart` |
 
@@ -64,7 +64,7 @@ Every subagent dispatched for a task MUST be given this contract and MUST satisf
 it before reporting done. A task is **not done** until all boxes are literally
 true and evidenced.
 
-1. **Read first:** `docs/design/ream/README.md` (tokens, type, DoD) and this
+1. **Read first:** `docs/design/app/README.md` (tokens, type, DoD) and this
    plan's Global Constraints + your task block. Do not invent colors, names, or
    file paths — use exactly what the task's **Interfaces** block specifies.
 2. **Own only your files.** Create/modify only the paths in your task's **Files**
@@ -155,29 +155,29 @@ git commit -m "feat(theme): bundle Figtree + IBM Plex Mono OFL fonts"   # + CLAU
 
 ---
 
-## Task 2: `ReamColors` ThemeExtension + `context.ream`
+## Task 2: `AppColors` ThemeExtension + `context.appColors`
 
 **Files:**
-- Create: `apps/mobile/lib/theme/ream_colors.dart`
-- Test: `apps/mobile/test/features/theme/ream_colors_test.dart`
+- Create: `apps/mobile/lib/theme/app_colors.dart`
+- Test: `apps/mobile/test/features/theme/app_colors_test.dart`
 
 **Interfaces:**
-- Produces: `class ReamColors extends ThemeExtension<ReamColors>` with `Color`
+- Produces: `class AppColors extends ThemeExtension<AppColors>` with `Color`
   fields `paper, surface, surface2, ink, ink2, muted, line, line2, appBg, green,
   greenDeep, greenSoft, amber, amberSoft, blue, blueSoft, kofiRed, deleteRed`;
-  `static const ReamColors.light`, `static const ReamColors.dark`; `copyWith`,
-  `lerp`. Plus `extension ReamColorsX on BuildContext { ReamColors get ream; }`.
+  `static const AppColors.light`, `static const AppColors.dark`; `copyWith`,
+  `lerp`. Plus `extension AppColorsX on BuildContext { AppColors get appColors; }`.
 
 - [ ] **Step 1: Write the failing test**
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 
 void main() {
   test('light tokens match the approved palette', () {
-    const c = ReamColors.light;
+    const c = AppColors.light;
     expect(c.paper, const Color(0xFFF4F1EA));
     expect(c.green, const Color(0xFF4FA866));
     expect(c.greenDeep, const Color(0xFF2D7B44));
@@ -185,16 +185,16 @@ void main() {
   });
 
   test('lerp interpolates halfway', () {
-    final mid = ReamColors.light.lerp(ReamColors.dark, 0.5);
-    expect(mid, isA<ReamColors>());
+    final mid = AppColors.light.lerp(AppColors.dark, 0.5);
+    expect(mid, isA<AppColors>());
   });
 
-  testWidgets('context.ream resolves from a themed context', (tester) async {
-    late ReamColors seen;
+  testWidgets('context.appColors resolves from a themed context', (tester) async {
+    late AppColors seen;
     await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(extensions: const [ReamColors.light]),
+      theme: ThemeData(extensions: const [AppColors.light]),
       home: Builder(builder: (context) {
-        seen = context.ream;
+        seen = context.appColors;
         return const SizedBox();
       }),
     ));
@@ -203,10 +203,10 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run — expect FAIL** (`ream_colors.dart` does not exist)
+- [ ] **Step 2: Run — expect FAIL** (`app_colors.dart` does not exist)
 
 ```bash
-cd apps/mobile && flutter test test/features/theme/ream_colors_test.dart
+cd apps/mobile && flutter test test/features/theme/app_colors_test.dart
 ```
 
 - [ ] **Step 3: Implement**
@@ -214,16 +214,16 @@ cd apps/mobile && flutter test test/features/theme/ream_colors_test.dart
 ```dart
 import 'package:flutter/material.dart';
 
-/// Semantic color tokens for the Ream design system, carried on [ThemeData]
+/// Semantic color tokens for the App design system, carried on [ThemeData]
 /// as a [ThemeExtension]. Values are the approved sRGB constants from
-/// docs/design/ream/README.md (oklch converted to hex; ±1/channel tolerance).
+/// docs/design/app/README.md (oklch converted to hex; ±1/channel tolerance).
 @immutable
-class ReamColors extends ThemeExtension<ReamColors> {
+class AppColors extends ThemeExtension<AppColors> {
   final Color paper, surface, surface2, ink, ink2, muted, line, line2, appBg;
   final Color green, greenDeep, greenSoft, amber, amberSoft, blue, blueSoft;
   final Color kofiRed, deleteRed;
 
-  const ReamColors({
+  const AppColors({
     required this.paper, required this.surface, required this.surface2,
     required this.ink, required this.ink2, required this.muted,
     required this.line, required this.line2, required this.appBg,
@@ -232,7 +232,7 @@ class ReamColors extends ThemeExtension<ReamColors> {
     required this.blueSoft, required this.kofiRed, required this.deleteRed,
   });
 
-  static const ReamColors light = ReamColors(
+  static const AppColors light = AppColors(
     paper: Color(0xFFF4F1EA), surface: Color(0xFFFFFDF8),
     surface2: Color(0xFFFAF7F0), ink: Color(0xFF33302A),
     ink2: Color(0xFF5C574D), muted: Color(0xFF928C80),
@@ -247,7 +247,7 @@ class ReamColors extends ThemeExtension<ReamColors> {
   // Extrapolated from the 1b HUD screens (paper->#16130e ground, #211d16
   // surfaces, #322c22 lines, #f4f1ea ink; confidence hues unchanged). Real
   // values so the token is usable, but NOT verified live this phase.
-  static const ReamColors dark = ReamColors(
+  static const AppColors dark = AppColors(
     paper: Color(0xFF16130E), surface: Color(0xFF211D16),
     surface2: Color(0xFF1B1811), ink: Color(0xFFF4F1EA),
     ink2: Color(0xFFC9C2B4), muted: Color(0xFF8F887A),
@@ -260,13 +260,13 @@ class ReamColors extends ThemeExtension<ReamColors> {
   );
 
   @override
-  ReamColors copyWith({
+  AppColors copyWith({
     Color? paper, Color? surface, Color? surface2, Color? ink, Color? ink2,
     Color? muted, Color? line, Color? line2, Color? appBg, Color? green,
     Color? greenDeep, Color? greenSoft, Color? amber, Color? amberSoft,
     Color? blue, Color? blueSoft, Color? kofiRed, Color? deleteRed,
   }) {
-    return ReamColors(
+    return AppColors(
       paper: paper ?? this.paper, surface: surface ?? this.surface,
       surface2: surface2 ?? this.surface2, ink: ink ?? this.ink,
       ink2: ink2 ?? this.ink2, muted: muted ?? this.muted,
@@ -280,10 +280,10 @@ class ReamColors extends ThemeExtension<ReamColors> {
   }
 
   @override
-  ReamColors lerp(ThemeExtension<ReamColors>? other, double t) {
-    if (other is! ReamColors) return this;
+  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) return this;
     Color l(Color a, Color b) => Color.lerp(a, b, t)!;
-    return ReamColors(
+    return AppColors(
       paper: l(paper, other.paper), surface: l(surface, other.surface),
       surface2: l(surface2, other.surface2), ink: l(ink, other.ink),
       ink2: l(ink2, other.ink2), muted: l(muted, other.muted),
@@ -297,25 +297,25 @@ class ReamColors extends ThemeExtension<ReamColors> {
   }
 }
 
-/// Terse access: `context.ream.green`.
-extension ReamColorsX on BuildContext {
-  ReamColors get ream => Theme.of(this).extension<ReamColors>()!;
+/// Terse access: `context.appColors.green`.
+extension AppColorsX on BuildContext {
+  AppColors get appColors => Theme.of(this).extension<AppColors>()!;
 }
 ```
 
-- [ ] **Step 4: Run — expect PASS.** `flutter test test/features/theme/ream_colors_test.dart`
-- [ ] **Step 5: analyze + format + commit** (`feat(theme): ReamColors ThemeExtension + context.ream`)
+- [ ] **Step 4: Run — expect PASS.** `flutter test test/features/theme/app_colors_test.dart`
+- [ ] **Step 5: analyze + format + commit** (`feat(theme): AppColors ThemeExtension + context.appColors`)
 
 ---
 
-## Task 3: `ReamTypography`
+## Task 3: `AppTypography`
 
 **Files:**
-- Create: `apps/mobile/lib/theme/ream_typography.dart`
-- Test: `apps/mobile/test/features/theme/ream_typography_test.dart`
+- Create: `apps/mobile/lib/theme/app_typography.dart`
+- Test: `apps/mobile/test/features/theme/app_typography_test.dart`
 
 **Interfaces:**
-- Produces: `class ReamTypography` with `static TextTheme textTheme(Color ink)`
+- Produces: `class AppTypography` with `static TextTheme textTheme(Color ink)`
   (all styles `fontFamily: 'Figtree'`; `displayLarge`/`headline*` weight 800) and
   `static TextStyle mono({double size = 12, FontWeight weight = FontWeight.w500,
   Color? color, double letterSpacing = 0})` (`fontFamily: 'IBMPlexMono'`).
@@ -325,16 +325,16 @@ extension ReamColorsX on BuildContext {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_typography.dart';
+import 'package:mobile/theme/app_typography.dart';
 
 void main() {
   test('UI text theme uses Figtree', () {
-    final t = ReamTypography.textTheme(const Color(0xFF33302A));
+    final t = AppTypography.textTheme(const Color(0xFF33302A));
     expect(t.titleLarge!.fontFamily, 'Figtree');
     expect(t.bodyMedium!.color, const Color(0xFF33302A));
   });
   test('mono uses IBM Plex Mono', () {
-    final s = ReamTypography.mono(size: 11, weight: FontWeight.w600);
+    final s = AppTypography.mono(size: 11, weight: FontWeight.w600);
     expect(s.fontFamily, 'IBMPlexMono');
     expect(s.fontWeight, FontWeight.w600);
     expect(s.fontSize, 11);
@@ -348,8 +348,8 @@ void main() {
 ```dart
 import 'package:flutter/material.dart';
 
-/// Ream typography: Figtree for UI, IBM Plex Mono for technical readouts.
-class ReamTypography {
+/// App typography: Figtree for UI, IBM Plex Mono for technical readouts.
+class AppTypography {
   static const _ui = 'Figtree';
   static const _mono = 'IBMPlexMono';
 
@@ -383,22 +383,22 @@ class ReamTypography {
 ```
 
 - [ ] **Step 4: Run — expect PASS.**
-- [ ] **Step 5: analyze + format + commit** (`feat(theme): ReamTypography (Figtree + IBM Plex Mono)`)
+- [ ] **Step 5: analyze + format + commit** (`feat(theme): AppTypography (Figtree + IBM Plex Mono)`)
 
 ---
 
-## Task 4: `ReamTheme` (light/dark) + wire `MaterialApp`
+## Task 4: `AppTheme` (light/dark) + wire `MaterialApp`
 
 **Files:**
-- Create: `apps/mobile/lib/theme/ream_theme.dart`
-- Test: `apps/mobile/test/features/theme/ream_theme_test.dart`
+- Create: `apps/mobile/lib/theme/app_theme.dart`
+- Test: `apps/mobile/test/features/theme/app_theme_test.dart`
 - Modify: `apps/mobile/lib/main.dart` (use the theme)
 
 **Interfaces:**
-- Consumes: `ReamColors` (Task 2), `ReamTypography` (Task 3).
-- Produces: `class ReamTheme` with `static ThemeData light()` and
-  `static ThemeData dark()`. `light()` carries `ReamColors.light` in
-  `extensions`, `scaffoldBackgroundColor == ReamColors.light.paper`, a
+- Consumes: `AppColors` (Task 2), `AppTypography` (Task 3).
+- Produces: `class AppTheme` with `static ThemeData light()` and
+  `static ThemeData dark()`. `light()` carries `AppColors.light` in
+  `extensions`, `scaffoldBackgroundColor == AppColors.light.paper`, a
   green-seeded `ColorScheme`, and the Figtree `textTheme`.
 
 - [ ] **Step 1: Failing test**
@@ -406,38 +406,38 @@ class ReamTypography {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 void main() {
-  test('light theme carries ReamColors + paper scaffold + Figtree', () {
-    final t = ReamTheme.light();
-    expect(t.extension<ReamColors>(), ReamColors.light);
-    expect(t.scaffoldBackgroundColor, ReamColors.light.paper);
+  test('light theme carries AppColors + paper scaffold + Figtree', () {
+    final t = AppTheme.light();
+    expect(t.extension<AppColors>(), AppColors.light);
+    expect(t.scaffoldBackgroundColor, AppColors.light.paper);
     expect(t.textTheme.titleLarge!.fontFamily, 'Figtree');
     expect(t.brightness, Brightness.light);
   });
   test('dark theme carries dark tokens', () {
-    expect(ReamTheme.dark().extension<ReamColors>(), ReamColors.dark);
+    expect(AppTheme.dark().extension<AppColors>(), AppColors.dark);
   });
 }
 ```
 
 - [ ] **Step 2: Run — expect FAIL.**
-- [ ] **Step 3: Implement `ream_theme.dart`**
+- [ ] **Step 3: Implement `app_theme.dart`**
 
 ```dart
 import 'package:flutter/material.dart';
-import 'ream_colors.dart';
-import 'ream_typography.dart';
+import 'app_colors.dart';
+import 'app_typography.dart';
 
-/// Builds the Ream [ThemeData] for light and dark, mapping [ReamColors] onto a
+/// Builds the App [ThemeData] for light and dark, mapping [AppColors] onto a
 /// Material [ColorScheme] so stock widgets inherit sensible colors.
-class ReamTheme {
-  static ThemeData light() => _build(ReamColors.light, Brightness.light);
-  static ThemeData dark() => _build(ReamColors.dark, Brightness.dark);
+class AppTheme {
+  static ThemeData light() => _build(AppColors.light, Brightness.light);
+  static ThemeData dark() => _build(AppColors.dark, Brightness.dark);
 
-  static ThemeData _build(ReamColors c, Brightness brightness) {
+  static ThemeData _build(AppColors c, Brightness brightness) {
     final scheme = ColorScheme.fromSeed(
       seedColor: c.greenDeep,
       brightness: brightness,
@@ -451,7 +451,7 @@ class ReamTheme {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: c.paper,
-      textTheme: ReamTypography.textTheme(c.ink),
+      textTheme: AppTypography.textTheme(c.ink),
       extensions: [c],
     );
   }
@@ -462,12 +462,12 @@ class ReamTheme {
 - [ ] **Step 5: Wire `main.dart`** — replace the `theme:` line:
 
 ```dart
-// import 'theme/ream_theme.dart';
+// import 'theme/app_theme.dart';
 return MaterialApp(
   title: 'CamScanner-light',
   debugShowCheckedModeBanner: false,
-  theme: ReamTheme.light(),
-  darkTheme: ReamTheme.dark(),
+  theme: AppTheme.light(),
+  darkTheme: AppTheme.dark(),
   themeMode: ThemeMode.light, // light-first; dark verified in the final phase
   home: HomeScreen(
     dependencies: scanDependencies,
@@ -485,19 +485,19 @@ cd apps/mobile && flutter test && flutter analyze
 Expected: all pass; "No issues found!". If a pre-existing test asserted the old
 indigo scheme, update that assertion (name it in the commit).
 
-- [ ] **Step 7: format + commit** (`feat(theme): ReamTheme light/dark + wire MaterialApp`)
+- [ ] **Step 7: format + commit** (`feat(theme): AppTheme light/dark + wire MaterialApp`)
 
 ---
 
-## Task 5: `pumpReam` test helper
+## Task 5: `pumpApp` test helper
 
 **Files:**
-- Create: `apps/mobile/test/support/ream_pump.dart`
+- Create: `apps/mobile/test/support/app_pump.dart`
 
 **Interfaces:**
-- Produces: `Future<void> pumpReam(WidgetTester tester, Widget child, {ThemeData? theme})`
-  — pumps `child` inside a `MaterialApp` themed with `ReamTheme.light()` and a
-  `Scaffold` body, so widgets that read `context.ream` resolve. Wave 1 widget
+- Produces: `Future<void> pumpApp(WidgetTester tester, Widget child, {ThemeData? theme})`
+  — pumps `child` inside a `MaterialApp` themed with `AppTheme.light()` and a
+  `Scaffold` body, so widgets that read `context.appColors` resolve. Wave 1 widget
   tests import this.
 
 - [ ] **Step 1: Implement (no separate test — exercised by Wave 1 tests)**
@@ -505,18 +505,18 @@ indigo scheme, update that assertion (name it in the commit).
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
-/// Pumps [child] inside a Ream-themed MaterialApp+Scaffold for widget tests.
-Future<void> pumpReam(WidgetTester tester, Widget child, {ThemeData? theme}) {
+/// Pumps [child] inside a App-themed MaterialApp+Scaffold for widget tests.
+Future<void> pumpApp(WidgetTester tester, Widget child, {ThemeData? theme}) {
   return tester.pumpWidget(MaterialApp(
-    theme: theme ?? ReamTheme.light(),
+    theme: theme ?? AppTheme.light(),
     home: Scaffold(body: child),
   ));
 }
 ```
 
-- [ ] **Step 2: analyze + commit** (`test(theme): pumpReam widget-test helper`)
+- [ ] **Step 2: analyze + commit** (`test(theme): pumpApp widget-test helper`)
 
 ---
 
@@ -527,7 +527,7 @@ Future<void> pumpReam(WidgetTester tester, Widget child, {ThemeData? theme}) {
 - Test: `apps/mobile/test/features/theme/confidence_chip_test.dart`
 
 **Interfaces:**
-- Consumes: `context.ream`, `pumpReam`.
+- Consumes: `context.appColors`, `pumpApp`.
 - Produces: `enum ConfidenceLevel { high, verify, info }` and
   `class ConfidenceChip extends StatelessWidget` with
   `ConfidenceChip({required ConfidenceLevel level, required String label, Key? key})`.
@@ -539,26 +539,26 @@ Future<void> pumpReam(WidgetTester tester, Widget child, {ThemeData? theme}) {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 import 'package:mobile/theme/widgets/confidence_chip.dart';
-import '../../support/ream_pump.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('high confidence renders label + green dot', (tester) async {
-    await pumpReam(tester, const ConfidenceChip(
+    await pumpApp(tester, const ConfidenceChip(
       level: ConfidenceLevel.high, label: 'High confidence'));
     expect(find.text('High confidence'), findsOneWidget);
     final dot = tester.widget<DecoratedBox>(find.byKey(
       const Key('confidence-dot')));
-    expect((dot.decoration as BoxDecoration).color, ReamColors.light.green);
+    expect((dot.decoration as BoxDecoration).color, AppColors.light.green);
   });
 
   testWidgets('verify level uses amber', (tester) async {
-    await pumpReam(tester, const ConfidenceChip(
+    await pumpApp(tester, const ConfidenceChip(
       level: ConfidenceLevel.verify, label: 'Please verify'));
     final dot = tester.widget<DecoratedBox>(find.byKey(
       const Key('confidence-dot')));
-    expect((dot.decoration as BoxDecoration).color, ReamColors.light.amber);
+    expect((dot.decoration as BoxDecoration).color, AppColors.light.amber);
   });
 }
 ```
@@ -568,8 +568,8 @@ void main() {
 
 ```dart
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
-import '../ream_typography.dart';
+import '../app_colors.dart';
+import '../app_typography.dart';
 
 enum ConfidenceLevel { high, verify, info }
 
@@ -582,7 +582,7 @@ class ConfidenceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final (dot, fg, bg) = switch (level) {
       ConfidenceLevel.high => (r.green, r.greenDeep, r.greenSoft),
       ConfidenceLevel.verify => (r.amber, r.ink2, r.amberSoft),
@@ -601,7 +601,7 @@ class ConfidenceChip extends StatelessWidget {
           child: const SizedBox(width: 7, height: 7),
         ),
         const SizedBox(width: 7),
-        Text(label, style: ReamTypography.mono(
+        Text(label, style: AppTypography.mono(
           size: 12, weight: FontWeight.w600, color: fg)),
       ]),
     );
@@ -614,15 +614,15 @@ class ConfidenceChip extends StatelessWidget {
 
 ---
 
-## Task 7: `ReamSearchField`  *(Wave 1 — parallel)*
+## Task 7: `AppSearchField`  *(Wave 1 — parallel)*
 
 **Files:**
-- Create: `apps/mobile/lib/theme/widgets/ream_search_field.dart`
-- Test: `apps/mobile/test/features/theme/ream_search_field_test.dart`
+- Create: `apps/mobile/lib/theme/widgets/app_search_field.dart`
+- Test: `apps/mobile/test/features/theme/app_search_field_test.dart`
 
 **Interfaces:**
-- Produces: `class ReamSearchField extends StatelessWidget` with
-  `ReamSearchField({required TextEditingController controller, required
+- Produces: `class AppSearchField extends StatelessWidget` with
+  `AppSearchField({required TextEditingController controller, required
   ValueChanged<String> onChanged, String hintText = 'Search titles & text inside
   pages', VoidCallback? onClear, Key? key})`. Contains a `TextField` (leading
   search icon; trailing clear button shown when `controller.text` non-empty)
@@ -633,14 +633,14 @@ class ConfidenceChip extends StatelessWidget {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/widgets/ream_search_field.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/widgets/app_search_field.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('typing calls onChanged; hint shown', (tester) async {
     final controller = TextEditingController();
     String? last;
-    await pumpReam(tester, ReamSearchField(
+    await pumpApp(tester, AppSearchField(
       controller: controller, onChanged: (v) => last = v));
     expect(find.text('Search titles & text inside pages'), findsOneWidget);
     await tester.enterText(find.byKey(const Key('documents-search-field')), 'lease');
@@ -654,15 +654,15 @@ void main() {
 
 ```dart
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
+import '../app_colors.dart';
 
-/// Inline, always-visible search field in the Ream header style.
-class ReamSearchField extends StatelessWidget {
+/// Inline, always-visible search field in the App header style.
+class AppSearchField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final String hintText;
   final VoidCallback? onClear;
-  const ReamSearchField({
+  const AppSearchField({
     super.key,
     required this.controller,
     required this.onChanged,
@@ -672,7 +672,7 @@ class ReamSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: r.surface, borderRadius: BorderRadius.circular(13),
@@ -711,21 +711,21 @@ class ReamSearchField extends StatelessWidget {
 ```
 
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
-  (`feat(theme): ReamSearchField inline search`).
+  (`feat(theme): AppSearchField inline search`).
 
 ---
 
-## Task 8: `ReamSegmented`  *(Wave 1 — parallel)*
+## Task 8: `AppSegmented`  *(Wave 1 — parallel)*
 
 **Files:**
-- Create: `apps/mobile/lib/theme/widgets/ream_segmented.dart`
-- Test: `apps/mobile/test/features/theme/ream_segmented_test.dart`
+- Create: `apps/mobile/lib/theme/widgets/app_segmented.dart`
+- Test: `apps/mobile/test/features/theme/app_segmented_test.dart`
 
 **Interfaces:**
-- Produces: `class ReamSegment<T> { final T value; final String label; final
-  IconData? icon; const ReamSegment({required this.value, required this.label,
-  this.icon}); }` and `class ReamSegmented<T> extends StatelessWidget` with
-  `ReamSegmented({required List<ReamSegment<T>> segments, required T value,
+- Produces: `class AppSegment<T> { final T value; final String label; final
+  IconData? icon; const AppSegment({required this.value, required this.label,
+  this.icon}); }` and `class AppSegmented<T> extends StatelessWidget` with
+  `AppSegmented({required List<AppSegment<T>> segments, required T value,
   required ValueChanged<T> onChanged, Key? key})`. Active segment: `ink` bg +
   `surface` text; inactive: `muted` text. Each segment tappable; keys
   `segment-<value>`.
@@ -735,18 +735,18 @@ class ReamSearchField extends StatelessWidget {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/widgets/ream_segmented.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/widgets/app_segmented.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('tapping a segment fires onChanged with its value', (tester) async {
     String value = 'list';
-    await pumpReam(tester, StatefulBuilder(builder: (_, setState) {
-      return ReamSegmented<String>(
+    await pumpApp(tester, StatefulBuilder(builder: (_, setState) {
+      return AppSegmented<String>(
         value: value,
         segments: const [
-          ReamSegment(value: 'list', label: 'List'),
-          ReamSegment(value: 'grid', label: 'Grid'),
+          AppSegment(value: 'list', label: 'List'),
+          AppSegment(value: 'grid', label: 'Grid'),
         ],
         onChanged: (v) => setState(() => value = v),
       );
@@ -763,21 +763,21 @@ void main() {
 
 ```dart
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
+import '../app_colors.dart';
 
-class ReamSegment<T> {
+class AppSegment<T> {
   final T value;
   final String label;
   final IconData? icon;
-  const ReamSegment({required this.value, required this.label, this.icon});
+  const AppSegment({required this.value, required this.label, this.icon});
 }
 
-/// A compact segmented toggle in the Ream style (e.g. List / Grid).
-class ReamSegmented<T> extends StatelessWidget {
-  final List<ReamSegment<T>> segments;
+/// A compact segmented toggle in the App style (e.g. List / Grid).
+class AppSegmented<T> extends StatelessWidget {
+  final List<AppSegment<T>> segments;
   final T value;
   final ValueChanged<T> onChanged;
-  const ReamSegmented({
+  const AppSegmented({
     super.key,
     required this.segments,
     required this.value,
@@ -786,7 +786,7 @@ class ReamSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: r.surface, borderRadius: BorderRadius.circular(9),
@@ -817,19 +817,19 @@ class ReamSegmented<T> extends StatelessWidget {
 ```
 
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
-  (`feat(theme): ReamSegmented toggle`).
+  (`feat(theme): AppSegmented toggle`).
 
 ---
 
-## Task 9: `ReamActionButton`  *(Wave 1 — parallel)*
+## Task 9: `AppActionButton`  *(Wave 1 — parallel)*
 
 **Files:**
-- Create: `apps/mobile/lib/theme/widgets/ream_action_button.dart`
-- Test: `apps/mobile/test/features/theme/ream_action_button_test.dart`
+- Create: `apps/mobile/lib/theme/widgets/app_action_button.dart`
+- Test: `apps/mobile/test/features/theme/app_action_button_test.dart`
 
 **Interfaces:**
-- Produces: `class ReamActionButton extends StatelessWidget` with
-  `ReamActionButton({required String label, IconData? icon, VoidCallback?
+- Produces: `class AppActionButton extends StatelessWidget` with
+  `AppActionButton({required String label, IconData? icon, VoidCallback?
   onPressed, bool primary = false, Key? key})`. `primary` → `greenDeep` fill,
   white label, horizontal icon+label. Secondary → `surface` fill, `line` border,
   `ink2` label, vertical icon-over-label. Disabled when `onPressed == null`.
@@ -839,13 +839,13 @@ class ReamSegmented<T> extends StatelessWidget {
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/widgets/ream_action_button.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/widgets/app_action_button.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('tapping fires onPressed; label shown', (tester) async {
     var taps = 0;
-    await pumpReam(tester, ReamActionButton(
+    await pumpApp(tester, AppActionButton(
       key: const Key('act-scan'), label: 'Scan', icon: Icons.add,
       primary: true, onPressed: () => taps++));
     expect(find.text('Scan'), findsOneWidget);
@@ -854,7 +854,7 @@ void main() {
   });
 
   testWidgets('null onPressed disables the button', (tester) async {
-    await pumpReam(tester, const ReamActionButton(
+    await pumpApp(tester, const AppActionButton(
       key: Key('act-x'), label: 'X', onPressed: null));
     await tester.tap(find.byKey(const Key('act-x')));
     // no throw, no callback — nothing to assert beyond not crashing
@@ -868,16 +868,16 @@ void main() {
 
 ```dart
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
+import '../app_colors.dart';
 
-/// A Ream action button. [primary] is the filled green CTA (icon beside label);
+/// A App action button. [primary] is the filled green CTA (icon beside label);
 /// secondary is an outlined surface tile (icon above label).
-class ReamActionButton extends StatelessWidget {
+class AppActionButton extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool primary;
-  const ReamActionButton({
+  const AppActionButton({
     super.key,
     required this.label,
     this.icon,
@@ -887,7 +887,7 @@ class ReamActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final enabled = onPressed != null;
     final child = primary
         ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -930,7 +930,7 @@ class ReamActionButton extends StatelessWidget {
 ```
 
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
-  (`feat(theme): ReamActionButton`).
+  (`feat(theme): AppActionButton`).
 
 ---
 
@@ -941,7 +941,7 @@ class ReamActionButton extends StatelessWidget {
 - Test: `apps/mobile/test/features/library/document_grid_card_test.dart`
 
 **Interfaces:**
-- Consumes: `DocumentSummary`, `DocumentThumbnail`, `ReamTypography`, `context.ream`.
+- Consumes: `DocumentSummary`, `DocumentThumbnail`, `AppTypography`, `context.appColors`.
 - Produces: `class DocumentGridCard extends StatelessWidget` with
   `DocumentGridCard({required DocumentSummary summary, VoidCallback? onTap,
   VoidCallback? onLongPress, bool selected = false, bool selectionMode = false,
@@ -957,7 +957,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/document_grid_card.dart';
-import '../../support/ream_pump.dart';
+import '../../support/app_pump.dart';
 
 DocumentSummary _summary() => DocumentSummary(
   document: Document(
@@ -968,7 +968,7 @@ DocumentSummary _summary() => DocumentSummary(
 void main() {
   testWidgets('renders title, page/date meta, and fires onTap', (tester) async {
     var opened = false;
-    await pumpReam(tester, DocumentGridCard(
+    await pumpApp(tester, DocumentGridCard(
       summary: _summary(), onTap: () => opened = true));
     expect(find.text('Lease Agreement'), findsOneWidget);
     expect(find.textContaining('6'), findsWidgets); // "6p ·" meta
@@ -984,7 +984,7 @@ void main() {
 - [ ] **Step 3: Implement** a `StatelessWidget` matching the design's grid card
   (white/`surface` card, 1px `line` border, radius 9, soft shadow; body = mini
   page-line placeholder via `DocumentThumbnail` when a path exists else the
-  neutral placeholder; footer = title + `ReamTypography.mono` meta). Wrap in
+  neutral placeholder; footer = title + `AppTypography.mono` meta). Wrap in
   `GestureDetector(key: Key('document-card-${id}'), onTap:, onLongPress:)`. Show a
   check badge when `selected`.
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
@@ -1025,7 +1025,7 @@ void main() {
 
 **Interfaces:**
 - Consumes: `DocumentSort`, `SortCriterion`, `SortDirection` from
-  `document_sort.dart`; `context.ream`.
+  `document_sort.dart`; `context.appColors`.
 - Produces: `class SortPill extends StatelessWidget` with
   `SortPill({required DocumentSort sort, required ValueChanged<SortCriterion>
   onCriterionSelected, Key? key})`. Shows the active criterion label + a
@@ -1041,12 +1041,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document_sort.dart';
 import 'package:mobile/features/library/widgets/sort_pill.dart';
-import '../../support/ream_pump.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('shows active criterion and selects from menu', (tester) async {
     SortCriterion? picked;
-    await pumpReam(tester, SortPill(
+    await pumpApp(tester, SortPill(
       sort: DocumentSort.initial,
       onCriterionSelected: (c) => picked = c));
     // DocumentSort.initial == (SortCriterion.created, desc)
@@ -1078,20 +1078,20 @@ pill shows "Created" with a `↓` arrow.
   absent) — keep `s1_donation_banner` behavior intact.
 
 **Interfaces:**
-- Consumes: `context.ream`.
+- Consumes: `context.appColors`.
 - Produces: same public widget (`DonationBanner`, key `donation-banner`, taps →
   `DonationScreen`) restyled to the amber card (`amberSoft` bg, amber border,
   ink2 copy, heart + chevron). **Preserve the `donation-banner` key** so
   `s1_donation_banner` + `i_tap_the_donation_banner` step keep passing.
 
-- [ ] **Step 1: Failing/again-green test** — pump `DonationBanner` via `pumpReam`;
+- [ ] **Step 1: Failing/again-green test** — pump `DonationBanner` via `pumpApp`;
   assert key `donation-banner` present and its container color is
-  `ReamColors.light.amberSoft`.
+  `AppColors.light.amberSoft`.
 - [ ] **Step 2: Run — expect FAIL** (color assertion).  **Step 3:** restyle using
-  `context.ream` amber tokens, keeping the `InkWell(key: Key('donation-banner'))`
+  `context.appColors` amber tokens, keeping the `InkWell(key: Key('donation-banner'))`
   → `DonationScreen` navigation and `SafeArea(top: false)`.
 - [ ] **Step 4: Run — expect PASS.**  **Step 5:** analyze + format + commit
-  (`feat(donation): restyle DonationBanner to Ream amber`).
+  (`feat(donation): restyle DonationBanner to App amber`).
 
 ---
 
@@ -1112,20 +1112,20 @@ pill shows "Created" with a `↓` arrow.
     (key `home-settings`) top-right that opens a menu; when `_feedbackAvailable`,
     the menu contains **Send feedback** (keys `home-menu-feedback` preserved,
     `home-overflow-menu` moves onto the gear).
-  - `ReamSearchField` (key `documents-search-field`) always visible, wired to
+  - `AppSearchField` (key `documents-search-field`) always visible, wired to
     `_onQueryChanged`. Remove the AppBar search-mode (`_openSearch`/`_closeSearch`,
     `_buildSearchAppBar`, `_searching`). Filtering rule: `_query.trim().isEmpty`
     → sorted full list; else FTS results (keep the race guard).
   - Controls row: `SortPill` (key `sort-pill`, → `_onSortCriterion`) +
-    `ReamSegmented` (key `library-view-toggle`, values `list`/`grid`) bound to a
+    `AppSegmented` (key `library-view-toggle`, values `list`/`grid`) bound to a
     new `LibraryViewMode _viewMode = LibraryViewMode.list` (in-memory).
 - **Body:** `_viewMode == list` → `DocumentsListView`; else `DocumentsGridView`
   (both fed `_displayed`). Empty → `EmptyDocumentsView`; loading spinner
   (`documents-loading`) and error (`documents-error`/`documents-retry`) preserved.
 - **Bottom** (`bottomNavigationBar` or a pinned column): a **3-button action row**
-  — `ReamActionButton(primary, key 'home-scan', label 'Scan', onPressed
-  _openScan)`, `ReamActionButton(key 'home-scan-id', label 'ID card', onPressed
-  _openIdScan)`, `ReamActionButton(key 'home-import', label 'Import', onPressed
+  — `AppActionButton(primary, key 'home-scan', label 'Scan', onPressed
+  _openScan)`, `AppActionButton(key 'home-scan-id', label 'ID card', onPressed
+  _openIdScan)`, `AppActionButton(key 'home-import', label 'Import', onPressed
   _onImport)` — above the restyled `DonationBanner`. Remove the extended FAB.
 - **Selection mode:** when `_selectionMode`, swap the header's title row for a
   contextual bar (key `selection-bar`) with a close (`selection-close`) + export
@@ -1170,7 +1170,7 @@ cd apps/mobile && flutter test && flutter analyze && dart format lib test
 ```
 Expected: all green; "No issues found!".
 
-- [ ] **Step 5: Commit** (`feat(library): restructure HomeScreen to Ream layout
+- [ ] **Step 5: Commit** (`feat(library): restructure HomeScreen to App layout
   (inline search, grid toggle, action row)`).
 
 ---
@@ -1185,7 +1185,7 @@ Expected: all green; "No issues found!".
 **Interfaces:**
 - Unchanged public API. Rows restyled to the design: paper card row (radius 14),
   `DocumentThumbnail` in a `line`-bordered frame, title `titleMedium`, mono meta
-  `N pages · <date>` via `ReamTypography.mono`, `⋯` overflow (keep
+  `N pages · <date>` via `AppTypography.mono`, `⋯` overflow (keep
   `document-menu-<id>`, `document-rename-<id>`, `document-share-<id>` keys).
   **Preserve** `documents-list`, `document-tile-<id>`, `document-thumb-<id>`,
   `document-check-<id>` keys.
@@ -1197,7 +1197,7 @@ Expected: all green; "No issues found!".
   custom row; keep all keys + callbacks). Meta line format stays
   `${date} · ${_pages(n)}` so existing text finders pass.
 - [ ] **Step 3:** Run the two files — expect PASS.  **Step 4:** analyze + format +
-  commit (`feat(library): restyle document rows to Ream`).
+  commit (`feat(library): restyle document rows to App`).
 
 ---
 
@@ -1271,12 +1271,12 @@ Expected: each PASS. Paste the summary lines.
 
 - [ ] **Step 3: iOS** — same loop with `-d <ios-device-id>`. Paste results.
 - [ ] **Step 4:** Also do a manual smoke: `flutter run -d <id>`, confirm the Library
-  renders the Ream paper header, inline search filters, grid toggle works, bottom
+  renders the App paper header, inline search filters, grid toggle works, bottom
   action row launches Scan/ID/Import, donation banner opens. Screenshot each
   platform.
 - [ ] **Step 5:** Report the exact commands + green output + screenshots. Only now
   is Phase 1 **done**. Commit any test-only fixups (`test(library): device-verify
-  Ream Library on Android+iOS`).
+  App Library on Android+iOS`).
 
 ---
 
@@ -1290,7 +1290,7 @@ Expected: each PASS. Paste the summary lines.
   bounded instruction with the exact keys/signatures; two fixtures carry a
   "verify field names against the source" note (Document ctor, DocumentSort.initial
   label) because those are existing types the implementer must match.
-- **Type consistency:** `ReamColors`/`context.ream`, `ReamTypography.mono`,
-  `ConfidenceLevel`, `ReamSegment<T>`/`ReamSegmented<T>`, `ReamActionButton`,
+- **Type consistency:** `AppColors`/`context.appColors`, `AppTypography.mono`,
+  `ConfidenceLevel`, `AppSegment<T>`/`AppSegmented<T>`, `AppActionButton`,
   `DocumentGridCard`/`DocumentsGridView`, `SortPill`, `LibraryViewMode` names are
   used identically across producing and consuming tasks.

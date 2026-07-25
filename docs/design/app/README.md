@@ -1,20 +1,20 @@
-# Ream design — reference for implementers (humans & subagents)
+# App design — reference for implementers (humans & subagents)
 
-This is the **single source of truth** for the Ream visual redesign. If you are a
+This is the **single source of truth** for the App visual redesign. If you are a
 subagent implementing any redesign task, read this file and the local design HTML
 before writing code. Do not re-fetch from the network unless told to.
 
 ## Source of truth
 
-- **Local design markup:** `docs/design/ream/Ream Scanner.dc.html` (committed copy
+- **Local design markup:** `docs/design/app/App Scanner.dc.html` (committed copy
   of the Claude Design file — read the inline styles/markup for exact spacing,
   radii, weights). `support.js` is the Claude Design canvas runtime (only needed
   to *render* the `.dc.html` in a browser; not needed to read design intent).
 - **Remote (for humans):**
-  `https://claude.ai/design/p/b1f98d43-afb3-4442-9c2b-f8d1787c2cbc?file=Ream+Scanner.dc.html`
+  `https://claude.ai/design/p/b1f98d43-afb3-4442-9c2b-f8d1787c2cbc?file=App+Scanner.dc.html`
   Project id `b1f98d43-afb3-4442-9c2b-f8d1787c2cbc`. Re-read via the `DesignSync`
   tool (`get_file`) after `/design-login` — **only if** the local copy is missing.
-- **Spec:** `docs/superpowers/specs/2026-07-10-ream-design-system-library-design.md`.
+- **Spec:** `docs/superpowers/specs/2026-07-10-app-design-system-library-design.md`.
 - **Direction:** use **1a "warm & clean" (light)**. 1b (dark HUD) is reference
   only, for the dark theme in the final phase. **Do not** implement capture/ID
   scan screens (03, 05, 1b capture) — the app uses the OS scanner.
@@ -23,7 +23,7 @@ before writing code. Do not re-fetch from the network unless told to.
 
 Flutter's `Color` cannot parse `oklch`. The design's `:root` neutrals are hex
 already; the confidence-trio oklch values are converted to sRGB below. These are
-the **only** approved constants — put them in `ReamColors` and reference by name.
+the **only** approved constants — put them in `AppColors` and reference by name.
 
 | Token         | Design value                | Flutter `Color` |
 |---------------|-----------------------------|-----------------|

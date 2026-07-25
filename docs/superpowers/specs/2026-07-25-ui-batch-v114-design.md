@@ -28,7 +28,7 @@ keys unless a task explicitly renames them atomically with all references.
 6. Share-link → hidden via feature-flag default flip; share-with-password added
    to the home 3-dots menu.
 7. iOS Bitcoin donation → **default ON**, behind `FEATURE_IOS_BTC_DONATION`.
-8. Design-system rename **"Ream" → neutral `App*`** (internal only; never
+8. Design-system rename **"App" → neutral `App*`** (internal only; never
    user-facing). Plus fix the visible `appTitle` inconsistency.
 
 ## ⚠️ Named risk (accepted by owner)
@@ -48,7 +48,7 @@ The rename touches the same files as every feature lane, so it cannot run in
 parallel with them. Do it first, merge, then branch all feature work off the
 renamed base.
 
-### P0-A: Rename `Ream*` → `App*` (design system)
+### P0-A: Rename `App*` → `App*` (design system)
 
 Purely internal — verified zero user-facing occurrences (no ARB string, no
 `Info.plist`/manifest label, no `Text()` widget). App launcher name stays
@@ -56,26 +56,26 @@ Purely internal — verified zero user-facing occurrences (no ARB string, no
 
 Mechanical rename across ~67 files (~443 occurrences):
 
-- Files: `lib/theme/ream_colors.dart` → `app_colors.dart`,
-  `ream_theme.dart` → `app_theme.dart`,
-  `ream_typography.dart` → `app_typography.dart`,
-  `widgets/ream_action_button.dart` → `app_action_button.dart`,
-  `widgets/ream_back_header.dart` → `app_back_header.dart`,
-  `widgets/ream_search_field.dart` → `app_search_field.dart`,
-  `widgets/ream_section_label.dart` → `app_section_label.dart`,
-  `widgets/ream_segmented.dart` → `app_segmented.dart`.
-- Types: `ReamColors`→`AppColors`, `ReamTheme`→`AppTheme`,
-  `ReamTypography`→`AppTypography`, `ReamActionButton`→`AppActionButton`,
-  `ReamBackHeader`→`AppBackHeader`, `ReamSearchField`→`AppSearchField`,
-  `ReamSectionLabel`→`AppSectionLabel`, `ReamSegment`→`AppSegment`,
-  `ReamSegmented`→`AppSegmented`.
-- Accessor: `extension ReamColorsX` → `AppColorsX`; getter `context.ream` →
+- Files: `lib/theme/app_colors.dart` → `app_colors.dart`,
+  `app_theme.dart` → `app_theme.dart`,
+  `app_typography.dart` → `app_typography.dart`,
+  `widgets/app_action_button.dart` → `app_action_button.dart`,
+  `widgets/app_back_header.dart` → `app_back_header.dart`,
+  `widgets/app_search_field.dart` → `app_search_field.dart`,
+  `widgets/app_section_label.dart` → `app_section_label.dart`,
+  `widgets/app_segmented.dart` → `app_segmented.dart`.
+- Types: `AppColors`→`AppColors`, `AppTheme`→`AppTheme`,
+  `AppTypography`→`AppTypography`, `AppActionButton`→`AppActionButton`,
+  `AppBackHeader`→`AppBackHeader`, `AppSearchField`→`AppSearchField`,
+  `AppSectionLabel`→`AppSectionLabel`, `AppSegment`→`AppSegment`,
+  `AppSegmented`→`AppSegmented`.
+- Accessor: `extension AppColorsX` → `AppColorsX`; getter `context.appColors` →
   `context.appColors` (~24 call sites).
-- Constants/fns: `kReamScrimStrong/Medium`→`kAppScrimStrong/Medium`,
-  `kReamCardShadow`→`kAppCardShadow`, `reamInkOnFill`→`appInkOnFill`.
-- Test helper: `test/support/ream_pump.dart` → `app_pump.dart`,
-  `pumpReam` → `pumpApp` (~12 files).
-- Widget key: `Key('ream-back')` → `Key('back')` — rename atomically with all 7
+- Constants/fns: `kAppScrimStrong/Medium`→`kAppScrimStrong/Medium`,
+  `kAppCardShadow`→`kAppCardShadow`, `appInkOnFill`→`appInkOnFill`.
+- Test helper: `test/support/app_pump.dart` → `app_pump.dart`,
+  `pumpApp` → `pumpApp` (~12 files).
+- Widget key: `Key('back')` → `Key('back')` — rename atomically with all 7
   test references.
 - Update all imports (~30 lib files, ~37 test files).
 

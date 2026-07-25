@@ -1,17 +1,17 @@
-# Ream redesign — Phase 2a: Document editor (screen 06)
+# App redesign — Phase 2a: Document editor (screen 06)
 
 **Date:** 2026-07-10
-**Source design:** `Ream Scanner.dc.html` screen **06 · Document editor** (direction
-1a). Local copy + tokens: `docs/design/ream/` (read first).
+**Source design:** `App Scanner.dc.html` screen **06 · Document editor** (direction
+1a). Local copy + tokens: `docs/design/app/` (read first).
 **Scope:** re-skin `PageViewerScreen` (the document editor / page viewer) to the
-Ream design. One screen; its own TDD/BDD cycle. Part of Phase 2 (per-screen
+App design. One screen; its own TDD/BDD cycle. Part of Phase 2 (per-screen
 re-skins) in the roadmap established by the Phase-1 spec.
 
 ## Decisions (locked with the user)
 
 - **Dark viewer.** The editor is a per-screen **dark** surface (near-black, so the
   page pops), regardless of the app's light theme mode — implemented by wrapping
-  the editor subtree in `Theme(data: ReamTheme.dark())`. The rest of the app stays
+  the editor subtree in `Theme(data: AppTheme.dark())`. The rest of the app stays
   light; the app-wide dark theme is still deferred to the final phase.
 - **6-icon bottom toolbar + `⋯` overflow**, nothing lost. Toolbar: Crop, Rotate,
   Text, Retake, Share, Delete (red). Overflow: everything else.
@@ -25,15 +25,15 @@ re-skins) in the roadmap established by the Phase-1 spec.
 
 ## Design language (screen 06)
 
-Dark surface (`ReamColors.dark`: `paper #16130E`, `surface #211D16`,
+Dark surface (`AppColors.dark`: `paper #16130E`, `surface #211D16`,
 `ink #F4F1EA`, `muted #8F887A`, `line #322C22`), `green #4FA866` for active
 accents, `deleteRed #F47B74` for Delete. Figtree for the title/labels; IBM Plex
 Mono for the page counter. Rounded, hairline-bordered dark tiles.
 
 ## Architecture
 
-- **Theme scoping.** Wrap the editor's `Scaffold` in `Theme(data: ReamTheme.dark())`
-  so `context.ream` inside the editor resolves to dark tokens and stock Material
+- **Theme scoping.** Wrap the editor's `Scaffold` in `Theme(data: AppTheme.dark())`
+  so `context.appColors` inside the editor resolves to dark tokens and stock Material
   chrome adapts. Consequences (intended):
   - **Dialogs** launched from the editor (delete-confirm, rename, export-quality,
     password, merge-picker) inherit the dark theme via Flutter's captured-themes
@@ -45,11 +45,11 @@ Mono for the page counter. Rounded, hairline-bordered dark tiles.
   (light status-bar icons over the dark surface); restore the prior style on pop
   (use an `AnnotatedRegion<SystemUiOverlayStyle>` around the editor so it reverts
   automatically when the route is covered/popped).
-- **Dark-palette validation.** `ReamColors.dark` was extrapolated from the 1b
+- **Dark-palette validation.** `AppColors.dark` was extrapolated from the 1b
   mockups and never rendered. This task is the first real use — it includes
   **validating and, if needed, tuning** the dark tokens on-device (contrast of
   `ink`/`muted`/`line` on `paper`/`surface`; green/red legibility). Any token
-  change lands in `ream_colors.dart` (dark set) with the existing token test
+  change lands in `app_colors.dart` (dark set) with the existing token test
   updated.
 
 ## Components
@@ -63,7 +63,7 @@ New, under `lib/features/library/widgets/`:
   (shown when page count > 1), key `page-viewer-page-counter`.
 Restyle:
 - **`PageThumbnailStrip`** — already dark (black bg); change the active-tile
-  border to `context.ream.green`; keep bg on the dark surface; **preserve keys**
+  border to `context.appColors.green`; keep bg on the dark surface; **preserve keys**
   `page-thumbnail-strip`, `page-thumb-$index`, `page-thumb-item-$index`.
 
 ## Action mapping (all preserved; keys kept)
@@ -118,7 +118,7 @@ features (`k1_rotate_page`, `h4_delete_retake`, `h2_page_thumbnail_strip`,
 `h3_page_reorder`, `b3_view_and_delete`, `o4_recognized_text` where relevant) on
 the real Android device and the iOS 18.3 simulator. This run is also the
 **dark-palette visual validation** — capture a screenshot per platform and tune
-`ReamColors.dark` if contrast is poor. Real iOS hardware remains a named gap.
+`AppColors.dark` if contrast is poor. Real iOS hardware remains a named gap.
 
 ## Non-goals
 

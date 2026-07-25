@@ -6,7 +6,7 @@
 
 **Architecture:** A small injectable `TipJarService` (load products / buy / event stream) wraps `package:in_app_purchase`. `DonationScreen` gains a platform-selected body: an iOS tip-jar `TipJarBody` (StatefulWidget state machine) vs. the existing Android Ko-fi/BTC list. All host tests drive a `FakeTipJarService`; the real StoreKit path is proven on a physical iPhone.
 
-**Tech Stack:** Flutter, Dart, `in_app_purchase` (^3.2.0), `bdd_widget_test`, `flutter_test`, existing Ream theme + `l10n`/ARB pipeline.
+**Tech Stack:** Flutter, Dart, `in_app_purchase` (^3.2.0), `bdd_widget_test`, `flutter_test`, existing App theme + `l10n`/ARB pipeline.
 
 ## Global Constraints
 
@@ -719,8 +719,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/ui/error_snack.dart';
 import '../../../l10n/l10n.dart';
-import '../../../theme/ream_colors.dart';
-import '../../../theme/widgets/ream_action_button.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/widgets/app_action_button.dart';
 import 'tip_event.dart';
 import 'tip_jar_service.dart';
 import 'tip_product.dart';
@@ -814,7 +814,7 @@ class _TipJarBodyState extends State<TipJarBody> {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     switch (_phase) {
       case _Phase.loading:
         return const Center(child: CircularProgressIndicator());
@@ -835,7 +835,7 @@ class _TipJarBodyState extends State<TipJarBody> {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (final product in _products) ...[
-              ReamActionButton(
+              AppActionButton(
                 key: Key('tip-button-${product.id}'),
                 label: context.l10n.donationTipButtonLabel(product.price),
                 icon: Icons.favorite,
@@ -853,7 +853,7 @@ class _TipJarBodyState extends State<TipJarBody> {
 }
 ```
 
-(If `ReamActionButton.onPressed` is non-nullable, wrap disabling differently — e.g. omit the button's tap when `busy` — but keep the disabled affordance. Check the widget's signature in `lib/theme/widgets/ream_action_button.dart` before finalizing.)
+(If `AppActionButton.onPressed` is non-nullable, wrap disabling differently — e.g. omit the button's tap when `busy` — but keep the disabled affordance. Check the widget's signature in `lib/theme/widgets/app_action_button.dart` before finalizing.)
 
 - [ ] **Step 6: Run the widget tests to green**
 
@@ -968,11 +968,11 @@ TipJarService _defaultTipJar() => StoreKitTipJarService();
 ```dart
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final showTips = tipJarMode ?? tipJarAvailable;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: context.l10n.settingsSupportApp,
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -1174,4 +1174,4 @@ Paste the device run output. If prerequisites 1–3 are unmet, state the exact g
 
 **Type consistency:** `TipJarService`/`TipProduct`/`TipEvent*`/`kTipProductIds`/`tipEventFromStatus`/`TipJarBody({createService})`/`DonationScreen({createTipJar, tipJarMode})` used identically across T2→T6. `FakeTipJarService.scriptProducts/scriptNextBuy/scriptLoadThrows` match the fake definition. ✔
 
-**Known confirmations for the implementer (not blockers):** the `package:mobile/...` import prefix, the `localizedTestApp` helper name/signature, and `ReamActionButton`'s `onPressed` nullability should each be confirmed against an existing file the first time they're used, and matched — the plan notes these inline.
+**Known confirmations for the implementer (not blockers):** the `package:mobile/...` import prefix, the `localizedTestApp` helper name/signature, and `AppActionButton`'s `onPressed` nullability should each be confirmed against an existing file the first time they're used, and matched — the plan notes these inline.
