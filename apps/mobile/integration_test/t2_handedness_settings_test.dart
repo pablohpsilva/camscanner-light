@@ -7,10 +7,10 @@ import 'package:integration_test/integration_test.dart';
 
 import './../test/step/the_app_is_launched_with_camera_permission_granted_and_empty_storage.dart';
 import './../test/step/i_open_settings_from_home.dart';
-import '../test/step/i_select_lefthanded.dart';
+import './../test/step/i_select_lefthanded.dart';
 import './../test/step/i_navigate_back_to_home.dart';
 import './../test/step/the_scan_button_is_on_the_left.dart';
-import '../test/step/i_select_righthanded.dart';
+import './../test/step/i_select_righthanded.dart';
 import './../test/step/the_scan_button_is_on_the_right.dart';
 
 void main() {

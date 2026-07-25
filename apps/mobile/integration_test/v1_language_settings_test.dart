@@ -20,12 +20,10 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('''Choose the app language on a device''', () {
-    testWidgets('''Spanish applies immediately and survives a relaunch''', (
-      tester,
-    ) async {
+    testWidgets('''Spanish applies immediately and survives a relaunch''',
+        (tester) async {
       await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyPersistentStorage(
-        tester,
-      );
+          tester);
       await iOpenSettingsFromHome(tester);
       await iChooseTheSpanishLanguage(tester);
       await theSettingsScreenIsShownInSpanish(tester);
