@@ -45,6 +45,10 @@ class DonationScreen extends StatelessWidget {
     this.copyToClipboard = _writeClipboard,
     this.createTipJar = _defaultTipJar,
     this.tipJarMode,
+    this.iosBtcDonation = const bool.fromEnvironment(
+      'FEATURE_IOS_BTC_DONATION',
+      defaultValue: true,
+    ),
   });
 
   final String kofiUrl;
@@ -62,15 +66,27 @@ class DonationScreen extends StatelessWidget {
   /// default (`tipJarAvailable`). Tests pass an explicit value.
   final bool? tipJarMode;
 
+  /// Whether the iOS tip-jar body also shows the display-only Bitcoin section
+  /// (QR + copyable address) after the tip consumables. Defaults to the
+  /// `FEATURE_IOS_BTC_DONATION` build flag (on). Bitcoin is display-only, so it
+  /// carries no App Store 3.1.1 in-app-payment risk; the section still
+  /// auto-hides when [bitcoinAddress] is empty. Does not affect Android.
+  final bool iosBtcDonation;
+
   /// The navigation route to this screen (P14 DUP-3) — one definition for the
   /// donation banner and the settings entry point.
   static Route<void> route({
     TipJarService Function()? createTipJar,
     bool? tipJarMode,
+    bool iosBtcDonation = const bool.fromEnvironment(
+      'FEATURE_IOS_BTC_DONATION',
+      defaultValue: true,
+    ),
   }) => MaterialPageRoute<void>(
     builder: (_) => DonationScreen(
       createTipJar: createTipJar ?? _defaultTipJar,
       tipJarMode: tipJarMode,
+      iosBtcDonation: iosBtcDonation,
     ),
   );
 
@@ -112,6 +128,16 @@ class DonationScreen extends StatelessWidget {
                 ..._headerChildren(context),
                 const SizedBox(height: 18),
                 TipJarBody(createService: createTipJar),
+                // Bitcoin is display-only (no in-app payment), so it can also
+                // appear on iOS after the tip consumables when enabled.
+                if (iosBtcDonation && bitcoinAddress.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  _BitcoinSection(
+                    key: const Key('donation-bitcoin-section'),
+                    address: bitcoinAddress,
+                    onCopy: () => _copyAddress(context),
+                  ),
+                ],
               ],
             )
           : _kofiBtcBody(context),
