@@ -149,6 +149,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsThemeSystem => 'النظام';
 
   @override
+  String get settingsHandednessLabel => 'اليد المفضلة';
+
+  @override
+  String get settingsHandednessLeft => 'يسار';
+
+  @override
+  String get settingsHandednessRight => 'يمين';
+
+  @override
   String get settingsSectionLanguage => 'اللغة';
 
   @override

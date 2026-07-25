@@ -138,6 +138,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsThemeSystem => 'Sistema';
 
   @override
+  String get settingsHandednessLabel => 'Mão dominante';
+
+  @override
+  String get settingsHandednessLeft => 'Esquerda';
+
+  @override
+  String get settingsHandednessRight => 'Direita';
+
+  @override
   String get settingsSectionLanguage => 'Idioma';
 
   @override
@@ -703,6 +712,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settingsThemeSystem => 'Sistema';
+
+  @override
+  String get settingsHandednessLabel => 'Mão dominante';
+
+  @override
+  String get settingsHandednessLeft => 'Esquerda';
+
+  @override
+  String get settingsHandednessRight => 'Direita';
 
   @override
   String get settingsSectionLanguage => 'Idioma';

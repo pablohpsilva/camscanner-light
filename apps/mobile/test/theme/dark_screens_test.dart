@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_screen.dart';
 import 'package:mobile/features/feedback/feedback_dependencies.dart';
 import 'package:mobile/features/feedback/feedback_screen.dart';
+import 'package:mobile/features/settings/handedness_controller.dart';
+import 'package:mobile/features/settings/handedness_store.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/l10n/locale_controller.dart';
@@ -49,6 +51,9 @@ void main() {
         SettingsScreen(
           themeController: ThemeController(store: InMemoryThemeModeStore()),
           localeController: LocaleController(store: InMemoryLocaleStore()),
+          handednessController: HandednessController(
+            store: InMemoryHandednessStore(),
+          ),
           feedbackDependencies: const FeedbackDependencies(),
         ),
       ),

@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/l10n/locale_controller.dart';
 import 'package:mobile/l10n/locale_resolution.dart';
 import 'package:mobile/l10n/locale_store.dart';
+import 'package:mobile/features/settings/handedness_controller.dart';
+import 'package:mobile/features/settings/handedness_store.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/theme/theme_controller.dart';
 import 'package:mobile/theme/theme_mode_store.dart';
@@ -15,6 +17,7 @@ Widget _app(LocaleController locale) => CamScannerApp(
   libraryDependencies: fakeLibraryDependencies(FakeDocumentRepository()),
   themeController: ThemeController(store: InMemoryThemeModeStore()),
   localeController: locale,
+  handednessController: HandednessController(store: InMemoryHandednessStore()),
 );
 
 void main() {

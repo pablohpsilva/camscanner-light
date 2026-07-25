@@ -14,6 +14,8 @@ import '../donation/donation_availability.dart';
 import '../donation/donation_screen.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../feedback/feedback_screen.dart';
+import 'handedness_controller.dart';
+import 'handedness_store.dart';
 
 /// App settings: theme selection (persisted via [ThemeController]), plus entry
 /// points to feedback and support, and an About footer. Renders under the
@@ -21,6 +23,7 @@ import '../feedback/feedback_screen.dart';
 class SettingsScreen extends StatelessWidget {
   final ThemeController themeController;
   final LocaleController localeController;
+  final HandednessController handednessController;
   final FeedbackDependencies feedbackDependencies;
   final bool feedbackAvailable;
 
@@ -28,6 +31,7 @@ class SettingsScreen extends StatelessWidget {
     super.key,
     required this.themeController,
     required this.localeController,
+    required this.handednessController,
     this.feedbackDependencies = const FeedbackDependencies(),
     this.feedbackAvailable = true,
   });
@@ -42,7 +46,11 @@ class SettingsScreen extends StatelessWidget {
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: AnimatedBuilder(
-        animation: Listenable.merge([themeController, localeController]),
+        animation: Listenable.merge([
+          themeController,
+          localeController,
+          handednessController,
+        ]),
         builder: (context, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -65,6 +73,25 @@ class SettingsScreen extends StatelessWidget {
                 AppSegment(
                   value: ThemeMode.system,
                   label: context.l10n.settingsThemeSystem,
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            AppSectionLabel(context.l10n.settingsHandednessLabel),
+            const SizedBox(height: 10),
+            AppSegmented<Handedness>(
+              key: const Key('settings-handedness'),
+              expanded: true,
+              value: handednessController.value,
+              onChanged: handednessController.setHandedness,
+              segments: [
+                AppSegment(
+                  value: Handedness.left,
+                  label: context.l10n.settingsHandednessLeft,
+                ),
+                AppSegment(
+                  value: Handedness.right,
+                  label: context.l10n.settingsHandednessRight,
                 ),
               ],
             ),

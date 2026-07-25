@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/settings/handedness_controller.dart';
+import 'package:mobile/features/settings/handedness_store.dart';
 import 'package:mobile/features/settings/settings_screen.dart';
 import 'package:mobile/l10n/locale_controller.dart';
 import 'package:mobile/l10n/locale_store.dart';
@@ -13,6 +15,9 @@ void main() {
     home: SettingsScreen(
       themeController: ThemeController(store: InMemoryThemeModeStore()),
       localeController: controller,
+      handednessController: HandednessController(
+        store: InMemoryHandednessStore(),
+      ),
       feedbackAvailable: false,
     ),
   );

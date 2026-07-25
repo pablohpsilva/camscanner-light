@@ -9,6 +9,12 @@ class AppActionButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool primary;
 
+  /// When false the [label] is not drawn as visible text; instead the button
+  /// renders icon-only and exposes [label] through a [Tooltip] and a
+  /// [Semantics] node (accessibility preserved). Fixes row overflow in long
+  /// translations without shrinking any font. Defaults to true.
+  final bool showLabel;
+
   /// Overrides the primary fill (default = greenDeep). No effect when secondary.
   final Color? fillColor;
   const AppActionButton({
@@ -17,6 +23,7 @@ class AppActionButton extends StatelessWidget {
     this.icon,
     this.onPressed,
     this.primary = false,
+    this.showLabel = true,
     this.fillColor,
   });
 
@@ -32,17 +39,21 @@ class AppActionButton extends StatelessWidget {
             children: [
               if (icon != null) ...[
                 Icon(icon, size: 18, color: onPrimary),
-                const SizedBox(width: 8),
+                if (showLabel) const SizedBox(width: 8),
               ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Figtree',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: onPrimary,
+              if (showLabel)
+                Text(
+                  label,
+                  // Defensive: never let a long translation wrap the CTA.
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Figtree',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: onPrimary,
+                  ),
                 ),
-              ),
             ],
           )
         : Column(
@@ -50,40 +61,47 @@ class AppActionButton extends StatelessWidget {
             children: [
               if (icon != null) ...[
                 Icon(icon, size: 18, color: r.ink2),
-                const SizedBox(height: 3),
+                if (showLabel) const SizedBox(height: 3),
               ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Figtree',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: r.ink2,
+              if (showLabel)
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Figtree',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: r.ink2,
+                  ),
                 ),
-              ),
             ],
           );
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: Material(
-        color: fill,
+    Widget button = Material(
+      color: fill,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onPressed,
         borderRadius: BorderRadius.circular(15),
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(15),
-          child: Container(
-            height: 52,
-            decoration: primary
-                ? null
-                : BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: r.line),
-                  ),
-            alignment: Alignment.center,
-            child: child,
-          ),
+        child: Container(
+          height: 52,
+          decoration: primary
+              ? null
+              : BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: r.line),
+                ),
+          alignment: Alignment.center,
+          child: child,
         ),
       ),
     );
+    // Icon-only: surface the label to pointer users (tooltip) and screen
+    // readers (semantics) since there is no visible text.
+    if (!showLabel) {
+      button = Tooltip(
+        message: label,
+        child: Semantics(label: label, button: true, child: button),
+      );
+    }
+    return Opacity(opacity: enabled ? 1 : 0.5, child: button);
   }
 }

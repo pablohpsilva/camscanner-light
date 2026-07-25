@@ -167,6 +167,18 @@
   "@settingsThemeSystem": {
     "description": "Theme segment"
   },
+  "settingsHandednessLabel": "Handedness",
+  "@settingsHandednessLabel": {
+    "description": "Section label for the scan-button handedness toggle"
+  },
+  "settingsHandednessLeft": "Left",
+  "@settingsHandednessLeft": {
+    "description": "Handedness segment: primary Scan button on the left"
+  },
+  "settingsHandednessRight": "Right",
+  "@settingsHandednessRight": {
+    "description": "Handedness segment: primary Scan button on the right"
+  },
   "settingsSectionLanguage": "Language",
   "@settingsSectionLanguage": {
     "description": "Section label + picker dialog title"

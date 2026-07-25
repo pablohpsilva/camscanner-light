@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/settings/handedness_controller.dart';
+import 'package:mobile/features/settings/handedness_store.dart';
 import 'package:mobile/l10n/locale_controller.dart';
 import 'package:mobile/l10n/locale_store.dart';
 import 'package:mobile/main.dart';
@@ -16,6 +18,9 @@ void main() {
       CamScannerApp(
         themeController: controller,
         localeController: LocaleController(store: InMemoryLocaleStore()),
+        handednessController: HandednessController(
+          store: InMemoryHandednessStore(),
+        ),
       ),
     );
     await t.pumpAndSettle();

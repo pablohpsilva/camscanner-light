@@ -139,6 +139,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsThemeSystem => 'Системная';
 
   @override
+  String get settingsHandednessLabel => 'Ведущая рука';
+
+  @override
+  String get settingsHandednessLeft => 'Слева';
+
+  @override
+  String get settingsHandednessRight => 'Справа';
+
+  @override
   String get settingsSectionLanguage => 'Язык';
 
   @override
