@@ -36,6 +36,14 @@
   "@commonCopied": {
     "description": "Snackbar"
   },
+  "copyTextDone": "Text copied",
+  "@copyTextDone": {
+    "description": "Snackbar after copying a document's recognized text"
+  },
+  "copyTextEmpty": "No text to copy",
+  "@copyTextEmpty": {
+    "description": "Snackbar when a document has no recognized text to copy"
+  },
   "commonDocumentOptions": "Document options",
   "@commonDocumentOptions": {
     "description": "List-item menu tooltip"

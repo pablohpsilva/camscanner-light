@@ -36,6 +36,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get commonCopied => 'Copiado';
 
   @override
+  String get copyTextDone => 'Texto copiado';
+
+  @override
+  String get copyTextEmpty => 'Nenhum texto para copiar';
+
+  @override
   String get commonDocumentOptions => 'Opções do documento';
 
   @override
@@ -610,6 +616,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get commonCopied => 'Copiado';
+
+  @override
+  String get copyTextDone => 'Texto copiado';
+
+  @override
+  String get copyTextEmpty => 'Nenhum texto para copiar';
 
   @override
   String get commonDocumentOptions => 'Opções do documento';

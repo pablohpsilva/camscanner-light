@@ -3,9 +3,14 @@ import 'package:mobile/features/library/feature_flags.dart';
 import 'package:mobile/features/library/library_dependencies.dart';
 
 void main() {
-  test('defaults: every feature on except fax', () {
+  test('defaults: every feature on except fax and shareLink', () {
     const f = FeatureFlags();
-    expect(f.fax, isFalse, reason: 'fax is the only default-off flag');
+    expect(f.fax, isFalse, reason: 'fax has no provider wired');
+    expect(
+      f.shareLink,
+      isFalse,
+      reason: 'C4a: share-link is hidden by default until a channel is wired',
+    );
     final onByDefault = <bool>[
       f.crop,
       f.rotate,
@@ -23,7 +28,6 @@ void main() {
       f.exportAllImages,
       f.print,
       f.protectWithPassword,
-      f.shareLink,
       f.idCard,
       f.scan,
       f.import,

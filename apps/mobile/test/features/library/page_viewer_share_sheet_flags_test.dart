@@ -30,10 +30,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('all share tiles present by default (fax too, if fax on)', (
+  testWidgets('all share tiles present when fax + share-link are on', (
     tester,
   ) async {
-    await openShareSheet(tester, features: const FeatureFlags(fax: true));
+    await openShareSheet(
+      tester,
+      features: const FeatureFlags(fax: true, shareLink: true),
+    );
     for (final key in const [
       'page-viewer-export',
       'page-viewer-export-image',

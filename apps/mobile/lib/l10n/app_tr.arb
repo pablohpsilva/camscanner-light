@@ -9,6 +9,8 @@
   "commonShare": "Paylaş",
   "commonRename": "Yeniden adlandır",
   "commonCopied": "Kopyalandı",
+  "copyTextDone": "Metin kopyalandı",
+  "copyTextEmpty": "Kopyalanacak metin yok",
   "commonDocumentOptions": "Belge seçenekleri",
   "commonSearchHint": "Başlıklarda ve sayfa metinlerinde ara",
   "commonPageCount": "{count, plural, =1{1 sayfa} other{{count} sayfa}}",

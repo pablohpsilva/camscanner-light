@@ -36,6 +36,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonCopied => '已复制';
 
   @override
+  String get copyTextDone => '已复制文本';
+
+  @override
+  String get copyTextEmpty => '没有可复制的文本';
+
+  @override
   String get commonDocumentOptions => '文档选项';
 
   @override

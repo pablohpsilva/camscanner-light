@@ -9,6 +9,8 @@
   "commonShare": "Teilen",
   "commonRename": "Umbenennen",
   "commonCopied": "Kopiert",
+  "copyTextDone": "Text kopiert",
+  "copyTextEmpty": "Kein Text zum Kopieren",
   "commonDocumentOptions": "Dokumentoptionen",
   "commonSearchHint": "Titel & Text in Seiten durchsuchen",
   "commonPageCount": "{count, plural, =1{1 Seite} other{{count} Seiten}}",

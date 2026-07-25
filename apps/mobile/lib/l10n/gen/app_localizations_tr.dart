@@ -36,6 +36,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get commonCopied => 'Kopyalandı';
 
   @override
+  String get copyTextDone => 'Metin kopyalandı';
+
+  @override
+  String get copyTextEmpty => 'Kopyalanacak metin yok';
+
+  @override
   String get commonDocumentOptions => 'Belge seçenekleri';
 
   @override

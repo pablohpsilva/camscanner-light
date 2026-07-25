@@ -36,6 +36,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonCopied => 'Скопировано';
 
   @override
+  String get copyTextDone => 'Текст скопирован';
+
+  @override
+  String get copyTextEmpty => 'Нет текста для копирования';
+
+  @override
   String get commonDocumentOptions => 'Параметры документа';
 
   @override
