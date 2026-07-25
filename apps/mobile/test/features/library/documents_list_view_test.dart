@@ -44,13 +44,13 @@ void main() {
     expect(find.textContaining('1 page ·'), findsOneWidget);
     expect(find.textContaining('3 pages ·'), findsOneWidget);
 
-    // Ream restyle: the meta line ("N pages · date") is a mono readout,
+    // App restyle: the meta line ("N pages · date") is a mono readout,
     // matching the grid's "N pages · date" order.
     final meta = tester.widget<Text>(find.textContaining('1 page ·'));
     expect(
       meta.style?.fontFamily,
       'IBMPlexMono',
-      reason: 'page-count/date meta uses ReamTypography.mono',
+      reason: 'page-count/date meta uses AppTypography.mono',
     );
   });
 

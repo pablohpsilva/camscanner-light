@@ -110,7 +110,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
     // --- SEARCH --------------------------------------------------------------
-    // The Ream search field is always visible in the header (no icon to open).
+    // The App search field is always visible in the header (no icon to open).
     await tester.enterText(
       find.byKey(const Key('documents-search-field')),
       'acme invoice',

@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_theme.dart';
+import '../../theme/app_theme.dart';
 import '../scan/widgets/filter_picker_strip.dart';
 import 'enhancer_mode.dart';
 import 'widgets/editor_top_bar.dart';
@@ -50,7 +50,7 @@ class _EditFilterScreenState extends State<EditFilterScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Theme(
-      data: ReamTheme.dark(),
+      data: AppTheme.dark(),
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: EditorTopBar(

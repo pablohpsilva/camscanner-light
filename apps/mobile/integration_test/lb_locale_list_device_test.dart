@@ -17,7 +17,7 @@ import 'package:mobile/features/library/widgets/document_grid_card.dart';
 import 'package:mobile/features/library/widgets/documents_list_view.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/l10n/lb_fallback_delegates.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 DocumentSummary _summary() => DocumentSummary(
   document: Document(
@@ -33,7 +33,7 @@ DocumentSummary _summary() => DocumentSummary(
 Future<void> _pumpLb(WidgetTester tester, Widget child) {
   return tester.pumpWidget(
     MaterialApp(
-      theme: ReamTheme.light(),
+      theme: AppTheme.light(),
       locale: const Locale('lb'),
       supportedLocales: const [Locale('lb')],
       localizationsDelegates: const [

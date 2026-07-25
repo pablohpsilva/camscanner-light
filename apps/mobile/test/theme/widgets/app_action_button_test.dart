@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_action_button.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_action_button.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('tapping fires onPressed; label shown', (tester) async {
     var taps = 0;
-    await pumpReam(
+    await pumpApp(
       tester,
-      ReamActionButton(
+      AppActionButton(
         key: const Key('act-scan'),
         label: 'Scan',
         icon: Icons.add,
@@ -24,9 +24,9 @@ void main() {
   });
 
   testWidgets('null onPressed disables the button', (tester) async {
-    await pumpReam(
+    await pumpApp(
       tester,
-      const ReamActionButton(key: Key('act-x'), label: 'X', onPressed: null),
+      const AppActionButton(key: Key('act-x'), label: 'X', onPressed: null),
     );
     await tester.tap(find.byKey(const Key('act-x')));
     // no throw, no callback — nothing to assert beyond not crashing
@@ -36,12 +36,12 @@ void main() {
   testWidgets('primary honours a custom fillColor', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         home: Scaffold(
-          body: ReamActionButton(
+          body: AppActionButton(
             label: 'Send report',
             primary: true,
-            fillColor: ReamColors.light.ink,
+            fillColor: AppColors.light.ink,
             onPressed: () {},
           ),
         ),
@@ -49,11 +49,11 @@ void main() {
     );
     final material = tester.widget<Material>(
       find.descendant(
-        of: find.byType(ReamActionButton),
+        of: find.byType(AppActionButton),
         matching: find.byType(Material),
       ),
     );
-    expect(material.color, ReamColors.light.ink);
+    expect(material.color, AppColors.light.ink);
   });
 
   testWidgets('primary label is white when fill is dark (light theme ink)', (
@@ -61,13 +61,13 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         home: Scaffold(
           body: Builder(
-            builder: (context) => ReamActionButton(
+            builder: (context) => AppActionButton(
               label: 'Send report',
               primary: true,
-              fillColor: context.ream.ink,
+              fillColor: context.appColors.ink,
               onPressed: () {},
             ),
           ),
@@ -83,13 +83,13 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ReamTheme.dark(),
+          theme: AppTheme.dark(),
           home: Scaffold(
             body: Builder(
-              builder: (context) => ReamActionButton(
+              builder: (context) => AppActionButton(
                 label: 'Send report',
                 primary: true,
-                fillColor: context.ream.ink,
+                fillColor: context.appColors.ink,
                 onPressed: () {},
               ),
             ),

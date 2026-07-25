@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// Semantic color tokens for the Ream design system, carried on [ThemeData]
+/// Semantic color tokens for the App design system, carried on [ThemeData]
 /// as a [ThemeExtension]. Values are the approved sRGB constants from
 /// docs/design/ream/README.md (oklch converted to hex; ±1/channel tolerance).
 @immutable
-class ReamColors extends ThemeExtension<ReamColors> {
+class AppColors extends ThemeExtension<AppColors> {
   final Color paper, surface, surface2, ink, ink2, muted, line, line2, appBg;
   final Color green, greenDeep, greenSoft, amber, amberSoft, blue, blueSoft;
   final Color kofiRed, deleteRed;
 
-  const ReamColors({
+  const AppColors({
     required this.paper,
     required this.surface,
     required this.surface2,
@@ -30,7 +30,7 @@ class ReamColors extends ThemeExtension<ReamColors> {
     required this.deleteRed,
   });
 
-  static const ReamColors light = ReamColors(
+  static const AppColors light = AppColors(
     paper: Color(0xFFF4F1EA),
     surface: Color(0xFFFFFDF8),
     surface2: Color(0xFFFAF7F0),
@@ -54,7 +54,7 @@ class ReamColors extends ThemeExtension<ReamColors> {
   // Extrapolated from the 1b HUD screens (paper->#16130e ground, #211d16
   // surfaces, #322c22 lines, #f4f1ea ink; confidence hues unchanged). Real
   // values so the token is usable, but NOT verified live this phase.
-  static const ReamColors dark = ReamColors(
+  static const AppColors dark = AppColors(
     paper: Color(0xFF16130E),
     surface: Color(0xFF211D16),
     surface2: Color(0xFF1B1811),
@@ -76,7 +76,7 @@ class ReamColors extends ThemeExtension<ReamColors> {
   );
 
   @override
-  ReamColors copyWith({
+  AppColors copyWith({
     Color? paper,
     Color? surface,
     Color? surface2,
@@ -96,7 +96,7 @@ class ReamColors extends ThemeExtension<ReamColors> {
     Color? kofiRed,
     Color? deleteRed,
   }) {
-    return ReamColors(
+    return AppColors(
       paper: paper ?? this.paper,
       surface: surface ?? this.surface,
       surface2: surface2 ?? this.surface2,
@@ -119,10 +119,10 @@ class ReamColors extends ThemeExtension<ReamColors> {
   }
 
   @override
-  ReamColors lerp(ThemeExtension<ReamColors>? other, double t) {
-    if (other is! ReamColors) return this;
+  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) return this;
     Color l(Color a, Color b) => Color.lerp(a, b, t)!;
-    return ReamColors(
+    return AppColors(
       paper: l(paper, other.paper),
       surface: l(surface, other.surface),
       surface2: l(surface2, other.surface2),
@@ -149,27 +149,27 @@ class ReamColors extends ThemeExtension<ReamColors> {
 /// whether the page is warm-paper or dark, and a card shadow is alpha-black in
 /// both — so these are plain named consts, not theme-varying tokens. They live
 /// here so the ONLY `Color(0x…)` literals in the app are in this file.
-const Color kReamScrimStrong = Color(0x99000000); // ~60% black — modal/busy dim
-const Color kReamScrimMedium = Color(0x66000000); // ~40% black — lighter dim
-const Color kReamCardShadow = Color(0x14000000); // ~8% black — subtle card shadow
+const Color kAppScrimStrong = Color(0x99000000); // ~60% black — modal/busy dim
+const Color kAppScrimMedium = Color(0x66000000); // ~40% black — lighter dim
+const Color kAppCardShadow = Color(0x14000000); // ~8% black — subtle card shadow
 
 /// The contrasting "ink" to place on a [fill] of arbitrary brightness (P15):
 /// white on dark fills, warm near-black on bright fills. Theme-independent — it
 /// depends only on the fill's luminance. Dedups the identical brightness ternary
-/// that lived in `ream_action_button` and `feedback_screen`.
-Color reamInkOnFill(Color fill) =>
+/// that lived in `app_action_button` and `feedback_screen`.
+Color appInkOnFill(Color fill) =>
     ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
     ? Colors.white
     : const Color(0xFF201C16);
 
-/// Terse access: `context.ream.green`.
+/// Terse access: `context.appColors.green`.
 ///
-/// Falls back to [ReamColors.light] when no [ReamColors] extension is
+/// Falls back to [AppColors.light] when no [AppColors] extension is
 /// registered on the theme. Production always registers it (light or dark) via
-/// `ReamTheme` in `main.dart`, so the fallback only applies in widget tests that
+/// `AppTheme` in `main.dart`, so the fallback only applies in widget tests that
 /// pump a component under a bare `MaterialApp` — those render with the light
 /// palette instead of crashing, which keeps the token usable everywhere.
-extension ReamColorsX on BuildContext {
-  ReamColors get ream =>
-      Theme.of(this).extension<ReamColors>() ?? ReamColors.light;
+extension AppColorsX on BuildContext {
+  AppColors get appColors =>
+      Theme.of(this).extension<AppColors>() ?? AppColors.light;
 }

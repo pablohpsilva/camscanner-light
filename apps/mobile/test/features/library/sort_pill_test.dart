@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document_sort.dart';
 import 'package:mobile/features/library/widgets/sort_pill.dart';
-import '../../support/ream_pump.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('shows active criterion and selects from menu', (tester) async {
     SortCriterion? picked;
-    await pumpReam(
+    await pumpApp(
       tester,
       SortPill(
         sort: DocumentSort.initial,
@@ -27,7 +27,7 @@ void main() {
     tester,
   ) async {
     SortCriterion? picked;
-    await pumpReam(
+    await pumpApp(
       tester,
       SortPill(
         sort: DocumentSort.initial,
@@ -45,7 +45,7 @@ void main() {
     tester,
   ) async {
     SortCriterion? picked;
-    await pumpReam(
+    await pumpApp(
       tester,
       SortPill(
         sort: DocumentSort.initial,

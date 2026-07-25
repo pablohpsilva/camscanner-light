@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
+import '../../theme/app_colors.dart';
 import 'donation_screen.dart';
 
 /// A fixed, always-visible banner inviting the user to donate. Placed in a
@@ -12,14 +12,14 @@ class DonationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ream = context.ream;
+    final appColors = context.appColors;
     return Material(
-      color: ream.amberSoft,
+      color: appColors.amberSoft,
       child: SafeArea(
         top: false,
         child: Container(
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: ream.amber, width: 1)),
+            border: Border(top: BorderSide(color: appColors.amber, width: 1)),
           ),
           child: InkWell(
             key: const Key('donation-banner'),
@@ -28,15 +28,15 @@ class DonationBanner extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.favorite, color: ream.amber, size: 22),
+                  Icon(Icons.favorite, color: appColors.amber, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       context.l10n.donationBannerText,
-                      style: TextStyle(color: ream.ink2),
+                      style: TextStyle(color: appColors.ink2),
                     ),
                   ),
-                  Icon(Icons.chevron_right, color: ream.amber),
+                  Icon(Icons.chevron_right, color: appColors.amber),
                 ],
               ),
             ),

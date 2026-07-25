@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
 import 'package:mobile/features/library/edit_crop_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 
 import '../../support/localized_app.dart';
 
 void main() {
-  testWidgets('crop editor uses dark Ream chrome + keeps Accept', (
+  testWidgets('crop editor uses dark App chrome + keeps Accept', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -26,7 +26,7 @@ void main() {
     );
     await tester.pump();
     expect(find.byKey(const Key('edit-crop-accept')), findsOneWidget);
-    // Body background is the dark Ream paper tone, not raw Colors.black.
+    // Body background is the dark App paper tone, not raw Colors.black.
     final box = tester.widget<ColoredBox>(
       find
           .descendant(
@@ -35,6 +35,6 @@ void main() {
           )
           .last,
     );
-    expect(box.color, ReamColors.dark.paper);
+    expect(box.color, AppColors.dark.paper);
   });
 }

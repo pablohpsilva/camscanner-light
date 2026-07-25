@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_banner.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 
 import '../../support/localized_app.dart';
 
@@ -30,7 +30,7 @@ void main() {
           )
           .first,
     );
-    expect(material.color, ReamColors.light.amberSoft);
+    expect(material.color, AppColors.light.amberSoft);
   });
 
   testWidgets('banner has amber top border', (tester) async {
@@ -52,14 +52,14 @@ void main() {
     expect(decoratedContainer, isNotNull);
     final border =
         (decoratedContainer!.decoration! as BoxDecoration).border! as Border;
-    expect(border.top.color, ReamColors.light.amber);
+    expect(border.top.color, AppColors.light.amber);
   });
 
   testWidgets('banner copy text uses ink2 color', (tester) async {
     await pumpBanner(tester);
 
     final text = tester.widget<Text>(find.textContaining('support').first);
-    expect(text.style?.color, ReamColors.light.ink2);
+    expect(text.style?.color, AppColors.light.ink2);
   });
 
   testWidgets('banner shows a heart icon and a trailing chevron', (

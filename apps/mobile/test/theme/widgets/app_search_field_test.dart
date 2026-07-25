@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/widgets/ream_search_field.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/widgets/app_search_field.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('typing calls onChanged; hint shown', (tester) async {
     final controller = TextEditingController();
     String? last;
-    await pumpReam(
+    await pumpApp(
       tester,
-      ReamSearchField(controller: controller, onChanged: (v) => last = v),
+      AppSearchField(controller: controller, onChanged: (v) => last = v),
     );
     expect(find.text('Search titles & text inside pages'), findsOneWidget);
     await tester.enterText(
@@ -24,9 +24,9 @@ void main() {
     (tester) async {
       final controller = TextEditingController();
       final changed = <String>[];
-      await pumpReam(
+      await pumpApp(
         tester,
-        ReamSearchField(controller: controller, onChanged: changed.add),
+        AppSearchField(controller: controller, onChanged: changed.add),
       );
 
       // Initially no clear button.

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
-import '../../../theme/ream_colors.dart';
-import '../../../theme/ream_typography.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
 
 /// A small "N / M" page-counter pill overlaid on the editor viewer.
 class PageCounterPill extends StatelessWidget {
@@ -15,7 +15,7 @@ class PageCounterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.55),
@@ -24,7 +24,7 @@ class PageCounterPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
       child: Text(
         context.l10n.viewerPageCounter(current, total),
-        style: ReamTypography.mono(
+        style: AppTypography.mono(
           size: 11,
           weight: FontWeight.w600,
           color: r.ink,

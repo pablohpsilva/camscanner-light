@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/editor_toolbar.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 void main() {
   Future<void> pump(WidgetTester tester, {required Widget toolbar}) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(bottomNavigationBar: toolbar),

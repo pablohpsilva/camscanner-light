@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/pdf_preview_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../support/localized_app.dart';
 
 void main() {
-  testWidgets('PDF viewer uses Ream chrome (header title + paper bg)', (
+  testWidgets('PDF viewer uses App chrome (header title + paper bg)', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -24,9 +24,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Lease Agreement'), findsOneWidget);
-    expect(find.byKey(const Key('ream-back')), findsOneWidget);
+    expect(find.byKey(const Key('back')), findsOneWidget);
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, ReamColors.light.paper);
+    expect(scaffold.backgroundColor, AppColors.light.paper);
     // error branch still reachable + keyed
     expect(find.byKey(const Key('pdf-preview-error')), findsOneWidget);
   });
@@ -36,7 +36,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: PdfPreviewScreen(
@@ -48,7 +48,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, ReamColors.dark.paper);
+    expect(scaffold.backgroundColor, AppColors.dark.paper);
   });
 
   // A loaded/render path needs the native plugin + a real PdfDocument that

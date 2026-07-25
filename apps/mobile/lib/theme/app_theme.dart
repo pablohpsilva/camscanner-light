@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'ream_colors.dart';
-import 'ream_typography.dart';
+import 'app_colors.dart';
+import 'app_typography.dart';
 
-/// Builds the Ream [ThemeData] for light and dark, mapping [ReamColors] onto a
+/// Builds the App [ThemeData] for light and dark, mapping [AppColors] onto a
 /// Material [ColorScheme] so stock widgets inherit sensible colors.
-class ReamTheme {
-  ReamTheme._();
+class AppTheme {
+  AppTheme._();
 
-  static ThemeData light() => _build(ReamColors.light, Brightness.light);
-  static ThemeData dark() => _build(ReamColors.dark, Brightness.dark);
+  static ThemeData light() => _build(AppColors.light, Brightness.light);
+  static ThemeData dark() => _build(AppColors.dark, Brightness.dark);
 
-  static ThemeData _build(ReamColors c, Brightness brightness) {
+  static ThemeData _build(AppColors c, Brightness brightness) {
     final scheme = ColorScheme.fromSeed(
       seedColor: c.greenDeep,
       brightness: brightness,
@@ -20,7 +20,7 @@ class ReamTheme {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: c.paper,
-      textTheme: ReamTypography.textTheme(c.ink),
+      textTheme: AppTypography.textTheme(c.ink),
       extensions: [c],
     );
   }

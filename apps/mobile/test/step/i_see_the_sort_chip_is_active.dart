@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Asserts the Ream sort pill's active criterion is [criterion]
+/// Asserts the App sort pill's active criterion is [criterion]
 /// ('name', 'created', 'modified') by checking its displayed label.
 Future<void> iSeeTheSortChipIsActive(
   WidgetTester tester,

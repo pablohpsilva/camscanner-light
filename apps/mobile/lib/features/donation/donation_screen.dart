@@ -4,11 +4,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/ream_typography.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_typography.dart';
 import '../../core/ui/error_snack.dart';
-import '../../theme/widgets/ream_action_button.dart';
-import '../../theme/widgets/ream_back_header.dart';
+import '../../theme/widgets/app_action_button.dart';
+import '../../theme/widgets/app_back_header.dart';
 import 'donation_availability.dart';
 import 'donation_config.dart';
 import 'tip_jar/storekit_tip_jar_service.dart';
@@ -97,11 +97,11 @@ class DonationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final showTips = tipJarMode ?? tipJarAvailable;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: context.l10n.settingsSupportApp,
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -122,7 +122,7 @@ class DonationScreen extends StatelessWidget {
   /// "donating unlocks nothing" note. Reused by both the tip-jar and the
   /// Ko-fi/BTC bodies (DRY).
   List<Widget> _headerChildren(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return [
       Icon(Icons.favorite, color: r.kofiRed, size: 34),
       const SizedBox(height: 8),
@@ -172,14 +172,14 @@ class DonationScreen extends StatelessWidget {
   }
 
   Widget _kofiBtcBody(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         ..._headerChildren(context),
         const SizedBox(height: 18),
         if (kofiUrl.isNotEmpty) ...[
-          ReamActionButton(
+          AppActionButton(
             key: const Key('donation-kofi-button'),
             label: context.l10n.donationKofiButton,
             icon: Icons.local_cafe_outlined,
@@ -212,7 +212,7 @@ class _BitcoinSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -245,7 +245,7 @@ class _BitcoinSection extends StatelessWidget {
           SelectableText(
             address,
             textAlign: TextAlign.center,
-            style: ReamTypography.mono(size: 12, color: r.muted),
+            style: AppTypography.mono(size: 12, color: r.muted),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(

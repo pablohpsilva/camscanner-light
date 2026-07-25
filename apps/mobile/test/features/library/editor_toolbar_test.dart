@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/widgets/editor_toolbar.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   group('EditorToolbar', () {
     testWidgets('renders all 7 keyed buttons with their labels', (
       tester,
     ) async {
-      await pumpReam(
+      await pumpApp(
         tester,
         EditorToolbar(
           onCrop: () {},
@@ -21,7 +21,7 @@ void main() {
           onDelete: () {},
           onFilter: () {},
         ),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
 
       expect(find.byKey(const Key('page-viewer-edit')), findsOneWidget);
@@ -43,7 +43,7 @@ void main() {
 
     testWidgets('tapping rotate fires onRotate', (tester) async {
       var rotateCount = 0;
-      await pumpReam(
+      await pumpApp(
         tester,
         EditorToolbar(
           onCrop: () {},
@@ -54,7 +54,7 @@ void main() {
           onDelete: () {},
           onFilter: () {},
         ),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
 
       await tester.tap(find.byKey(const Key('page-viewer-rotate')));
@@ -65,7 +65,7 @@ void main() {
 
     testWidgets('tapping filter fires onFilter', (tester) async {
       var filterCount = 0;
-      await pumpReam(
+      await pumpApp(
         tester,
         EditorToolbar(
           onCrop: () {},
@@ -76,7 +76,7 @@ void main() {
           onDelete: () {},
           onFilter: () => filterCount++,
         ),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
       await tester.tap(find.byKey(const Key('page-viewer-filter')));
       await tester.pump();
@@ -85,7 +85,7 @@ void main() {
 
     testWidgets('tapping delete fires onDelete', (tester) async {
       var deleteCount = 0;
-      await pumpReam(
+      await pumpApp(
         tester,
         EditorToolbar(
           onCrop: () {},
@@ -96,7 +96,7 @@ void main() {
           onDelete: () => deleteCount++,
           onFilter: () {},
         ),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
 
       await tester.tap(find.byKey(const Key('page-viewer-delete-page')));
@@ -108,7 +108,7 @@ void main() {
     testWidgets('null onCrop keeps page-viewer-edit present but inert', (
       tester,
     ) async {
-      await pumpReam(
+      await pumpApp(
         tester,
         EditorToolbar(
           onCrop: null,
@@ -119,7 +119,7 @@ void main() {
           onDelete: () {},
           onFilter: () {},
         ),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
 
       expect(find.byKey(const Key('page-viewer-edit')), findsOneWidget);
@@ -131,7 +131,7 @@ void main() {
           matching: find.byType(Icon),
         ),
       );
-      expect(icon.color, ReamColors.dark.muted);
+      expect(icon.color, AppColors.dark.muted);
     });
   });
 }

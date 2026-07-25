@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/recognized_text_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:mobile/theme/widgets/confidence_chip.dart';
 
 import '../../support/fake_library.dart';
@@ -83,7 +83,7 @@ void main() {
   );
 
   testWidgets(
-    'OCR screen uses Ream chrome: paper bg, header, confidence chip',
+    'OCR screen uses App chrome: paper bg, header, confidence chip',
     (tester) async {
       final repo = FakeDocumentRepository(
         pages: const [
@@ -98,7 +98,7 @@ void main() {
       expect(find.byKey(const Key('recognized-text-copy')), findsOneWidget);
       expect(find.byKey(const Key('recognized-text-share')), findsOneWidget);
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, ReamColors.light.paper);
+      expect(scaffold.backgroundColor, AppColors.light.paper);
     },
   );
 
@@ -112,7 +112,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: RecognizedTextScreen(
@@ -127,6 +127,6 @@ void main() {
     await tester.pumpAndSettle();
 
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, ReamColors.dark.paper);
+    expect(scaffold.backgroundColor, AppColors.dark.paper);
   });
 }

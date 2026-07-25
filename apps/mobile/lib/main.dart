@@ -10,7 +10,7 @@ import 'l10n/lb_fallback_delegates.dart';
 import 'l10n/locale_controller.dart';
 import 'l10n/locale_resolution.dart';
 import 'l10n/locale_store.dart';
-import 'theme/ream_theme.dart';
+import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 import 'theme/theme_mode_store.dart';
 
@@ -95,8 +95,8 @@ class CamScannerApp extends StatelessWidget {
       builder: (context, _) => MaterialApp(
         onGenerateTitle: (context) => context.l10n.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: ReamTheme.light(),
-        darkTheme: ReamTheme.dark(),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
         themeMode: themeController.mode,
         locale: localeController.localeOverride,
         supportedLocales: kSupportedAppLocales,

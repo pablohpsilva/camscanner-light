@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
-import '../ream_typography.dart';
+import '../app_colors.dart';
+import '../app_typography.dart';
 
 enum ConfidenceLevel { high, verify, info }
 
@@ -13,7 +13,7 @@ class ConfidenceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final (dot, fg, bg) = switch (level) {
       ConfidenceLevel.high => (r.green, r.greenDeep, r.greenSoft),
       ConfidenceLevel.verify => (r.amber, r.ink2, r.amberSoft),
@@ -37,7 +37,7 @@ class ConfidenceChip extends StatelessWidget {
           const SizedBox(width: 7),
           Text(
             label,
-            style: ReamTypography.mono(
+            style: AppTypography.mono(
               size: 12,
               weight: FontWeight.w600,
               color: fg,

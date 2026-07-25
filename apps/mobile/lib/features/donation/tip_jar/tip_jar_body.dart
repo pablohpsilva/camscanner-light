@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/ui/error_snack.dart';
 import '../../../l10n/l10n.dart';
-import '../../../theme/ream_colors.dart';
-import '../../../theme/widgets/ream_action_button.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/widgets/app_action_button.dart';
 import 'tip_event.dart';
 import 'tip_jar_service.dart';
 import 'tip_product.dart';
@@ -99,7 +99,7 @@ class _TipJarBodyState extends State<TipJarBody> {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     switch (_phase) {
       case _Phase.loading:
         return const Center(child: CircularProgressIndicator());
@@ -120,7 +120,7 @@ class _TipJarBodyState extends State<TipJarBody> {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (final product in _products) ...[
-              ReamActionButton(
+              AppActionButton(
                 key: Key('tip-button-${product.id}'),
                 label: context.l10n.donationTipButtonLabel(product.price),
                 icon: Icons.favorite,

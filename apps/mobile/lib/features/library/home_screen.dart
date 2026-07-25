@@ -10,12 +10,12 @@ import '../../core/ui/error_snack.dart';
 import '../../l10n/l10n.dart';
 import '../../l10n/locale_controller.dart';
 import '../../l10n/locale_store.dart';
-import '../../theme/ream_colors.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/theme_mode_store.dart';
-import '../../theme/widgets/ream_action_button.dart';
-import '../../theme/widgets/ream_search_field.dart';
-import '../../theme/widgets/ream_segmented.dart';
+import '../../theme/widgets/app_action_button.dart';
+import '../../theme/widgets/app_search_field.dart';
+import '../../theme/widgets/app_segmented.dart';
 import 'document_summary.dart';
 import 'library_controller.dart';
 import 'library_dependencies.dart';
@@ -262,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_lib.sharing)
                 const Positioned.fill(
                   child: ColoredBox(
-                    color: kReamScrimMedium,
+                    color: kAppScrimMedium,
                     child: Center(
                       key: Key('home-sharing'),
                       child: CircularProgressIndicator(),
@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _lib.summaries.isNotEmpty;
 
   Widget _buildHeader(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final overlay = Theme.of(context).brightness == Brightness.dark
         ? SystemUiOverlayStyle.light.copyWith(
             statusBarColor: Colors.transparent,
@@ -310,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : _buildTitleRow(context),
             if (!_lib.selectionMode) ...[
               const SizedBox(height: 14),
-              ReamSearchField(
+              AppSearchField(
                 controller: _searchController,
                 onChanged: _lib.onQueryChanged,
               ),
@@ -324,16 +324,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     sort: _lib.sort,
                     onCriterionSelected: _lib.setSortCriterion,
                   ),
-                  ReamSegmented<LibraryViewMode>(
+                  AppSegmented<LibraryViewMode>(
                     key: const Key('library-view-toggle'),
                     value: _viewMode,
                     onChanged: _onViewModeChanged,
                     segments: [
-                      ReamSegment(
+                      AppSegment(
                         value: LibraryViewMode.list,
                         label: context.l10n.homeViewList,
                       ),
-                      ReamSegment(
+                      AppSegment(
                         value: LibraryViewMode.grid,
                         label: context.l10n.homeViewGrid,
                       ),
@@ -349,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTitleRow(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -389,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSettingsMenu(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return GestureDetector(
       key: const Key('home-settings'),
       onTap: () => Navigator.of(context).push(
@@ -417,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSelectionBar(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Row(
       key: const Key('selection-bar'),
       children: [
@@ -452,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (f.scan)
         Expanded(
           flex: 3,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-scan'),
             label: context.l10n.homeActionScan,
             icon: Icons.add,
@@ -463,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (f.idCard)
         Expanded(
           flex: 2,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-scan-id'),
             label: context.l10n.homeActionIdCard,
             icon: Icons.badge_outlined,
@@ -473,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (f.import)
         Expanded(
           flex: 2,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-import'),
             label: context.l10n.homeActionImport,
             icon: Icons.download_outlined,

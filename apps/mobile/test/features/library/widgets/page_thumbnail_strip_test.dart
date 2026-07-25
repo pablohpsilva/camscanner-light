@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/widgets/page_thumbnail_strip.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import '../../../support/ream_pump.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
+import '../../../support/app_pump.dart';
 
 void main() {
   final pages = [
@@ -134,12 +134,12 @@ void main() {
   });
 
   testWidgets(
-    'selected tile border color is ReamColors.dark.green under ReamTheme.dark()',
+    'selected tile border color is AppColors.dark.green under AppTheme.dark()',
     (tester) async {
-      await pumpReam(
+      await pumpApp(
         tester,
         PageThumbnailStrip(pages: pages, currentIndex: 1, onTap: (_) {}),
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
       );
       await tester.pump();
 
@@ -150,8 +150,8 @@ void main() {
       final border = decoration?.border as Border?;
       expect(
         border?.top.color,
-        ReamColors.dark.green,
-        reason: 'active tile border must use ReamColors.dark.green',
+        AppColors.dark.green,
+        reason: 'active tile border must use AppColors.dark.green',
       );
     },
   );

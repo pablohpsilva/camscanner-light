@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
-import '../../../theme/ream_colors.dart';
+import '../../../theme/app_colors.dart';
 import 'editor_toolbar_button.dart';
 
-/// A 7-action dark bottom bar for the Ream document editor. Renders one
-/// [EditorToolbarButton] per action, spaced evenly, on [ReamColors.paper] with
-/// a hairline top border in [ReamColors.line]. A null callback disables that
+/// A 7-action dark bottom bar for the App document editor. Renders one
+/// [EditorToolbarButton] per action, spaced evenly, on [AppColors.paper] with
+/// a hairline top border in [AppColors.line]. A null callback disables that
 /// button (passed through to [EditorToolbarButton]); a false show* flag omits
 /// that button entirely and the row reflows.
 class EditorToolbar extends StatelessWidget {
@@ -44,7 +44,7 @@ class EditorToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final l10n = context.l10n;
     final buttons = <Widget>[
       if (showCrop)

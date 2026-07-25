@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
+import '../app_colors.dart';
 
-class ReamSegment<T> {
+class AppSegment<T> {
   final T value;
   final String label;
   final IconData? icon;
-  const ReamSegment({required this.value, required this.label, this.icon});
+  const AppSegment({required this.value, required this.label, this.icon});
 }
 
-/// A compact segmented toggle in the Ream style (e.g. List / Grid).
-class ReamSegmented<T> extends StatelessWidget {
-  final List<ReamSegment<T>> segments;
+/// A compact segmented toggle in the App style (e.g. List / Grid).
+class AppSegmented<T> extends StatelessWidget {
+  final List<AppSegment<T>> segments;
   final T value;
   final ValueChanged<T> onChanged;
   final bool expanded;
-  const ReamSegmented({
+  const AppSegmented({
     super.key,
     required this.segments,
     required this.value,
@@ -24,7 +24,7 @@ class ReamSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: r.surface,
@@ -45,8 +45,8 @@ class ReamSegmented<T> extends StatelessWidget {
     );
   }
 
-  Widget _segment(BuildContext context, ReamSegment<T> s) {
-    final r = context.ream;
+  Widget _segment(BuildContext context, AppSegment<T> s) {
+    final r = context.appColors;
     final selected = s.value == value;
     return GestureDetector(
       key: Key('segment-${s.value}'),

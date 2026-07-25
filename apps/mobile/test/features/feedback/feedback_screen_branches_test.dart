@@ -165,7 +165,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(FeedbackScreen), findsOneWidget);
 
-    await t.tap(find.byKey(const Key('ream-back')));
+    await t.tap(find.byKey(const Key('back')));
     await t.pumpAndSettle();
 
     expect(find.byType(FeedbackScreen), findsNothing);

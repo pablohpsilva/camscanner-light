@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 
 void main() {
   test('light tokens match the approved palette (all 18 tokens)', () {
-    const c = ReamColors.light;
+    const c = AppColors.light;
     expect(c.paper, const Color(0xFFF4F1EA));
     expect(c.surface, const Color(0xFFFFFDF8));
     expect(c.surface2, const Color(0xFFFAF7F0));
@@ -26,7 +26,7 @@ void main() {
   });
 
   test('dark tokens match the approved palette (all 18 tokens)', () {
-    const c = ReamColors.dark;
+    const c = AppColors.dark;
     expect(c.paper, const Color(0xFF16130E));
     expect(c.surface, const Color(0xFF211D16));
     expect(c.surface2, const Color(0xFF1B1811));
@@ -48,18 +48,18 @@ void main() {
   });
 
   test('lerp interpolates halfway', () {
-    final mid = ReamColors.light.lerp(ReamColors.dark, 0.5);
-    expect(mid, isA<ReamColors>());
+    final mid = AppColors.light.lerp(AppColors.dark, 0.5);
+    expect(mid, isA<AppColors>());
   });
 
-  testWidgets('context.ream resolves from a themed context', (tester) async {
-    late ReamColors seen;
+  testWidgets('context.appColors resolves from a themed context', (tester) async {
+    late AppColors seen;
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: const [ReamColors.light]),
+        theme: ThemeData(extensions: const [AppColors.light]),
         home: Builder(
           builder: (context) {
-            seen = context.ream;
+            seen = context.appColors;
             return const SizedBox();
           },
         ),
@@ -68,30 +68,30 @@ void main() {
     expect(seen.paper, const Color(0xFFF4F1EA));
   });
 
-  testWidgets('context.ream falls back to light when no extension is present', (
+  testWidgets('context.appColors falls back to light when no extension is present', (
     tester,
   ) async {
-    late ReamColors seen;
+    late AppColors seen;
     await tester.pumpWidget(
       MaterialApp(
-        // No ReamColors extension registered (bare theme) — as in isolated
-        // widget tests. context.ream must degrade to light, not crash.
+        // No AppColors extension registered (bare theme) — as in isolated
+        // widget tests. context.appColors must degrade to light, not crash.
         home: Builder(
           builder: (context) {
-            seen = context.ream;
+            seen = context.appColors;
             return const SizedBox();
           },
         ),
       ),
     );
-    expect(seen.paper, ReamColors.light.paper);
-    expect(seen.green, ReamColors.light.green);
+    expect(seen.paper, AppColors.light.paper);
+    expect(seen.green, AppColors.light.green);
   });
 
   test(
     'copyWith with no args returns instance with all fields equal to original',
     () {
-      const original = ReamColors.light;
+      const original = AppColors.light;
       final copy = original.copyWith();
 
       expect(copy.paper, original.paper);
@@ -116,7 +116,7 @@ void main() {
   );
 
   test('copyWith with overrides applies only those overrides', () {
-    const original = ReamColors.light;
+    const original = AppColors.light;
     const newPaper = Color(0xFF010203);
     const newDeleteRed = Color(0xFF040506);
 

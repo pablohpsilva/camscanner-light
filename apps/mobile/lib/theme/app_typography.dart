@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Ream typography: Figtree for UI, IBM Plex Mono for technical readouts.
-class ReamTypography {
-  ReamTypography._();
+/// App typography: Figtree for UI, IBM Plex Mono for technical readouts.
+class AppTypography {
+  AppTypography._();
 
   static const _ui = 'Figtree';
   static const _mono = 'IBMPlexMono';

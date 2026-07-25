@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../ream_colors.dart';
+import '../app_colors.dart';
 
-/// A Ream action button. [primary] is the filled green CTA (icon beside label);
+/// A App action button. [primary] is the filled green CTA (icon beside label);
 /// secondary is an outlined surface tile (icon above label).
-class ReamActionButton extends StatelessWidget {
+class AppActionButton extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onPressed;
@@ -11,7 +11,7 @@ class ReamActionButton extends StatelessWidget {
 
   /// Overrides the primary fill (default = greenDeep). No effect when secondary.
   final Color? fillColor;
-  const ReamActionButton({
+  const AppActionButton({
     super.key,
     required this.label,
     this.icon,
@@ -22,10 +22,10 @@ class ReamActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final enabled = onPressed != null;
     final fill = primary ? (fillColor ?? r.greenDeep) : r.surface;
-    final onPrimary = reamInkOnFill(fill);
+    final onPrimary = appInkOnFill(fill);
     final child = primary
         ? Row(
             mainAxisAlignment: MainAxisAlignment.center,

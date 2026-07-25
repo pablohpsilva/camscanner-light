@@ -9,8 +9,8 @@ import 'package:mobile/features/library/page_viewer_screen.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 import 'package:mobile/features/scan/scan_dependencies.dart';
 import 'package:mobile/features/scan/scan_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/fake_scan.dart';
@@ -180,7 +180,7 @@ void main() {
     expect(find.text("Couldn't rename"), findsOneWidget);
   });
 
-  // --- D3: sort control (now the Ream sort pill) ---
+  // --- D3: sort control (now the App sort pill) ---
   List<Document> twoDocs() => [
     Document(
       id: 1,
@@ -464,7 +464,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
         home: HomeScreen(
           dependencies: grantedScanDependencies(),
           libraryDependencies: fakeLibraryDependencies(
@@ -475,13 +475,13 @@ void main() {
     );
     await tester.pumpAndSettle();
     // HomeScreen's Scaffold doesn't set an explicit backgroundColor; it
-    // inherits ThemeData.scaffoldBackgroundColor (set from ReamColors.paper
-    // in ReamTheme._build), so assert that resolved value instead.
+    // inherits ThemeData.scaffoldBackgroundColor (set from AppColors.paper
+    // in AppTheme._build), so assert that resolved value instead.
     expect(
       Theme.of(
         tester.element(find.byType(Scaffold).first),
       ).scaffoldBackgroundColor,
-      ReamColors.dark.paper,
+      AppColors.dark.paper,
     );
   });
 }

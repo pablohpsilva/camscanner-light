@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
-import 'package:mobile/theme/widgets/ream_segmented.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/app_theme.dart';
+import 'package:mobile/theme/widgets/app_segmented.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   testWidgets('tapping a segment fires onChanged with its value', (
     tester,
   ) async {
     String value = 'list';
-    await pumpReam(
+    await pumpApp(
       tester,
       StatefulBuilder(
         builder: (_, setState) {
-          return ReamSegmented<String>(
+          return AppSegmented<String>(
             value: value,
             segments: const [
-              ReamSegment(value: 'list', label: 'List'),
-              ReamSegment(value: 'grid', label: 'Grid'),
+              AppSegment(value: 'list', label: 'List'),
+              AppSegment(value: 'grid', label: 'Grid'),
             ],
             onChanged: (v) => setState(() => value = v),
           );
@@ -35,15 +35,15 @@ void main() {
     String? picked;
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         home: Scaffold(
-          body: ReamSegmented<String>(
+          body: AppSegmented<String>(
             expanded: true,
             value: 'bug',
             segments: const [
-              ReamSegment(value: 'bug', label: 'Bug'),
-              ReamSegment(value: 'idea', label: 'Idea'),
-              ReamSegment(value: 'question', label: 'Question'),
+              AppSegment(value: 'bug', label: 'Bug'),
+              AppSegment(value: 'idea', label: 'Idea'),
+              AppSegment(value: 'question', label: 'Question'),
             ],
             onChanged: (v) => picked = v,
           ),

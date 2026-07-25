@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
-import '../../../theme/ream_colors.dart';
-import '../../../theme/ream_typography.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_typography.dart';
 import '../document_date_format.dart';
 import '../document_summary.dart';
 import '../feature_flags.dart';
@@ -57,7 +57,7 @@ class DocumentsListView extends StatelessWidget {
   }
 
   Widget _row(BuildContext context, DocumentSummary s) {
-    final r = context.ream;
+    final r = context.appColors;
     final d = s.document;
     final selected = selectedIds.contains(d.id);
     final theme = Theme.of(context);
@@ -150,7 +150,7 @@ class DocumentsListView extends StatelessWidget {
                       Text(
                         '${context.l10n.commonPageCount(s.pageCount)} · '
                         '${formatDocumentDateDetailed(d.createdAt.toLocal(), Localizations.localeOf(context).toString())}',
-                        style: ReamTypography.mono(size: 11.5, color: r.muted),
+                        style: AppTypography.mono(size: 11.5, color: r.muted),
                       ),
                     ],
                   ),
