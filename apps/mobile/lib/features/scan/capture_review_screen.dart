@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
@@ -14,31 +12,13 @@ import '../library/enhancer_for_mode.dart';
 import '../library/enhancer_mode.dart';
 import '../library/image_enhancer.dart';
 import '../library/image_size_resolver.dart';
+import '../library/preview_proxy.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
 import 'widgets/filter_picker_strip.dart';
 
 Future<Uint8List> _defaultReadBytes(String path) => File(path).readAsBytes();
-
-/// Downsize to a ≤1080 px long-side JPEG proxy for a fast LIVE filter preview.
-/// Top-level so it can run in a `compute` isolate (never blocks the UI thread).
-/// On any failure it returns [bytes] unchanged, so the enhancer still gets
-/// something to work with (or fails into the raw-image fallback).
-Uint8List _proxyFn(Uint8List bytes) {
-  final decoded = img.decodeImage(bytes);
-  if (decoded == null) return bytes;
-  final oriented = img.bakeOrientation(decoded);
-  final longest = math.max(oriented.width, oriented.height);
-  if (longest <= 1080) return bytes;
-  final scale = 1080 / longest;
-  final small = img.copyResize(
-    oriented,
-    width: math.max(1, (oriented.width * scale).round()),
-    height: math.max(1, (oriented.height * scale).round()),
-  );
-  return Uint8List.fromList(img.encodeJpg(small, quality: 90));
-}
 
 class CaptureReviewScreen extends StatefulWidget {
   final CapturedImage image;
@@ -53,7 +33,7 @@ class CaptureReviewScreen extends StatefulWidget {
 
   /// B2 live-preview seams. [previewDebounce] coalesces rapid filter switches;
   /// [proxyRunner] downsizes the source to a preview proxy (defaults to
-  /// `compute(_proxyFn, …)`); [previewEnhancerFor] maps a mode to the enhancer
+  /// `compute(previewProxyJpeg, …)`); [previewEnhancerFor] maps a mode to the enhancer
   /// used for the ON-SCREEN preview (defaults to [enhancerForMode]). Accept is
   /// unaffected — it still enhances the FULL-res capture via [enhancerForMode].
   final Duration previewDebounce;
@@ -170,7 +150,7 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
       return;
     }
     try {
-      final proxyRun = widget.proxyRunner ?? ((b) => compute(_proxyFn, b));
+      final proxyRun = widget.proxyRunner ?? ((b) => compute(previewProxyJpeg, b));
       final proxy = await proxyRun(bytes);
       if (!mounted || gen != _previewGen) return;
       final enhancerFor = widget.previewEnhancerFor ?? enhancerForMode;
