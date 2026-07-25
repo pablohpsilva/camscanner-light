@@ -23,3 +23,9 @@ Feature: G3 Color and Auto scan enhancement
     When I toggle the auto filter
     And I tap Accept
     Then the auto enhancer flattens the shadow
+
+  Scenario: Auto filter keeps faded text readable on a bright background
+    Given the review screen is open with a captured image
+    When I toggle the auto filter
+    And I tap Accept
+    Then the auto enhancer keeps the faded text readable

@@ -14,6 +14,7 @@ import './../test/step/the_document_is_saved_with_color_enhancement.dart';
 import './../test/step/i_tap_the_original_filter_tile.dart';
 import './../test/step/the_document_is_saved_without_enhancement.dart';
 import './../test/step/the_auto_enhancer_flattens_the_shadow.dart';
+import './../test/step/the_auto_enhancer_keeps_the_faded_text_readable.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +49,14 @@ void main() {
       await iToggleTheAutoFilter(tester);
       await iTapAccept(tester);
       await theAutoEnhancerFlattensTheShadow(tester);
+    });
+    testWidgets(
+        '''Auto filter keeps faded text readable on a bright background''',
+        (tester) async {
+      await theReviewScreenIsOpenWithACapturedImage(tester);
+      await iToggleTheAutoFilter(tester);
+      await iTapAccept(tester);
+      await theAutoEnhancerKeepsTheFadedTextReadable(tester);
     });
   });
 }
