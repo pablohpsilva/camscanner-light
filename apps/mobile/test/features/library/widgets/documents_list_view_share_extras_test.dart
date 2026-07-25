@@ -29,7 +29,7 @@ void main() {
             summaries: [s],
             onShare: (_) {},
             onRename: (_) {},
-            features: const FeatureFlags(fax: true),
+            features: const FeatureFlags(fax: true, shareLink: true),
           ),
         ),
       ),

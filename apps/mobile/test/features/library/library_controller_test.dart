@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/logging/app_logger.dart';
@@ -130,6 +131,71 @@ void main() {
     expect(await c.shareDocument(c.summaries.first), isTrue);
     expect(c.sharing, isFalse);
     expect(busy, contains(true));
+  });
+
+  group('protect (document-level, C3)', () {
+    test(
+      'returns the protected file and passes the password through',
+      () async {
+        final repo = FakeDocumentRepository(documents: [doc(1, 'A')]);
+        final c = make(repo);
+        await c.init();
+        final file = await c.protect(1, 'hunter2');
+        expect(file, isNotNull);
+        expect(repo.protectCalls, 1);
+        expect(repo.lastProtectPassword, 'hunter2');
+      },
+    );
+
+    test('returns null on failure (repository throws)', () async {
+      final repo = FakeDocumentRepository(
+        documents: [doc(1, 'A')],
+        throwOnExport: true,
+      );
+      final c = make(repo);
+      await c.init();
+      expect(await c.protect(1, 'pw'), isNull);
+    });
+
+    test('shareQuietly swallows a share failure', () async {
+      final c = LibraryController(
+        dependencies: LibraryDependencies(
+          createRepository: () async =>
+              FakeDocumentRepository(documents: [doc(1, 'A')]),
+          logger: () => const PrintAppLogger(),
+          share: FakeShareChannel(throwOnShare: true),
+        ),
+        coldStartStepTimeout: fast,
+      );
+      await c.init();
+      // Must not throw even though the share channel fails.
+      await c.shareQuietly(File('/tmp/whatever.pdf'));
+    });
+  });
+
+  group('deleteDocument (document-level, C5)', () {
+    test('deletes and refreshes the list on success', () async {
+      final repo = FakeDocumentRepository(
+        documents: [doc(1, 'A'), doc(2, 'B')],
+      );
+      final c = make(repo);
+      await c.init();
+      expect(c.summaries, hasLength(2));
+      expect(await c.deleteDocument(1), isTrue);
+      expect(repo.deletedIds, contains(1));
+      expect(c.summaries, hasLength(1));
+      expect(c.summaries.single.document.id, 2);
+    });
+
+    test('returns false when the repository throws', () async {
+      final repo = FakeDocumentRepository(
+        documents: [doc(1, 'A')],
+        throwOnDelete: true,
+      );
+      final c = make(repo);
+      await c.init();
+      expect(await c.deleteDocument(1), isFalse);
+    });
   });
 
   test('suppresses notifications after dispose', () async {

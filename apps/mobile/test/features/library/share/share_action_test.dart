@@ -8,25 +8,25 @@ import '../../../support/localized_app.dart';
 void main() {
   group('availableShareActions', () {
     test(
-      'default flags (fax off) yield the export family minus fax, in order',
+      'default flags (fax + share-link off) yield the export family, in order',
       () {
         final kinds = availableShareActions(
           const FeatureFlags(),
         ).map((a) => a.kind).toList();
+        // C4a: share-link now defaults off, so it is absent here.
         expect(kinds, const [
           ShareActionKind.exportPdf,
           ShareActionKind.shareImage,
           ShareActionKind.exportAllImages,
           ShareActionKind.print,
           ShareActionKind.protect,
-          ShareActionKind.shareLink,
         ]);
       },
     );
 
-    test('fax on appends fax last', () {
+    test('fax + share-link on appends them last, in order', () {
       final kinds = availableShareActions(
-        const FeatureFlags(fax: true),
+        const FeatureFlags(fax: true, shareLink: true),
       ).map((a) => a.kind).toList();
       expect(kinds, const [
         ShareActionKind.exportPdf,
@@ -44,12 +44,12 @@ void main() {
         const FeatureFlags(print: false),
       ).map((a) => a.kind).toList();
       expect(kinds.contains(ShareActionKind.print), isFalse);
+      // share-link defaults off (C4a), so it is not in the list either.
       expect(kinds, const [
         ShareActionKind.exportPdf,
         ShareActionKind.shareImage,
         ShareActionKind.exportAllImages,
         ShareActionKind.protect,
-        ShareActionKind.shareLink,
       ]);
     });
 
@@ -107,13 +107,21 @@ void main() {
   });
 
   group('shareExtras', () {
+    test('is empty by default (C4a: share-link off, fax off)', () {
+      expect(shareExtras(const FeatureFlags()), isEmpty);
+    });
+
     test('is share-link (+ fax when on), in order', () {
       expect(
-        shareExtras(const FeatureFlags()).map((a) => a.kind).toList(),
+        shareExtras(
+          const FeatureFlags(shareLink: true),
+        ).map((a) => a.kind).toList(),
         const [ShareActionKind.shareLink],
       );
       expect(
-        shareExtras(const FeatureFlags(fax: true)).map((a) => a.kind).toList(),
+        shareExtras(
+          const FeatureFlags(shareLink: true, fax: true),
+        ).map((a) => a.kind).toList(),
         const [ShareActionKind.shareLink, ShareActionKind.fax],
       );
     });

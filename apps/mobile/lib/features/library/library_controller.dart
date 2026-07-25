@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import 'document_repository.dart';
@@ -204,6 +206,45 @@ class LibraryController extends ChangeNotifier {
       return false;
     } finally {
       if (!_disposed) _set(() => _sharing = false);
+    }
+  }
+
+  /// Builds a password-protected PDF of [documentId] and returns the file, or
+  /// null on failure (mirrors PageViewerController.protect — the document-level
+  /// "share with password" from the home 3-dots menu / swipe action, C3). The
+  /// widget shows the success/error toast and then shares the file quietly.
+  Future<File?> protect(int documentId, String password) async {
+    final repo = _repository;
+    if (repo == null) return null;
+    try {
+      return await repo.exportProtectedPdf(documentId, password);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Best-effort share (swallows failures, e.g. share unavailable in a host
+  /// test) — used after [protect], mirroring PageViewerController.shareQuietly.
+  Future<void> shareQuietly(File file) async {
+    try {
+      await _deps.share.share([file.path]);
+    } catch (_) {
+      /* share unavailable — ignore */
+    }
+  }
+
+  /// Deletes [documentId] then refreshes the list (C5 swipe-left → confirm).
+  /// Returns success. The confirm dialog lives in the swipe surface; this only
+  /// performs the delete once confirmed.
+  Future<bool> deleteDocument(int documentId) async {
+    final repo = _repository;
+    if (repo == null) return false;
+    try {
+      await repo.deleteDocument(documentId);
+      await refresh();
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

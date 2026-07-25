@@ -36,6 +36,12 @@ class AppLocalizationsLb extends AppLocalizations {
   String get commonCopied => 'Kopéiert';
 
   @override
+  String get copyTextDone => 'Text kopéiert';
+
+  @override
+  String get copyTextEmpty => 'Kee Text zum Kopéieren';
+
+  @override
   String get commonDocumentOptions => 'Dokumentoptiounen';
 
   @override

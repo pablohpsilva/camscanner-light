@@ -1,3 +1,5 @@
+import 'dart:async'; // unawaited
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -17,10 +19,12 @@ import '../../theme/widgets/app_action_button.dart';
 import '../../theme/widgets/app_search_field.dart';
 import '../../theme/widgets/app_segmented.dart';
 import 'document_summary.dart';
+import 'document_text_gatherer.dart';
 import 'library_controller.dart';
 import 'library_dependencies.dart';
 import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
+import 'password_dialog.dart';
 import 'save_controller.dart';
 import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
@@ -221,6 +225,53 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result == false && mounted) {
       context.showErrorSnack(l10n.commonErrorShare);
     }
+  }
+
+  /// Copies the whole document's recognized (OCR) text to the clipboard (C5
+  /// swipe action). Shows a "no text" snackbar when the document has none, so an
+  /// empty clipboard is never silently written.
+  Future<void> _copyText(DocumentSummary s) async {
+    final repo = _lib.repository;
+    if (repo == null) return;
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final text = await DocumentTextGatherer(
+      repository: repo,
+    ).gather(s.document.id);
+    if (!mounted) return;
+    if (text.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.copyTextEmpty)));
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text(l10n.copyTextDone)));
+  }
+
+  /// Document-level "share with password" (C3): prompts for a password, builds a
+  /// protected PDF, then shares it quietly. Mirrors PageViewerScreen._protect.
+  Future<void> _protectDocument(DocumentSummary s) async {
+    final l10n = context.l10n;
+    final password = await showPasswordDialog(context);
+    if (password == null || password.isEmpty || !mounted) return;
+    final file = await _lib.protect(s.document.id, password);
+    if (!mounted) return;
+    if (file != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerProtectPdfSuccess)));
+      unawaited(_lib.shareQuietly(file));
+    } else {
+      context.showErrorSnack(l10n.viewerProtectPdfError);
+    }
+  }
+
+  /// Deletes a document (C5 swipe-left). The confirm dialog lives in
+  /// DocumentsListView, so this runs only after the user confirmed.
+  Future<void> _deleteDocument(DocumentSummary s) async {
+    final l10n = context.l10n;
+    final ok = await _lib.deleteDocument(s.document.id);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerDeleteDocumentError);
   }
 
   Future<void> _exportSelected() async {
@@ -541,6 +592,9 @@ class _HomeScreenState extends State<HomeScreen> {
       onOpen: _openDocument,
       onRename: _renameDocument,
       onShare: _shareDocument,
+      onCopyText: _copyText,
+      onProtect: _protectDocument,
+      onDelete: _deleteDocument,
       selectionMode: _lib.selectionMode,
       selectedIds: _lib.selectedIds,
       onToggleSelect: _lib.toggleSelect,

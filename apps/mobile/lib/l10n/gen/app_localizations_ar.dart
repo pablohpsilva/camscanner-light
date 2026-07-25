@@ -36,6 +36,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonCopied => 'تم النسخ';
 
   @override
+  String get copyTextDone => 'تم نسخ النص';
+
+  @override
+  String get copyTextEmpty => 'لا يوجد نص للنسخ';
+
+  @override
   String get commonDocumentOptions => 'خيارات المستند';
 
   @override

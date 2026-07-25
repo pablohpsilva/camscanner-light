@@ -22,9 +22,16 @@ Future<void> _pump(WidgetTester tester, {FeatureFlags? features}) async {
 }
 
 void main() {
-  testWidgets('default flags hide fax but show share-link', (tester) async {
+  testWidgets('default flags hide both fax and share-link (C4a)', (
+    tester,
+  ) async {
     await _pump(tester);
     expect(find.byKey(const Key('share-menu-fax')), findsNothing);
+    expect(find.byKey(const Key('share-menu-share-link')), findsNothing);
+  });
+
+  testWidgets('shareLink: true shows the share-link item', (tester) async {
+    await _pump(tester, features: const FeatureFlags(shareLink: true));
     expect(find.byKey(const Key('share-menu-share-link')), findsOneWidget);
   });
 

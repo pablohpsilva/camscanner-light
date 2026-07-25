@@ -169,6 +169,18 @@ abstract class AppLocalizations {
   /// **'Copied'**
   String get commonCopied;
 
+  /// Snackbar after copying a document's recognized text
+  ///
+  /// In en, this message translates to:
+  /// **'Text copied'**
+  String get copyTextDone;
+
+  /// Snackbar when a document has no recognized text to copy
+  ///
+  /// In en, this message translates to:
+  /// **'No text to copy'**
+  String get copyTextEmpty;
+
   /// List-item menu tooltip
   ///
   /// In en, this message translates to:
