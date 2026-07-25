@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/crop_corners.dart';
+import 'package:mobile/features/library/enhancer_mode.dart';
+import 'package:mobile/features/library/grayscale_enhancer.dart';
 import 'package:mobile/features/library/image_enhancer.dart';
 import 'package:mobile/features/scan/capture_review_screen.dart';
 import 'package:mobile/features/scan/captured_image.dart';
@@ -26,6 +28,19 @@ class _ThrowingDetector implements EdgeDetector {
   @override
   Future<DetectionResult?> detect(Uint8List bytes) async =>
       throw Exception('boom');
+}
+
+// B2: a fast, host-safe enhancer that returns fixed bytes (no compute isolate)
+// and optionally counts calls — lets the live-preview logic be exercised on host.
+class _FakeEnhancer implements ImageEnhancer {
+  _FakeEnhancer(this.out, {this.onCall});
+  final Uint8List out;
+  final VoidCallback? onCall;
+  @override
+  Future<Uint8List> enhance(Uint8List bytes) async {
+    onCall?.call();
+    return out;
+  }
 }
 
 void main() {
@@ -506,5 +521,174 @@ void main() {
     await tester.tap(find.byKey(const Key('review-accept')));
     await tester.pumpAndSettle();
     expect(accepted, CropCorners.fullFrame);
+  });
+
+  // ── B2: live filter preview on the big image ─────────────────────────────
+  // readBytes returns Uint8List(0): length < 20 so FilterPickerStrip skips its
+  // thumbnail compute() (no host deadlock), while _sourceBytes is still
+  // non-null so the injected preview seams run.
+  group('B2 live preview', () {
+    final previewBytes = Uint8List.fromList(const [1, 2, 3, 4, 5]);
+
+    CaptureReviewScreen subject({
+      required ImageEnhancer Function(EnhancerMode) previewEnhancerFor,
+      Future<Uint8List> Function(Uint8List)? proxyRunner,
+      Duration debounce = Duration.zero,
+    }) => CaptureReviewScreen(
+      image: const CapturedImage('/nonexistent/cap.jpg'),
+      onRetake: () {},
+      onAccept: (_, _) {},
+      decodeImageSize: (_) async => const Size(1000, 750),
+      readBytes: (_) async => Uint8List(0),
+      previewDebounce: debounce,
+      proxyRunner: proxyRunner ?? (b) async => b,
+      previewEnhancerFor: previewEnhancerFor,
+    );
+
+    testWidgets('big image starts as the raw file image', (tester) async {
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: subject(previewEnhancerFor: (_) => _FakeEnhancer(previewBytes)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final image = tester.widget<Image>(find.byKey(const Key('review-image')));
+      expect(image.image, isA<FileImage>());
+    });
+
+    testWidgets('selecting a filter swaps the big image to a Image.memory '
+        'preview', (tester) async {
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: subject(previewEnhancerFor: (_) => _FakeEnhancer(previewBytes)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
+      await tester.pump(); // onModeChanged -> schedule + spinner
+      await tester.pump(const Duration(milliseconds: 10)); // fire timer
+      await tester.pump(); // proxyRunner future
+      await tester.pump(); // enhance future
+      await tester.pump(); // setState(_previewBytes)
+
+      final image = tester.widget<Image>(find.byKey(const Key('review-image')));
+      expect(image.image, isA<MemoryImage>());
+    });
+
+    testWidgets('selecting Original returns to the raw file image', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: subject(previewEnhancerFor: (_) => _FakeEnhancer(previewBytes)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Grayscale -> preview.
+      await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 10));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      expect(
+        tester.widget<Image>(find.byKey(const Key('review-image'))).image,
+        isA<MemoryImage>(),
+      );
+
+      // Original -> raw file image, synchronously (no compute).
+      await tester.tap(find.byKey(const Key('filter-tile-original')));
+      await tester.pump();
+      expect(
+        tester.widget<Image>(find.byKey(const Key('review-image'))).image,
+        isA<FileImage>(),
+      );
+    });
+
+    testWidgets('shows a spinner while the preview is computing', (
+      tester,
+    ) async {
+      final gate = Completer<Uint8List>();
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: subject(
+            previewEnhancerFor: (_) => _FakeEnhancer(previewBytes),
+            proxyRunner: (_) => gate.future, // stalls the compute
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('filter-tile-color')));
+      await tester.pump(); // schedule
+      await tester.pump(
+        const Duration(milliseconds: 10),
+      ); // fire -> proxyRunner
+      expect(find.byKey(const Key('review-preview-loading')), findsOneWidget);
+
+      gate.complete(Uint8List(0)); // drain
+      await tester.pump(); // proxy future resolves -> enhance
+      await tester.pump(); // enhance resolves -> setState
+      await tester.pump(); // rebuild
+      expect(find.byKey(const Key('review-preview-loading')), findsNothing);
+    });
+
+    testWidgets('debounces rapid switches — only the last mode computes', (
+      tester,
+    ) async {
+      var calls = 0;
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: subject(
+            debounce: const Duration(milliseconds: 250),
+            previewEnhancerFor: (_) =>
+                _FakeEnhancer(previewBytes, onCall: () => calls++),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('filter-tile-color')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
+      await tester.pump();
+
+      // Advance past the debounce window; only the final schedule survives.
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      await tester.pump();
+
+      expect(calls, 1, reason: 'rapid switches coalesce into one enhance');
+    });
+
+    testWidgets('Accept still passes enhancerForMode (full-res enhance on '
+        'accept, not the preview enhancer)', (tester) async {
+      ImageEnhancer? accepted;
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: CaptureReviewScreen(
+            image: const CapturedImage('/nonexistent/cap.jpg'),
+            onRetake: () {},
+            onAccept: (_, e) => accepted = e,
+            decodeImageSize: (_) async => const Size(1000, 750),
+            readBytes: (_) async => Uint8List(0),
+            previewDebounce: Duration.zero,
+            proxyRunner: (b) async => b,
+            previewEnhancerFor: (_) => _FakeEnhancer(previewBytes),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('filter-tile-grayscale')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('review-accept')));
+      // The accept path uses the REAL enhancerForMode, not the fake preview one.
+      expect(accepted, isA<GrayscaleEnhancer>());
+    });
   });
 }
