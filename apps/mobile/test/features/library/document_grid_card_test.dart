@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/document_grid_card.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import '../../support/ream_pump.dart';
+import 'package:mobile/theme/app_colors.dart';
+import '../../support/app_pump.dart';
 
 DocumentSummary _summary() => DocumentSummary(
   document: Document(
@@ -20,7 +20,7 @@ DocumentSummary _summary() => DocumentSummary(
 void main() {
   testWidgets('renders title, page/date meta, and fires onTap', (tester) async {
     var opened = false;
-    await pumpReam(
+    await pumpApp(
       tester,
       DocumentGridCard(summary: _summary(), onTap: () => opened = true),
     );
@@ -31,7 +31,7 @@ void main() {
   });
 
   testWidgets('shows check badge when selected', (tester) async {
-    await pumpReam(
+    await pumpApp(
       tester,
       DocumentGridCard(
         summary: _summary(),
@@ -44,7 +44,7 @@ void main() {
 
   testWidgets('fires onLongPress', (tester) async {
     var longPressed = false;
-    await pumpReam(
+    await pumpApp(
       tester,
       DocumentGridCard(
         summary: _summary(),
@@ -55,11 +55,11 @@ void main() {
     expect(longPressed, true);
   });
 
-  testWidgets('placeholder thumbnail icon uses the Ream muted token', (
+  testWidgets('placeholder thumbnail icon uses the App muted token', (
     tester,
   ) async {
-    await pumpReam(tester, DocumentGridCard(summary: _summary()));
+    await pumpApp(tester, DocumentGridCard(summary: _summary()));
     final icon = tester.widget<Icon>(find.byIcon(Icons.description_outlined));
-    expect(icon.color, ReamColors.light.muted);
+    expect(icon.color, AppColors.light.muted);
   });
 }

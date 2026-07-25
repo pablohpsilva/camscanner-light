@@ -9,7 +9,7 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => 'İptal';
@@ -34,6 +34,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get commonCopied => 'Kopyalandı';
+
+  @override
+  String get copyTextDone => 'Metin kopyalandı';
+
+  @override
+  String get copyTextEmpty => 'Kopyalanacak metin yok';
 
   @override
   String get commonDocumentOptions => 'Belge seçenekleri';
@@ -133,6 +139,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsThemeSystem => 'Sistem';
+
+  @override
+  String get settingsHandednessLabel => 'El tercihi';
+
+  @override
+  String get settingsHandednessLeft => 'Sol';
+
+  @override
+  String get settingsHandednessRight => 'Sağ';
 
   @override
   String get settingsSectionLanguage => 'Dil';

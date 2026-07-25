@@ -13,6 +13,7 @@ import './../test/step/i_tap_the_grayscale_filter_tile.dart';
 import './../test/step/the_document_is_saved_with_grayscale_enhancement.dart';
 import './../test/step/i_tap_the_original_filter_tile.dart';
 import './../test/step/the_document_is_saved_without_enhancement.dart';
+import './../test/step/the_big_image_shows_the_filtered_preview.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,12 @@ void main() {
       await iTapTheOriginalFilterTile(tester);
       await iTapAccept(tester);
       await theDocumentIsSavedWithoutEnhancement(tester);
+    });
+    testWidgets('''Selecting a filter shows a live preview on the big image''',
+        (tester) async {
+      await theReviewScreenIsOpenWithACapturedImage(tester);
+      await iTapTheGrayscaleFilterTile(tester);
+      await theBigImageShowsTheFilteredPreview(tester);
     });
   });
 }

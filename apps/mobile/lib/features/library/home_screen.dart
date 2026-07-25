@@ -1,3 +1,5 @@
+import 'dart:async'; // unawaited
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,17 +12,19 @@ import '../../core/ui/error_snack.dart';
 import '../../l10n/l10n.dart';
 import '../../l10n/locale_controller.dart';
 import '../../l10n/locale_store.dart';
-import '../../theme/ream_colors.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/theme_mode_store.dart';
-import '../../theme/widgets/ream_action_button.dart';
-import '../../theme/widgets/ream_search_field.dart';
-import '../../theme/widgets/ream_segmented.dart';
+import '../../theme/widgets/app_action_button.dart';
+import '../../theme/widgets/app_search_field.dart';
+import '../../theme/widgets/app_segmented.dart';
 import 'document_summary.dart';
+import 'document_text_gatherer.dart';
 import 'library_controller.dart';
 import 'library_dependencies.dart';
 import 'library_view_mode.dart';
 import 'page_viewer_screen.dart';
+import 'password_dialog.dart';
 import 'save_controller.dart';
 import 'widgets/documents_grid_view.dart';
 import 'widgets/documents_list_view.dart';
@@ -30,6 +34,8 @@ import 'widgets/sort_pill.dart';
 import '../donation/donation_banner.dart';
 import '../donation/donation_availability.dart';
 import '../feedback/feedback_dependencies.dart';
+import '../settings/handedness_controller.dart';
+import '../settings/handedness_store.dart';
 import '../settings/settings_screen.dart';
 
 /// The app's home: the document library. All library state + orchestration lives
@@ -42,6 +48,7 @@ class HomeScreen extends StatefulWidget {
   final FeedbackDependencies feedbackDependencies;
   final ThemeController? themeController;
   final LocaleController? localeController;
+  final HandednessController? handednessController;
 
   const HomeScreen({
     super.key,
@@ -50,6 +57,7 @@ class HomeScreen extends StatefulWidget {
     this.feedbackDependencies = const FeedbackDependencies(),
     this.themeController,
     this.localeController,
+    this.handednessController,
   });
 
   // Aggressive cold-start watchdog budget. Every startup step must finish within
@@ -80,6 +88,11 @@ class _HomeScreenState extends State<HomeScreen> {
   late final bool _ownsLocaleController = widget.localeController == null;
   late final LocaleController _localeController =
       widget.localeController ?? LocaleController(store: InMemoryLocaleStore());
+  late final bool _ownsHandednessController =
+      widget.handednessController == null;
+  late final HandednessController _handednessController =
+      widget.handednessController ??
+      HandednessController(store: InMemoryHandednessStore());
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -106,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // one, which the caller still owns and may reuse.
     if (_ownsThemeController) _themeController.dispose();
     if (_ownsLocaleController) _localeController.dispose();
+    if (_ownsHandednessController) _handednessController.dispose();
     super.dispose();
   }
 
@@ -223,6 +237,53 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Copies the whole document's recognized (OCR) text to the clipboard (C5
+  /// swipe action). Shows a "no text" snackbar when the document has none, so an
+  /// empty clipboard is never silently written.
+  Future<void> _copyText(DocumentSummary s) async {
+    final repo = _lib.repository;
+    if (repo == null) return;
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final text = await DocumentTextGatherer(
+      repository: repo,
+    ).gather(s.document.id);
+    if (!mounted) return;
+    if (text.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.copyTextEmpty)));
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text(l10n.copyTextDone)));
+  }
+
+  /// Document-level "share with password" (C3): prompts for a password, builds a
+  /// protected PDF, then shares it quietly. Mirrors PageViewerScreen._protect.
+  Future<void> _protectDocument(DocumentSummary s) async {
+    final l10n = context.l10n;
+    final password = await showPasswordDialog(context);
+    if (password == null || password.isEmpty || !mounted) return;
+    final file = await _lib.protect(s.document.id, password);
+    if (!mounted) return;
+    if (file != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.viewerProtectPdfSuccess)));
+      unawaited(_lib.shareQuietly(file));
+    } else {
+      context.showErrorSnack(l10n.viewerProtectPdfError);
+    }
+  }
+
+  /// Deletes a document (C5 swipe-left). The confirm dialog lives in
+  /// DocumentsListView, so this runs only after the user confirmed.
+  Future<void> _deleteDocument(DocumentSummary s) async {
+    final l10n = context.l10n;
+    final ok = await _lib.deleteDocument(s.document.id);
+    if (!ok && mounted) context.showErrorSnack(l10n.viewerDeleteDocumentError);
+  }
+
   Future<void> _exportSelected() async {
     final l10n = context.l10n;
     final result = await _lib.exportSelected();
@@ -237,7 +298,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _lib,
+      // Also listen to handedness so the action row re-orders immediately when
+      // the user changes hand in settings and returns.
+      listenable: Listenable.merge([_lib, _handednessController]),
       builder: (context, _) {
         // The banner's own SafeArea absorbs the bottom inset when shown; without
         // it (iOS, guideline 3.1.1) the body must clear the home indicator.
@@ -262,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_lib.sharing)
                 const Positioned.fill(
                   child: ColoredBox(
-                    color: kReamScrimMedium,
+                    color: kAppScrimMedium,
                     child: Center(
                       key: Key('home-sharing'),
                       child: CircularProgressIndicator(),
@@ -289,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _lib.summaries.isNotEmpty;
 
   Widget _buildHeader(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final overlay = Theme.of(context).brightness == Brightness.dark
         ? SystemUiOverlayStyle.light.copyWith(
             statusBarColor: Colors.transparent,
@@ -310,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : _buildTitleRow(context),
             if (!_lib.selectionMode) ...[
               const SizedBox(height: 14),
-              ReamSearchField(
+              AppSearchField(
                 controller: _searchController,
                 onChanged: _lib.onQueryChanged,
               ),
@@ -324,16 +387,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     sort: _lib.sort,
                     onCriterionSelected: _lib.setSortCriterion,
                   ),
-                  ReamSegmented<LibraryViewMode>(
+                  AppSegmented<LibraryViewMode>(
                     key: const Key('library-view-toggle'),
                     value: _viewMode,
                     onChanged: _onViewModeChanged,
                     segments: [
-                      ReamSegment(
+                      AppSegment(
                         value: LibraryViewMode.list,
                         label: context.l10n.homeViewList,
                       ),
-                      ReamSegment(
+                      AppSegment(
                         value: LibraryViewMode.grid,
                         label: context.l10n.homeViewGrid,
                       ),
@@ -349,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTitleRow(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -389,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSettingsMenu(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return GestureDetector(
       key: const Key('home-settings'),
       onTap: () => Navigator.of(context).push(
@@ -397,6 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_) => SettingsScreen(
             themeController: _themeController,
             localeController: _localeController,
+            handednessController: _handednessController,
             feedbackDependencies: widget.feedbackDependencies,
             feedbackAvailable: _feedbackAvailable,
           ),
@@ -417,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSelectionBar(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Row(
       key: const Key('selection-bar'),
       children: [
@@ -448,39 +512,62 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActionRow(BuildContext context) {
     final f = widget.libraryDependencies.features;
     final ready = _lib.repository != null;
-    final buttons = <Widget>[
-      if (f.scan)
-        Expanded(
-          flex: 3,
-          child: ReamActionButton(
-            key: const Key('home-scan'),
-            label: context.l10n.homeActionScan,
-            icon: Icons.add,
-            primary: true,
-            onPressed: ready ? _openScan : null,
-          ),
-        ),
+    // The primary Scan CTA (labeled).
+    final scan = f.scan
+        ? Expanded(
+            flex: 3,
+            child: AppActionButton(
+              key: const Key('home-scan'),
+              label: context.l10n.homeActionScan,
+              icon: Icons.add,
+              primary: true,
+              onPressed: ready ? _openScan : null,
+            ),
+          )
+        : null;
+    // Secondary actions, rendered ICON-ONLY (tooltip + semantics) so the row
+    // never overflows in long translations. Natural reading order ID → Import.
+    final secondaries = <Widget>[
       if (f.idCard)
         Expanded(
           flex: 2,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-scan-id'),
             label: context.l10n.homeActionIdCard,
             icon: Icons.badge_outlined,
+            showLabel: false,
             onPressed: ready ? _openIdScan : null,
           ),
         ),
       if (f.import)
         Expanded(
           flex: 2,
-          child: ReamActionButton(
+          child: AppActionButton(
             key: const Key('home-import'),
             label: context.l10n.homeActionImport,
             icon: Icons.download_outlined,
+            showLabel: false,
             onPressed: ready ? _onImport : null,
           ),
         ),
     ];
+    // Physical left-to-right order: right-handed puts Scan on the physical
+    // right (after the secondaries); left-handed keeps Scan on the left.
+    final rightHanded = _handednessController.value == Handedness.right;
+    final physical = <Widget>[
+      if (rightHanded) ...[
+        ...secondaries,
+        ?scan,
+      ] else ...[
+        ?scan,
+        ...secondaries,
+      ],
+    ];
+    // Apply the physical order AFTER Flutter's automatic RTL flip: a Row places
+    // its first child on the right under RTL, so reverse the logical children
+    // there to keep the intended physical layout (no double-flip).
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final buttons = isRtl ? physical.reversed.toList() : physical;
     final spaced = <Widget>[];
     for (var i = 0; i < buttons.length; i++) {
       if (i > 0) spaced.add(const SizedBox(width: 8));
@@ -541,6 +628,9 @@ class _HomeScreenState extends State<HomeScreen> {
       onOpen: _openDocument,
       onRename: _renameDocument,
       onShare: _shareDocument,
+      onCopyText: _copyText,
+      onProtect: _protectDocument,
+      onDelete: _deleteDocument,
       selectionMode: _lib.selectionMode,
       selectedIds: _lib.selectedIds,
       onToggleSelect: _lib.toggleSelect,

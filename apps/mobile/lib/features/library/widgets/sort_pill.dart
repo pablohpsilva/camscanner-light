@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/library/document_sort.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 
 /// A compact pill that shows the active [DocumentSort] criterion and a
 /// direction arrow, and opens a popup menu to pick a different criterion.
@@ -34,22 +34,22 @@ class SortPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ream = context.ream;
+    final appColors = context.appColors;
     return PopupMenuButton<SortCriterion>(
       key: const Key('sort-pill'),
       onSelected: onCriterionSelected,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: ream.line),
+        side: BorderSide(color: appColors.line),
       ),
-      color: ream.surface,
+      color: appColors.surface,
       itemBuilder: (context) => [
         PopupMenuItem(
           key: const Key('sort-option-name'),
           value: SortCriterion.name,
           child: Text(
             context.l10n.sortName,
-            style: TextStyle(color: ream.ink2),
+            style: TextStyle(color: appColors.ink2),
           ),
         ),
         PopupMenuItem(
@@ -57,7 +57,7 @@ class SortPill extends StatelessWidget {
           value: SortCriterion.created,
           child: Text(
             context.l10n.sortCreated,
-            style: TextStyle(color: ream.ink2),
+            style: TextStyle(color: appColors.ink2),
           ),
         ),
         PopupMenuItem(
@@ -65,16 +65,16 @@ class SortPill extends StatelessWidget {
           value: SortCriterion.modified,
           child: Text(
             context.l10n.sortModified,
-            style: TextStyle(color: ream.ink2),
+            style: TextStyle(color: appColors.ink2),
           ),
         ),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: ream.surface,
+          color: appColors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: ream.line),
+          border: Border.all(color: appColors.line),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -82,7 +82,7 @@ class SortPill extends StatelessWidget {
             Text(
               _criterionLabel(context),
               style: TextStyle(
-                color: ream.ink2,
+                color: appColors.ink2,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -91,7 +91,7 @@ class SortPill extends StatelessWidget {
             Text(
               _directionArrow,
               style: TextStyle(
-                color: ream.ink2,
+                color: appColors.ink2,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

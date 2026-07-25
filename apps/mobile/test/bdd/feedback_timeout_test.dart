@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import './../step/the_feedback_screen_backed_by_a_stalled_service.dart';
 import './../step/i_enter_a_feedback_message.dart';
 import './../step/i_tap_send_feedback.dart';
-import '../step/i_see_the_message_check_your_connection_and_try_again.dart';
+import './../step/i_see_the_message_check_your_connection_and_try_again.dart';
 import './../step/the_feedback_submit_control_is_enabled_again.dart';
 
 void main() {

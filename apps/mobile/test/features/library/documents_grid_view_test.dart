@@ -4,7 +4,7 @@ import 'package:mobile/features/library/document.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/documents_grid_view.dart';
 
-import '../../support/ream_pump.dart';
+import '../../support/app_pump.dart';
 
 void main() {
   final summaryA = DocumentSummary(
@@ -29,7 +29,7 @@ void main() {
 
   group('DocumentsGridView', () {
     testWidgets('renders the grid root key and both card keys', (tester) async {
-      await pumpReam(
+      await pumpApp(
         tester,
         DocumentsGridView(summaries: [summaryA, summaryB]),
       );
@@ -44,7 +44,7 @@ void main() {
     ) async {
       DocumentSummary? opened;
 
-      await pumpReam(
+      await pumpApp(
         tester,
         DocumentsGridView(
           summaries: [summaryA, summaryB],
@@ -64,7 +64,7 @@ void main() {
       DocumentSummary? toggled;
       DocumentSummary? opened;
 
-      await pumpReam(
+      await pumpApp(
         tester,
         DocumentsGridView(
           summaries: [summaryA, summaryB],
@@ -82,7 +82,7 @@ void main() {
     });
 
     testWidgets('selected cards receive selected: true', (tester) async {
-      await pumpReam(
+      await pumpApp(
         tester,
         DocumentsGridView(
           summaries: [summaryA, summaryB],
@@ -104,7 +104,7 @@ void main() {
     ) async {
       DocumentSummary? longPressed;
 
-      await pumpReam(
+      await pumpApp(
         tester,
         DocumentsGridView(
           summaries: [summaryA, summaryB],
@@ -119,7 +119,7 @@ void main() {
     });
 
     testWidgets('renders empty grid without error', (tester) async {
-      await pumpReam(tester, const DocumentsGridView(summaries: []));
+      await pumpApp(tester, const DocumentsGridView(summaries: []));
 
       expect(find.byKey(const Key('documents-grid')), findsOneWidget);
     });

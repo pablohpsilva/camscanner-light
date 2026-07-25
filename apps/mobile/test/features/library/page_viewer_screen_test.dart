@@ -386,7 +386,7 @@ void main() {
 
   testWidgets('the editor actions carry accessible labels', (tester) async {
     await pushViewer(tester, FakeDocumentRepository());
-    // The toolbar actions expose visible text labels (no tooltips in Ream).
+    // The toolbar actions expose visible text labels (no tooltips in App).
     expect(find.text('Crop'), findsOneWidget);
     expect(find.text('Share'), findsOneWidget);
     // The overflow menu exposes Rename + Delete document as labeled items.

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/page_image.dart';
 import 'package:mobile/features/library/recognized_text_screen.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 import '../../support/fake_library.dart';
 import '../../support/localized_app.dart';
@@ -77,7 +77,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(

@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => '取消';
@@ -34,6 +34,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commonCopied => '已复制';
+
+  @override
+  String get copyTextDone => '已复制文本';
+
+  @override
+  String get copyTextEmpty => '没有可复制的文本';
 
   @override
   String get commonDocumentOptions => '文档选项';
@@ -132,6 +138,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsThemeSystem => '跟随系统';
+
+  @override
+  String get settingsHandednessLabel => '惯用手';
+
+  @override
+  String get settingsHandednessLeft => '左';
+
+  @override
+  String get settingsHandednessRight => '右';
 
   @override
   String get settingsSectionLanguage => '语言';

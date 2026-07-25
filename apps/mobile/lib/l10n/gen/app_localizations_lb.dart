@@ -9,7 +9,7 @@ class AppLocalizationsLb extends AppLocalizations {
   AppLocalizationsLb([String locale = 'lb']) : super(locale);
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => 'Ofbriechen';
@@ -34,6 +34,12 @@ class AppLocalizationsLb extends AppLocalizations {
 
   @override
   String get commonCopied => 'Kopéiert';
+
+  @override
+  String get copyTextDone => 'Text kopéiert';
+
+  @override
+  String get copyTextEmpty => 'Kee Text zum Kopéieren';
 
   @override
   String get commonDocumentOptions => 'Dokumentoptiounen';
@@ -135,6 +141,15 @@ class AppLocalizationsLb extends AppLocalizations {
 
   @override
   String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsHandednessLabel => 'Händegkeet';
+
+  @override
+  String get settingsHandednessLeft => 'Lénks';
+
+  @override
+  String get settingsHandednessRight => 'Riets';
 
   @override
   String get settingsSectionLanguage => 'Sprooch';

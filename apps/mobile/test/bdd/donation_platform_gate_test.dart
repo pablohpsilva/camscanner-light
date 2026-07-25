@@ -24,18 +24,16 @@ void main() {
       await iSeeTheSupportRow(tester);
       await thePlatformOverrideIsCleared(tester);
     });
-    testWidgets('''Home actions keep clear of the screen bottom on iOS''', (
-      tester,
-    ) async {
+    testWidgets('''Home actions keep clear of the screen bottom on iOS''',
+        (tester) async {
       await thePlatformIsIos(tester);
       await theDeviceHasABottomSafeAreaInset(tester);
       await theHomeScreenIsShown(tester);
       await theScanActionsSitClearOfTheBottomInset(tester);
       await thePlatformOverrideIsCleared(tester);
     });
-    testWidgets('''Donation entry points are shown on Android''', (
-      tester,
-    ) async {
+    testWidgets('''Donation entry points are shown on Android''',
+        (tester) async {
       await thePlatformIsAndroid(tester);
       await theHomeScreenIsShown(tester);
       await iSeeTheDonationBanner(tester);

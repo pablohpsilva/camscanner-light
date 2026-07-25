@@ -118,7 +118,7 @@ abstract class AppLocalizations {
   /// Brand name — MaterialApp title, Settings About; same in all languages
   ///
   /// In en, this message translates to:
-  /// **'CamScanner-light'**
+  /// **'ScannerCam Light'**
   String get appTitle;
 
   /// Dialogs
@@ -168,6 +168,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copied'**
   String get commonCopied;
+
+  /// Snackbar after copying a document's recognized text
+  ///
+  /// In en, this message translates to:
+  /// **'Text copied'**
+  String get copyTextDone;
+
+  /// Snackbar when a document has no recognized text to copy
+  ///
+  /// In en, this message translates to:
+  /// **'No text to copy'**
+  String get copyTextEmpty;
 
   /// List-item menu tooltip
   ///
@@ -342,6 +354,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get settingsThemeSystem;
+
+  /// Section label for the scan-button handedness toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Handedness'**
+  String get settingsHandednessLabel;
+
+  /// Handedness segment: primary Scan button on the left
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get settingsHandednessLeft;
+
+  /// Handedness segment: primary Scan button on the right
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get settingsHandednessRight;
 
   /// Section label + picker dialog title
   ///

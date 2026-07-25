@@ -2,14 +2,17 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import '../../theme/app_theme.dart';
 import '../library/crop_corners.dart';
 import '../library/enhancer_for_mode.dart';
 import '../library/enhancer_mode.dart';
 import '../library/image_enhancer.dart';
 import '../library/image_size_resolver.dart';
+import '../library/preview_proxy.dart';
 import 'captured_image.dart';
 import 'edge_detector.dart';
 import 'widgets/crop_overlay.dart';
@@ -28,6 +31,15 @@ class CaptureReviewScreen extends StatefulWidget {
   final Future<Uint8List> Function(String path) readBytes; // NEW
   final EdgeDetector? edgeDetector; // NEW
 
+  /// B2 live-preview seams. [previewDebounce] coalesces rapid filter switches;
+  /// [proxyRunner] downsizes the source to a preview proxy (defaults to
+  /// `compute(previewProxyJpeg, …)`); [previewEnhancerFor] maps a mode to the enhancer
+  /// used for the ON-SCREEN preview (defaults to [enhancerForMode]). Accept is
+  /// unaffected — it still enhances the FULL-res capture via [enhancerForMode].
+  final Duration previewDebounce;
+  final Future<Uint8List> Function(Uint8List bytes)? proxyRunner;
+  final ImageEnhancer Function(EnhancerMode mode)? previewEnhancerFor;
+
   const CaptureReviewScreen({
     super.key,
     required this.image,
@@ -38,6 +50,9 @@ class CaptureReviewScreen extends StatefulWidget {
     this.decodeImageSize = resolveImageSize,
     this.readBytes = _defaultReadBytes, // NEW
     this.edgeDetector, // NEW
+    this.previewDebounce = const Duration(milliseconds: 250),
+    this.proxyRunner,
+    this.previewEnhancerFor,
   });
 
   @override
@@ -56,6 +71,14 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
   // The source JPEG is read off disk ONCE (P13 PERF-1): both the _sourceBytes
   // setter and _runDetection await this single future instead of re-reading.
   late final Future<Uint8List> _bytesFuture;
+
+  // B2 live preview: the enhanced proxy shown on the big image, or null to show
+  // the raw capture (Original / not-yet-computed). A generation counter
+  // discards stale async results, and a debounce timer coalesces rapid switches.
+  Uint8List? _previewBytes;
+  bool _previewComputing = false;
+  Timer? _previewDebounce;
+  int _previewGen = 0;
 
   // Three tiers: confident (green), best-guess-please-check (amber), and
   // fallback/full-frame (blue). Low-confidence detections still snap the dots
@@ -87,6 +110,67 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
         .catchError((_) {});
   }
 
+  @override
+  void dispose() {
+    _previewDebounce?.cancel();
+    super.dispose();
+  }
+
+  // B2: user picked a filter. Update the selected mode (drives Accept + the
+  // strip's pill) and (re)schedule a debounced live preview on the big image.
+  void _onModeChanged(EnhancerMode mode) {
+    setState(() => _mode = mode);
+    _schedulePreview(mode);
+  }
+
+  void _schedulePreview(EnhancerMode mode) {
+    _previewDebounce?.cancel();
+    final gen = ++_previewGen; // invalidate any in-flight compute
+    if (mode == EnhancerMode.none) {
+      // Original: no enhancement — show the raw capture, drop any spinner.
+      setState(() {
+        _previewBytes = null;
+        _previewComputing = false;
+      });
+      return;
+    }
+    setState(() => _previewComputing = true);
+    _previewDebounce = Timer(
+      widget.previewDebounce,
+      () => _computePreview(mode, gen),
+    );
+  }
+
+  Future<void> _computePreview(EnhancerMode mode, int gen) async {
+    final bytes = _sourceBytes;
+    if (bytes == null) {
+      if (mounted && gen == _previewGen) {
+        setState(() => _previewComputing = false);
+      }
+      return;
+    }
+    try {
+      final proxyRun = widget.proxyRunner ?? ((b) => compute(previewProxyJpeg, b));
+      final proxy = await proxyRun(bytes);
+      if (!mounted || gen != _previewGen) return;
+      final enhancerFor = widget.previewEnhancerFor ?? enhancerForMode;
+      final out = await enhancerFor(mode).enhance(proxy);
+      if (!mounted || gen != _previewGen) return;
+      setState(() {
+        _previewBytes = out;
+        _previewComputing = false;
+      });
+    } catch (_) {
+      // Preview failed — fall back to the raw capture (never a stuck spinner).
+      if (mounted && gen == _previewGen) {
+        setState(() {
+          _previewBytes = null;
+          _previewComputing = false;
+        });
+      }
+    }
+  }
+
   Future<void> _runDetection() async {
     if (!widget.enableCrop) return;
     final detector = widget.edgeDetector;
@@ -109,17 +193,33 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
     }
   }
 
-  Widget _imageWidget() => Image.file(
-    File(widget.image.path),
-    key: const Key('review-image'),
-    fit: BoxFit.contain,
-    errorBuilder: (context, error, stack) => const Icon(
+  Widget _imageWidget() {
+    const errorIcon = Icon(
       Icons.broken_image_outlined,
       key: Key('review-image-error'),
       color: Colors.white54,
       size: 64,
-    ),
-  );
+    );
+    // B2: show the enhanced live preview when available, else the raw capture.
+    // Both keep the `review-image` key so callers/tests are unaffected.
+    final preview = _previewBytes;
+    if (preview != null) {
+      return Image.memory(
+        preview,
+        key: const Key('review-image'),
+        fit: BoxFit.contain,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stack) => errorIcon,
+      );
+    }
+    return Image.file(
+      File(widget.image.path),
+      key: const Key('review-image'),
+      fit: BoxFit.contain,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stack) => errorIcon,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,14 +262,31 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
                       ),
                     ),
                   ),
+                // B2: small spinner while the live preview is being computed.
+                if (_previewComputing && !widget.saving)
+                  const Positioned(
+                    top: 12,
+                    right: 12,
+                    child: SizedBox(
+                      key: Key('review-preview-loading'),
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
               ],
             ),
           ),
-          FilterPickerStrip(
-            key: const Key('filter-picker-strip'),
-            selectedMode: _mode,
-            onModeChanged: (m) => setState(() => _mode = m),
-            sourceBytes: _sourceBytes,
+          // B2: wrap the strip in the App theme scope so it renders in the
+          // design system (matches EditFilterScreen).
+          Theme(
+            data: AppTheme.dark(),
+            child: FilterPickerStrip(
+              key: const Key('filter-picker-strip'),
+              selectedMode: _mode,
+              onModeChanged: _onModeChanged,
+              sourceBytes: _sourceBytes,
+            ),
           ),
         ],
       ),

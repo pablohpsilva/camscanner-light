@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:mobile/features/library/widgets/editor_top_bar.dart';
 
 void main() {
@@ -12,7 +12,7 @@ void main() {
   }) {
     return tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.dark(),
+        theme: AppTheme.dark(),
         home: Scaffold(
           appBar: EditorTopBar(
             title: title,

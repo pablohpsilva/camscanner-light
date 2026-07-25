@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../theme/ream_colors.dart';
+import '../../../theme/app_colors.dart';
 
-/// Dark top bar for the Ream document editor.
+/// Dark top bar for the App document editor.
 ///
 /// Provides a back button ([key: Key('page-viewer-back')]), a centered title,
 /// and an optional [trailing] widget (e.g. an overflow-menu button). When
@@ -26,7 +26,7 @@ class EditorTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     // Measure the back button width so the spacer mirrors it exactly.
     const double sideWidth = kMinInteractiveDimension;
 

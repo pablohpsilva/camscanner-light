@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'share_channel.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
+import '../../theme/app_colors.dart';
 import '../../core/ui/error_snack.dart';
 import '../../theme/widgets/confidence_chip.dart';
-import '../../theme/widgets/ream_action_button.dart';
-import '../../theme/widgets/ream_back_header.dart';
+import '../../theme/widgets/app_action_button.dart';
+import '../../theme/widgets/app_back_header.dart';
 import 'document_repository.dart';
 import 'page_image.dart';
 
@@ -112,13 +112,13 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final l10n = context.l10n;
     final text = _text;
     final hasText = text != null && text.trim().isNotEmpty;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: l10n.ocrTitle,
         onBack: () => Navigator.of(context).maybePop(),
         backKey: const Key('recognized-text-back'),
@@ -161,7 +161,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: ReamActionButton(
+                        child: AppActionButton(
                           key: const Key('recognized-text-copy'),
                           label: l10n.ocrCopyText,
                           onPressed: (_busy || !hasText) ? null : _copy,
@@ -169,7 +169,7 @@ class _RecognizedTextScreenState extends State<RecognizedTextScreen> {
                       ),
                       const SizedBox(width: 9),
                       Expanded(
-                        child: ReamActionButton(
+                        child: AppActionButton(
                           key: const Key('recognized-text-share'),
                           label: l10n.ocrShareTxt,
                           primary: true,

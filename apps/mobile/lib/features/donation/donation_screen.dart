@@ -4,11 +4,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/ream_typography.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_typography.dart';
 import '../../core/ui/error_snack.dart';
-import '../../theme/widgets/ream_action_button.dart';
-import '../../theme/widgets/ream_back_header.dart';
+import '../../theme/widgets/app_action_button.dart';
+import '../../theme/widgets/app_back_header.dart';
 import 'donation_availability.dart';
 import 'donation_config.dart';
 import 'tip_jar/storekit_tip_jar_service.dart';
@@ -45,6 +45,10 @@ class DonationScreen extends StatelessWidget {
     this.copyToClipboard = _writeClipboard,
     this.createTipJar = _defaultTipJar,
     this.tipJarMode,
+    this.iosBtcDonation = const bool.fromEnvironment(
+      'FEATURE_IOS_BTC_DONATION',
+      defaultValue: true,
+    ),
   });
 
   final String kofiUrl;
@@ -62,15 +66,27 @@ class DonationScreen extends StatelessWidget {
   /// default (`tipJarAvailable`). Tests pass an explicit value.
   final bool? tipJarMode;
 
+  /// Whether the iOS tip-jar body also shows the display-only Bitcoin section
+  /// (QR + copyable address) after the tip consumables. Defaults to the
+  /// `FEATURE_IOS_BTC_DONATION` build flag (on). Bitcoin is display-only, so it
+  /// carries no App Store 3.1.1 in-app-payment risk; the section still
+  /// auto-hides when [bitcoinAddress] is empty. Does not affect Android.
+  final bool iosBtcDonation;
+
   /// The navigation route to this screen (P14 DUP-3) — one definition for the
   /// donation banner and the settings entry point.
   static Route<void> route({
     TipJarService Function()? createTipJar,
     bool? tipJarMode,
+    bool iosBtcDonation = const bool.fromEnvironment(
+      'FEATURE_IOS_BTC_DONATION',
+      defaultValue: true,
+    ),
   }) => MaterialPageRoute<void>(
     builder: (_) => DonationScreen(
       createTipJar: createTipJar ?? _defaultTipJar,
       tipJarMode: tipJarMode,
+      iosBtcDonation: iosBtcDonation,
     ),
   );
 
@@ -97,11 +113,11 @@ class DonationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final showTips = tipJarMode ?? tipJarAvailable;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: context.l10n.settingsSupportApp,
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -112,6 +128,16 @@ class DonationScreen extends StatelessWidget {
                 ..._headerChildren(context),
                 const SizedBox(height: 18),
                 TipJarBody(createService: createTipJar),
+                // Bitcoin is display-only (no in-app payment), so it can also
+                // appear on iOS after the tip consumables when enabled.
+                if (iosBtcDonation && bitcoinAddress.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  _BitcoinSection(
+                    key: const Key('donation-bitcoin-section'),
+                    address: bitcoinAddress,
+                    onCopy: () => _copyAddress(context),
+                  ),
+                ],
               ],
             )
           : _kofiBtcBody(context),
@@ -122,7 +148,7 @@ class DonationScreen extends StatelessWidget {
   /// "donating unlocks nothing" note. Reused by both the tip-jar and the
   /// Ko-fi/BTC bodies (DRY).
   List<Widget> _headerChildren(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return [
       Icon(Icons.favorite, color: r.kofiRed, size: 34),
       const SizedBox(height: 8),
@@ -172,14 +198,14 @@ class DonationScreen extends StatelessWidget {
   }
 
   Widget _kofiBtcBody(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         ..._headerChildren(context),
         const SizedBox(height: 18),
         if (kofiUrl.isNotEmpty) ...[
-          ReamActionButton(
+          AppActionButton(
             key: const Key('donation-kofi-button'),
             label: context.l10n.donationKofiButton,
             icon: Icons.local_cafe_outlined,
@@ -212,7 +238,7 @@ class _BitcoinSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -245,7 +271,7 @@ class _BitcoinSection extends StatelessWidget {
           SelectableText(
             address,
             textAlign: TextAlign.center,
-            style: ReamTypography.mono(size: 12, color: r.muted),
+            style: AppTypography.mono(size: 12, color: r.muted),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(

@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => 'إلغاء';
@@ -34,6 +34,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get commonCopied => 'تم النسخ';
+
+  @override
+  String get copyTextDone => 'تم نسخ النص';
+
+  @override
+  String get copyTextEmpty => 'لا يوجد نص للنسخ';
 
   @override
   String get commonDocumentOptions => 'خيارات المستند';
@@ -147,6 +153,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsThemeSystem => 'النظام';
+
+  @override
+  String get settingsHandednessLabel => 'اليد المفضلة';
+
+  @override
+  String get settingsHandednessLeft => 'يسار';
+
+  @override
+  String get settingsHandednessRight => 'يمين';
 
   @override
   String get settingsSectionLanguage => 'اللغة';

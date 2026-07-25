@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/widgets/ream_action_button.dart';
-import '../../theme/widgets/ream_back_header.dart';
-import '../../theme/widgets/ream_section_label.dart';
-import '../../theme/widgets/ream_segmented.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/widgets/app_action_button.dart';
+import '../../theme/widgets/app_back_header.dart';
+import '../../theme/widgets/app_section_label.dart';
+import '../../theme/widgets/app_segmented.dart';
 import 'feedback_dependencies.dart';
 import 'feedback_result.dart';
 import 'feedback_result_l10n.dart';
@@ -78,7 +78,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
-  InputDecoration _fieldDecoration(ReamColors r, String label) {
+  InputDecoration _fieldDecoration(AppColors r, String label) {
     // border and enabledBorder are intentionally identical: this app has no
     // error/focus border style yet, so both fall back to the same neutral
     // r.line outline. border is kept explicit (rather than omitted) so a
@@ -100,11 +100,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final l10n = context.l10n;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: l10n.feedbackTitle,
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -115,15 +115,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ReamSectionLabel(l10n.feedbackTypeLabel),
+              AppSectionLabel(l10n.feedbackTypeLabel),
               const SizedBox(height: 8),
-              ReamSegmented<String>(
+              AppSegmented<String>(
                 expanded: true,
                 value: _category,
                 segments: [
-                  ReamSegment(value: 'bug', label: l10n.feedbackTypeBug),
-                  ReamSegment(value: 'idea', label: l10n.feedbackTypeIdea),
-                  ReamSegment(
+                  AppSegment(value: 'bug', label: l10n.feedbackTypeBug),
+                  AppSegment(value: 'idea', label: l10n.feedbackTypeIdea),
+                  AppSegment(
                     value: 'question',
                     label: l10n.feedbackTypeQuestion,
                   ),
@@ -131,7 +131,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 onChanged: (v) => setState(() => _category = v),
               ),
               const SizedBox(height: 16),
-              ReamSectionLabel(l10n.feedbackMessageLabel),
+              AppSectionLabel(l10n.feedbackMessageLabel),
               const SizedBox(height: 8),
               TextFormField(
                 key: const Key('feedback-message'),
@@ -145,7 +145,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-              ReamSectionLabel(l10n.feedbackEmailLabel),
+              AppSectionLabel(l10n.feedbackEmailLabel),
               const SizedBox(height: 8),
               TextFormField(
                 key: const Key('feedback-email'),
@@ -259,14 +259,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                reamInkOnFill(r.ink),
+                                appInkOnFill(r.ink),
                               ),
                             ),
                           ),
                         ),
                       ),
                     )
-                  : ReamActionButton(
+                  : AppActionButton(
                       key: const Key('feedback-submit'),
                       label: l10n.feedbackSubmit,
                       primary: true,

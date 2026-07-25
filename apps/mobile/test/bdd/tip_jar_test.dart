@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import './../step/the_tip_jar_has_products.dart';
 import './../step/i_tap_the_small_tip.dart';
-import '../step/i_see_the_tip_thankyou_dialog.dart';
+import './../step/i_see_the_tip_thankyou_dialog.dart';
 import './../step/the_tip_jar_has_no_products.dart';
 import './../step/i_see_the_tip_unavailable_message.dart';
 

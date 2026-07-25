@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_theme.dart';
 
 export 'package:mobile/l10n/l10n.dart';
 
@@ -14,7 +14,7 @@ Widget localizedTestApp({
     locale: locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    theme: ReamTheme.light(),
+    theme: AppTheme.light(),
     home: home,
   );
 }

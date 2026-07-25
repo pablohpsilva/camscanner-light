@@ -18,7 +18,7 @@ void main() {
           documentId: 1,
           name: 'Scan X',
           repository: repo,
-          features: const FeatureFlags(fax: true),
+          features: const FeatureFlags(fax: true, shareLink: true),
         ),
       ),
     );

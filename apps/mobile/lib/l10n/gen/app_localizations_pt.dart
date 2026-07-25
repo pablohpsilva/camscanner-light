@@ -9,7 +9,7 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => 'Cancelar';
@@ -34,6 +34,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get commonCopied => 'Copiado';
+
+  @override
+  String get copyTextDone => 'Texto copiado';
+
+  @override
+  String get copyTextEmpty => 'Nenhum texto para copiar';
 
   @override
   String get commonDocumentOptions => 'Opções do documento';
@@ -136,6 +142,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsThemeSystem => 'Sistema';
+
+  @override
+  String get settingsHandednessLabel => 'Mão dominante';
+
+  @override
+  String get settingsHandednessLeft => 'Esquerda';
+
+  @override
+  String get settingsHandednessRight => 'Direita';
 
   @override
   String get settingsSectionLanguage => 'Idioma';
@@ -576,7 +591,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => 'Cancelar';
@@ -601,6 +616,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get commonCopied => 'Copiado';
+
+  @override
+  String get copyTextDone => 'Texto copiado';
+
+  @override
+  String get copyTextEmpty => 'Nenhum texto para copiar';
 
   @override
   String get commonDocumentOptions => 'Opções do documento';
@@ -703,6 +724,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settingsThemeSystem => 'Sistema';
+
+  @override
+  String get settingsHandednessLabel => 'Mão dominante';
+
+  @override
+  String get settingsHandednessLeft => 'Esquerda';
+
+  @override
+  String get settingsHandednessRight => 'Direita';
 
   @override
   String get settingsSectionLanguage => 'Idioma';

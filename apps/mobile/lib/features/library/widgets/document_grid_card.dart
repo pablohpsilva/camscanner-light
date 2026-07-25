@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/library/document_date_format.dart';
 import 'package:mobile/features/library/document_summary.dart';
 import 'package:mobile/features/library/widgets/document_thumbnail.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_typography.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_typography.dart';
 
 /// A grid card for a document in the library grid view.
 ///
@@ -33,7 +33,7 @@ class DocumentGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ream = context.ream;
+    final appColors = context.appColors;
     final textTheme = Theme.of(context).textTheme;
     final doc = summary.document;
 
@@ -52,12 +52,12 @@ class DocumentGridCard extends StatelessWidget {
     Widget card = IntrinsicWidth(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: ream.surface,
+          color: appColors.surface,
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: ream.line, width: 1),
+          border: Border.all(color: appColors.line, width: 1),
           boxShadow: const [
             BoxShadow(
-              color: kReamCardShadow,
+              color: kAppCardShadow,
               blurRadius: 6,
               offset: Offset(0, 2),
             ),
@@ -77,7 +77,7 @@ class DocumentGridCard extends StatelessWidget {
                   children: [
                     _ThumbnailArea(
                       path: summary.thumbnailPath,
-                      backgroundColor: ream.surface2,
+                      backgroundColor: appColors.surface2,
                     ),
                     if (selected)
                       Positioned(
@@ -85,7 +85,7 @@ class DocumentGridCard extends StatelessWidget {
                         right: 6,
                         child: Icon(
                           Icons.check_circle,
-                          color: ream.green,
+                          color: appColors.green,
                           size: 22,
                         ),
                       ),
@@ -108,7 +108,7 @@ class DocumentGridCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       metaText,
-                      style: ReamTypography.mono(size: 11, color: ream.muted),
+                      style: AppTypography.mono(size: 11, color: appColors.muted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -147,7 +147,7 @@ class _ThumbnailArea extends StatelessWidget {
         child: Center(
           child: Icon(
             Icons.description_outlined,
-            color: context.ream.muted,
+            color: context.appColors.muted,
             size: 36,
           ),
         ),

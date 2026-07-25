@@ -9,8 +9,8 @@ import 'share_channel.dart';
 import '../../core/ui/error_snack.dart';
 import '../scan/scan_screen.dart';
 import '../scan/scan_dependencies.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/ream_theme.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_theme.dart';
 import 'crop_corners.dart';
 import 'document_printer.dart';
 import 'document_repository.dart';
@@ -483,7 +483,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Theme(
-        data: ReamTheme.dark(),
+        data: AppTheme.dark(),
         child: ListenableBuilder(
           listenable: _pvc,
           builder: (context, _) => Scaffold(
@@ -508,7 +508,7 @@ class _PageViewerScreenState extends State<PageViewerScreen> {
                 if (_pvc.editing)
                   const Positioned.fill(
                     child: ColoredBox(
-                      color: kReamScrimStrong,
+                      color: kAppScrimStrong,
                       child: Center(
                         key: Key('page-viewer-editing'),
                         child: CircularProgressIndicator(),

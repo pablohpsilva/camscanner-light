@@ -9,7 +9,7 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appTitle => 'CamScanner-light';
+  String get appTitle => 'ScannerCam Light';
 
   @override
   String get commonCancel => 'Отмена';
@@ -34,6 +34,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get commonCopied => 'Скопировано';
+
+  @override
+  String get copyTextDone => 'Текст скопирован';
+
+  @override
+  String get copyTextEmpty => 'Нет текста для копирования';
 
   @override
   String get commonDocumentOptions => 'Параметры документа';
@@ -137,6 +143,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsThemeSystem => 'Системная';
+
+  @override
+  String get settingsHandednessLabel => 'Ведущая рука';
+
+  @override
+  String get settingsHandednessLeft => 'Слева';
+
+  @override
+  String get settingsHandednessRight => 'Справа';
 
   @override
   String get settingsSectionLanguage => 'Язык';

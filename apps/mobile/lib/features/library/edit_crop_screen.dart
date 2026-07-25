@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/ream_theme.dart';
-import '../../theme/widgets/ream_back_header.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/widgets/app_back_header.dart';
 import '../scan/widgets/crop_overlay.dart';
 import 'crop_corners.dart';
 import 'image_size_resolver.dart';
@@ -58,7 +58,7 @@ class _EditCropScreenState extends State<EditCropScreen> {
         });
   }
 
-  Widget _imageWidget(ReamColors r) => RotatedBox(
+  Widget _imageWidget(AppColors r) => RotatedBox(
     quarterTurns: widget.quarterTurns,
     child: Image.file(
       File(widget.imagePath),
@@ -76,13 +76,13 @@ class _EditCropScreenState extends State<EditCropScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Theme(
-        data: ReamTheme.dark(),
+        data: AppTheme.dark(),
         child: Builder(
           builder: (context) {
-            final r = context.ream;
+            final r = context.appColors;
             final l10n = context.l10n;
             return Scaffold(
-              appBar: ReamBackHeader(
+              appBar: AppBackHeader(
                 title: l10n.editCropTitle,
                 backKey: const Key('edit-crop-back'),
                 onBack: () => Navigator.of(context).pop(),

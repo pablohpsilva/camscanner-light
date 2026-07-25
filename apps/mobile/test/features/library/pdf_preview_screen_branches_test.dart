@@ -8,8 +8,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/library/pdf_preview_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
-import 'package:mobile/theme/ream_theme.dart';
+import 'package:mobile/theme/app_colors.dart';
+import 'package:mobile/theme/app_theme.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../support/localized_app.dart';
@@ -112,7 +112,7 @@ void main() {
       expect(find.byKey(const Key('pdf-preview-loading')), findsNothing);
       expect(find.byKey(const Key('pdf-preview-error')), findsNothing);
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, ReamColors.light.paper);
+      expect(scaffold.backgroundColor, AppColors.light.paper);
 
       // PdfViewPinch schedules a short-lived internal "real size overlay"
       // Timer on layout; drain it before the test ends so flutter_test's
@@ -126,7 +126,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
@@ -155,7 +155,7 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('pdf-preview-view')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('ream-back')));
+    await tester.tap(find.byKey(const Key('back')));
     await tester.pumpAndSettle();
 
     expect(find.byType(PdfPreviewScreen), findsNothing);
@@ -171,7 +171,7 @@ void main() {
     // pdf_preview_screen_test.dart, kept here for completeness of the pop).
     await tester.pumpWidget(
       MaterialApp(
-        theme: ReamTheme.light(),
+        theme: AppTheme.light(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
@@ -200,7 +200,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300)); // finish transition
     expect(find.byKey(const Key('pdf-preview-loading')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('ream-back')));
+    await tester.tap(find.byKey(const Key('back')));
     // Drain the pop transition in discrete frames (no pumpAndSettle: the
     // loading screen's CircularProgressIndicator ticks forever while mounted).
     for (var i = 0; i < 20; i++) {
@@ -221,7 +221,7 @@ void main() {
       final doc = _FakeDoc();
       await tester.pumpWidget(
         MaterialApp(
-          theme: ReamTheme.light(),
+          theme: AppTheme.light(),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(

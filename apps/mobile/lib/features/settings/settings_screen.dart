@@ -5,22 +5,25 @@ import '../../l10n/language_autonyms.dart';
 import '../../l10n/locale_controller.dart';
 import '../../l10n/locale_resolution.dart';
 import '../../l10n/locale_store.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/widgets/ream_back_header.dart';
-import '../../theme/widgets/ream_section_label.dart';
-import '../../theme/widgets/ream_segmented.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/widgets/app_back_header.dart';
+import '../../theme/widgets/app_section_label.dart';
+import '../../theme/widgets/app_segmented.dart';
 import '../../theme/theme_controller.dart';
 import '../donation/donation_availability.dart';
 import '../donation/donation_screen.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../feedback/feedback_screen.dart';
+import 'handedness_controller.dart';
+import 'handedness_store.dart';
 
 /// App settings: theme selection (persisted via [ThemeController]), plus entry
 /// points to feedback and support, and an About footer. Renders under the
-/// active Ream theme (light or dark).
+/// active App theme (light or dark).
 class SettingsScreen extends StatelessWidget {
   final ThemeController themeController;
   final LocaleController localeController;
+  final HandednessController handednessController;
   final FeedbackDependencies feedbackDependencies;
   final bool feedbackAvailable;
 
@@ -28,48 +31,72 @@ class SettingsScreen extends StatelessWidget {
     super.key,
     required this.themeController,
     required this.localeController,
+    required this.handednessController,
     this.feedbackDependencies = const FeedbackDependencies(),
     this.feedbackAvailable = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: context.l10n.settingsTitle,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: AnimatedBuilder(
-        animation: Listenable.merge([themeController, localeController]),
+        animation: Listenable.merge([
+          themeController,
+          localeController,
+          handednessController,
+        ]),
         builder: (context, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            ReamSectionLabel(context.l10n.settingsSectionAppearance),
+            AppSectionLabel(context.l10n.settingsSectionAppearance),
             const SizedBox(height: 10),
-            ReamSegmented<ThemeMode>(
+            AppSegmented<ThemeMode>(
               key: const Key('settings-theme-mode'),
               expanded: true,
               value: themeController.mode,
               onChanged: themeController.setMode,
               segments: [
-                ReamSegment(
+                AppSegment(
                   value: ThemeMode.light,
                   label: context.l10n.settingsThemeLight,
                 ),
-                ReamSegment(
+                AppSegment(
                   value: ThemeMode.dark,
                   label: context.l10n.settingsThemeDark,
                 ),
-                ReamSegment(
+                AppSegment(
                   value: ThemeMode.system,
                   label: context.l10n.settingsThemeSystem,
                 ),
               ],
             ),
             const SizedBox(height: 28),
-            ReamSectionLabel(context.l10n.settingsSectionLanguage),
+            AppSectionLabel(context.l10n.settingsHandednessLabel),
+            const SizedBox(height: 10),
+            AppSegmented<Handedness>(
+              key: const Key('settings-handedness'),
+              expanded: true,
+              value: handednessController.value,
+              onChanged: handednessController.setHandedness,
+              segments: [
+                AppSegment(
+                  value: Handedness.left,
+                  label: context.l10n.settingsHandednessLeft,
+                ),
+                AppSegment(
+                  value: Handedness.right,
+                  label: context.l10n.settingsHandednessRight,
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            AppSectionLabel(context.l10n.settingsSectionLanguage),
             const SizedBox(height: 10),
             _NavRow(
               key: const Key('settings-language'),
@@ -78,7 +105,7 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _showLanguagePicker(context),
             ),
             const SizedBox(height: 28),
-            ReamSectionLabel(context.l10n.settingsSectionFeedback),
+            AppSectionLabel(context.l10n.settingsSectionFeedback),
             const SizedBox(height: 10),
             if (feedbackAvailable)
               _NavRow(
@@ -177,7 +204,7 @@ class _NavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -222,7 +249,7 @@ class _About extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Column(
       children: [
         Text(

@@ -5,12 +5,14 @@ import 'features/feedback/feedback_dependencies.dart';
 import 'features/library/home_screen.dart';
 import 'features/library/library_dependencies.dart';
 import 'features/scan/scan_dependencies.dart';
+import 'features/settings/handedness_controller.dart';
+import 'features/settings/handedness_store.dart';
 import 'l10n/l10n.dart';
 import 'l10n/lb_fallback_delegates.dart';
 import 'l10n/locale_controller.dart';
 import 'l10n/locale_resolution.dart';
 import 'l10n/locale_store.dart';
-import 'theme/ream_theme.dart';
+import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 import 'theme/theme_mode_store.dart';
 
@@ -40,9 +42,15 @@ Future<void> main() async {
     store: localeStore,
     initial: await localeStore.load(),
   );
+  final handednessStore = SharedPrefsHandednessStore();
+  final handednessController = HandednessController(
+    store: handednessStore,
+    initial: await handednessStore.load() ?? Handedness.right,
+  );
   runCamScannerApp(
     themeController: controller,
     localeController: localeController,
+    handednessController: handednessController,
   );
 }
 
@@ -54,6 +62,7 @@ void runCamScannerApp({
   FeedbackDependencies feedbackDependencies = const FeedbackDependencies(),
   ThemeController? themeController,
   LocaleController? localeController,
+  HandednessController? handednessController,
 }) {
   runApp(
     CamScannerApp(
@@ -68,6 +77,9 @@ void runCamScannerApp({
       localeController:
           localeController ??
           (LocaleController(store: SharedPrefsLocaleStore())..load()),
+      handednessController:
+          handednessController ??
+          (HandednessController(store: SharedPrefsHandednessStore())..load()),
     ),
   );
 }
@@ -78,6 +90,7 @@ class CamScannerApp extends StatelessWidget {
   final FeedbackDependencies feedbackDependencies;
   final ThemeController themeController;
   final LocaleController localeController;
+  final HandednessController handednessController;
 
   const CamScannerApp({
     super.key,
@@ -86,17 +99,22 @@ class CamScannerApp extends StatelessWidget {
     this.feedbackDependencies = const FeedbackDependencies(),
     required this.themeController,
     required this.localeController,
+    required this.handednessController,
   });
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([themeController, localeController]),
+      animation: Listenable.merge([
+        themeController,
+        localeController,
+        handednessController,
+      ]),
       builder: (context, _) => MaterialApp(
         onGenerateTitle: (context) => context.l10n.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: ReamTheme.light(),
-        darkTheme: ReamTheme.dark(),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
         themeMode: themeController.mode,
         locale: localeController.localeOverride,
         supportedLocales: kSupportedAppLocales,
@@ -112,6 +130,7 @@ class CamScannerApp extends StatelessWidget {
           feedbackDependencies: feedbackDependencies,
           themeController: themeController,
           localeController: localeController,
+          handednessController: handednessController,
         ),
       ),
     );

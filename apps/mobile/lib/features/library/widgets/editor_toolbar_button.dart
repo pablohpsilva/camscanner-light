@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/ream_colors.dart';
+import '../../../theme/app_colors.dart';
 
 /// One item in the dark editor toolbar: an icon over a small label. [danger]
 /// tints it red (Delete); a null [onPressed] dims and disables it.
@@ -18,7 +18,7 @@ class EditorToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     final enabled = onPressed != null;
     final color = !enabled ? r.muted : (danger ? r.deleteRed : r.ink);
     return InkWell(

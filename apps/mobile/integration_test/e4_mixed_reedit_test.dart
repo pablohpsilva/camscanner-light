@@ -21,8 +21,7 @@ void main() {
   group('''Mixed re-edit of a page''', () {
     testWidgets('''Rotate and crop repeatedly without error''', (tester) async {
       await aDocumentWithARealPageImageWasSavedToPersistentStorageEarlier(
-        tester,
-      );
+          tester);
       await theAppLaunchesReadingThatSameStorage(tester);
       await iOpenTheFirstDocument(tester);
       await iSeeThePageViewer(tester);

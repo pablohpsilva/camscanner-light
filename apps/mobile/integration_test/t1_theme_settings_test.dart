@@ -16,9 +16,8 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('''Choose the app theme''', () {
-    testWidgets('''Switch from the default dark theme to light''', (
-      tester,
-    ) async {
+    testWidgets('''Switch from the default dark theme to light''',
+        (tester) async {
       await theAppIsLaunchedWithCameraPermissionGrantedAndEmptyStorage(tester);
       await iOpenSettingsFromHome(tester);
       await iSelectTheLightTheme(tester);

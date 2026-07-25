@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/donation/donation_screen.dart';
-import 'package:mobile/theme/ream_colors.dart';
+import 'package:mobile/theme/app_colors.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
@@ -196,7 +196,7 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
   });
 
-  testWidgets('donation uses Ream chrome (header + paper bg)', (tester) async {
+  testWidgets('donation uses App chrome (header + paper bg)', (tester) async {
     await tester.pumpWidget(
       localizedTestApp(
         home: const DonationScreen(
@@ -209,6 +209,6 @@ void main() {
     expect(find.textContaining('Ream'), findsNothing);
     expect(find.byKey(const Key('donation-kofi-button')), findsOneWidget);
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, ReamColors.light.paper);
+    expect(scaffold.backgroundColor, AppColors.light.paper);
   });
 }

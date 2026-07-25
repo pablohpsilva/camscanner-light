@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "CamScanner-light",
+  "appTitle": "ScannerCam Light",
   "@appTitle": {
     "description": "Brand name — MaterialApp title, Settings About; same in all languages"
   },
@@ -35,6 +35,14 @@
   "commonCopied": "Copied",
   "@commonCopied": {
     "description": "Snackbar"
+  },
+  "copyTextDone": "Text copied",
+  "@copyTextDone": {
+    "description": "Snackbar after copying a document's recognized text"
+  },
+  "copyTextEmpty": "No text to copy",
+  "@copyTextEmpty": {
+    "description": "Snackbar when a document has no recognized text to copy"
   },
   "commonDocumentOptions": "Document options",
   "@commonDocumentOptions": {
@@ -166,6 +174,18 @@
   "settingsThemeSystem": "System",
   "@settingsThemeSystem": {
     "description": "Theme segment"
+  },
+  "settingsHandednessLabel": "Handedness",
+  "@settingsHandednessLabel": {
+    "description": "Section label for the scan-button handedness toggle"
+  },
+  "settingsHandednessLeft": "Left",
+  "@settingsHandednessLeft": {
+    "description": "Handedness segment: primary Scan button on the left"
+  },
+  "settingsHandednessRight": "Right",
+  "@settingsHandednessRight": {
+    "description": "Handedness segment: primary Scan button on the right"
   },
   "settingsSectionLanguage": "Language",
   "@settingsSectionLanguage": {

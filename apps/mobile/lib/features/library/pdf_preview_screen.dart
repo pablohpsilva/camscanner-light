@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 import '../../l10n/l10n.dart';
-import '../../theme/ream_colors.dart';
-import '../../theme/widgets/ream_back_header.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/widgets/app_back_header.dart';
 import 'feature_flags.dart';
 import 'share_channel.dart';
 import 'widgets/share_menu_button.dart';
@@ -83,10 +83,10 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.ream;
+    final r = context.appColors;
     return Scaffold(
       backgroundColor: r.paper,
-      appBar: ReamBackHeader(
+      appBar: AppBackHeader(
         title: widget.name,
         onBack: () => Navigator.of(context).maybePop(),
         trailing: ShareMenuButton(

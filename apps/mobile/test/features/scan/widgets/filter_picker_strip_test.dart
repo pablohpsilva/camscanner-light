@@ -74,7 +74,12 @@ void main() {
       },
     );
 
-    testWidgets('selected tile has a border decoration', (tester) async {
+    // B1: the selected state is a clearly-visible FILLED PILL (like AppSegmented),
+    // not a thin low-contrast border. Assert the fill without hardcoding the exact
+    // theme color: selected has a non-transparent fill, unselected is transparent.
+    testWidgets('selected tile is a filled pill (non-transparent fill)', (
+      tester,
+    ) async {
       await _pump(tester, selectedMode: EnhancerMode.grayscale);
 
       final container = tester.widget<Container>(
@@ -82,13 +87,20 @@ void main() {
       );
       final decoration = container.decoration as BoxDecoration?;
       expect(
-        decoration?.border,
+        decoration?.color,
         isNotNull,
-        reason: 'Selected tile must have a border',
+        reason: 'Selected tile must have a fill color',
+      );
+      expect(
+        decoration?.color,
+        isNot(Colors.transparent),
+        reason: 'Selected tile must be a visible filled pill',
       );
     });
 
-    testWidgets('unselected tile has no border', (tester) async {
+    testWidgets('unselected tile has a transparent fill (no pill)', (
+      tester,
+    ) async {
       await _pump(tester, selectedMode: EnhancerMode.auto);
 
       final container = tester.widget<Container>(
@@ -96,10 +108,24 @@ void main() {
       );
       final decoration = container.decoration as BoxDecoration?;
       expect(
-        decoration?.border,
-        isNull,
-        reason: 'Unselected tile must not have a border',
+        decoration?.color,
+        Colors.transparent,
+        reason: 'Unselected tile must not be filled',
       );
+    });
+
+    // B1: labels must be readable design-system ink, never Material's disabled
+    // white60/white54 opacities (the "looks disabled" bug this restyle fixes).
+    testWidgets('labels do not use Material disabled white opacities', (
+      tester,
+    ) async {
+      await _pump(tester, selectedMode: EnhancerMode.auto);
+      final texts = tester.widgetList<Text>(find.byType(Text));
+      for (final t in texts) {
+        final c = t.style?.color;
+        expect(c, isNot(Colors.white60));
+        expect(c, isNot(Colors.white54));
+      }
     });
 
     testWidgets('does not crash when sourceBytes is corrupt', (tester) async {

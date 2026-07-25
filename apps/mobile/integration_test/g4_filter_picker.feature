@@ -20,3 +20,8 @@ Feature: G4 Filter picker strip
     When I tap the original filter tile
     And I tap Accept
     Then the document is saved without enhancement
+
+  Scenario: Selecting a filter shows a live preview on the big image
+    Given the review screen is open with a captured image
+    When I tap the grayscale filter tile
+    Then the big image shows the filtered preview

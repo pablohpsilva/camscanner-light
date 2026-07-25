@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../../../theme/ream_colors.dart';
+import '../../../theme/app_colors.dart';
 import '../page_image.dart';
 
 /// Thumbnail tile geometry — the SINGLE source for the tile size + its scroll
@@ -79,13 +79,13 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
   Widget _buildTile(BuildContext context, int index) {
     final isSelected = index == widget.currentIndex;
     final page = widget.pages[index];
-    final ream = context.ream;
+    final appColors = context.appColors;
     final dpr = MediaQuery.of(context).devicePixelRatio;
     final placeholder = Container(
       width: kTileWidth,
       height: kTileHeight,
-      color: ream.surface,
-      child: Icon(Icons.description_outlined, color: ream.muted),
+      color: appColors.surface,
+      child: Icon(Icons.description_outlined, color: appColors.muted),
     );
     return GestureDetector(
       onTap: () => widget.onTap(index),
@@ -95,7 +95,7 @@ class _PageThumbnailStripState extends State<PageThumbnailStrip> {
         margin: const EdgeInsets.symmetric(horizontal: kTileMargin),
         foregroundDecoration: isSelected
             ? BoxDecoration(
-                border: Border.all(color: ream.green, width: 2),
+                border: Border.all(color: appColors.green, width: 2),
                 borderRadius: BorderRadius.circular(4),
               )
             : null,
