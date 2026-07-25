@@ -51,10 +51,17 @@ const int kAutoLocalWindowRadius = 16;
 /// gradients before they are divided out (avoids blocky contrast transitions).
 const int kAutoLocalBlurRadius = 24;
 
-/// Minimum local luminance span (white - black) for a region to be stretched.
-/// Below this the region is blank/uniform paper with no real ink — leave it
-/// untouched so sensor noise is not amplified into speckle.
-const int kAutoLocalMinSpan = 40;
+/// Local luminance span (white − black) at/below which a region is treated as
+/// blank paper and left untouched — prevents amplifying sensor noise into
+/// speckle. The guard ramps SMOOTHLY from here up to [kAutoLocalSpanHi] so a
+/// hair's-worth of span difference never flips a whole region on/off (which
+/// caused visible seams AND native/Dart parity blow-ups on a hard threshold).
+const int kAutoLocalSpanLo = 20;
+
+/// Local span at/above which the local contrast stretch runs at full
+/// [kAutoLocalStrength]. Between [kAutoLocalSpanLo] and this, strength ramps
+/// linearly with span.
+const int kAutoLocalSpanHi = 60;
 
 /// Blend of the locally-stretched luma vs the original (0 = off, 1 = full).
 /// < 1 keeps already-clean images looking natural while still rescuing faded
@@ -396,8 +403,9 @@ Uint8List _blur1(Uint8List src, int w, int h) {
 /// Stage 2: local luminance contrast stretch that preserves colour. Estimates
 /// the local black (ink) and white (paper) luminance references and rescales
 /// each pixel's luma between them, applying the same multiplicative scale to
-/// R/G/B so hue/saturation are preserved. Blank/low-contrast regions (span <
-/// [kAutoLocalMinSpan]) are left untouched so noise is not amplified.
+/// R/G/B so hue/saturation are preserved. Blank/low-contrast regions (span at
+/// or below [kAutoLocalSpanLo]) are left untouched so noise is not amplified;
+/// the guard ramps smoothly up to full strength at [kAutoLocalSpanHi].
 void _localContrast(Uint8List px, int w, int h) {
   final (black, white, bw, bh) = _estimateLocalRefs(px, w, h);
   final sx = bw > 1 ? (bw - 1) / (w - 1) : 0.0;
@@ -427,12 +435,16 @@ void _localContrast(Uint8List px, int w, int h) {
       final oi = o + x * 3;
       final r = px[oi], g = px[oi + 1], b = px[oi + 2];
       final yLuma = 0.299 * r + 0.587 * g + 0.114 * b;
+      final guard =
+          ((span - kAutoLocalSpanLo) / (kAutoLocalSpanHi - kAutoLocalSpanLo))
+              .clamp(0.0, 1.0);
       double yout;
-      if (span < kAutoLocalMinSpan) {
+      if (guard <= 0.0) {
         yout = yLuma;
       } else {
-        final yPrime = ((yLuma - bRef) * 255.0 / span).clamp(0.0, 255.0);
-        yout = yLuma + kAutoLocalStrength * (yPrime - yLuma);
+        final spanSafe = span < 1.0 ? 1.0 : span;
+        final yPrime = ((yLuma - bRef) * 255.0 / spanSafe).clamp(0.0, 255.0);
+        yout = yLuma + kAutoLocalStrength * guard * (yPrime - yLuma);
       }
       final scale = yout / (yLuma < 1.0 ? 1.0 : yLuma);
       final nr = (r * scale).round();
