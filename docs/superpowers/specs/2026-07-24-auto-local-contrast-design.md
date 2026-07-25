@@ -4,6 +4,21 @@ Date: 2026-07-24
 Status: Approved design, ready for implementation plan
 Target release: 1.1.3 (or the next build after)
 
+## Amendment 2026-07-25 — smooth guard (during implementation)
+
+The original design used a **hard** guard: `span < kAutoLocalMinSpan → untouched,
+else full stretch`. During native implementation this failed the `np2` parity
+gate (bright-bg mean 8.19 vs `< 2.0`): a binary switch at the threshold means a
+tiny OpenCV-vs-Dart `span` difference flips *entire regions* on/off. The same
+discontinuity would also produce visible seams in real photos. Fix (approved):
+make the guard a **smooth ramp**. Replace `kAutoLocalMinSpan` with
+`kAutoLocalSpanLo = 20` and `kAutoLocalSpanHi = 60`, and compute
+`guard = clamp((span − lo)/(hi − lo), 0, 1)`, then
+`yout = y + kAutoLocalStrength · guard · (yPrime − y)`. Also make the `np2`
+bright-bg fixture use realistic thick strokes instead of a period-4 (Nyquist)
+pattern that aliases at the 512px proxy. The per-pixel formula below is updated
+accordingly.
+
 ## Problem
 
 The "Auto" (Scanned document) filter is the default enhancement applied to every
