@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 
 import '../../../core/async/with_isolate_timeout.dart';
 import '../../../l10n/l10n.dart';
+import '../../../theme/app_colors.dart';
 import '../../library/auto_enhancer.dart';
 import '../../library/color_enhancer.dart';
 import '../../library/enhancer_mode.dart';
@@ -166,58 +167,73 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    // B1: styled with the App design system (context.appColors) instead of raw
+    // black + Material disabled-white opacities. Selected tiles are a filled
+    // pill (like AppSegmented), labels are high-contrast ink.
+    final r = context.appColors;
     final l10n = context.l10n;
     return Container(
-      height: 100,
-      color: Colors.black,
+      height: 108,
+      color: r.surface,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         children: _kFilters.map((f) {
           final isSelected = f.mode == widget.selectedMode;
           final thumb = _thumbs[f.mode];
+          // Filled-pill selected state mirrors AppSegmented: dark ink fill with
+          // paper-coloured label; unselected is transparent with ink2 label.
+          final labelColor = isSelected ? r.surface : r.ink2;
           return GestureDetector(
             onTap: () => widget.onModeChanged(f.mode),
             child: Container(
               key: Key(f.tileKey),
-              width: 68,
+              width: 72,
               margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
               decoration: BoxDecoration(
-                border: isSelected
-                    ? Border.all(color: primary, width: 2)
-                    : null,
-                borderRadius: BorderRadius.circular(6),
+                color: isSelected ? r.ink : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
                     width: 52,
-                    height: 60,
+                    height: 58,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(6),
                       child: thumb != null
                           ? Image.memory(thumb, fit: BoxFit.cover)
                           : _generating
-                          ? const Center(
+                          ? Center(
                               child: SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  color: isSelected ? r.surface : r.muted,
                                 ),
                               ),
                             )
-                          : Icon(f.icon, size: 28, color: Colors.white54),
+                          : ColoredBox(
+                              color: isSelected ? r.surface2 : r.line2,
+                              child: Icon(
+                                f.icon,
+                                size: 28,
+                                color: r.muted,
+                              ),
+                            ),
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     _filterLabel(f.mode, l10n),
                     style: TextStyle(
-                      fontSize: 11,
-                      color: isSelected ? Colors.white : Colors.white60,
+                      fontFamily: 'Figtree',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: labelColor,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
