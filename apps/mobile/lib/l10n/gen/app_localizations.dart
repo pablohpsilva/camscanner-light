@@ -343,6 +343,24 @@ abstract class AppLocalizations {
   /// **'System'**
   String get settingsThemeSystem;
 
+  /// Section label for the scan-button handedness toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Handedness'**
+  String get settingsHandednessLabel;
+
+  /// Handedness segment: primary Scan button on the left
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get settingsHandednessLeft;
+
+  /// Handedness segment: primary Scan button on the right
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get settingsHandednessRight;
+
   /// Section label + picker dialog title
   ///
   /// In en, this message translates to:

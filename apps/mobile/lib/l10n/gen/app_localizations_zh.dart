@@ -134,6 +134,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsThemeSystem => '跟随系统';
 
   @override
+  String get settingsHandednessLabel => '惯用手';
+
+  @override
+  String get settingsHandednessLeft => '左';
+
+  @override
+  String get settingsHandednessRight => '右';
+
+  @override
   String get settingsSectionLanguage => '语言';
 
   @override

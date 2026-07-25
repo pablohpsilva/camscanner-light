@@ -137,6 +137,15 @@ class AppLocalizationsLb extends AppLocalizations {
   String get settingsThemeSystem => 'System';
 
   @override
+  String get settingsHandednessLabel => 'Händegkeet';
+
+  @override
+  String get settingsHandednessLeft => 'Lénks';
+
+  @override
+  String get settingsHandednessRight => 'Riets';
+
+  @override
   String get settingsSectionLanguage => 'Sprooch';
 
   @override

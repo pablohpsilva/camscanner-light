@@ -138,6 +138,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsThemeSystem => 'Système';
 
   @override
+  String get settingsHandednessLabel => 'Latéralité';
+
+  @override
+  String get settingsHandednessLeft => 'Gauche';
+
+  @override
+  String get settingsHandednessRight => 'Droite';
+
+  @override
   String get settingsSectionLanguage => 'Langue';
 
   @override

@@ -30,6 +30,8 @@ import 'widgets/sort_pill.dart';
 import '../donation/donation_banner.dart';
 import '../donation/donation_availability.dart';
 import '../feedback/feedback_dependencies.dart';
+import '../settings/handedness_controller.dart';
+import '../settings/handedness_store.dart';
 import '../settings/settings_screen.dart';
 
 /// The app's home: the document library. All library state + orchestration lives
@@ -42,6 +44,7 @@ class HomeScreen extends StatefulWidget {
   final FeedbackDependencies feedbackDependencies;
   final ThemeController? themeController;
   final LocaleController? localeController;
+  final HandednessController? handednessController;
 
   const HomeScreen({
     super.key,
@@ -50,6 +53,7 @@ class HomeScreen extends StatefulWidget {
     this.feedbackDependencies = const FeedbackDependencies(),
     this.themeController,
     this.localeController,
+    this.handednessController,
   });
 
   // Aggressive cold-start watchdog budget. Every startup step must finish within
@@ -80,6 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
   late final bool _ownsLocaleController = widget.localeController == null;
   late final LocaleController _localeController =
       widget.localeController ?? LocaleController(store: InMemoryLocaleStore());
+  late final bool _ownsHandednessController =
+      widget.handednessController == null;
+  late final HandednessController _handednessController =
+      widget.handednessController ??
+      HandednessController(store: InMemoryHandednessStore());
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -106,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // one, which the caller still owns and may reuse.
     if (_ownsThemeController) _themeController.dispose();
     if (_ownsLocaleController) _localeController.dispose();
+    if (_ownsHandednessController) _handednessController.dispose();
     super.dispose();
   }
 
@@ -237,7 +247,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _lib,
+      // Also listen to handedness so the action row re-orders immediately when
+      // the user changes hand in settings and returns.
+      listenable: Listenable.merge([_lib, _handednessController]),
       builder: (context, _) {
         // The banner's own SafeArea absorbs the bottom inset when shown; without
         // it (iOS, guideline 3.1.1) the body must clear the home indicator.
@@ -397,6 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_) => SettingsScreen(
             themeController: _themeController,
             localeController: _localeController,
+            handednessController: _handednessController,
             feedbackDependencies: widget.feedbackDependencies,
             feedbackAvailable: _feedbackAvailable,
           ),
@@ -448,18 +461,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActionRow(BuildContext context) {
     final f = widget.libraryDependencies.features;
     final ready = _lib.repository != null;
-    final buttons = <Widget>[
-      if (f.scan)
-        Expanded(
-          flex: 3,
-          child: AppActionButton(
-            key: const Key('home-scan'),
-            label: context.l10n.homeActionScan,
-            icon: Icons.add,
-            primary: true,
-            onPressed: ready ? _openScan : null,
-          ),
-        ),
+    // The primary Scan CTA (labeled).
+    final scan = f.scan
+        ? Expanded(
+            flex: 3,
+            child: AppActionButton(
+              key: const Key('home-scan'),
+              label: context.l10n.homeActionScan,
+              icon: Icons.add,
+              primary: true,
+              onPressed: ready ? _openScan : null,
+            ),
+          )
+        : null;
+    // Secondary actions, rendered ICON-ONLY (tooltip + semantics) so the row
+    // never overflows in long translations. Natural reading order ID → Import.
+    final secondaries = <Widget>[
       if (f.idCard)
         Expanded(
           flex: 2,
@@ -467,6 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
             key: const Key('home-scan-id'),
             label: context.l10n.homeActionIdCard,
             icon: Icons.badge_outlined,
+            showLabel: false,
             onPressed: ready ? _openIdScan : null,
           ),
         ),
@@ -477,10 +495,28 @@ class _HomeScreenState extends State<HomeScreen> {
             key: const Key('home-import'),
             label: context.l10n.homeActionImport,
             icon: Icons.download_outlined,
+            showLabel: false,
             onPressed: ready ? _onImport : null,
           ),
         ),
     ];
+    // Physical left-to-right order: right-handed puts Scan on the physical
+    // right (after the secondaries); left-handed keeps Scan on the left.
+    final rightHanded = _handednessController.value == Handedness.right;
+    final physical = <Widget>[
+      if (rightHanded) ...[
+        ...secondaries,
+        ?scan,
+      ] else ...[
+        ?scan,
+        ...secondaries,
+      ],
+    ];
+    // Apply the physical order AFTER Flutter's automatic RTL flip: a Row places
+    // its first child on the right under RTL, so reverse the logical children
+    // there to keep the intended physical layout (no double-flip).
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final buttons = isRtl ? physical.reversed.toList() : physical;
     final spaced = <Widget>[];
     for (var i = 0; i < buttons.length; i++) {
       if (i > 0) spaced.add(const SizedBox(width: 8));

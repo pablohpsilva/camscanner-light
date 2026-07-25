@@ -100,4 +100,85 @@ void main() {
       expect(style.color, const Color(0xFF201C16));
     },
   );
+
+  testWidgets(
+    'icon-only mode renders the icon, a Tooltip + Semantics label, no Text',
+    (tester) async {
+      await pumpApp(
+        tester,
+        const AppActionButton(
+          key: Key('act-import'),
+          label: 'Import',
+          icon: Icons.download_outlined,
+          showLabel: false,
+          onPressed: _noop,
+        ),
+      );
+      // The label is not rendered as visible text.
+      expect(find.text('Import'), findsNothing);
+      // The icon is still shown.
+      expect(find.byIcon(Icons.download_outlined), findsOneWidget);
+      // A Tooltip carries the label for pointer/keyboard users.
+      final tooltip = tester.widget<Tooltip>(
+        find.descendant(
+          of: find.byType(AppActionButton),
+          matching: find.byType(Tooltip),
+        ),
+      );
+      expect(tooltip.message, 'Import');
+      // A Semantics node carries the label for screen readers.
+      final semantics = tester.widget<Semantics>(
+        find.descendant(
+          of: find.byType(AppActionButton),
+          matching: find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == 'Import',
+          ),
+        ),
+      );
+      expect(semantics.properties.label, 'Import');
+    },
+  );
+
+  testWidgets('labeled mode (default) still shows the Text label', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      const AppActionButton(
+        key: Key('act-id'),
+        label: 'ID card',
+        icon: Icons.badge_outlined,
+        onPressed: _noop,
+      ),
+    );
+    expect(find.text('ID card'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppActionButton),
+        matching: find.byType(Tooltip),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('primary label is single-line with ellipsis overflow', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      const AppActionButton(
+        label: 'A very very long label that could wrap',
+        icon: Icons.add,
+        primary: true,
+        onPressed: _noop,
+      ),
+    );
+    final text = tester.widget<Text>(
+      find.text('A very very long label that could wrap'),
+    );
+    expect(text.maxLines, 1);
+    expect(text.overflow, TextOverflow.ellipsis);
+  });
 }
+
+void _noop() {}

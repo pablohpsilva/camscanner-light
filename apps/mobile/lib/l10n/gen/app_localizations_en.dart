@@ -135,6 +135,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsThemeSystem => 'System';
 
   @override
+  String get settingsHandednessLabel => 'Handedness';
+
+  @override
+  String get settingsHandednessLeft => 'Left';
+
+  @override
+  String get settingsHandednessRight => 'Right';
+
+  @override
   String get settingsSectionLanguage => 'Language';
 
   @override

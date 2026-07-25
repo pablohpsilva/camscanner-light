@@ -137,6 +137,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsThemeSystem => 'Sistema';
 
   @override
+  String get settingsHandednessLabel => 'Mano dominante';
+
+  @override
+  String get settingsHandednessLeft => 'Izquierda';
+
+  @override
+  String get settingsHandednessRight => 'Derecha';
+
+  @override
   String get settingsSectionLanguage => 'Idioma';
 
   @override

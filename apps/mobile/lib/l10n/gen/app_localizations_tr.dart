@@ -135,6 +135,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsThemeSystem => 'Sistem';
 
   @override
+  String get settingsHandednessLabel => 'El tercihi';
+
+  @override
+  String get settingsHandednessLeft => 'Sol';
+
+  @override
+  String get settingsHandednessRight => 'Sağ';
+
+  @override
   String get settingsSectionLanguage => 'Dil';
 
   @override
