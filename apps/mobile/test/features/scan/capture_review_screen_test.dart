@@ -623,11 +623,10 @@ void main() {
 
       await tester.tap(find.byKey(const Key('filter-tile-color')));
       await tester.pump(); // schedule
-      await tester.pump(const Duration(milliseconds: 10)); // fire -> proxyRunner
-      expect(
-        find.byKey(const Key('review-preview-loading')),
-        findsOneWidget,
-      );
+      await tester.pump(
+        const Duration(milliseconds: 10),
+      ); // fire -> proxyRunner
+      expect(find.byKey(const Key('review-preview-loading')), findsOneWidget);
 
       gate.complete(Uint8List(0)); // drain
       await tester.pump(); // proxy future resolves -> enhance

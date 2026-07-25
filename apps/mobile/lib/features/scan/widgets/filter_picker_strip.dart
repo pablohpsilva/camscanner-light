@@ -218,11 +218,7 @@ class _FilterPickerStripState extends State<FilterPickerStrip> {
                             )
                           : ColoredBox(
                               color: isSelected ? r.surface2 : r.line2,
-                              child: Icon(
-                                f.icon,
-                                size: 28,
-                                color: r.muted,
-                              ),
+                              child: Icon(f.icon, size: 28, color: r.muted),
                             ),
                     ),
                   ),
