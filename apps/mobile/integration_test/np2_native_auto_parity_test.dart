@@ -66,36 +66,93 @@ void main() {
     expect(mean, lessThan(2.0), reason: 'quality parity gate');
   });
 
-  // P01 T2: an over-cap full-frame input must be processed at a bounded working
-  // resolution (the float pass no longer runs at raw capture resolution). This
-  // exercises the computeWorkResolution downscale branch (scale != 1.0) that the
-  // 1600x1200 fixture above never hits.
-  test('native Auto caps an over-cap full-frame input to the output cap', () async {
-    const long = 4600, short = 3450; // long side > kDefaultFlatMaxDimension (3500)
-    final bytes = _doc(long, short);
+  test('native Auto ≈ Dart Auto (bright bg + faded text)', () async {
+    // Bright uniform bg with faded vertical "ink" bars — the washed-out case.
+    // Bars are 6px wide on a 24px pitch so they SURVIVE the 512-longside proxy
+    // downscale intact (a period-4 pattern aliased at the proxy scale, making
+    // the OpenCV vs package:image resample/blur divergence land on opposite
+    // sides of the smooth guard for whole regions — a synthetic-only artifact).
+    const w = 1200, h = 900;
+    final im = img.Image(width: w, height: h, numChannels: 3);
+    for (final px in im) {
+      px
+        ..r = 246
+        ..g = 245
+        ..b = 244;
+    }
+    for (var y = h ~/ 4; y < 3 * h ~/ 4; y++) {
+      for (var x = w ~/ 4; x < 3 * w ~/ 4; x++) {
+        if ((x % 24) < 6) {
+          im.getPixel(x, y)
+            ..r = 170
+            ..g = 170
+            ..b = 170;
+        }
+      }
+    }
+    final bytes = Uint8List.fromList(img.encodeJpg(im, quality: 95));
+
     final nativeOut = await p.process(
       bytes,
       CropCorners.fullFrame,
       EnhancerMode.auto,
     );
-    expect(nativeOut, isNotNull, reason: 'over-cap Auto must still produce output');
-
+    expect(nativeOut, isNotNull);
+    final baked = img.bakeOrientation(img.decodeImage(bytes)!);
+    final dartImg = autoEnhanceOriented(baked);
     final nImg = img.decodeImage(nativeOut!)!;
-    // The working resolution (and thus the output) is bounded by the cap: the
-    // long side is downscaled to exactly kDefaultFlatMaxDimension.
-    expect(
-      nImg.width,
-      kDefaultFlatMaxDimension,
-      reason: 'over-cap long side must be downscaled to the cap',
-    );
-    expect(nImg.width <= kDefaultFlatMaxDimension, isTrue);
-    expect(nImg.height <= kDefaultFlatMaxDimension, isTrue);
-    // Aspect ratio preserved (proportional downscale).
-    expect(
-      ((nImg.width / nImg.height) - (long / short)).abs(),
-      lessThan(0.02),
-    );
+    final nb = nImg.getBytes(order: img.ChannelOrder.rgb);
+    final db = dartImg.getBytes(order: img.ChannelOrder.rgb);
+    var sum = 0, maxd = 0;
+    for (var i = 0; i < nb.length; i++) {
+      final d = (nb[i] - db[i]).abs();
+      sum += d;
+      if (d > maxd) maxd = d;
+    }
+    final mean = sum / nb.length;
     // ignore: avoid_print
-    print('NP2 over-cap: in=${long}x$short out=${nImg.width}x${nImg.height}');
+    print('NP2 bright-bg Auto: mean=${mean.toStringAsFixed(3)} max=$maxd');
+    expect(mean, lessThan(2.0), reason: 'quality parity gate');
   });
+
+  // P01 T2: an over-cap full-frame input must be processed at a bounded working
+  // resolution (the float pass no longer runs at raw capture resolution). This
+  // exercises the computeWorkResolution downscale branch (scale != 1.0) that the
+  // 1600x1200 fixture above never hits.
+  test(
+    'native Auto caps an over-cap full-frame input to the output cap',
+    () async {
+      const long = 4600,
+          short = 3450; // long side > kDefaultFlatMaxDimension (3500)
+      final bytes = _doc(long, short);
+      final nativeOut = await p.process(
+        bytes,
+        CropCorners.fullFrame,
+        EnhancerMode.auto,
+      );
+      expect(
+        nativeOut,
+        isNotNull,
+        reason: 'over-cap Auto must still produce output',
+      );
+
+      final nImg = img.decodeImage(nativeOut!)!;
+      // The working resolution (and thus the output) is bounded by the cap: the
+      // long side is downscaled to exactly kDefaultFlatMaxDimension.
+      expect(
+        nImg.width,
+        kDefaultFlatMaxDimension,
+        reason: 'over-cap long side must be downscaled to the cap',
+      );
+      expect(nImg.width <= kDefaultFlatMaxDimension, isTrue);
+      expect(nImg.height <= kDefaultFlatMaxDimension, isTrue);
+      // Aspect ratio preserved (proportional downscale).
+      expect(
+        ((nImg.width / nImg.height) - (long / short)).abs(),
+        lessThan(0.02),
+      );
+      // ignore: avoid_print
+      print('NP2 over-cap: in=${long}x$short out=${nImg.width}x${nImg.height}');
+    },
+  );
 }
