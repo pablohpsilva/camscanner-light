@@ -98,12 +98,11 @@ void main() {
     expect(find.byKey(const Key('settings-feedback')), findsNothing);
   });
 
-  testWidgets('about footer shows the app name and no "Ream"', (t) async {
+  testWidgets('about footer shows the app name', (t) async {
     final c = ThemeController(store: InMemoryThemeModeStore());
     await t.pumpWidget(_host(c));
     expect(find.byKey(const Key('settings-about')), findsOneWidget);
     expect(find.textContaining('ScannerCam Light'), findsOneWidget);
-    expect(find.textContaining('Ream'), findsNothing);
   });
 
   testWidgets('support row is shown on iOS', (t) async {

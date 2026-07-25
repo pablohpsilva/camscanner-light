@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Semantic color tokens for the App design system, carried on [ThemeData]
-/// as a [ThemeExtension]. Values are the approved sRGB constants from
-/// docs/design/ream/README.md (oklch converted to hex; ±1/channel tolerance).
+/// as a [ThemeExtension]. Values are the approved sRGB constants from the
+/// design system's oklch tokens (converted to hex; ±1/channel tolerance).
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
   final Color paper, surface, surface2, ink, ink2, muted, line, line2, appBg;
