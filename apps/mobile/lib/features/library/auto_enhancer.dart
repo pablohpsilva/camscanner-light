@@ -27,15 +27,6 @@ const int kAutoDilateRadius = 7;
 /// soft illumination gradient before it is divided out.
 const int kAutoBlurRadius = 12;
 
-/// Top fraction of pixels ignored when picking the per-channel white point in
-/// the finishing stretch, so a few specular outliers don't set the reference.
-const double kAutoWhiteClip = 0.01;
-
-/// Fraction of the white point below which finishing leaves pixels untouched —
-/// only the top of the range is pulled to 255, so text/ink are never lifted
-/// (which would grey them out).
-const double kAutoBlackAnchor = 0.55;
-
 /// Upper bound on the per-channel flat-field gain (255/bg). Real hand/phone
 /// shadows on paper only dim it to ~15-40% brightness (gain 2.5-6), so this
 /// still fully whitens them; but it stops near-black off-paper regions (bg→0)

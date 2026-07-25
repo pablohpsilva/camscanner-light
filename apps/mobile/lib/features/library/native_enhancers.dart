@@ -262,6 +262,8 @@ cv.Mat autoFlatField(cv.Mat src) {
     blended = null;
     graySafe.dispose();
     graySafe = null;
+    // `.cvd` copies each Mat's header into the vector's own storage, so disposing
+    // `ratio` and `ratioVec` separately is safe refcounting, not a double-free.
     ratioVec = [ratio, ratio, ratio].cvd;
     ratio3 = cv.merge(ratioVec); // CV_32FC3
     ratio.dispose();
