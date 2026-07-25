@@ -118,7 +118,7 @@ abstract class AppLocalizations {
   /// Brand name — MaterialApp title, Settings About; same in all languages
   ///
   /// In en, this message translates to:
-  /// **'CamScanner-light'**
+  /// **'ScannerCam Light'**
   String get appTitle;
 
   /// Dialogs

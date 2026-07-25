@@ -71,7 +71,7 @@ void main() {
     final c = ThemeController(store: InMemoryThemeModeStore());
     await t.pumpWidget(_host(c));
     expect(find.byKey(const Key('settings-about')), findsOneWidget);
-    expect(find.textContaining('CamScanner-light'), findsOneWidget);
+    expect(find.textContaining('ScannerCam Light'), findsOneWidget);
     expect(find.textContaining('Ream'), findsNothing);
   });
 
