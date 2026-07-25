@@ -12,6 +12,7 @@ import './../test/step/i_see_the_page_viewer.dart';
 import './../test/step/i_tap_the_filter_button.dart';
 import './../test/step/i_tap_the_grayscale_filter_tile.dart';
 import './../test/step/i_tap_save_on_the_filter_screen.dart';
+import './../test/step/the_filter_screen_shows_the_filtered_preview.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,18 @@ void main() {
       await iTapTheGrayscaleFilterTile(tester);
       await iTapSaveOnTheFilterScreen(tester);
       await iSeeThePageViewer(tester);
+    });
+    testWidgets(
+        '''Selecting a filter previews it on the base image before saving''',
+        (tester) async {
+      await aDocumentWithARealPageImageWasSavedToPersistentStorageEarlier(
+          tester);
+      await theAppLaunchesReadingThatSameStorage(tester);
+      await iOpenTheFirstDocument(tester);
+      await iSeeThePageViewer(tester);
+      await iTapTheFilterButton(tester);
+      await iTapTheGrayscaleFilterTile(tester);
+      await theFilterScreenShowsTheFilteredPreview(tester);
     });
   });
 }
