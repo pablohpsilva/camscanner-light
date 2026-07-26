@@ -12,7 +12,7 @@ import '../../support/fake_library.dart';
 class _SpyInvalidator implements ImageCacheInvalidator {
   final evicted = <String>[];
   @override
-  void evict(String path, {int? cacheWidth}) => evicted.add(path);
+  Future<void> evict(String path, {int? cacheWidth}) async => evicted.add(path);
 }
 
 /// Unit tests for the page-viewer orchestration (P06 tasks 5-8) — NO widget is

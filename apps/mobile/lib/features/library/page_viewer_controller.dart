@@ -111,7 +111,9 @@ class PageViewerController extends ChangeNotifier {
   Future<void> reloadAfterEdit() async {
     final page = currentPage;
     if (page != null) {
-      _invalidator.evict(page.displayPath, cacheWidth: displayCacheWidth);
+      // Await so the stale entry is gone BEFORE load() triggers a re-decode of
+      // the same-path regenerated flat.
+      await _invalidator.evict(page.displayPath, cacheWidth: displayCacheWidth);
     }
     _imageEpoch++;
     if (_disposed) return;
