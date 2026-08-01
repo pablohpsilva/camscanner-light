@@ -37,6 +37,13 @@ else
   echo "!! donation_config.json not found -- donation methods will be hidden" >&2
 fi
 
+# App Store Guideline 3.1.1: iOS builds must NOT surface the Bitcoin donation
+# address (Apple rejects out-of-app "purchase" prompts). This script only ever
+# produces App-Store/TestFlight IPAs, so force the flag off here. Android builds
+# still read BITCOIN_ADDRESS from donation_config.json and show it.
+DEFINES+=(--dart-define=FEATURE_IOS_BTC_DONATION=false)
+echo "== FEATURE_IOS_BTC_DONATION=false (App Store 3.1.1) =="
+
 echo "== building release IPA (archive + app-store export) =="
 flutter build ipa --release \
   --export-options-plist="$APP/ios/ExportOptions.plist" \
