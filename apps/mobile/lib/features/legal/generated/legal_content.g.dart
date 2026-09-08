@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source: libs/legal-content/content/*.json
-// Regenerate: pnpm --filter @camscanner/legal-content generate
+// Regenerate: node libs/legal-content/src/generate.mjs (from the repo root)
 // ignore_for_file: type=lint, type=warning
 
 import '../legal_models.dart';
