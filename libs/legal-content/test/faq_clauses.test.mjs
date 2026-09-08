@@ -70,3 +70,8 @@ test('the offline answer does not gate the feedback reachability check on active
   const t = section('offline')
   assert.doesNotMatch(t, /when actively used|only when you use/)
 })
+
+test('the offline answer does not gate StoreKit tip traffic on making a purchase', () => {
+  const t = section('offline')
+  assert.doesNotMatch(t, /only when actively made|only when you make/)
+})

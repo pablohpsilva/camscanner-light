@@ -11,7 +11,7 @@
       "heading": "Does it work offline?",
       "body": [
         { "type": "p", "text": "Yes. Scanning, edge detection, image enhancement, and on-device text recognition (OCR) all run entirely on the device and need no internet connection. On **Android**, the released app does not even request the INTERNET permission, so it has no way to make a network request at all." },
-        { "type": "p", "text": "On **iOS** there is no equivalent permission system, but the same is true for everything document-related — nothing about a document ever touches the network. Where the optional feedback feature is enabled in a build, the app does check whether the feedback service is reachable automatically each time the library screen opens, whether or not feedback is ever used; an in-app tip, where offered, uses the network only when actively made. See the feedback question below for the full detail on what that check sends and when." }
+        { "type": "p", "text": "On **iOS** there is no equivalent permission system, but the same is true for everything document-related — nothing about a document ever touches the network. Where the optional feedback feature is enabled in a build, the app checks whether the feedback service is reachable automatically each time the library screen opens, whether or not feedback is ever used — see the feedback question below for the full detail on what that check sends and when. Where an in-app tip is offered, opening the support screen asks the App Store for the available tip options before any tip is made; Apple handles the network side of an actual purchase." }
       ]
     },
     {
