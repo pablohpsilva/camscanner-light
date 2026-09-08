@@ -13,8 +13,17 @@ Or just open `index.html` in a browser.
 ## Pages
 
 - `index.html` — marketing landing page
-- `support.html` — support / FAQ / contact (App Store & Play "Support URL")
+- `support.html` — support / contact (App Store & Play "Support URL")
 - `privacy.html` — privacy policy (App Store & Play "Privacy Policy URL")
+- `terms.html` — terms of service
+- `faq.html` — frequently asked questions
+- `legal/` — the same terms/privacy/faq documents in 10 other locales
+
+`terms.html`, `privacy.html`, `faq.html`, and everything under `legal/` are
+**generated** by `node libs/legal-content/src/generate.mjs` (run from the repo
+root) from the shared content in `libs/legal-content/`. Do not hand-edit these
+files — edit the source content and/or `libs/legal-content/src/render-html.mjs`
+and regenerate instead.
 
 ## Publish on GitHub Pages
 
