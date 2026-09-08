@@ -1,0 +1,112 @@
+{
+  "doc": "privacy",
+  "locale": "en",
+  "title": "Privacy Policy",
+  "effectiveDateLabel": "Effective date",
+  "translationNotice": "",
+  "intro": "ScannerCam Light is a free, offline, on-device document scanner for iOS and Android. This policy explains what data the app touches, where it stays, and the few cases in which anything ever leaves the device.",
+  "sections": [
+    {
+      "id": "summary",
+      "heading": "Summary",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light is built to keep documents private. Everything stays on the device, with one explicit exception: the optional in-app feedback feature described below, which only transmits data when it is actively chosen to be sent. There are no user accounts, no analytics, no ads, no tracking, and personal data is never sold." }
+      ]
+    },
+    {
+      "id": "what-we-collect",
+      "heading": "What is collected",
+      "body": [
+        { "type": "p", "text": "**Almost nothing.** Apart from the optional feedback feature described below, ScannerCam Light does not collect, transmit, or store any personal data on any server. There are no user accounts and no analytics or tracking of any kind. No ads are shown, and no data is ever sold. See the Feedback section below for the sole exception." }
+      ]
+    },
+    {
+      "id": "where-data-lives",
+      "heading": "Where your data lives",
+      "body": [
+        { "type": "ul", "items": [
+          "Scanned images are stored as files on your device only.",
+          "Document titles and text are kept in a local database on your device.",
+          "Text recognition (OCR) runs entirely on your device — no images or text are sent anywhere."
+        ] }
+      ]
+    },
+    {
+      "id": "network",
+      "heading": "Network access",
+      "body": [
+        { "type": "p", "text": "The app makes no background network requests. An outbound connection happens only when explicitly triggered: when an optional donation link is tapped, which opens your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; when an optional in-app tip is made on iOS, which is handled by Apple as described in the Purchases section below; or when feedback is explicitly submitted through the in-app feedback form, as described in the Feedback section below." },
+        { "type": "p", "text": "On **Android**, the released app does not request the INTERNET permission at all, so it cannot make any network request. On iOS there is no equivalent permission system; the app still makes no background requests regardless." }
+      ]
+    },
+    {
+      "id": "feedback",
+      "heading": "Feedback",
+      "body": [
+        { "type": "p", "text": "The app includes an optional **Send feedback** feature. No data is ever sent unless the feedback form is opened and **Submit** is tapped. When it is, the following is transmitted:" },
+        { "type": "ul", "items": [
+          "Your message — the text typed into the feedback form (required).",
+          "Your email address — only if one is chosen to be entered. Providing an email is entirely optional.",
+          "Non-personal diagnostics — app version, OS version, device model, and language/locale. These help reproduce reported issues and contain no information about your documents."
+        ] },
+        { "type": "p", "text": "This data is sent to a Cloudflare Worker service, which creates a **publicly visible issue** in the app's GitHub repository. This means your message text will be visible to anyone on the internet, and that if an email address is included, it will also be publicly visible in the GitHub issue." },
+        { "type": "p", "text": "The app warns about this public visibility before submission. Sensitive information should not be included in a feedback message, and the email field can be left blank if that public visibility is not wanted." },
+        { "type": "p", "text": "**No scanned documents or their contents are ever sent.** Feedback submission is strictly limited to the fields listed above." }
+      ]
+    },
+    {
+      "id": "purchases",
+      "heading": "In-app purchases and tips",
+      "body": [
+        { "type": "p", "text": "On iOS the app offers an optional tip. Tips are processed entirely by **Apple**; the developer receives no payment-card details, no billing address, and no other payment data — only Apple's aggregate, anonymous sales reporting. On Android there is no in-app purchase; the donation links open your browser." },
+        { "type": "p", "text": "Ko-fi and Bitcoin donation options may also be offered, depending on platform and app version. These are independent of any Apple in-app purchase and, like other donation links, simply open a third-party page in your browser." }
+      ]
+    },
+    {
+      "id": "sharing",
+      "heading": "Sharing",
+      "body": [
+        { "type": "p", "text": "When a document is exported or shared, the destination is chosen through your device's own share sheet. That action, and where the file goes, is entirely under your control." }
+      ]
+    },
+    {
+      "id": "retention",
+      "heading": "Retention",
+      "body": [
+        { "type": "p", "text": "A scanned document and its metadata are kept on your device for as long as you keep them — nothing is deleted automatically, and nothing expires on its own. A document is removed only when you delete it within the app, or when you uninstall the app itself." },
+        { "type": "p", "text": "Uninstalling ScannerCam Light removes the local database and every image file it created; nothing survives the uninstall. Because no server-side copy of any document is ever made, there is no server-side copy to request the deletion of — deleting on your device is deletion, complete and immediate." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Your rights",
+      "body": [
+        { "type": "p", "text": "Privacy laws such as the EU/UK General Data Protection Regulation (**GDPR**) and the California Consumer Privacy Act (**CCPA**) give individuals rights over their personal data, including the right to access, correct, delete, or object to the processing of it." },
+        { "type": "p", "text": "Because ScannerCam Light collects and stores no personal data on any server, there is normally nothing to export, correct, or erase: the data described in this policy exists only as files and a database on your own device, under your direct control at all times, and it can be removed whenever you like by deleting a document or uninstalling the app." },
+        { "type": "p", "text": "The one exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis — nothing is sent unless the form is opened and Submit is explicitly tapped — and it becomes a public GitHub issue as described in the Feedback section above. A submitted feedback issue can be removed on request by writing to the support email below." }
+      ]
+    },
+    {
+      "id": "children",
+      "heading": "Children's privacy",
+      "body": [
+        { "type": "p", "text": "Because the app performs no background data collection and the optional feedback feature is explicitly user-initiated, it poses no passive data-collection risk to users of any age." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Changes to this policy",
+      "body": [
+        { "type": "p", "text": "The developer of ScannerCam Light may update this policy from time to time, for example to reflect a new feature or a change in applicable law. The effective date at the top of this document shows when the current version took effect." },
+        { "type": "p", "text": "No separate notice is sent when this policy changes. The copy bundled inside the app reflects the version that was current when that release of ScannerCam Light was built; the current version is the one published on the ScannerCam Light website, and the effective date above shows which version you are reading." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Contact",
+      "body": [
+        { "type": "p", "text": "Questions can be sent to [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). See also the [Terms of Service](terms.html) for the legal terms governing use of ScannerCam Light." }
+      ]
+    }
+  ]
+}
