@@ -70,7 +70,7 @@
       "body": [
         { "type": "p", "text": "ScannerCam Light interacts with a small number of independent third parties for features you choose to use. Each is governed by its own terms and privacy practices, which the developer of ScannerCam Light does not control:" },
         { "type": "ul", "items": [
-          "Apple and Google, for distributing the app through their app stores and, where offered, for processing an in-app tip.",
+          "Apple and Google, for distributing the app through their app stores, and Apple alone for processing an optional in-app tip where that is offered.",
           "Ko-fi and the Bitcoin network, for optional donation options that may be offered depending on your platform and app version.",
           "GitHub, for the optional feedback form, which files a publicly visible issue on ScannerCam Light's repository."
         ] },
