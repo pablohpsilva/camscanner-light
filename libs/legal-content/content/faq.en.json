@@ -1,0 +1,116 @@
+{
+  "doc": "faq",
+  "locale": "en",
+  "title": "Frequently Asked Questions",
+  "effectiveDateLabel": "Effective date",
+  "translationNotice": "",
+  "intro": "Answers to common questions about ScannerCam Light. For the full legal detail behind any of these, see the [Privacy Policy](privacy.html) and the [Terms of Service](terms.html).",
+  "sections": [
+    {
+      "id": "offline",
+      "heading": "Does it work offline?",
+      "body": [
+        { "type": "p", "text": "Yes. Scanning, edge detection, image enhancement, and on-device text recognition (OCR) all run entirely on the device and need no internet connection. On **Android**, the released app does not even request the INTERNET permission, so it has no way to make a network request at all." },
+        { "type": "p", "text": "On **iOS** there is no equivalent permission system, but the same is true for everything document-related. A handful of optional features — an in-app tip, or the feedback form where it is enabled — do use the network when actively used; nothing about a document ever does." }
+      ]
+    },
+    {
+      "id": "where-stored",
+      "heading": "Where are my documents stored?",
+      "body": [
+        { "type": "p", "text": "On the device only. Scanned images are saved as files in the app's own storage, and document titles and extracted text are indexed in a local database — nothing is uploaded anywhere. See the [Privacy Policy](privacy.html) for the full detail on what is stored and where." }
+      ]
+    },
+    {
+      "id": "is-it-free",
+      "heading": "Is it free?",
+      "body": [
+        { "type": "p", "text": "Yes — ScannerCam Light is free to use in full, with no ads. Depending on platform and app version, an optional way to support the project may be offered: an in-app tip processed by Apple on iOS, a Ko-fi link, or a Bitcoin donation address. None of these change what the app can do." }
+      ]
+    },
+    {
+      "id": "tips",
+      "heading": "What do tips or donations unlock?",
+      "body": [
+        { "type": "p", "text": "Nothing. Any tip or donation — an optional in-app tip processed by Apple, a Ko-fi contribution, or a Bitcoin donation, whichever is offered — is entirely **voluntary** and does not unlock any feature, remove any limit, or change how the app behaves. ScannerCam Light already includes everything it offers before any tip is given." },
+        { "type": "p", "text": "Tips and donations are non-refundable. See [Terms of Service](terms.html) for the full terms." }
+      ]
+    },
+    {
+      "id": "export-pdf",
+      "heading": "How do I export a PDF?",
+      "body": [
+        { "type": "p", "text": "Open a document, choose export, and pick PDF. The OS share sheet then lets the PDF be saved, printed, or sent to any app or destination chosen there — ScannerCam Light does not control or see where it ends up." }
+      ]
+    },
+    {
+      "id": "ocr-accuracy",
+      "heading": "How accurate is the text recognition (OCR)?",
+      "body": [
+        { "type": "p", "text": "Not perfect. Text recognition, like edge detection and image enhancement, is automated and can misread, omit, or garble text — especially on poor-quality photos, unusual layouts, or handwriting." },
+        { "type": "p", "text": "Always check recognized text against the original before relying on it, especially for anything legal, medical, or financial. See [Terms of Service](terms.html) for the full accuracy disclaimer." }
+      ]
+    },
+    {
+      "id": "search",
+      "heading": "How does search work, and what can't it find?",
+      "body": [
+        { "type": "p", "text": "Search looks through document titles and the text captured by on-device OCR. Because OCR only reads Latin-script text, a document whose content is in Chinese, Arabic, Russian, or another non-Latin script will not be found by searching its text — only its title will be, and only OCR text from Latin-script documents is searchable." }
+      ]
+    },
+    {
+      "id": "backups",
+      "heading": "Are my documents backed up anywhere?",
+      "body": [
+        { "type": "p", "text": "No. ScannerCam Light stores documents only on the device — there is **no cloud storage and no backup** created by the app, and nothing is copied to a server. If the app is uninstalled, or the device is lost, reset, or damaged, those documents are gone for good." },
+        { "type": "p", "text": "Keep your own copies of anything that cannot be afforded to lose — for example by exporting important documents to another app, a computer, or a cloud service of choice before uninstalling the app or switching devices. See [Terms of Service](terms.html) for the full data-loss terms." }
+      ]
+    },
+    {
+      "id": "free-space",
+      "heading": "How do I free up space?",
+      "body": [
+        { "type": "p", "text": "Delete documents no longer needed from the library. Deleting a document removes its image files from the device entirely, not just its entry in the list, so the space is actually freed." }
+      ]
+    },
+    {
+      "id": "feedback-public",
+      "heading": "Is feedback sent through the app made public?",
+      "body": [
+        { "type": "p", "text": "Yes — where the optional feedback feature is enabled in a build, a submitted message becomes a **publicly visible issue** on ScannerCam Light's **GitHub** repository, and anyone on the internet can read the message text and, if one was entered, the email address." },
+        { "type": "p", "text": "Some network activity happens before that point, too: when the library screen loads, the app checks whether the feedback service is reachable, and opening the feedback form loads a **Cloudflare Turnstile** verification challenge — which means Cloudflare receives a request and the device's IP address. Neither of those two steps sends the message or email; that happens on **Submit**." },
+        { "type": "p", "text": "No scanned documents or their contents are ever included in feedback. The email field can be left blank to keep it out of the public issue, and sensitive information should not be put in the message itself. See the Feedback section of the [Privacy Policy](privacy.html) for the full detail." }
+      ]
+    },
+    {
+      "id": "languages",
+      "heading": "Is the app available in my language, and does that include OCR and search?",
+      "body": [
+        { "type": "p", "text": "The app's interface is translated into 11 languages, including Chinese, Russian, and Arabic. Text recognition is more limited: OCR in ScannerCam Light reads **Latin-script** text only — the alphabet used by English, Spanish, French, and similar languages — not Chinese, Arabic, or Cyrillic text." },
+        { "type": "p", "text": "Because full-text search is built on OCR output, this carries through to search: a document scanned in Chinese, Arabic, or Russian will not be found by searching its text, though its title remains searchable. Scanning, viewing, and exporting such documents works normally — only text recognition and text search are affected." }
+      ]
+    },
+    {
+      "id": "ads-tracking",
+      "heading": "Does ScannerCam Light show ads or track usage?",
+      "body": [
+        { "type": "p", "text": "No. There are no ads, no analytics, no crash-reporting, and no tracking SDKs anywhere in the app, and no user accounts. Nothing about app usage is collected or sent anywhere. See the [Privacy Policy](privacy.html) for the full detail on what the app does and does not do with data." }
+      ]
+    },
+    {
+      "id": "lost-phone",
+      "heading": "What happens to my documents if I lose my phone?",
+      "body": [
+        { "type": "p", "text": "They are gone. ScannerCam Light keeps documents only on the device that scanned them — there is no cloud copy and no account to sign back into on a different device. If a phone is lost, reset, or damaged, or the app is uninstalled, its documents cannot be recovered by the developer of ScannerCam Light or by anyone else." },
+        { "type": "p", "text": "The only protection is exporting copies of anything important beforehand — to another app, a computer, or a cloud service of choice. See [Terms of Service](terms.html) for the full data-loss terms." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "How can I get in touch?",
+      "body": [
+        { "type": "p", "text": "Email [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) with questions, bug reports, or feedback. The in-app **Send feedback** form, where enabled, is another way to report a problem — see the [Privacy Policy](privacy.html) for what that sends and to whom, and the [Terms of Service](terms.html) for the terms covering use of the app." }
+      ]
+    }
+  ]
+}
