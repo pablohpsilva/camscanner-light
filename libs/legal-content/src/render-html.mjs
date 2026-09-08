@@ -11,6 +11,15 @@ const esc = (v) => String(v)
 
 const SUPPORT_EMAIL = 'scannercamlight.line149@passmail.net'
 
+// Fully-qualified origin for the deployed site (see .github/workflows/pages.yml
+// and apps/web/README.md). hreflang specifically requires absolute URLs — a
+// relative href there is not just untidy, search engines commonly ignore it,
+// which would silently defeat the whole alternates block.
+const SITE_ORIGIN = 'https://pablohpsilva.github.io/camscanner-light/'
+
+// English-only category label shown above the h1. It has no translation in
+// content/*.json, so it is shown only on the English page rather than leaking
+// an untranslated word into a localized (and possibly RTL) document body.
 const EYEBROW = { terms: 'Terms', privacy: 'Privacy', faq: 'FAQ' }
 
 // Native-language labels for the language switcher. Chrome strings (nav,
@@ -70,6 +79,16 @@ const renderInline = (text, { locale }) => parseInline(text).map((tok) => {
 // `[label](url)` keeps only its label, `**bold**` keeps only its text.
 const plainText = (text) => parseInline(text).map((tok) => tok.text).join('')
 
+// Truncate at the last word boundary within `max` chars, not mid-word —
+// search-result snippets built from a truncated meta description are what a
+// reader actually sees, and "…and it ha" reads as broken, not just short.
+const truncate = (text, max) => {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  const lastSpace = cut.lastIndexOf(' ')
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut) + '…'
+}
+
 const renderBody = (body, ctx) => body.map((b) => b.type === 'p'
   ? `      <p>${renderInline(b.text, ctx)}</p>`
   : `      <ul>\n${b.items.map((i) => `        <li>${renderInline(i, ctx)}</li>`).join('\n')}\n      </ul>`
@@ -94,11 +113,11 @@ export function renderHtml (document, opts) {
   const prefix = locale === 'en' ? '' : '../'
   const dir = locale === 'ar' ? ' dir="rtl"' : ''
 
-  const description = esc(plainText(document.intro).slice(0, 160))
+  const description = esc(truncate(plainText(document.intro), 160))
 
   const hreflangLinks = LOCALES
-    .map((l) => `  <link rel="alternate" hreflang="${webTag(l)}" href="${relativePagePath(doc, l, locale)}" />`)
-    .concat(`  <link rel="alternate" hreflang="x-default" href="${relativePagePath(doc, 'en', locale)}" />`)
+    .map((l) => `  <link rel="alternate" hreflang="${webTag(l)}" href="${SITE_ORIGIN}${pagePath(doc, l)}" />`)
+    .concat(`  <link rel="alternate" hreflang="x-default" href="${SITE_ORIGIN}${pagePath(doc, 'en')}" />`)
     .join('\n')
 
   const langSwitch = LOCALES.map((l) => {
@@ -108,6 +127,10 @@ export function renderHtml (document, opts) {
 
   const translationNotice = locale !== 'en' && document.translationNotice
     ? `\n      <p class="translation-notice">${esc(document.translationNotice)}</p>`
+    : ''
+
+  const eyebrow = locale === 'en'
+    ? `      <span class="eyebrow">${esc(EYEBROW[doc])}</span>\n`
     : ''
 
   return `<!DOCTYPE html>
@@ -138,8 +161,7 @@ ${hreflangLinks}
 
   <main class="section">
     <div class="container prose">
-      <span class="eyebrow">${esc(EYEBROW[doc])}</span>
-      <h1>${esc(document.title)}</h1>
+${eyebrow}      <h1>${esc(document.title)}</h1>
       <p class="lead">${renderInline(document.intro, ctx)}</p>
       <p><em>${esc(document.effectiveDateLabel)}: ${esc(effectiveDate)}</em></p>${translationNotice}
 
@@ -153,7 +175,7 @@ ${langSwitch}
 
   <footer class="footer">
     <div class="container footer__grid">
-      <div><strong>ScannerCam Light</strong><br /><span style="color:#9aa4bd">Scan. Clean. Done.</span></div>
+      <div><strong>ScannerCam Light</strong><br /><span dir="ltr" style="color:#9aa4bd">Scan. Clean. Done.</span></div>
       <div>
         <a href="${siblingHref('terms', locale)}">Terms</a> &nbsp;·&nbsp;
         <a href="${siblingHref('privacy', locale)}">Privacy</a> &nbsp;·&nbsp;

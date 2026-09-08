@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
-import { repoRoot } from '../src/constants.mjs'
+import { repoRoot, DOCS, LOCALES } from '../src/constants.mjs'
 
 const webDir = resolve(repoRoot, 'apps/web')
 
@@ -17,16 +17,26 @@ function listHtml (dir) {
   return out
 }
 
-const HREF = /href="([^"]*)"/g
+// href AND src: an <img src> or <script src> with a wrong ../ depth 404s
+// exactly like a broken <a href> — it just doesn't look like a "link".
+// Dropping the prefix on <script src="../main.js"> breaks the mobile nav
+// toggle on every nested page and a plain `href=`-only scan never sees it.
+const HREF_OR_SRC = /(?:href|src)="([^"]*)"/g
 
-test('every internal href resolves to a file that exists under apps/web/', () => {
+test('every generated page exists — 33 legal pages plus the 2 hand-written ones', () => {
+  const pages = listHtml(webDir)
+  // 3 docs x 11 locales, plus index.html and support.html.
+  assert.equal(pages.length, DOCS.length * LOCALES.length + 2)
+})
+
+test('every internal href/src resolves to a file that exists under apps/web/', () => {
   const pages = listHtml(webDir)
   assert.ok(pages.length > 0, 'expected at least one .html page under apps/web/')
   const problems = []
 
   for (const page of pages) {
     const html = readFileSync(page, 'utf8')
-    for (const m of html.matchAll(HREF)) {
+    for (const m of html.matchAll(HREF_OR_SRC)) {
       const href = m[1]
       if (href.startsWith('mailto:') || /^https?:\/\//.test(href)) continue
       // Strip a fragment; "#donate" alone means "this same page".
@@ -34,7 +44,7 @@ test('every internal href resolves to a file that exists under apps/web/', () =>
       if (pathPart === '') continue
       const target = resolve(dirname(page), pathPart)
       if (!existsSync(target)) {
-        problems.push(`${page.replace(webDir + '/', '')}: href="${href}" -> missing ${target.replace(webDir + '/', '')}`)
+        problems.push(`${page.replace(webDir + '/', '')}: href/src="${href}" -> missing ${target.replace(webDir + '/', '')}`)
       }
     }
   }
