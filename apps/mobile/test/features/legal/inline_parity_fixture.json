@@ -12599,7 +12599,7 @@
   ]
  },
  {
-  "input": "No **iOS** não existe um sistema de permissões equivalente, mas vale a mesma coisa para tudo relacionado a documentos — nada sobre um documento chega perto da rede. Nas versões em que o recurso opcional de feedback está habilitado, o aplicativo verifica automaticamente se o serviço de feedback está acessível toda vez que a tela da biblioteca é aberta, seja o feedback usado ou não — veja a pergunta sobre feedback logo abaixo para saber exatamente o que essa verificação envia e quando. Quando uma gorjeta dentro do app é oferecida, abrir a tela de suporte pergunta à App Store quais são as opções de gorjeta disponíveis antes de qualquer gorjeta ser dada; a Apple cuida do lado de rede de uma compra de verdade.",
+  "input": "No **iOS** não existe um sistema de permissões equivalente, mas vale a mesma coisa para tudo relacionado a documentos — nada sobre um documento jamais toca a rede. Nas versões em que o recurso opcional de feedback está habilitado, o aplicativo verifica automaticamente se o serviço de feedback está acessível toda vez que a tela da biblioteca é aberta, seja o feedback usado ou não — veja a pergunta sobre feedback logo abaixo para saber exatamente o que essa verificação envia e quando. Quando uma gorjeta dentro do app é oferecida, abrir a tela de suporte pergunta à App Store quais são as opções de gorjeta disponíveis antes de qualquer gorjeta ser dada; a Apple cuida do lado de rede de uma compra de verdade.",
   "tokens": [
    {
     "type": "text",
@@ -12611,7 +12611,7 @@
    },
    {
     "type": "text",
-    "text": " não existe um sistema de permissões equivalente, mas vale a mesma coisa para tudo relacionado a documentos — nada sobre um documento chega perto da rede. Nas versões em que o recurso opcional de feedback está habilitado, o aplicativo verifica automaticamente se o serviço de feedback está acessível toda vez que a tela da biblioteca é aberta, seja o feedback usado ou não — veja a pergunta sobre feedback logo abaixo para saber exatamente o que essa verificação envia e quando. Quando uma gorjeta dentro do app é oferecida, abrir a tela de suporte pergunta à App Store quais são as opções de gorjeta disponíveis antes de qualquer gorjeta ser dada; a Apple cuida do lado de rede de uma compra de verdade."
+    "text": " não existe um sistema de permissões equivalente, mas vale a mesma coisa para tudo relacionado a documentos — nada sobre um documento jamais toca a rede. Nas versões em que o recurso opcional de feedback está habilitado, o aplicativo verifica automaticamente se o serviço de feedback está acessível toda vez que a tela da biblioteca é aberta, seja o feedback usado ou não — veja a pergunta sobre feedback logo abaixo para saber exatamente o que essa verificação envia e quando. Quando uma gorjeta dentro do app é oferecida, abrir a tela de suporte pergunta à App Store quais são as opções de gorjeta disponíveis antes de qualquer gorjeta ser dada; a Apple cuida do lado de rede de uma compra de verdade."
    }
   ]
  },
