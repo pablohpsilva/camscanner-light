@@ -19,14 +19,6 @@ test('the package locale list matches the app', () => {
 })
 
 for (const doc of DOCS) {
-  test(`${doc}: every locale has the same section ids as English`, () => {
-    const en = loadDocument(doc, 'en').sections.map((s) => s.id)
-    for (const locale of LOCALES) {
-      assert.deepEqual(loadDocument(doc, locale).sections.map((s) => s.id), en,
-        `${doc}.${locale}.json section ids diverge from English`)
-    }
-  })
-
   test(`${doc}: every locale has the same block shape as English`, () => {
     const shape = (d) => d.sections.map((s) => s.body.map((b) => b.type + (b.type === 'ul' ? `:${b.items.length}` : '')))
     const en = shape(loadDocument(doc, 'en'))
@@ -44,19 +36,29 @@ for (const doc of DOCS) {
 
   // A title-only check is not enough: a file whose title was translated but whose
   // BODY was left in English would pass every other structural assertion and ship
-  // as a "translation". Compare the whole body text too.
-  test(`${doc}: translations are not just copied English`, () => {
-    const bodyText = (d) =>
-      d.sections.map((s) => s.body.map((b) => (b.type === 'p' ? b.text : b.items.join(' '))).join(' ')).join(' ')
-    const en = loadDocument(doc, 'en')
-    for (const locale of LOCALES.filter((l) => l !== 'en')) {
+  // as a "translation". A whole-document concatenation isn't enough either: with
+  // 14-41 sections per document, a batch translation that copies a handful of
+  // sections verbatim would still produce a concatenation that differs from
+  // English overall, and would sail through undetected. Compare PER SECTION
+  // instead, so a partially-copied translation fails and names the untranslated
+  // section id(s), one test per (doc, locale) so a failure points at exactly the
+  // file responsible.
+  for (const locale of LOCALES.filter((l) => l !== 'en')) {
+    test(`${doc}: ${locale} is not just copied English, section by section`, () => {
+      const en = loadDocument(doc, 'en')
       const other = loadDocument(doc, locale)
       assert.notEqual(other.title, en.title, `${doc}.${locale}.json title is still English`)
       assert.notEqual(other.effectiveDateLabel, en.effectiveDateLabel,
         `${doc}.${locale}.json effectiveDateLabel is still English`)
-      assert.notEqual(bodyText(other), bodyText(en), `${doc}.${locale}.json body is still English`)
-    }
-  })
+      const sectionText = (s) =>
+        s.body.map((b) => (b.type === 'p' ? b.text : b.items.join(' '))).join(' ')
+      const copiedIds = en.sections
+        .filter((enSection, i) => sectionText(enSection) === sectionText(other.sections[i]))
+        .map((s) => s.id)
+      assert.deepEqual(copiedIds, [],
+        `${doc}.${locale}.json has section(s) copied verbatim from English: ${copiedIds.join(', ')}`)
+    })
+  }
 
   // Section ids are keys, not prose: the Dart renderer, the HTML renderer and the
   // widget tests all key off them (`legal-section-<id>`). A translated id breaks
