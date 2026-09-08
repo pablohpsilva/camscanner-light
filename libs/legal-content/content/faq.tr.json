@@ -77,7 +77,7 @@
       "id": "feedback-public",
       "heading": "Uygulama üzerinden gönderilen geri bildirim herkese açık hale mi getirilir?",
       "body": [
-        { "type": "p", "text": "Evet — isteğe bağlı geri bildirim özelliğinin bir sürümde etkinleştirildiği durumlarda, gönderilen bir mesaj, ScannerCam Light'ın **GitHub** deposunda **herkese açık olarak görülebilen bir issue**'ya dönüşür ve internetteki herkes mesaj metnini ve, girilmişse, e-posta adresini okuyabilir." },
+        { "type": "p", "text": "Evet — isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda (özellik sürüm bazında etkinleştirilir ve yayınlanan bir **Android** sürümü hiçbir ağ isteği gönderemediğinden, orada sunulmaz), gönderilen bir mesaj, ScannerCam Light'ın **GitHub** deposunda **herkese açık olarak görülebilen bir issue**'ya dönüşür ve internetteki herkes mesaj metnini ve, girilmişse, e-posta adresini okuyabilir." },
         { "type": "p", "text": "Bu noktadan önce de bir miktar ağ etkinliği gerçekleşir: kitaplık ekranı yüklendiğinde, uygulama geri bildirim hizmetinin erişilebilir olup olmadığını kontrol eder; geri bildirim formunu açmak ise bir **Cloudflare Turnstile** doğrulama testi yükler — bu da Cloudflare'in bir istek ve cihazın IP adresini aldığı anlamına gelir. Bu iki adımdan hiçbiri mesajı veya e-postayı göndermez; bu, **Gönder**'e dokunulduğunda gerçekleşir." },
         { "type": "p", "text": "Taranan hiçbir belge veya içeriği hiçbir zaman geri bildirime dahil edilmez. Herkese açık issue'da görünmemesi için e-posta alanı boş bırakılabilir ve hassas bilgiler mesajın kendisine yazılmamalıdır. Tam ayrıntılar için [Gizlilik Politikası](privacy.html)'nın Geri Bildirim bölümüne bakın." }
       ]
@@ -94,7 +94,7 @@
       "id": "ads-tracking",
       "heading": "ScannerCam Light reklam gösteriyor mu veya kullanımı takip ediyor mu?",
       "body": [
-        { "type": "p", "text": "Hayır. Uygulamanın hiçbir yerinde reklam, analiz, çökme raporlama veya izleme SDK'sı yoktur ve kullanıcı hesabı yoktur. Uygulama kullanımıyla ilgili hiçbir şey toplanmaz veya herhangi bir yere gönderilmez. Uygulamanın verilerle ne yapıp ne yapmadığına dair tam ayrıntı için [Gizlilik Politikası](privacy.html)'na bakın." }
+        { "type": "p", "text": "Hayır. Uygulamanın hiçbir yerinde reklam, analiz, çökme raporlama veya izleme SDK'sı yoktur, kullanıcı hesabı yoktur ve taradığınız hiçbir şey hiçbir yere gönderilmez. Bu, uygulamanın ağ üzerinde tamamen sessiz olduğu anlamına gelmez: isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, uygulama kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığını otomatik olarak kontrol eder; geri bildirim formunun açılması ise cihazın IP adresini alan **Cloudflare** ile iletişim kurar. Bu iki istek, işletmecilerine bir cihazın belirli bir saatte, belirli bir IP adresinden bir ekranı açtığını söyler; ScannerCam Light geliştiricisi bunlardan hiçbir profil oluşturmaz ve hiçbir şey satmaz. Uygulamanın verilerle ne yapıp ne yapmadığına dair tam ayrıntı için [Gizlilik Politikası](privacy.html)'na bakın." }
       ]
     },
     {

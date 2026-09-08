@@ -4,7 +4,7 @@
   "title": "Notzungsbedingungen",
   "effectiveDateLabel": "Datum vum Inkrafttrieden",
   "translationNotice": "Dës Iwwersetzung gëtt just fir Är Bequemlechkeet ugebueden. Bei engem Widderspruch mat der englescher Versioun gëllt d'englesch Versioun.",
-  "intro": "ScannerCam Light ass e gratis Dokumenteschanner fir iOS an Android, deen offline funktionnéiert an alles nëmmen op Ärem Apparat veraarbecht. Et huet keng Reklamm, keng Benotzerkonten, a keen Tracking oder Analytik. Dës Bedingungen regelen Är Notzung vun der App. Si sinn einfach a kuerz geschriwwen, bleiwen awer trotzdem eng juristesch Vereinbarung tëscht Iech an dem Entwéckler vu ScannerCam Light.",
+  "intro": "ScannerCam Light ass e gratis Dokumenteschanner fir iOS an Android, deen op Ärem Apparat schafft: Schannen, Beaarbechten, Texterkennung a Späicheren geschéien alleguer op Ärem Apparat, an et huet keng Reklamm, keng Benotzerkonten, a keen Tracking oder Analytik. E puer optional Funktioune huelen awer Kontakt mat Drëttparteien op, an en Deel vun deem Kontakt geschitt automatesch an net, well Dir en auslëst — d'Dateschutzerklärung beschreift all eenzele Fall. Dës Bedingungen regelen Är Notzung vun der App. Si sinn einfach a kuerz geschriwwen, bleiwen awer trotzdem eng juristesch Vereinbarung tëscht Iech an dem Entwéckler vu ScannerCam Light.",
   "sections": [
     {
       "id": "acceptance",
@@ -60,7 +60,7 @@
       "id": "accuracy",
       "heading": "Genauegkeet vum Schannen an dem OCR",
       "body": [
-        { "type": "p", "text": "Kantenerkennung, Perspektivkorrektur, Bildverbesserung an Texterkennung (OCR) an ScannerCam Light sinn automatiséiert an net perfekt. Si kënnen Inhalt ofschneiden, verzerren, falsch liesen oder auslossen, besonnesch bei Originaler mat schlechter Qualitéit, ongewéinlechen Layouten oder Handschrëft." },
+        { "type": "p", "text": "Kantenerkennung, Perspektivkorrektur, Bildverbesserung an Texterkennung (OCR) an ScannerCam Light sinn automatiséiert an net perfekt. Si kënnen Inhalt ofschneiden, verzerren, falsch liesen oder auslossen, besonnesch bei Originaler mat schlechter Qualitéit, ongewéinlechen Layouten oder Handschrëft. D'Texterkennung liest ausserdeem nëmmen Text an der **laténgescher Schrëft** — dem Alphabet, dat Englesch, Spuenesch, Franséisch an ähnlech Sprooche benotzen —, sou datt chineeseschen, arabeschen a kyrilleschen Text guer net erkannt gëtt an och net ka gesicht ginn." },
         { "type": "p", "text": "D'Resultat vun dëse Funktiounen dierf ouni Vergläich mam Original net fir juristesch, medezinesch, finanziell oder aner wichteg Zwecker benotzt ginn. Iwwerpréift ëmmer en agescannt oder erkannt Dokument, ier Dir Iech drop verlooss oder et un een aneren schéckt." }
       ]
     },
@@ -68,13 +68,13 @@
       "id": "third-parties",
       "heading": "Servicer vun Drëttparteien",
       "body": [
-        { "type": "p", "text": "ScannerCam Light interagéiert mat enger klenger Zuel vun onofhängege Drëttparteien fir Funktiounen, déi Dir wielt ze benotzen. All eng dovun ass hire eegene Bedingunge an Dateschutzpraktiken ënnerworf, déi den Entwéckler vu ScannerCam Light net kontrolléiert:" },
+        { "type": "p", "text": "ScannerCam Light interagéiert mat enger klenger Zuel vun onofhängege Drëttparteien. En Deel vun deem Kontakt kënnt vun eppes, wat Dir maacht, zum Beispill wann Dir op en Don-Link klickt oder de Feedback-Formulaire ofschéckt. En Deel dovun geschitt automatesch: do wou déi optional Feedback-Funktioun disponibel ass, kontrolléiert d'App beim Opmaache vum Bibliothéik-Écran, ob de Feedback-Service erreechbar ass, an d'Opmaache vum Feedback-Formulaire lued eng **Cloudflare**-Verifikatioun, déi d'IP-Adress vun Ärem Apparat kritt. All eng vun dëse Parteien ass hire eegene Bedingunge an Dateschutzpraktiken ënnerworf, déi den Entwéckler vu ScannerCam Light net kontrolléiert:" },
         { "type": "ul", "items": [
-          "Apple a Google, fir d'App iwwer hir App-Stores ze verdeelen, an Apple eleng fir en optionalen Tipp an der App ze veraarbechten, wa sou eppes ugebuede gëtt.",
+          "Apple a Google, fir d'App iwwer hir App-Stores ze verdeelen, an Apple eleng fir en optionalen Tipp an der App ze veraarbechten, wa sou eppes ugebuede gëtt — dorënner d'Ufro beim App Store no den disponibelen Tipp-Optiounen, déi automatesch geschitt, wann de Support-Écran opgeet.",
           "Ko-fi an d'Bitcoin-Netzwierk, fir optional Don-Optiounen, déi ofhängeg vun Ärer Plattform an App-Versioun ugebuede kënne ginn.",
-          "GitHub, fir dat optionaalt Feedback-Formulaire, dat en ëffentlech siichtbaren Issue am Repository vu ScannerCam Light erstellt."
+          "**Cloudflare** a **GitHub**, fir dat optionaalt Feedback-Formulaire: Cloudflare stellt d'Verifikatioun, déi mam Formulaire gelueden gëtt, an de Service, deen eng Asendung entgéintenhëlt, an dee Service leet duerno en ëffentlech siichtbaren Issue am GitHub-Repository vu ScannerCam Light un."
         ] },
-        { "type": "p", "text": "Liest d'Bedingunge vun dëse Drëttparteien selwer, ier Dir eng Funktioun benotzt, déi si mat abezitt. Den Entwéckler vu ScannerCam Light ass net verantwortlech fir hir Handlungen, Ënnerloossungen, Verfügbarkeet oder Richtlinnen." }
+        { "type": "p", "text": "Liest d'Bedingunge vun dëse Drëttparteien selwer, ier Dir eng Funktioun benotzt, déi si mat abezitt; do wou de Kontakt automatesch geschitt, sou wéi hei uewe beschriwwen, leeft en ouni eng separat Entscheedung vun Ärer Säit of. Den Entwéckler vu ScannerCam Light ass net verantwortlech fir hir Handlungen, Ënnerloossungen, Verfügbarkeet oder Richtlinnen." }
       ]
     },
     {
@@ -110,7 +110,7 @@
       "heading": "Ophalen",
       "body": [
         { "type": "p", "text": "Dir kënnt zu all Moment ophale ScannerCam Light ze benotzen, och andeems Dir et desinstalléiert — denkt drun, fir vireran all Dokumenter z'exportéieren, déi Dir behale wëllt, well d'Desinstalléiere se definitiv läscht." },
-        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light kann d'App, oder Är Méiglechkeet, bestëmmten Funktioune ze notzen, zu all Moment a fir all Grond suspendéieren oder ophalen, dorënner wann Dir géint dës Bedingungen verstéisst. Well d'App offline a gratis ass, heescht dëst normalerweis, datt d'App keng Updates méi kritt, amplaz aus der Ferne desaktivéiert ze ginn." }
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light kann d'App, oder Är Méiglechkeet, bestëmmten Funktioune ze notzen, zu all Moment a fir all Grond suspendéieren oder ophalen, dorënner wann Dir géint dës Bedingungen verstéisst. Well d'App op Ärem Apparat leeft a gratis ass, heescht dëst normalerweis, datt d'App keng Updates méi kritt, amplaz aus der Ferne desaktivéiert ze ginn." }
       ]
     },
     {

@@ -4,7 +4,7 @@
   "title": "Termos de Uso",
   "effectiveDateLabel": "Data de vigência",
   "translationNotice": "Esta tradução é fornecida apenas por conveniência. Em caso de conflito, prevalece a versão em inglês.",
-  "intro": "O ScannerCam Light é um digitalizador de documentos gratuito, offline e processado inteiramente no aparelho, para iOS e Android. Não tem anúncios, não exige conta de usuário e não faz rastreamento nem coleta de dados analíticos. Estes termos regem o seu uso do aplicativo. Foram escritos para serem claros e curtos, mas ainda assim constituem um acordo legal entre você e o desenvolvedor do ScannerCam Light.",
+  "intro": "O ScannerCam Light é um digitalizador de documentos gratuito e processado no próprio aparelho, para iOS e Android: a digitalização, a edição, o reconhecimento de texto e o armazenamento acontecem todos no seu aparelho, e ele não tem anúncios, não exige conta de usuário e não faz rastreamento nem coleta de dados analíticos. Alguns recursos opcionais realmente entram em contato com terceiros, e parte desse contato é automática, e não algo que você escolha — a Política de Privacidade descreve cada caso. Estes termos regem o seu uso do aplicativo. Foram escritos para serem claros e curtos, mas ainda assim constituem um acordo legal entre você e o desenvolvedor do ScannerCam Light.",
   "sections": [
     {
       "id": "acceptance",
@@ -60,7 +60,7 @@
       "id": "accuracy",
       "heading": "Precisão da digitalização e do OCR",
       "body": [
-        { "type": "p", "text": "A detecção de bordas, a correção de perspectiva, o aprimoramento de imagem e o reconhecimento de texto (OCR) no ScannerCam Light são automatizados e imperfeitos. Eles podem cortar, distorcer, ler errado ou omitir conteúdo, especialmente em originais de baixa qualidade, layouts incomuns ou letra manuscrita." },
+        { "type": "p", "text": "A detecção de bordas, a correção de perspectiva, o aprimoramento de imagem e o reconhecimento de texto (OCR) no ScannerCam Light são automatizados e imperfeitos. Eles podem cortar, distorcer, ler errado ou omitir conteúdo, especialmente em originais de baixa qualidade, layouts incomuns ou letra manuscrita. O reconhecimento de texto também lê apenas texto em **alfabeto latino** — o alfabeto usado pelo inglês, pelo espanhol, pelo francês e por idiomas semelhantes —, de modo que texto em chinês, árabe e cirílico não é reconhecido de forma alguma e não se torna pesquisável." },
         { "type": "p", "text": "O resultado desses recursos não deve ser usado para fins legais, médicos, financeiros ou outros fins relevantes sem conferência com o original. Sempre verifique um documento digitalizado ou reconhecido antes de confiar nele ou de enviá-lo a outra pessoa." }
       ]
     },
@@ -68,13 +68,13 @@
       "id": "third-parties",
       "heading": "Serviços de terceiros",
       "body": [
-        { "type": "p", "text": "O ScannerCam Light interage com um pequeno número de terceiros independentes para recursos que você escolhe usar. Cada um é regido por seus próprios termos e práticas de privacidade, que o desenvolvedor do ScannerCam Light não controla:" },
+        { "type": "p", "text": "O ScannerCam Light interage com um pequeno número de terceiros independentes. Parte desse contato decorre de algo que você faz, como tocar em um link de doação ou enviar o formulário de feedback. Parte dele é automática: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio de verificação da **Cloudflare** que recebe o endereço IP do seu aparelho. Cada um desses terceiros é regido por seus próprios termos e práticas de privacidade, que o desenvolvedor do ScannerCam Light não controla:" },
         { "type": "ul", "items": [
-          "Apple e Google, para a distribuição do aplicativo por suas lojas de aplicativos, e a Apple sozinha para processar uma gorjeta opcional dentro do app, quando oferecida.",
+          "Apple e Google, para a distribuição do aplicativo por suas lojas de aplicativos, e a Apple sozinha para processar uma gorjeta opcional dentro do app, quando oferecida — incluindo a consulta à App Store sobre as opções de gorjeta disponíveis, que acontece automaticamente quando a tela de suporte é aberta.",
           "Ko-fi e a rede Bitcoin, para opções de doação que podem ser oferecidas dependendo da sua plataforma e versão do aplicativo.",
-          "GitHub, para o formulário de feedback opcional, que registra uma issue publicamente visível no repositório do ScannerCam Light."
+          "**Cloudflare** e **GitHub**, para o formulário de feedback opcional: a Cloudflare fornece o desafio de verificação que é carregado junto com o formulário e o serviço que recebe um envio, e esse serviço então registra uma issue publicamente visível no repositório GitHub do ScannerCam Light."
         ] },
-        { "type": "p", "text": "Leia os termos desses próprios terceiros antes de usar um recurso que os envolva. O desenvolvedor do ScannerCam Light não é responsável por seus atos, omissões, disponibilidade ou políticas." }
+        { "type": "p", "text": "Leia os termos desses próprios terceiros antes de usar um recurso que os envolva; quando o contato é automático, conforme descrito acima, ele acontece sem uma escolha separada da sua parte. O desenvolvedor do ScannerCam Light não é responsável por seus atos, omissões, disponibilidade ou políticas." }
       ]
     },
     {
@@ -110,7 +110,7 @@
       "heading": "Encerramento",
       "body": [
         { "type": "p", "text": "Você pode parar de usar o ScannerCam Light a qualquer momento, inclusive desinstalando-o — lembre-se de exportar antes qualquer documento que queira manter, já que desinstalar os apaga permanentemente." },
-        { "type": "p", "text": "O desenvolvedor do ScannerCam Light pode suspender ou descontinuar o aplicativo, ou sua capacidade de usar recursos específicos, a qualquer momento, por qualquer motivo, inclusive se você violar estes termos. Como o aplicativo é offline e gratuito, isso normalmente significa que ele deixa de receber atualizações, em vez de ser desativado remotamente." }
+        { "type": "p", "text": "O desenvolvedor do ScannerCam Light pode suspender ou descontinuar o aplicativo, ou sua capacidade de usar recursos específicos, a qualquer momento, por qualquer motivo, inclusive se você violar estes termos. Como o aplicativo roda no seu aparelho e é gratuito, isso normalmente significa que ele deixa de receber atualizações, em vez de ser desativado remotamente." }
       ]
     },
     {

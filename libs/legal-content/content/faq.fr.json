@@ -77,7 +77,7 @@
       "id": "feedback-public",
       "heading": "Le retour d'expérience envoyé via l'application est-il rendu public ?",
       "body": [
-        { "type": "p", "text": "Oui — lorsque la fonction facultative de retour d'expérience est activée dans une version donnée, un message envoyé devient un **ticket (« issue ») publiquement visible** sur le dépôt **GitHub** de ScannerCam Light, et n'importe qui sur internet peut lire le texte du message et, s'il a été saisi, l'adresse e-mail." },
+        { "type": "p", "text": "Oui — lorsque la fonction facultative de retour d'expérience est disponible (elle est activée version par version, et une version **Android** publiée ne peut effectuer aucune requête réseau, elle n'y est donc pas proposée), un message envoyé devient un **ticket (« issue ») publiquement visible** sur le dépôt **GitHub** de ScannerCam Light, et n'importe qui sur internet peut lire le texte du message et, s'il a été saisi, l'adresse e-mail." },
         { "type": "p", "text": "Une activité réseau se produit aussi avant ce point : lorsque l'écran de la bibliothèque se charge, l'application vérifie si le service de retour d'expérience est accessible, et l'ouverture du formulaire de retour charge un défi de vérification **Cloudflare Turnstile** — ce qui signifie que Cloudflare reçoit une requête et l'adresse IP de l'appareil. Aucune de ces deux étapes n'envoie le message ou l'e-mail ; cela se produit au moment d'appuyer sur **Envoyer**." },
         { "type": "p", "text": "Aucun document numérisé ni son contenu n'est jamais inclus dans un retour d'expérience. Le champ e-mail peut être laissé vide pour ne pas apparaître dans le ticket public, et aucune information sensible ne doit être placée dans le message lui-même. Voir la section Retours de la [Politique de confidentialité](privacy.html) pour le détail complet." }
       ]
@@ -94,7 +94,7 @@
       "id": "ads-tracking",
       "heading": "ScannerCam Light affiche-t-elle des publicités ou suit-elle l'utilisation ?",
       "body": [
-        { "type": "p", "text": "Non. Il n'y a aucune publicité, aucune analyse, aucun rapport de plantage et aucun SDK de suivi nulle part dans l'application, et aucun compte utilisateur. Rien concernant l'utilisation de l'application n'est collecté ni envoyé où que ce soit. Voir la [Politique de confidentialité](privacy.html) pour le détail complet de ce que l'application fait et ne fait pas avec les données." }
+        { "type": "p", "text": "Non. Il n'y a aucune publicité, aucune analyse, aucun rapport de plantage et aucun SDK de suivi nulle part dans l'application, aucun compte utilisateur, et rien de ce que vous numérisez n'est jamais envoyé où que ce soit. Ce n'est pas tout à fait la même chose que de dire que l'application est silencieuse sur le réseau : lorsque la fonction facultative de retour d'expérience est disponible, l'application vérifie automatiquement si le service de retour d'expérience est accessible à l'ouverture de l'écran de la bibliothèque, et l'ouverture du formulaire de retour contacte **Cloudflare**, qui reçoit l'adresse IP de l'appareil. Ces deux requêtes indiquent à leurs opérateurs qu'un appareil a ouvert un écran, à un instant donné, depuis une adresse IP ; le développeur de ScannerCam Light n'en tire aucun profil et ne vend rien. Voir la [Politique de confidentialité](privacy.html) pour le détail complet de ce que l'application fait et ne fait pas avec les données." }
       ]
     },
     {

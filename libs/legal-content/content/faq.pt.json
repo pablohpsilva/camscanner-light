@@ -77,7 +77,7 @@
       "id": "feedback-public",
       "heading": "O feedback enviado através da aplicação é tornado público?",
       "body": [
-        { "type": "p", "text": "Sim — nas versões em que a funcionalidade opcional de feedback está ativada, uma mensagem submetida torna-se um **problema (\"issue\") publicamente visível** no repositório **GitHub** do ScannerCam Light, e qualquer pessoa na internet pode ler o texto da mensagem e, se tiver sido introduzido, o endereço de email." },
+        { "type": "p", "text": "Sim — quando a funcionalidade opcional de feedback está disponível (é ativada versão a versão, e uma versão **Android** lançada não consegue fazer qualquer pedido de rede, pelo que não é aí disponibilizada), uma mensagem submetida torna-se um **problema (\"issue\") publicamente visível** no repositório **GitHub** do ScannerCam Light, e qualquer pessoa na internet pode ler o texto da mensagem e, se tiver sido introduzido, o endereço de email." },
         { "type": "p", "text": "Também ocorre alguma atividade de rede antes desse ponto: quando o ecrã da biblioteca carrega, a aplicação verifica se o serviço de feedback está acessível, e abrir o formulário de feedback carrega um desafio de verificação **Cloudflare Turnstile** — o que significa que a Cloudflare recebe um pedido e o endereço IP do dispositivo. Nenhum destes dois passos envia a mensagem ou o email; isso acontece ao tocar em **Enviar**." },
         { "type": "p", "text": "Nenhum documento digitalizado ou o seu conteúdo é alguma vez incluído no feedback. O campo de email pode ser deixado em branco para não aparecer no problema público, e não deve ser colocada informação sensível na própria mensagem. Veja a secção Feedback da [Política de Privacidade](privacy.html) para o detalhe completo." }
       ]
@@ -94,7 +94,7 @@
       "id": "ads-tracking",
       "heading": "O ScannerCam Light mostra anúncios ou monitoriza a utilização?",
       "body": [
-        { "type": "p", "text": "Não. Não existem anúncios, análises, relatórios de falhas nem SDKs de monitorização em lado nenhum da aplicação, e não há contas de utilizador. Nada sobre a utilização da aplicação é recolhido ou enviado para qualquer lado. Veja a [Política de Privacidade](privacy.html) para o detalhe completo do que a aplicação faz e não faz com os dados." }
+        { "type": "p", "text": "Não. Não existem anúncios, análises, relatórios de falhas nem SDKs de monitorização em lado nenhum da aplicação, não há contas de utilizador, e nada do que digitaliza é alguma vez enviado para qualquer lado. Isso não é bem o mesmo que a aplicação ser silenciosa na rede: quando a funcionalidade opcional de feedback está disponível, a aplicação verifica automaticamente se o serviço de feedback está acessível quando o ecrã da biblioteca é aberto, e abrir o formulário de feedback contacta a **Cloudflare**, que recebe o endereço IP do dispositivo. Esses dois pedidos indicam aos respetivos operadores que um dispositivo abriu um ecrã, a uma dada hora, a partir de um endereço IP; o programador do ScannerCam Light não constrói qualquer perfil a partir deles e não vende nada. Veja a [Política de Privacidade](privacy.html) para o detalhe completo do que a aplicação faz e não faz com os dados." }
       ]
     },
     {

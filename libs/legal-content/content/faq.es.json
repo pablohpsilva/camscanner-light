@@ -77,7 +77,7 @@
       "id": "feedback-public",
       "heading": "¿Los comentarios enviados a través de la aplicación se hacen públicos?",
       "body": [
-        { "type": "p", "text": "Sí — cuando la función opcional de comentarios está habilitada en una versión, un mensaje enviado se convierte en un **incidente (\"issue\") públicamente visible** en el repositorio de **GitHub** de ScannerCam Light, y cualquier persona en internet puede leer el texto del mensaje y, si se introdujo, la dirección de correo electrónico." },
+        { "type": "p", "text": "Sí — cuando la función opcional de comentarios está disponible (se habilita versión por versión, y una versión publicada de **Android** no puede realizar ninguna solicitud de red, por lo que allí no se ofrece), un mensaje enviado se convierte en un **incidente (\"issue\") públicamente visible** en el repositorio de **GitHub** de ScannerCam Light, y cualquier persona en internet puede leer el texto del mensaje y, si se introdujo, la dirección de correo electrónico." },
         { "type": "p", "text": "También ocurre algo de actividad de red antes de ese punto: cuando se carga la pantalla de la biblioteca, la aplicación comprueba si el servicio de comentarios está accesible, y abrir el formulario de comentarios carga un desafío de verificación **Cloudflare Turnstile** — lo que significa que Cloudflare recibe una solicitud y la dirección IP del dispositivo. Ninguno de estos dos pasos envía el mensaje ni el correo electrónico; eso ocurre al pulsar **Enviar**." },
         { "type": "p", "text": "Ningún documento escaneado ni su contenido se incluye jamás en los comentarios. El campo de correo electrónico puede dejarse en blanco para que no aparezca en el incidente público, y no debe incluirse información sensible en el propio mensaje. Vea la sección de Comentarios de la [Política de Privacidad](privacy.html) para el detalle completo." }
       ]
@@ -94,7 +94,7 @@
       "id": "ads-tracking",
       "heading": "¿ScannerCam Light muestra anuncios o rastrea el uso?",
       "body": [
-        { "type": "p", "text": "No. No hay anuncios, análisis, informes de fallos ni SDK de rastreo en ninguna parte de la aplicación, y no hay cuentas de usuario. No se recopila ni se envía a ningún sitio nada sobre el uso de la aplicación. Vea la [Política de Privacidad](privacy.html) para el detalle completo de qué hace y qué no hace la aplicación con los datos." }
+        { "type": "p", "text": "No. No hay anuncios, análisis, informes de fallos ni SDK de rastreo en ninguna parte de la aplicación, no hay cuentas de usuario, y nada de lo que escanee se envía jamás a ningún sitio. Eso no es exactamente lo mismo que decir que la aplicación esté en silencio en la red: cuando la función opcional de comentarios está disponible, la aplicación comprueba automáticamente si el servicio de comentarios está accesible al abrirse la pantalla de la biblioteca, y abrir el formulario de comentarios contacta con **Cloudflare**, que recibe la dirección IP del dispositivo. Esas dos solicitudes indican a sus operadores que un dispositivo abrió una pantalla, en un momento dado, desde una dirección IP; el desarrollador de ScannerCam Light no construye ningún perfil a partir de ellas y no vende nada. Vea la [Política de Privacidad](privacy.html) para el detalle completo de qué hace y qué no hace la aplicación con los datos." }
       ]
     },
     {

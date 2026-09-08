@@ -77,8 +77,8 @@
       "id": "feedback-public",
       "heading": "Wird über die App gesendetes Feedback öffentlich gemacht?",
       "body": [
-        { "type": "p", "text": "Ja — dort, wo die optionale Feedback-Funktion in einer Version aktiviert ist, wird eine gesendete Nachricht zu einem **öffentlich sichtbaren Issue** im **GitHub**-Repository von ScannerCam Light, und jeder im Internet kann den Nachrichtentext lesen sowie, falls angegeben, die E-Mail-Adresse." },
-        { "type": "p", "text": "Auch schon davor findet etwas Netzwerkaktivität statt: Beim Laden des Bibliotheksbildschirms prüft die App, ob der Feedback-Dienst erreichbar ist, und das Öffnen des Feedback-Formulars lädt eine **Cloudflare-Turnstile**-Prüfung — was bedeutet, dass Cloudflare zu diesem Zeitpunkt eine Anfrage und die IP-Adresse des Geräts erhält. Keiner dieser beiden Schritte sendet die Nachricht oder die E-Mail-Adresse; das geschieht beim Tippen auf **Senden**." },
+        { "type": "p", "text": "Ja — dort, wo die optionale Feedback-Funktion verfügbar ist (sie wird pro Version aktiviert, und eine veröffentlichte **Android**-Version kann überhaupt keine Netzwerkanfrage stellen, sodass sie dort nicht angeboten wird), wird eine gesendete Nachricht zu einem **öffentlich sichtbaren Issue** im **GitHub**-Repository von ScannerCam Light, und jeder im Internet kann den Nachrichtentext lesen sowie, falls angegeben, die E-Mail-Adresse." },
+        { "type": "p", "text": "Auch schon davor findet Netzwerkaktivität statt: Beim Laden des Bibliotheksbildschirms prüft die App, ob der Feedback-Dienst erreichbar ist, und das Öffnen des Feedback-Formulars lädt eine **Cloudflare-Turnstile**-Prüfung — was bedeutet, dass Cloudflare zu diesem Zeitpunkt eine Anfrage und die IP-Adresse des Geräts erhält. Keiner dieser beiden Schritte sendet die Nachricht oder die E-Mail-Adresse; das geschieht beim Tippen auf **Senden**." },
         { "type": "p", "text": "Gescannte Dokumente oder ihre Inhalte werden niemals in Feedback einbezogen. Das E-Mail-Feld kann leer gelassen werden, damit es nicht im öffentlichen Issue erscheint, und sensible Informationen sollten nicht in die Nachricht selbst geschrieben werden. Siehe den Abschnitt Feedback der [Datenschutzerklärung](privacy.html) für alle Details." }
       ]
     },
@@ -94,7 +94,7 @@
       "id": "ads-tracking",
       "heading": "Zeigt ScannerCam Light Werbung an oder verfolgt die Nutzung?",
       "body": [
-        { "type": "p", "text": "Nein. Es gibt keine Werbung, keine Analyse, kein Crash-Reporting und keine Tracking-SDKs irgendwo in der App, und keine Benutzerkonten. Nichts über die App-Nutzung wird erfasst oder irgendwohin gesendet. Siehe die [Datenschutzerklärung](privacy.html) für alle Details dazu, was die App mit Daten tut und was nicht." }
+        { "type": "p", "text": "Nein. Es gibt keine Werbung, keine Analyse, kein Crash-Reporting und keine Tracking-SDKs irgendwo in der App, keine Benutzerkonten, und nichts, was Sie scannen, wird jemals irgendwohin gesendet. Das ist nicht ganz dasselbe, wie im Netzwerk stumm zu sein: Dort, wo die optionale Feedback-Funktion verfügbar ist, prüft die App automatisch beim Öffnen des Bibliotheksbildschirms, ob der Feedback-Dienst erreichbar ist, und das Öffnen des Feedback-Formulars kontaktiert **Cloudflare**, das dabei die IP-Adresse des Geräts erhält. Diese beiden Anfragen teilen ihren Betreibern mit, dass ein Gerät zu einem bestimmten Zeitpunkt von einer IP-Adresse aus einen Bildschirm geöffnet hat; der Entwickler von ScannerCam Light erstellt daraus kein Profil und verkauft nichts. Siehe die [Datenschutzerklärung](privacy.html) für alle Details dazu, was die App mit Daten tut und was nicht." }
       ]
     },
     {

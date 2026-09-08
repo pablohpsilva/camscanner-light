@@ -4,7 +4,7 @@
   "title": "Kullanım Koşulları",
   "effectiveDateLabel": "Yürürlük tarihi",
   "translationNotice": "Bu çeviri yalnızca kolaylık sağlamak amacıyla sunulmuştur. İngilizce sürümle çelişmesi halinde İngilizce sürüm geçerlidir.",
-  "intro": "ScannerCam Light, iOS ve Android için ücretsiz, çevrimdışı çalışan ve her şeyi yalnızca cihaz üzerinde işleyen bir belge tarayıcısıdır. Reklam içermez, kullanıcı hesabı gerektirmez ve herhangi bir izleme veya analiz yapmaz. Bu koşullar uygulamayı kullanımınızı düzenler. Sade ve kısa olacak şekilde yazılmıştır, ancak yine de sizinle ScannerCam Light geliştiricisi arasında bir hukuki sözleşme niteliğindedir.",
+  "intro": "ScannerCam Light, iOS ve Android için ücretsiz, cihaz üzerinde çalışan bir belge tarayıcısıdır: tarama, düzenleme, metin tanıma ve depolama işlemlerinin tamamı cihazınızda gerçekleşir; reklam içermez, kullanıcı hesabı gerektirmez ve herhangi bir izleme veya analiz yapmaz. İsteğe bağlı birkaç özellik üçüncü taraflarla iletişim kurar ve bu iletişimin bir kısmı sizin seçiminizle değil, otomatik olarak gerçekleşir — Gizlilik Politikası her durumu ayrı ayrı açıklar. Bu koşullar uygulamayı kullanımınızı düzenler. Sade ve kısa olacak şekilde yazılmıştır, ancak yine de sizinle ScannerCam Light geliştiricisi arasında bir hukuki sözleşme niteliğindedir.",
   "sections": [
     {
       "id": "acceptance",
@@ -60,7 +60,7 @@
       "id": "accuracy",
       "heading": "Tarama ve OCR doğruluğu",
       "body": [
-        { "type": "p", "text": "ScannerCam Light'taki kenar algılama, perspektif düzeltme, görüntü iyileştirme ve metin tanıma (OCR) otomatiktir ve kusursuz değildir. Özellikle kalitesi düşük orijinallerde, sıra dışı düzenlerde veya el yazısında içeriği kırpabilir, bozabilir, yanlış okuyabilir veya atlayabilir." },
+        { "type": "p", "text": "ScannerCam Light'taki kenar algılama, perspektif düzeltme, görüntü iyileştirme ve metin tanıma (OCR) otomatiktir ve kusursuz değildir. Özellikle kalitesi düşük orijinallerde, sıra dışı düzenlerde veya el yazısında içeriği kırpabilir, bozabilir, yanlış okuyabilir veya atlayabilir. Metin tanıma ayrıca yalnızca **Latin alfabesiyle** yazılmış metinleri okur — İngilizce, İspanyolca, Fransızca ve benzeri dillerin kullandığı alfabe — bu nedenle Çince, Arapça ve Kiril metinler hiç tanınmaz ve aranabilir hale gelmez." },
         { "type": "p", "text": "Bu özelliklerin çıktısına, orijinaliyle karşılaştırılmadan hukuki, tıbbi, mali veya diğer önemli sonuçlar doğuran amaçlar için güvenilmemelidir. Taranan veya tanınan bir belgeye güvenmeden ya da onu başka birine göndermeden önce her zaman doğrulayın." }
       ]
     },
@@ -68,13 +68,13 @@
       "id": "third-parties",
       "heading": "Üçüncü taraf hizmetleri",
       "body": [
-        { "type": "p", "text": "ScannerCam Light, kullanmayı tercih ettiğiniz özellikler için az sayıda bağımsız üçüncü tarafla etkileşime girer. Her biri, ScannerCam Light geliştiricisinin kontrol etmediği kendi koşulları ve gizlilik uygulamaları tarafından yönetilir:" },
+        { "type": "p", "text": "ScannerCam Light, az sayıda bağımsız üçüncü tarafla etkileşime girer. Bu iletişimin bir kısmı sizin bir eyleminizin ardından gerçekleşir; örneğin bir bağış bağlantısına dokunmanız veya geri bildirim formunu göndermeniz. Bir kısmı ise otomatiktir: isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, uygulama kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığını kontrol eder; geri bildirim formunun açılması ise cihazınızın IP adresini alan bir **Cloudflare** doğrulama testi yükler. Bu tarafların her biri, ScannerCam Light geliştiricisinin kontrol etmediği kendi koşulları ve gizlilik uygulamaları tarafından yönetilir:" },
         { "type": "ul", "items": [
-          "Uygulamayı kendi uygulama mağazaları üzerinden dağıtmaları nedeniyle Apple ve Google; sunulduğu durumlarda uygulama içi isteğe bağlı bahşişi işlemesi nedeniyle yalnızca Apple.",
+          "Uygulamayı kendi uygulama mağazaları üzerinden dağıtmaları nedeniyle Apple ve Google; sunulduğu durumlarda uygulama içi isteğe bağlı bahşişi işlemesi nedeniyle yalnızca Apple — buna, destek ekranı açıldığında otomatik olarak gerçekleşen, mevcut bahşiş seçenekleri için App Store sorgusu da dahildir.",
           "Platformunuza ve uygulama sürümünüze bağlı olarak sunulabilecek isteğe bağlı bağış seçenekleri nedeniyle Ko-fi ve Bitcoin ağı.",
-          "ScannerCam Light deposunda herkese açık şekilde görülebilen bir \"issue\" oluşturan isteğe bağlı geri bildirim formu nedeniyle GitHub."
+          "İsteğe bağlı geri bildirim formu nedeniyle **Cloudflare** ve **GitHub**: Cloudflare, formla birlikte yüklenen doğrulama testini ve gönderimi alan hizmeti sağlar; bu hizmet daha sonra ScannerCam Light deposunda herkese açık şekilde görülebilen bir issue oluşturur."
         ] },
-        { "type": "p", "text": "Onları içeren bir özelliği kullanmadan önce bu üçüncü tarafların kendi koşullarını okuyun. ScannerCam Light geliştiricisi, bu tarafların eylemlerinden, ihmallerinden, kullanılabilirliğinden veya politikalarından sorumlu değildir." }
+        { "type": "p", "text": "Onları içeren bir özelliği kullanmadan önce bu üçüncü tarafların kendi koşullarını okuyun; iletişimin yukarıda açıklandığı gibi otomatik olduğu durumlarda ise bu iletişim, sizin ayrı bir tercihiniz olmaksızın gerçekleşir. ScannerCam Light geliştiricisi, bu tarafların eylemlerinden, ihmallerinden, kullanılabilirliğinden veya politikalarından sorumlu değildir." }
       ]
     },
     {
@@ -109,8 +109,8 @@
       "id": "termination",
       "heading": "Fesih",
       "body": [
-        { "type": "p", "text": "ScannerCam Light'ı istediğiniz zaman, uygulamayı kaldırmak dahil olmak üzere kullanmayı bırakabilirsiniz — kaldırmanın belgelerinizi kalıcı olarak sildiğini unutmadan, saklamak istediğiniz belgeleri önce dışa aktarmayı unutmayın." },
-        { "type": "p", "text": "ScannerCam Light geliştiricisi, bu koşulları ihlal etmeniz dahil olmak üzere herhangi bir nedenle, herhangi bir zamanda uygulamayı veya belirli özellikleri kullanma yeteneğinizi askıya alabilir veya sonlandırabilir. Uygulama çevrimdışı ve ücretsiz olduğundan, bu genellikle uygulamanın uzaktan devre dışı bırakılması yerine güncelleme almayı bırakması anlamına gelir." }
+        { "type": "p", "text": "ScannerCam Light'ı istediğiniz zaman, uygulamayı kaldırmak dahil olmak üzere kullanmayı bırakabilirsiniz — kaldırma işlemi belgelerinizi kalıcı olarak sildiğinden, saklamak istediğiniz belgeleri önce dışa aktarmayı unutmayın." },
+        { "type": "p", "text": "ScannerCam Light geliştiricisi, bu koşulları ihlal etmeniz dahil olmak üzere herhangi bir nedenle, herhangi bir zamanda uygulamayı veya belirli özellikleri kullanma yeteneğinizi askıya alabilir veya sonlandırabilir. Uygulama cihazınızda çalıştığı ve ücretsiz olduğu için, bu genellikle uygulamanın uzaktan devre dışı bırakılması yerine güncelleme almayı bırakması anlamına gelir." }
       ]
     },
     {

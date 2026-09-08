@@ -10,14 +10,14 @@
       "id": "summary",
       "heading": "Özet",
       "body": [
-        { "type": "p", "text": "ScannerCam Light, belgeleri gizli tutmak üzere tasarlanmıştır. Aşağıda açıklanan, yalnızca etkin biçimde gönderilmesi seçildiğinde veri ileten isteğe bağlı uygulama içi geri bildirim özelliği hariç, her şey cihazda kalır. Kullanıcı hesabı, analiz, reklam veya izleme yoktur ve kişisel veriler asla satılmaz." }
+        { "type": "p", "text": "ScannerCam Light, belgeleri gizli tutmak üzere tasarlanmıştır. Taradığınız belgeler, bunlardan tanınan metin ve bunlardan türetilen her şey cihazınızda kalır ve hiçbir zaman hiçbir yere yüklenmez. İsteğe bağlı birkaç özellik ağı kullanır ve bunların bir kısmı yalnızca siz istediğinizde değil, otomatik olarak gerçekleşir: isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, uygulama kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığını kontrol eder; geri bildirim formunun açılması ise cihazınızın IP adresini alan bir **Cloudflare** doğrulama testi yükler — her ikisi de siz herhangi bir şey yazmadan veya göndermeden önce gerçekleşir. Uygulama içi bir bahşişin sunulduğu durumlarda, destek ekranının açılması App Store'dan mevcut bahşiş seçeneklerini ister. Aşağıdaki Ağ erişimi, Geri Bildirim ve Uygulama içi satın almalar ve bahşişler bölümleri her durumu ayrı ayrı açıklar. Kullanıcı hesabı, analiz, reklam veya izleme yoktur ve kişisel veriler asla satılmaz." }
       ]
     },
     {
       "id": "what-we-collect",
       "heading": "Ne toplanıyor",
       "body": [
-        { "type": "p", "text": "**Neredeyse hiçbir şey.** Aşağıda açıklanan isteğe bağlı geri bildirim özelliği dışında, ScannerCam Light hiçbir sunucuda hiçbir kişisel veri toplamaz, iletmez veya saklamaz. Kullanıcı hesabı yoktur ve hiçbir türde analiz veya izleme yapılmaz. Reklam gösterilmez ve hiçbir veri satılmaz. Tek istisna için aşağıdaki Geri Bildirim bölümüne bakın." }
+        { "type": "p", "text": "**Neredeyse hiçbir şey.** ScannerCam Light'ta kullanıcı hesabı yoktur ve hiçbir türde analiz veya izleme yapılmaz; reklam gösterilmez ve hiçbir veri satılmaz. Hiçbir belge, hiçbir sayfa görüntüsü ve bir belgeden tanınan hiçbir metin herhangi bir sunucuya gönderilmez. Cihazdan çıkan şeyler, aşağıdaki Ağ erişimi, Geri Bildirim ve Uygulama içi satın almalar ve bahşişler bölümlerinde açıklanan durumlarla sınırlıdır: isteğe bağlı geri bildirim özelliği — herhangi bir şey gönderilmeden önce otomatik olarak yaptığı iki istek dahil —, uygulama içi bir bahşişin sunulduğu durumlarda mevcut bahşiş seçenekleri için yapılan App Store sorgusu ve dokunduğunuz bağış bağlantıları." }
       ]
     },
     {
@@ -35,15 +35,15 @@
       "id": "network",
       "heading": "Ağ erişimi",
       "body": [
-        { "type": "p", "text": "Uygulama, etkin biçimde kullandığınız bir özellikle ilgisi olmayan hiçbir arka plan ağ isteği göndermez. İsteğe bağlı bir bağış bağlantısına dokunduğunuzda, ScannerCam Light geliştiricisinin kontrol etmediği ve kendisine hiçbir veri ulaşmayan üçüncü taraf bir bağış sayfasını tarayıcınızda açan giden bağlantılar oluşur; uygulama içi bir bahşiş sunulduğunda, destek ekranını açmak, herhangi bir bahşiş yapılmadan önce App Store'dan mevcut bahşiş seçeneklerini ister ve Apple, aşağıdaki Satın Almalar bölümünde açıklandığı gibi gerçek bir satın almanın ağ tarafını ayrıca ele alır; ve belirli bir sürümde isteğe bağlı geri bildirim özelliği etkinleştirildiğinde, aşağıdaki Geri Bildirim bölümünde açıklandığı gibi bu özellikle bağlantılı olarak — bu, yalnızca formu gönderdiğinizde değil, kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığının kontrol edilmesini de içerir." },
-        { "type": "p", "text": "**Android**'de, yayınlanan uygulama INTERNET iznini hiç istemez, bu nedenle hiçbir ağ isteği gönderemez. iOS'ta eşdeğer bir izin sistemi yoktur; buna rağmen uygulama yine de hiçbir arka plan isteği göndermez." }
+        { "type": "p", "text": "Bu bölümde açıklanan durumların dışında uygulama kendiliğinden hiçbir ağ isteği göndermez — ancak bu durumların bazıları sizin tetiklediğiniz bir şey değil, otomatiktir. İsteğe bağlı bir bağış bağlantısına dokunulduğunda, ScannerCam Light geliştiricisinin kontrol etmediği ve kendisine hiçbir veri ulaşmayan üçüncü taraf bir bağış sayfasını tarayıcınızda açan giden bağlantılar oluşur; uygulama içi bir bahşiş sunulduğunda, destek ekranının açılması, herhangi bir bahşiş yapılmadan önce App Store'dan mevcut bahşiş seçeneklerini ister ve Apple, aşağıdaki Uygulama içi satın almalar ve bahşişler bölümünde açıklandığı gibi gerçek bir satın almanın ağ tarafını ayrıca ele alır; ve isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, aşağıdaki Geri Bildirim bölümünde açıklandığı gibi bu özellikle bağlantılı olarak — bu, kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığının kontrol edilmesini ve geri bildirim formu açıldığında yüklenen bir **Cloudflare Turnstile** testini içerir; bunların hiçbiri sizin bir şey göndermenizi beklemez." },
+        { "type": "p", "text": "**Android**'de, yayınlanan uygulama INTERNET iznini hiç istemez, bu nedenle hiçbir ağ isteği gönderemez; dolayısıyla isteğe bağlı geri bildirim özelliği, yayınlanan bir Android sürümünde kendi hizmetine ulaşamaz ve orada sunulmaz. iOS'ta eşdeğer bir izin sistemi yoktur ve yukarıda açıklanan otomatik istekler gerçekten gerçekleşir: geri bildirim hizmeti kontrolü, **Cloudflare Turnstile** testi ve App Store bahşiş seçenekleri sorgusunun hepsi siz tetiklemeden gerçekleşir. Bunların ve kendi dokunduğunuz bağlantıların dışında uygulama başka hiçbir istek göndermez." }
       ]
     },
     {
       "id": "feedback",
       "heading": "Geri Bildirim",
       "body": [
-        { "type": "p", "text": "Uygulama isteğe bağlı bir **Geri bildirim gönder** özelliği içerir. Bu özellik belirli bir sürümde etkinleştirildiğinde, siz herhangi bir şey yazmadan önce iki şey gerçekleşir: kitaplık ekranı yüklendiğinde, uygulama geri bildirim hizmetinin şu anda erişilebilir olup olmadığını kontrol etmek için küçük bir istek gönderir; ve geri bildirim formunun kendisini açtığınızda, form içinde bir **Cloudflare Turnstile** insan doğrulama testi yüklenir, bu da o noktada Cloudflare'in bir istek ve cihazınızın IP adresini aldığı anlamına gelir. Bu iki adımdan hiçbiri mesajınızı, e-postanızı veya belgeleriniz hakkında herhangi bir şeyi göndermez — bunlar otomatik olarak gerçekleşir ve Gönder'e bağlı değildir." },
+        { "type": "p", "text": "Uygulama isteğe bağlı bir **Geri bildirim gönder** özelliği içerir. Bu özellik yalnızca onu etkinleştiren ve ağa erişebilen bir sürümde kullanılabilir; bu da yayınlanan **Android** sürümlerini kapsam dışında bırakır — bu sürümler INTERNET iznini istemez, bu nedenle özellik onlarda sunulmaz. Özelliğin kullanılabilir olduğu durumlarda, siz herhangi bir şey yazmadan önce iki şey gerçekleşir: kitaplık ekranı yüklendiğinde, uygulama geri bildirim hizmetinin şu anda erişilebilir olup olmadığını kontrol etmek için küçük bir istek gönderir; ve geri bildirim formunun kendisini açtığınızda, form içinde bir **Cloudflare Turnstile** insan doğrulama testi yüklenir, bu da o noktada Cloudflare'in bir istek ve cihazınızın IP adresini aldığı anlamına gelir. Bu iki adımdan hiçbiri mesajınızı, e-postanızı veya belgeleriniz hakkında herhangi bir şeyi göndermez — bunlar otomatik olarak gerçekleşir ve Gönder'e bağlı değildir." },
         { "type": "p", "text": "Mesajınız ve aşağıdaki alanlar, yalnızca **Gönder**'e dokunduğunuzda gönderilir:" },
         { "type": "ul", "items": [
           "Mesajınız — geri bildirim formuna yazılan metin (zorunlu).",
@@ -59,7 +59,7 @@
       "id": "purchases",
       "heading": "Uygulama içi satın almalar ve bahşişler",
       "body": [
-        { "type": "p", "text": "iOS'ta uygulama isteğe bağlı bir bahşiş sunar. Destek ekranını açmak, herhangi bir bahşiş yapılmadan önce App Store'dan mevcut bahşiş seçeneklerini ister. Bahşişlerin kendisi tamamen **Apple** tarafından işlenir; geliştirici hiçbir ödeme kartı bilgisi, fatura adresi veya başka bir ödeme verisi almaz — yalnızca Apple'ın toplu, anonim satış raporlamasını alır. Android'de uygulama içi satın alma yoktur; bağış bağlantıları tarayıcınızı açar." },
+        { "type": "p", "text": "Platformunuza ve uygulama sürümünüze bağlı olarak iOS'ta isteğe bağlı bir uygulama içi bahşiş sunulabilir; herhangi bir bahşiş seçeneğinin gerçekten görünüp görünmemesi ayrıca Apple'ın o sıradaki App Store ayarlarına bağlıdır, bu nedenle destek ekranının hiçbir seçenek göstermemesi de olağandır. Bahşişin sunulduğu durumlarda, destek ekranının açılması, herhangi bir bahşiş yapılmadan önce ve ondan bağımsız olarak, ekran açılır açılmaz App Store'dan mevcut bahşiş seçeneklerini ister. Bahşişlerin kendisi tamamen **Apple** tarafından işlenir; geliştirici hiçbir ödeme kartı bilgisi, fatura adresi veya başka bir ödeme verisi almaz — yalnızca Apple'ın toplu, anonim satış raporlamasını alır. Android'de uygulama içi satın alma yoktur; bir bağış seçeneğinin sunulduğu durumlarda, bağlantısına dokunmak tarayıcınızı açar." },
         { "type": "p", "text": "Platformunuza ve uygulama sürümünüze bağlı olarak Ko-fi ve Bitcoin bağış seçenekleri de sunulabilir. Bunlar herhangi bir Apple uygulama içi satın almasından bağımsızdır ve diğer bağış bağlantıları gibi tarayıcınızda yalnızca üçüncü taraf bir sayfa açar." }
       ]
     },
@@ -74,8 +74,8 @@
       "id": "retention",
       "heading": "Saklama",
       "body": [
-        { "type": "p", "text": "Taranan bir belge ve meta verileri, siz onları tuttuğunuz sürece cihazınızda kalır — hiçbir şey otomatik olarak silinmez ve hiçbir şey kendiliğinden süresi dolmaz. Bir belge yalnızca uygulama içinde onu sildiğinizde veya uygulamanın kendisini kaldırdığınızda kaldırılır." },
-        { "type": "p", "text": "ScannerCam Light'ı kaldırmak, yerel veritabanını ve oluşturduğu tüm görüntü dosyalarını kaldırır; kaldırmadan hiçbir şey kurtulmaz. Hiçbir belgenin sunucu tarafı kopyası asla oluşturulmadığından, silinmesi istenebilecek bir sunucu tarafı kopya da yoktur — cihazınızda silmek, tam ve anında silme anlamına gelir." }
+        { "type": "p", "text": "Taranan bir belge ve meta verileri, siz onları tuttuğunuz sürece cihazınızda kalır — hiçbir şey otomatik olarak silinmez ve hiçbir şeyin süresi kendiliğinden dolmaz. Bir belge yalnızca uygulama içinde onu sildiğinizde veya uygulamanın kendisini kaldırdığınızda kaldırılır." },
+        { "type": "p", "text": "ScannerCam Light'ı kaldırmak, yerel veritabanını ve oluşturduğu tüm görüntü dosyalarını kaldırır; kaldırma işleminden hiçbir şey kurtulmaz. Hiçbir belgenin sunucu tarafı kopyası asla oluşturulmadığından, silinmesi istenebilecek bir sunucu tarafı kopya da yoktur. Cihazınızda silmek, uygulamanın kendi dosyalarını ve veritabanı satırlarını hemen kaldırır; altta yatan depolama alanının gerçekte ne kadar süre sonra üzerine yazılacağına ise uygulamanın kontrol etmediği işletim sisteminiz ve cihazınız karar verir." }
       ]
     },
     {
@@ -84,14 +84,14 @@
       "body": [
         { "type": "p", "text": "AB/İngiltere Genel Veri Koruma Yönetmeliği (**GDPR**) ve Kaliforniya Tüketici Gizliliği Yasası (**CCPA**) gibi gizlilik yasaları, bireylere kişisel verileri üzerinde erişme, düzeltme, silme veya işlenmesine itiraz etme hakkı dahil olmak üzere haklar tanır." },
         { "type": "p", "text": "ScannerCam Light hiçbir sunucuda hiçbir kişisel veri toplamadığından veya saklamadığından, normalde dışa aktarılacak, düzeltilecek veya silinecek hiçbir şey yoktur: bu politikada açıklanan veriler yalnızca kendi cihazınızdaki dosyalar ve bir veritabanı olarak var olur, her zaman doğrudan sizin kontrolünüzdedir ve bir belgeyi silerek veya uygulamayı kaldırarak istediğiniz zaman kaldırılabilir." },
-        { "type": "p", "text": "Tek istisna, uygulama içi geri bildirim formu aracılığıyla gönüllü olarak gönderilen geri bildirimdir. Bu gönderim, yasal dayanağı olarak **onayınıza** dayanır: mesajınız, e-postanız ve tanılama verileriniz Gönder'e dokunduğunuzda gönderilir ve yukarıdaki Geri Bildirim bölümü, geri bildirim özelliğinin bundan önce yaptığı otomatik istekleri ayrıca açıklar. Gönderilen bir geri bildirim issue'su herkese açık bir GitHub issue'suna dönüşür ve aşağıdaki destek e-postasına yazılarak talep üzerine kaldırılabilir." }
+        { "type": "p", "text": "Başlıca istisna, uygulama içi geri bildirim formu aracılığıyla gönüllü olarak gönderilen geri bildirimdir. Bu gönderim, yasal dayanağı olarak **onayınıza** dayanır: mesajınız, e-postanız ve tanılama verileriniz Gönder'e dokunduğunuzda gönderilir. Geri bildirim özelliğinin bundan önce yaptığı istekler — yukarıdaki Geri Bildirim bölümünde açıklananlar — otomatiktir ve bu onaya bağlı değildir; bunlardan biri, form açıldığında cihazınızın IP adresini Cloudflare'e açıklar. Gönderilen bir geri bildirim, herkese açık bir GitHub issue'suna dönüşür; kaldırılması aşağıdaki destek e-postasına yazılarak talep edilebilir, ancak herhangi bir süre taahhüt edilmez ve o zamana kadar issue başka yerlerde çoktan kopyalanmış, önbelleğe alınmış veya dizine eklenmiş olabilir; ScannerCam Light geliştiricisinin bunu geri almasının hiçbir yolu yoktur." }
       ]
     },
     {
       "id": "children",
       "heading": "Çocukların gizliliği",
       "body": [
-        { "type": "p", "text": "Uygulama hiçbir arka plan veri toplama işlemi gerçekleştirmediğinden ve isteğe bağlı geri bildirim özelliği açıkça kullanıcı tarafından başlatıldığından, her yaştan kullanıcı için pasif veri toplama riski oluşturmaz." }
+        { "type": "p", "text": "Uygulama çocuklara yönelik değildir, kullanıcı hesabı yoktur, kimseden yaşını veya başka bir kişisel bilgisini istemez, reklam göstermez, analiz veya izleme SDK'sı içermez ve taranan bir belgeyi asla hiçbir yere göndermez. Bununla birlikte ağ üzerinde tamamen sessiz de değildir: isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, uygulama kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığını kontrol eder; geri bildirim formunun açılması ise cihazın IP adresini Cloudflare'e açıklayan bir **Cloudflare Turnstile** testi yükler — her ikisi de otomatik olarak, hiç kimse bir şey göndermeyi seçmeden gerçekleşir. Bu, her yaştan kullanıcı için geçerlidir ve bilinçli bir eylem olmaksızın gerçekleşen her şey bundan ibarettir." }
       ]
     },
     {
