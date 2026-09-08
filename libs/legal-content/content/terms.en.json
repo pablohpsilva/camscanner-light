@@ -11,7 +11,7 @@
       "heading": "Acceptance of these terms",
       "body": [
         { "type": "p", "text": "By using ScannerCam Light you agree to these terms. If you do not agree, do not use the app." },
-        { "type": "p", "text": "These terms apply together with our [Privacy Policy](privacy.html), which explains what little data the app touches and why." }
+        { "type": "p", "text": "These terms apply together with the [Privacy Policy](privacy.html), which explains what little data the app touches and why." }
       ]
     },
     {
@@ -28,7 +28,7 @@
       "body": [
         { "type": "p", "text": "\"Your content\" means anything you scan, photograph, edit, store, export, or share using ScannerCam Light — including the resulting images, PDFs, and any text extracted from them by on-device OCR." },
         { "type": "p", "text": "**You are solely responsible** for the documents you scan, store, and share with ScannerCam Light, for having the right to scan or copy them, and for your use complying with the laws that apply to you." },
-        { "type": "p", "text": "The developer of ScannerCam Light never sees, receives, or has access to your content. Everything happens on your device, so we cannot review, moderate, or remove anything you scan — that responsibility stays with you." }
+        { "type": "p", "text": "The developer of ScannerCam Light never sees, receives, or has access to your content. Everything happens on your device, so nothing you scan can be reviewed, moderated, or removed by the developer of ScannerCam Light — that responsibility stays with you." }
       ]
     },
     {
@@ -70,9 +70,9 @@
       "body": [
         { "type": "p", "text": "ScannerCam Light interacts with a small number of independent third parties for features you choose to use. Each is governed by its own terms and privacy practices, which the developer of ScannerCam Light does not control:" },
         { "type": "ul", "items": [
-          "Apple and Google, for distributing the app through their app stores and, on iOS, for processing the optional in-app tip.",
-          "Ko-fi and the Bitcoin network, for the optional donation options offered on Android.",
-          "GitHub, for the optional feedback form, which files a publicly visible issue on our repository."
+          "Apple and Google, for distributing the app through their app stores and, where offered, for processing an in-app tip.",
+          "Ko-fi and the Bitcoin network, for optional donation options that may be offered depending on your platform and app version.",
+          "GitHub, for the optional feedback form, which files a publicly visible issue on ScannerCam Light's repository."
         ] },
         { "type": "p", "text": "Read those third parties' own terms before you use a feature that involves them. The developer of ScannerCam Light is not responsible for their acts, omissions, availability, or policies." }
       ]
@@ -81,7 +81,7 @@
       "id": "donations",
       "heading": "Tips and donations",
       "body": [
-        { "type": "p", "text": "ScannerCam Light is free to use in full. On iOS you may optionally leave a tip through an in-app purchase processed by Apple; on Android you may optionally support the project through Ko-fi or by sending Bitcoin to an address we display." },
+        { "type": "p", "text": "ScannerCam Light is free to use in full. Depending on your platform and app version, you may optionally support the project through an in-app tip processed by Apple, through Ko-fi, or by sending Bitcoin to an address shown in the app — whichever of these options is offered to you." },
         { "type": "p", "text": "Any tip or donation is entirely **voluntary** and **non-refundable**, and it does not unlock any feature, warranty, priority, or support obligation. It does not create a contract for goods or services beyond the goodwill it represents." }
       ]
     },
@@ -102,7 +102,7 @@
       "id": "indemnity",
       "heading": "Indemnity",
       "body": [
-        { "type": "p", "text": "You agree to indemnify and hold harmless the developer of ScannerCam Light from any claim, loss, liability, or expense (including reasonable legal fees) arising out of your content, your use of the app in breach of these terms, or your violation of any law or of a third party's rights, to the extent permitted by applicable law." }
+        { "type": "p", "text": "Subject to the mandatory rights described in \"Your rights\" below, and to the extent permitted by applicable law, you agree to indemnify the developer of ScannerCam Light against claims, losses, and reasonable legal costs arising directly from your content or from your breach of these terms or of the law." }
       ]
     },
     {
@@ -118,7 +118,7 @@
       "heading": "Changes to these terms",
       "body": [
         { "type": "p", "text": "The developer of ScannerCam Light may update these terms from time to time, for example to reflect a new feature or a change in applicable law. The effective date at the top of this document shows when the current version took effect." },
-        { "type": "p", "text": "If changes are significant, we will make a reasonable effort to flag them within the app. Continuing to use ScannerCam Light after a new version takes effect means you accept the updated terms; if you do not accept them, stop using the app." }
+        { "type": "p", "text": "You do not receive a separate notice when these terms change — the current version is always available within the app and on the web page where these terms are published, and the effective date above shows when it took effect. Continuing to use ScannerCam Light after a new version takes effect means you accept the updated terms; if you do not accept them, stop using the app." }
       ]
     },
     {
@@ -132,7 +132,7 @@
       "id": "contact",
       "heading": "Contact",
       "body": [
-        { "type": "p", "text": "Questions about these terms can be sent to [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). See also our [Privacy Policy](privacy.html) for how ScannerCam Light handles data." }
+        { "type": "p", "text": "Questions about these terms can be sent to [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). See also the [Privacy Policy](privacy.html) for how ScannerCam Light handles data." }
       ]
     }
   ]

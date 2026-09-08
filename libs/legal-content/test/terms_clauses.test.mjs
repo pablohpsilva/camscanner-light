@@ -78,3 +78,8 @@ test('names no individual person as publisher', () => {
 test('gives the support email', () => {
   assert.match(allText(doc()), /scannercamlight\.line149@passmail\.net/)
 })
+
+test('does not promise to notify users about changes to these terms', () => {
+  const t = JSON.stringify(doc().sections.find((x) => x.id === 'changes')).toLowerCase()
+  assert.doesNotMatch(t, /notify|flag them|alert|inform you/)
+})
