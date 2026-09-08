@@ -35,7 +35,7 @@
       "id": "network",
       "heading": "Network access",
       "body": [
-        { "type": "p", "text": "The app makes no background network requests. An outbound connection happens only when explicitly triggered: when an optional donation link is tapped, which opens your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; when an optional in-app tip is made on iOS, which is handled by Apple as described in the Purchases section below; or when feedback is explicitly submitted through the in-app feedback form, as described in the Feedback section below." },
+        { "type": "p", "text": "The app makes no background network requests unrelated to a feature you are actively using. Outbound connections happen when an optional donation link is tapped, opening your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; when an optional in-app tip is made on iOS, handled by Apple as described in the Purchases section below; and, where the optional feedback feature is enabled in a given build, in connection with that feature as described in the Feedback section below — which includes a check of whether the feedback service is reachable when the library screen opens, not only a connection when you submit the form." },
         { "type": "p", "text": "On **Android**, the released app does not request the INTERNET permission at all, so it cannot make any network request. On iOS there is no equivalent permission system; the app still makes no background requests regardless." }
       ]
     },
@@ -43,13 +43,14 @@
       "id": "feedback",
       "heading": "Feedback",
       "body": [
-        { "type": "p", "text": "The app includes an optional **Send feedback** feature. No data is ever sent unless the feedback form is opened and **Submit** is tapped. When it is, the following is transmitted:" },
+        { "type": "p", "text": "The app includes an optional **Send feedback** feature. Where this feature is enabled in a given build, two things happen before you type anything: when the library screen loads, the app makes a small request to check whether the feedback service is currently reachable; and when you open the feedback form itself, it loads a **Cloudflare Turnstile** human-verification challenge inside the form, which means Cloudflare receives a request and your device's IP address at that point. Neither of these two steps sends your message, your email, or anything about your documents — they happen automatically and are not gated on Submit." },
+        { "type": "p", "text": "Your message, and the fields below, are sent only when you tap **Submit**:" },
         { "type": "ul", "items": [
           "Your message — the text typed into the feedback form (required).",
           "Your email address — only if one is chosen to be entered. Providing an email is entirely optional.",
           "Non-personal diagnostics — app version, OS version, device model, and language/locale. These help reproduce reported issues and contain no information about your documents."
         ] },
-        { "type": "p", "text": "This data is sent to a Cloudflare Worker service, which creates a **publicly visible issue** in the app's GitHub repository. This means your message text will be visible to anyone on the internet, and that if an email address is included, it will also be publicly visible in the GitHub issue." },
+        { "type": "p", "text": "On Submit, this data is sent to a Cloudflare Worker service, which creates a **publicly visible issue** in the app's GitHub repository. This means your message text will be visible to anyone on the internet, and that if an email address is included, it will also be publicly visible in the GitHub issue." },
         { "type": "p", "text": "The app warns about this public visibility before submission. Sensitive information should not be included in a feedback message, and the email field can be left blank if that public visibility is not wanted." },
         { "type": "p", "text": "**No scanned documents or their contents are ever sent.** Feedback submission is strictly limited to the fields listed above." }
       ]

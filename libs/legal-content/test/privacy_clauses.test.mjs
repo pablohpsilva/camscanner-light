@@ -71,3 +71,28 @@ test('does not promise a response time or deletion procedure it cannot keep', ()
   const t = section('your-rights')
   assert.doesNotMatch(t, /within \d+ days|we will respond|guarantee/)
 })
+
+test('does not claim the network triggers are exhaustive', () => {
+  const t = section('network')
+  assert.doesNotMatch(t, /only when explicitly triggered/)
+})
+
+test('does not claim nothing is sent until Submit', () => {
+  const t = section('feedback')
+  assert.doesNotMatch(t, /no data is ever sent unless/)
+})
+
+test('discloses the automatic feedback-availability probe on the library screen', () => {
+  const t = section('network')
+  assert.match(t, /feedback (service|worker)/)
+  assert.match(t, /library screen|app (opens|is opened|launches)/)
+})
+
+test('discloses Turnstile loads (and reaches Cloudflare) when the feedback form opens', () => {
+  const t = section('feedback')
+  assert.match(t, /turnstile/)
+  assert.match(t, /cloudflare/)
+  assert.match(t, /ip address/)
+  // the strong claims must still hold, unweakened
+  assert.match(t, /no scanned documents/)
+})
