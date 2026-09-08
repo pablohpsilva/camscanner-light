@@ -83,3 +83,8 @@ test('does not promise to notify users about changes to these terms', () => {
   const t = JSON.stringify(doc().sections.find((x) => x.id === 'changes')).toLowerCase()
   assert.doesNotMatch(t, /notify|flag them|alert|inform you/)
 })
+
+test('does not claim the in-app copy is always current', () => {
+  const t = JSON.stringify(doc().sections.find((x) => x.id === 'changes')).toLowerCase()
+  assert.doesNotMatch(t, /current version is always|always available within the app/)
+})
