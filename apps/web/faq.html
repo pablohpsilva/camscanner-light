@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frequently Asked Questions — ScannerCam Light</title>
+  <meta name="description" content="Answers to common questions about ScannerCam Light. For the full legal detail behind any of these, see the Privacy Policy and the Terms of Service." />
+  <link rel="icon" href="assets/icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="alternate" hreflang="en" href="faq.html" />
+  <link rel="alternate" hreflang="pt" href="legal/faq.pt.html" />
+  <link rel="alternate" hreflang="pt-BR" href="legal/faq.pt-BR.html" />
+  <link rel="alternate" hreflang="es" href="legal/faq.es.html" />
+  <link rel="alternate" hreflang="fr" href="legal/faq.fr.html" />
+  <link rel="alternate" hreflang="de" href="legal/faq.de.html" />
+  <link rel="alternate" hreflang="lb" href="legal/faq.lb.html" />
+  <link rel="alternate" hreflang="tr" href="legal/faq.tr.html" />
+  <link rel="alternate" hreflang="ru" href="legal/faq.ru.html" />
+  <link rel="alternate" hreflang="zh" href="legal/faq.zh.html" />
+  <link rel="alternate" hreflang="ar" href="legal/faq.ar.html" />
+  <link rel="alternate" hreflang="x-default" href="faq.html" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="index.html"><img src="assets/icon.png" alt="" /> ScannerCam Light</a>
+      <button class="nav__toggle" aria-label="Menu">☰</button>
+      <nav class="nav__links">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#privacy">Privacy</a>
+        <a href="index.html#donate">Donate</a>
+        <a href="support.html">Support</a>
+        <a class="btn btn--primary" href="index.html#get">Get the app</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="container prose">
+      <span class="eyebrow">FAQ</span>
+      <h1>Frequently Asked Questions</h1>
+      <p class="lead">Answers to common questions about ScannerCam Light. For the full legal detail behind any of these, see the <a href="privacy.html">Privacy Policy</a> and the <a href="terms.html">Terms of Service</a>.</p>
+      <p><em>Effective date: 2026-09-08</em></p>
+
+      <div class="faq">
+        <details>
+          <summary>Does it work offline?</summary>
+      <p>Yes. Scanning, edge detection, image enhancement, and on-device text recognition (OCR) all run entirely on the device and need no internet connection. On <strong>Android</strong>, the released app does not even request the INTERNET permission, so it has no way to make a network request at all.</p>
+      <p>On <strong>iOS</strong> there is no equivalent permission system, but the same is true for everything document-related — nothing about a document ever touches the network. Where the optional feedback feature is enabled in a build, the app checks whether the feedback service is reachable automatically each time the library screen opens, whether or not feedback is ever used — see the feedback question below for the full detail on what that check sends and when. Where an in-app tip is offered, opening the support screen asks the App Store for the available tip options before any tip is made; Apple handles the network side of an actual purchase.</p>
+        </details>
+        <details>
+          <summary>Where are my documents stored?</summary>
+      <p>On the device only. Scanned images are saved as files in the app's own storage, and document titles and extracted text are indexed in a local database — none of it is uploaded anywhere. See the <a href="privacy.html">Privacy Policy</a> for the full detail on what is stored and where.</p>
+        </details>
+        <details>
+          <summary>Is it free?</summary>
+      <p>Yes — ScannerCam Light is free to use in full, with no ads. Depending on platform and app version, an optional way to support the project may be offered: an in-app tip processed by Apple on iOS, a Ko-fi link, or a Bitcoin donation address. None of these change what the app can do.</p>
+        </details>
+        <details>
+          <summary>What do tips or donations unlock?</summary>
+      <p>Nothing. Any tip or donation — an optional in-app tip processed by Apple, a Ko-fi contribution, or a Bitcoin donation, whichever is offered — is entirely <strong>voluntary</strong> and does not unlock any feature, remove any limit, or change how the app behaves. ScannerCam Light already includes everything it offers before any tip is given.</p>
+      <p>Tips and donations are non-refundable. See <a href="terms.html">Terms of Service</a> for the full terms.</p>
+        </details>
+        <details>
+          <summary>How do I export a PDF?</summary>
+      <p>Open a document, choose export, and pick PDF. The OS share sheet then lets the PDF be saved, printed, or sent to any app or destination chosen there — ScannerCam Light does not control or see where it ends up.</p>
+        </details>
+        <details>
+          <summary>How accurate is the text recognition (OCR)?</summary>
+      <p>Not perfect. Text recognition, like edge detection and image enhancement, is automated and can misread, omit, or garble text — especially on poor-quality photos, unusual layouts, or handwriting.</p>
+      <p>Always check recognized text against the original before relying on it, especially for anything legal, medical, or financial. See <a href="terms.html">Terms of Service</a> for the full accuracy disclaimer.</p>
+        </details>
+        <details>
+          <summary>How does search work, and what can't it find?</summary>
+      <p>Search looks through document titles and the text captured by on-device OCR. Because OCR only reads Latin-script text, a document whose content is in Chinese, Arabic, Russian, or another non-Latin script will not be found by searching its text. Its title remains searchable, because titles are matched directly rather than through OCR.</p>
+        </details>
+        <details>
+          <summary>Are my documents backed up anywhere?</summary>
+      <p>No. ScannerCam Light stores documents only on the device — there is <strong>no cloud storage and no backup</strong> created by the app, and nothing is copied to a server. If the app is uninstalled, or the device is lost, reset, or damaged, those documents are gone for good.</p>
+      <p>Keep your own copies of anything that cannot be afforded to lose — for example by exporting important documents to another app, a computer, or a cloud service of choice before uninstalling the app or switching devices. See <a href="terms.html">Terms of Service</a> for the full data-loss terms.</p>
+        </details>
+        <details>
+          <summary>How do I free up space?</summary>
+      <p>Delete documents no longer needed from the library. Deleting a document removes its image files from the device entirely, not just its entry in the list, so the space is actually freed.</p>
+        </details>
+        <details>
+          <summary>Is feedback sent through the app made public?</summary>
+      <p>Yes — where the optional feedback feature is available (it is enabled per build, and a released <strong>Android</strong> build cannot make a network request at all, so it is not offered there), a submitted message becomes a <strong>publicly visible issue</strong> on ScannerCam Light's <strong>GitHub</strong> repository, and anyone on the internet can read the message text and, if one was entered, the email address.</p>
+      <p>Some network activity happens before that point, too: when the library screen loads, the app checks whether the feedback service is reachable, and opening the feedback form loads a <strong>Cloudflare Turnstile</strong> verification challenge — which means Cloudflare receives a request and the device's IP address. Neither of those two steps sends the message or email; that happens on <strong>Submit</strong>.</p>
+      <p>No scanned documents or their contents are ever included in feedback. The email field can be left blank to keep it out of the public issue, and sensitive information should not be put in the message itself. See the Feedback section of the <a href="privacy.html">Privacy Policy</a> for the full detail.</p>
+        </details>
+        <details>
+          <summary>Is the app available in my language, and does that include OCR and search?</summary>
+      <p>The app's interface is translated into 11 languages, including Chinese, Russian, and Arabic. Text recognition is more limited: OCR in ScannerCam Light reads <strong>Latin-script</strong> text only — the alphabet used by English, Spanish, French, and similar languages — not Chinese, Arabic, or Cyrillic text.</p>
+      <p>Because full-text search is built on OCR output, this carries through to search: a document scanned in Chinese, Arabic, or Russian will not be found by searching its text, though its title remains searchable. Scanning, viewing, and exporting such documents works normally — only text recognition and text search are affected.</p>
+        </details>
+        <details>
+          <summary>Does ScannerCam Light show ads or track usage?</summary>
+      <p>No. There are no ads, no analytics, no crash-reporting, and no tracking SDKs anywhere in the app, no user accounts, and nothing you scan is ever sent anywhere. That is not quite the same as the app being silent on the network: where the optional feedback feature is available, the app checks whether the feedback service is reachable automatically when the library screen opens, and opening the feedback form contacts <strong>Cloudflare</strong>, which receives the device's IP address. Those two requests tell their operators that a device opened a screen, at a time, from an IP address; the developer of ScannerCam Light builds no profile from them and sells nothing. See the <a href="privacy.html">Privacy Policy</a> for the full detail on what the app does and does not do with data.</p>
+        </details>
+        <details>
+          <summary>What happens to my documents if I lose my phone?</summary>
+      <p>They are gone. ScannerCam Light keeps documents only on the device that scanned them — there is no cloud copy and no account to sign back into on a different device. If a phone is lost, reset, or damaged, or the app is uninstalled, its documents cannot be recovered by the developer of ScannerCam Light or by anyone else.</p>
+      <p>The only protection is exporting copies of anything important beforehand — to another app, a computer, or a cloud service of choice. See <a href="terms.html">Terms of Service</a> for the full data-loss terms.</p>
+        </details>
+        <details>
+          <summary>How can I get in touch?</summary>
+      <p>Email <a href="mailto:scannercamlight.line149@passmail.net">scannercamlight.line149@passmail.net</a> with questions, bug reports, or feedback. The in-app <strong>Send feedback</strong> form, where enabled, is another way to report a problem — see the <a href="privacy.html">Privacy Policy</a> for what that sends and to whom, and the <a href="terms.html">Terms of Service</a> for the terms covering use of the app.</p>
+        </details>
+      </div>
+
+      <nav class="lang-switch">
+        <a href="faq.html" aria-current="page">English</a>
+        <a href="legal/faq.pt.html">Português</a>
+        <a href="legal/faq.pt-BR.html">Português (Brasil)</a>
+        <a href="legal/faq.es.html">Español</a>
+        <a href="legal/faq.fr.html">Français</a>
+        <a href="legal/faq.de.html">Deutsch</a>
+        <a href="legal/faq.lb.html">Lëtzebuergesch</a>
+        <a href="legal/faq.tr.html">Türkçe</a>
+        <a href="legal/faq.ru.html">Русский</a>
+        <a href="legal/faq.zh.html">中文</a>
+        <a href="legal/faq.ar.html">العربية</a>
+      </nav>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div><strong>ScannerCam Light</strong><br /><span style="color:#9aa4bd">Scan. Clean. Done.</span></div>
+      <div>
+        <a href="terms.html">Terms</a> &nbsp;·&nbsp;
+        <a href="privacy.html">Privacy</a> &nbsp;·&nbsp;
+        <a href="faq.html">FAQ</a> &nbsp;·&nbsp;
+        <a href="support.html">Support</a> &nbsp;·&nbsp;
+        <a href="index.html#donate">Donate</a> &nbsp;·&nbsp;
+        <a href="mailto:scannercamlight.line149@passmail.net">Contact</a>
+      </div>
+    </div>
+  </footer>
+  <script src="main.js"></script>
+</body>
+</html>

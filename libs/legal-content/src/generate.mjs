@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { DOCS, LOCALES, repoRoot } from './constants.mjs'
 import { loadDocument, loadMeta } from './schema.mjs'
 import { renderDart } from './render-dart.mjs'
+import { renderHtml, pagePath } from './render-html.mjs'
 
 const write = (relPath, contents) => {
   const abs = resolve(repoRoot, relPath)
@@ -50,6 +51,13 @@ export function generate () {
   const meta = loadMeta()
   const documents = loadAll()
   write('apps/mobile/lib/features/legal/generated/legal_content.g.dart', renderDart(documents, meta))
+
+  for (const doc of DOCS) {
+    for (const locale of LOCALES) {
+      write(`apps/web/${pagePath(doc, locale)}`,
+        renderHtml(documents[doc][locale], { doc, locale, effectiveDate: meta[doc].effectiveDate }))
+    }
+  }
 }
 
 // Only generate when this file is executed directly. Importing it (a test
