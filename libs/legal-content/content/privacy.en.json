@@ -84,7 +84,7 @@
       "body": [
         { "type": "p", "text": "Privacy laws such as the EU/UK General Data Protection Regulation (**GDPR**) and the California Consumer Privacy Act (**CCPA**) give individuals rights over their personal data, including the right to access, correct, delete, or object to the processing of it." },
         { "type": "p", "text": "Because ScannerCam Light collects and stores no personal data on any server, there is normally nothing to export, correct, or erase: the data described in this policy exists only as files and a database on your own device, under your direct control at all times, and it can be removed whenever you like by deleting a document or uninstalling the app." },
-        { "type": "p", "text": "The one exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis — nothing is sent unless the form is opened and Submit is explicitly tapped — and it becomes a public GitHub issue as described in the Feedback section above. A submitted feedback issue can be removed on request by writing to the support email below." }
+        { "type": "p", "text": "The one exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit, as described in the Feedback section above, which also describes the earlier requests that happen automatically once the feedback form is opened. A submitted feedback issue becomes a public GitHub issue and can be removed on request by writing to the support email below." }
       ]
     },
     {

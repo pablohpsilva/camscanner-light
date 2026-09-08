@@ -77,9 +77,16 @@ test('does not claim the network triggers are exhaustive', () => {
   assert.doesNotMatch(t, /only when explicitly triggered/)
 })
 
-test('does not claim nothing is sent until Submit', () => {
-  const t = section('feedback')
-  assert.doesNotMatch(t, /no data is ever sent unless/)
+// Document-wide, not section-scoped: the false "nothing happens before Submit"
+// claim previously reappeared in `your-rights`, two sections away from `feedback`,
+// as a paraphrase a single literal string could not catch. Checking the whole
+// document, against a family of phrasings, is the point of this guard.
+test('does not claim nothing is sent until Submit, anywhere in the document', () => {
+  const t = allText(doc())
+  assert.doesNotMatch(
+    t,
+    /nothing is sent unless|no data is ever sent unless|only when you (tap|press) submit|not until you submit/,
+  )
 })
 
 test('discloses the automatic feedback-availability probe on the library screen', () => {
@@ -97,8 +104,8 @@ test('discloses Turnstile loads (and reaches Cloudflare) when the feedback form 
   assert.match(t, /no scanned documents/)
 })
 
-test('does not gate the App Store tip-options query on a tip actually being made', () => {
-  const t = section('network')
+test('does not gate the App Store tip-options query on a tip actually being made, anywhere in the document', () => {
+  const t = allText(doc())
   assert.doesNotMatch(t, /when an optional in-app tip is made|only when a tip is made/)
 })
 
