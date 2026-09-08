@@ -75,3 +75,17 @@ test('the offline answer does not gate StoreKit tip traffic on making a purchase
   const t = section('offline')
   assert.doesNotMatch(t, /only when actively made|only when you make/)
 })
+
+// Three independent blind back-translators (zh, ru, ar) each flagged the same
+// defect in the English source: the search answer ended with a global-sounding
+// "only OCR text from Latin-script documents is searchable", which reads as
+// cancelling the carve-out immediately before it ("only its title will be").
+// A reader could conclude titles are not searchable either — they are, via a
+// separate name match that never touches the trigram index
+// (document_search_service.dart `_searchRanked`: "names are not in the trigram
+// index"). Presence, not absence: guards that the carve-out is stated in a form
+// no trailing clause can take back.
+test('the search answer states plainly that titles stay searchable', () => {
+  const t = section('search')
+  assert.match(t, /title (remains|stays|is still) searchable/)
+})

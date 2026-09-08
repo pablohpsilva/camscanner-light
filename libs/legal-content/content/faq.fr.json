@@ -55,7 +55,7 @@
       "id": "search",
       "heading": "Comment fonctionne la recherche, et que ne peut-elle pas trouver ?",
       "body": [
-        { "type": "p", "text": "La recherche parcourt les titres des documents et le texte capturé par l'OCR sur l'appareil. Comme l'OCR ne lit que le texte en alphabet latin, un document dont le contenu est en chinois, en arabe, en russe ou dans une autre écriture non latine ne sera pas trouvé en recherchant son texte — seul son titre le sera, et seul le texte OCR des documents en alphabet latin est consultable par la recherche." }
+        { "type": "p", "text": "La recherche parcourt les titres des documents et le texte capturé par l'OCR sur l'appareil. Comme l'OCR ne lit que le texte en alphabet latin, un document dont le contenu est en chinois, en arabe, en russe ou dans une autre écriture non latine ne sera pas trouvé en recherchant son texte. Son titre peut toujours être trouvé par la recherche, car les titres sont comparés directement et non via l'OCR." }
       ]
     },
     {
@@ -87,7 +87,7 @@
       "heading": "L'application est-elle disponible dans ma langue, et cela inclut-il l'OCR et la recherche ?",
       "body": [
         { "type": "p", "text": "L'interface de l'application est traduite en 11 langues, dont le chinois, le russe et l'arabe. La reconnaissance de texte est plus limitée : l'OCR de ScannerCam Light ne lit que le texte en **alphabet latin** — l'alphabet utilisé par l'anglais, l'espagnol, le français et les langues similaires — pas le chinois, l'arabe ni le cyrillique." },
-        { "type": "p", "text": "Comme la recherche en texte intégral repose sur le résultat de l'OCR, cela se répercute sur la recherche : un document numérisé en chinois, en arabe ou en russe ne sera pas trouvé en recherchant son texte, bien que son titre reste consultable. Numériser, consulter et exporter de tels documents fonctionne normalement — seules la reconnaissance et la recherche de texte sont affectées." }
+        { "type": "p", "text": "Comme la recherche en texte intégral repose sur le résultat de l'OCR, cela se répercute sur la recherche : un document numérisé en chinois, en arabe ou en russe ne sera pas trouvé en recherchant son texte, bien que son titre puisse toujours être trouvé. Numériser, consulter et exporter de tels documents fonctionne normalement — seules la reconnaissance et la recherche de texte sont affectées." }
       ]
     },
     {

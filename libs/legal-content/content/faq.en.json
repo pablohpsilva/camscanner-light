@@ -55,7 +55,7 @@
       "id": "search",
       "heading": "How does search work, and what can't it find?",
       "body": [
-        { "type": "p", "text": "Search looks through document titles and the text captured by on-device OCR. Because OCR only reads Latin-script text, a document whose content is in Chinese, Arabic, Russian, or another non-Latin script will not be found by searching its text — only its title will be, and only OCR text from Latin-script documents is searchable." }
+        { "type": "p", "text": "Search looks through document titles and the text captured by on-device OCR. Because OCR only reads Latin-script text, a document whose content is in Chinese, Arabic, Russian, or another non-Latin script will not be found by searching its text. Its title remains searchable, because titles are matched directly rather than through OCR." }
       ]
     },
     {

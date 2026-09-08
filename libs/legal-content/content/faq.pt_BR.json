@@ -55,7 +55,7 @@
       "id": "search",
       "heading": "Como a busca funciona, e o que ela não encontra?",
       "body": [
-        { "type": "p", "text": "A busca percorre os títulos dos documentos e o texto capturado pelo OCR no aparelho. Como o OCR só lê texto em alfabeto latino, um documento cujo conteúdo esteja em chinês, árabe, russo ou outro alfabeto não latino não será encontrado ao buscar pelo texto — só o título será encontrado, e apenas o texto de OCR de documentos em alfabeto latino pode ser buscado." }
+        { "type": "p", "text": "A busca percorre os títulos dos documentos e o texto capturado pelo OCR no aparelho. Como o OCR só lê texto em alfabeto latino, um documento cujo conteúdo esteja em chinês, árabe, russo ou outro alfabeto não latino não será encontrado ao buscar pelo texto. O título dele continua podendo ser encontrado pela busca, porque os títulos são comparados diretamente e não por meio do OCR." }
       ]
     },
     {

@@ -55,7 +55,7 @@
       "id": "search",
       "heading": "Arama nasıl çalışır ve neyi bulamaz?",
       "body": [
-        { "type": "p", "text": "Arama, belge başlıklarını ve cihaz üzerindeki OCR tarafından yakalanan metni tarar. OCR yalnızca Latin alfabesiyle yazılmış metni okuduğundan, içeriği Çince, Arapça, Rusça veya başka bir Latin olmayan alfabede olan bir belge, metni aranarak bulunamaz — yalnızca başlığı bulunabilir ve yalnızca Latin alfabesiyle yazılmış belgelerin OCR metni aranabilir." }
+        { "type": "p", "text": "Arama, belge başlıklarını ve cihaz üzerindeki OCR tarafından yakalanan metni tarar. OCR yalnızca Latin alfabesiyle yazılmış metni okuduğundan, içeriği Çince, Arapça, Rusça veya başka bir Latin olmayan alfabede olan bir belge, metni aranarak bulunamaz. Başlığı ise aranabilir olmaya devam eder, çünkü başlıklar OCR üzerinden değil doğrudan eşleştirilir." }
       ]
     },
     {

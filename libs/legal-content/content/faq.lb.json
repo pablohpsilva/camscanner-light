@@ -55,7 +55,7 @@
       "id": "search",
       "heading": "Wéi funktionnéiert d'Sich, a wat kann si net fannen?",
       "body": [
-        { "type": "p", "text": "D'Sich duerchsicht d'Titelen vun Dokumenter an den Text, deen d'OCR um Apparat erfaasst huet. Well d'OCR nëmme Text am laténgesche Alfabet liest, gëtt en Dokument, deem säin Inhalt op Chinesesch, Arabesch, Russesch, oder engem aneren net-laténgesche Schrëftsystem geschriwwe steet, net fonnt, wann Dir no sengem Text sicht — nëmmen säin Titel gëtt fonnt, an nëmme OCR-Text vun Dokumenter am laténgesche Alfabet ass duerchsichbar." }
+        { "type": "p", "text": "D'Sich duerchsicht d'Titelen vun Dokumenter an den Text, deen d'OCR um Apparat erfaasst huet. Well d'OCR nëmme Text am laténgesche Alphabet liest, gëtt en Dokument, deem säin Inhalt op Chinesesch, Arabesch, Russesch, oder engem aneren net-laténgesche Schrëftsystem geschriwwe steet, net fonnt, wann Dir no sengem Text sicht. Säin Titel kann awer weider gesicht ginn, well Titelen direkt ofgeglach ginn an net iwwer d'OCR." }
       ]
     },
     {
@@ -86,8 +86,8 @@
       "id": "languages",
       "heading": "Ass d'App a menger Sprooch disponibel, an ass dat och fir OCR an d'Sich de Fall?",
       "body": [
-        { "type": "p", "text": "D'Benotzeroberfläch vun der App ass a 11 Sproochen iwwersat, dorënner Chinesesch, Russesch, an Arabesch. D'Texterkennung ass méi limitéiert: D'OCR an ScannerCam Light liest nëmmen Text am **laténgesche Alfabet** — dat Alfabet, dat Englesch, Spuenesch, Franséisch a soss ähnlech Sproochen benotzen — net Chinesesch, Arabesch, oder Kyrillesch." },
-        { "type": "p", "text": "Well d'Volltextsuche op der OCR-Ausgab opbaut, wierkt sech dat och op d'Sich aus: En Dokument, dat op Chinesesch, Arabesch, oder Russesch agescannt gouf, gëtt net fonnt, wann Dir no sengem Text sicht, mä säin Titel bleift trotzdeem duerchsichbar. D'Scannen, d'Kucken, an d'Exportéiere vun esou Dokumenter funktionnéiert normal — nëmmen d'Texterkennung an d'Textsich si betraff." }
+        { "type": "p", "text": "D'Benotzeroberfläch vun der App ass a 11 Sproochen iwwersat, dorënner Chinesesch, Russesch, an Arabesch. D'Texterkennung ass méi limitéiert: D'OCR an ScannerCam Light liest nëmmen Text am **laténgesche Alphabet** — dat Alphabet, dat Englesch, Spuenesch, Franséisch a soss ähnlech Sproochen benotzen — net Chinesesch, Arabesch, oder Kyrillesch." },
+        { "type": "p", "text": "Well d'Volltextsuche op der OCR-Ausgab opbaut, wierkt sech dat och op d'Sich aus: En Dokument, dat op Chinesesch, Arabesch, oder Russesch agescannt gouf, gëtt net fonnt, wann Dir no sengem Text sicht, mä säin Titel kann trotzdeem gesicht ginn. D'Scannen, d'Kucken, an d'Exportéiere vun esou Dokumenter funktionnéiert normal — nëmmen d'Texterkennung an d'Textsich si betraff." }
       ]
     },
     {

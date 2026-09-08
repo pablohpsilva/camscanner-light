@@ -55,7 +55,7 @@
       "id": "search",
       "heading": "Wie funktioniert die Suche, und was findet sie nicht?",
       "body": [
-        { "type": "p", "text": "Die Suche durchsucht Dokumenttitel und den von der OCR auf dem Gerät erfassten Text. Da die OCR nur Text in lateinischer Schrift liest, wird ein Dokument, dessen Inhalt auf Chinesisch, Arabisch, Russisch oder in einer anderen nicht-lateinischen Schrift verfasst ist, bei einer Textsuche nicht gefunden — nur sein Titel wird gefunden, und nur OCR-Text aus Dokumenten in lateinischer Schrift ist durchsuchbar." }
+        { "type": "p", "text": "Die Suche durchsucht Dokumenttitel und den von der OCR auf dem Gerät erfassten Text. Da die OCR nur Text in lateinischer Schrift liest, wird ein Dokument, dessen Inhalt auf Chinesisch, Arabisch, Russisch oder in einer anderen nicht-lateinischen Schrift verfasst ist, bei einer Textsuche nicht gefunden. Sein Titel bleibt durchsuchbar, denn Titel werden direkt abgeglichen und nicht über die OCR." }
       ]
     },
     {
