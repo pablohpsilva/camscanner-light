@@ -35,7 +35,7 @@
       "id": "network",
       "heading": "Network access",
       "body": [
-        { "type": "p", "text": "The app makes no background network requests unrelated to a feature you are actively using. Outbound connections happen when an optional donation link is tapped, opening your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; when an optional in-app tip is made on iOS, handled by Apple as described in the Purchases section below; and, where the optional feedback feature is enabled in a given build, in connection with that feature as described in the Feedback section below — which includes a check of whether the feedback service is reachable when the library screen opens, not only a connection when you submit the form." },
+        { "type": "p", "text": "The app makes no background network requests unrelated to a feature you are actively using. Outbound connections happen when an optional donation link is tapped, opening your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; where an in-app tip is offered, opening the support screen asks the App Store for the available tip options before any tip is made, and Apple separately handles the network side of an actual purchase, as described in the Purchases section below; and, where the optional feedback feature is enabled in a given build, in connection with that feature as described in the Feedback section below — which includes a check of whether the feedback service is reachable when the library screen opens, not only a connection when you submit the form." },
         { "type": "p", "text": "On **Android**, the released app does not request the INTERNET permission at all, so it cannot make any network request. On iOS there is no equivalent permission system; the app still makes no background requests regardless." }
       ]
     },
@@ -59,7 +59,7 @@
       "id": "purchases",
       "heading": "In-app purchases and tips",
       "body": [
-        { "type": "p", "text": "On iOS the app offers an optional tip. Tips are processed entirely by **Apple**; the developer receives no payment-card details, no billing address, and no other payment data — only Apple's aggregate, anonymous sales reporting. On Android there is no in-app purchase; the donation links open your browser." },
+        { "type": "p", "text": "On iOS the app offers an optional tip. Opening the support screen asks the App Store for the available tip options, before any tip is made. Tips themselves are processed entirely by **Apple**; the developer receives no payment-card details, no billing address, and no other payment data — only Apple's aggregate, anonymous sales reporting. On Android there is no in-app purchase; the donation links open your browser." },
         { "type": "p", "text": "Ko-fi and Bitcoin donation options may also be offered, depending on platform and app version. These are independent of any Apple in-app purchase and, like other donation links, simply open a third-party page in your browser." }
       ]
     },

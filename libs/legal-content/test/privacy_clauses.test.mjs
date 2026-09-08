@@ -96,3 +96,14 @@ test('discloses Turnstile loads (and reaches Cloudflare) when the feedback form 
   // the strong claims must still hold, unweakened
   assert.match(t, /no scanned documents/)
 })
+
+test('does not gate the App Store tip-options query on a tip actually being made', () => {
+  const t = section('network')
+  assert.doesNotMatch(t, /when an optional in-app tip is made|only when a tip is made/)
+})
+
+test('discloses the automatic App Store product query when the support screen opens', () => {
+  const t = section('network')
+  assert.match(t, /app store/)
+  assert.match(t, /before any tip is made/)
+})
