@@ -2099,11 +2099,16 @@ OUTPUTS=(
   "apps/web/legal"
 )
 
+# Invoke node directly rather than through `pnpm --filter ... <script>`: pnpm 11's
+# verifyDepsBeforeRun spawns an inner `pnpm install` that fails in some local
+# environments (it does on this repo's dev machine, for every workspace package,
+# including ones this work never touched). Calling node keeps the guard identical
+# locally and in CI.
 echo "==> Running the content test suite"
-pnpm --filter @camscanner/legal-content test
+( cd libs/legal-content && node --test )
 
 echo "==> Regenerating legal artifacts"
-pnpm --filter @camscanner/legal-content generate
+( cd libs/legal-content && node src/generate.mjs )
 
 echo "==> Checking for drift"
 # Untracked files matter as much as modified ones: `git diff` is blind to a
