@@ -44,7 +44,7 @@
       "heading": "Feedback",
       "body": [
         { "type": "p", "text": "The app includes an optional **Send feedback** feature. Where this feature is enabled in a given build, two things happen before you type anything: when the library screen loads, the app makes a small request to check whether the feedback service is currently reachable; and when you open the feedback form itself, it loads a **Cloudflare Turnstile** human-verification challenge inside the form, which means Cloudflare receives a request and your device's IP address at that point. Neither of these two steps sends your message, your email, or anything about your documents — they happen automatically and are not gated on Submit." },
-        { "type": "p", "text": "Your message, and the fields below, are sent when you tap **Submit**:" },
+        { "type": "p", "text": "Your message, and the fields below, are sent only when you tap **Submit**:" },
         { "type": "ul", "items": [
           "Your message — the text typed into the feedback form (required).",
           "Your email address — only if one is chosen to be entered. Providing an email is entirely optional.",

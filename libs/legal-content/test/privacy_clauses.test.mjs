@@ -89,12 +89,29 @@ test('does not claim the network triggers are exhaustive', () => {
 // claim previously reappeared in `your-rights`, two sections away from `feedback`,
 // as a paraphrase a single literal string could not catch. Checking the whole
 // document, against a family of phrasings, is the point of this guard.
+//
+// This family covers only UNIVERSAL claims ("nothing"/"no data" is ever sent) —
+// denials that the probe and Turnstile exist. It deliberately does NOT include
+// a bare "only when you tap submit": that phrasing is also used, correctly, to
+// scope a true, SUBJECT-specific claim ("your message ... is sent only when you
+// tap Submit") — a guard that can't tell those apart just pressures whoever
+// hits it into deleting accurate text. The subject-specific claim is guarded
+// by a presence test below instead, which can't be satisfied by deletion.
 test('does not claim nothing is sent until Submit, anywhere in the document', () => {
   const t = allText(doc())
   assert.doesNotMatch(
     t,
-    /nothing is sent unless|no data is ever sent unless|only when you (tap|press) submit|not until you submit/,
+    /nothing is sent unless|no data is ever sent unless|not until you submit|no request .{0,30} before you submit/,
   )
+})
+
+// Presence, not absence: guards the FACT that message/email/diagnostics are
+// Submit-gated. An absence test on "only when you tap submit" could be
+// satisfied by deleting the word "only" — which is exactly what happened once
+// before. A presence test can't be satisfied that way.
+test('states the message/email/diagnostics fields are sent only on Submit', () => {
+  const t = section('feedback')
+  assert.match(t, /sent only when you tap submit/)
 })
 
 test('discloses the automatic feedback-availability probe on the library screen', () => {
