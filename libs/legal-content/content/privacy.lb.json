@@ -1,0 +1,113 @@
+{
+  "doc": "privacy",
+  "locale": "lb",
+  "title": "Dateschutzerklärung",
+  "effectiveDateLabel": "Datum vum Inkrafttrieden",
+  "translationNotice": "Dës Iwwersetzung gëtt just fir Är Bequemlechkeet ugebueden. Bei engem Widderspruch mat der englescher Versioun gëllt d'englesch Versioun.",
+  "intro": "ScannerCam Light ass e gratis Dokumenteschanner fir iOS an Android, deen offline funktionnéiert an alles nëmmen op Ärem Apparat veraarbecht. Dës Erklärung erkläert, mat wéi wéinegen Daten d'App iwwerhaapt a Kontakt kënnt, wou dës bleiwen, an déi wéineg Fäll, wou eppes jeemools den Apparat verléisst.",
+  "sections": [
+    {
+      "id": "summary",
+      "heading": "Resumé",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light ass sou gebaut, datt Är Dokumenter privat bleiwen. Alles bleift op Ärem Apparat, mat enger ausdrécklecher Ausnam: der optionaler Feedback-Funktioun an der App, déi hei drënner beschriwwe gëtt, déi nëmme Daten iwwerdréit, wann dat aktiv esou gewielt gëtt fir se ze schécken. Et gëtt keng Benotzerkonten, keng Analyse, keng Reklamm, kee Tracking, a perséinlech Daten ginn ni verkaaft." }
+      ]
+    },
+    {
+      "id": "what-we-collect",
+      "heading": "Wat gëtt gesammelt",
+      "body": [
+        { "type": "p", "text": "**Bal näischt.** Ausser der optionaler Feedback-Funktioun hei drënner beschriwwen, sammelt, iwwerdréit oder späichert ScannerCam Light keng perséinlech Daten op iergendengem Server. Et gëtt keng Benotzerkonten a keng Aart vun Analyse oder Tracking. Et gëtt keng Reklamm gewisen, an et ginn ni Daten verkaaft. Kuckt d'Feedback-Sektioun hei drënner fir déi eenzeg Ausnam." }
+      ]
+    },
+    {
+      "id": "where-data-lives",
+      "heading": "Wou Är Daten bleiwen",
+      "body": [
+        { "type": "ul", "items": [
+          "Agescannt Biller gi nëmme als Dateien op Ärem Apparat gespäichert.",
+          "Titele vun Dokumenter an Text gi lokal an enger Datebank op Ärem Apparat gespäichert.",
+          "Texterkennung (OCR) leeft komplett op Ärem Apparat — et ginn keng Biller oder Texter irgendwouhin geschéckt."
+        ] }
+      ]
+    },
+    {
+      "id": "network",
+      "heading": "Netzwierkzougang",
+      "body": [
+        { "type": "p", "text": "D'App mécht keng Netzwierkufroe am Hannergrond, déi net mat enger Funktioun ze dinn hunn, déi Dir aktiv notzt. Ausgeheend Verbindunge geschéien, wann Dir op en optionale Don-Link klickt, deen Äre Browser op eng Don-Säit vun engem Drëttaanbieter opmécht, déi den Entwéckler vu ScannerCam Light net kontrolléiert an vun där hien keng Daten kritt; wann en Tipp an der App ugebuede gëtt, freet d'Opmaache vum Support-Écran den App Store no den disponibelen Tipp-Optiounen, ier iergendee Tipp gemaach gëtt, an Apple këmmert sech separat ëm d'Netzwierksäit vun engem tatsächleche Kaf, sou wéi an der Sektioun Käf hei drënner beschriwwen; a wann d'optional Feedback-Funktioun an enger bestëmmter Versioun aktivéiert ass, am Zesummenhang mat där Funktioun, sou wéi an der Feedback-Sektioun hei drënner beschriwwen — dat schléisst eng Iwwerpréiwung mat an, ob de Feedback-Service erreechbar ass, wann de Bibliothéik-Écran opgeet, an net nëmmen eng Verbindung, wann Dir de Formulaire ofschéckt." },
+        { "type": "p", "text": "Op **Android** freet déi verëffentlecht App d'Erlaabnis INTERNET guer net, sou datt si guer keng Netzwierkufro maache kann. Op iOS gëtt et kee gläichwäertegt Erlaabnissystem; d'App mécht awer trotzdem weiderhin keng Ufroen am Hannergrond." }
+      ]
+    },
+    {
+      "id": "feedback",
+      "heading": "Feedback",
+      "body": [
+        { "type": "p", "text": "D'App huet eng optional **Feedback schécken**-Funktioun. Wann dës Funktioun an enger bestëmmter Versioun aktivéiert ass, geschéien zwou Saachen ier Dir iergendeppes schreift: wann de Bibliothéik-Écran gelueden gëtt, mécht d'App eng kleng Ufro fir ze kontrolléieren, ob de Feedback-Service am Moment erreechbar ass; a wann Dir de Feedback-Formulaire selwer opmaacht, lued deen an sech dra eng **Cloudflare-Turnstile**-Erkennung fir mënschlech Verifikatioun, wat heescht datt Cloudflare an deem Moment eng Ufro an d'IP-Adress vun Ärem Apparat kritt. Keen vun dëse béide Schrëtt schéckt Är Noriicht, Är E-Mail, oder eppes iwwer Är Dokumenter — si geschéien automatesch a sinn net un d'Ofschécke gebonnen." },
+        { "type": "p", "text": "Är Noriicht, an d'Felder hei drënner, ginn nëmme geschéckt, wann Dir op **Ofschécken** klickt:" },
+        { "type": "ul", "items": [
+          "Är Noriicht — den Text, deen an de Feedback-Formulaire agi gouf (obligatoresch).",
+          "Är E-Mail-Adress — nëmmen, wann Dir Iech entscheet, eng unzeginn. Eng E-Mail unzeginn ass komplett optional.",
+          "Net-perséinlech Diagnosdaten — App-Versioun, OS-Versioun, Apparat-Modell, a Sprooch/Regioun. Dës hëllefe fir gemellte Problemer nozevollzéien an enthale keng Informatioune iwwer Är Dokumenter."
+        ] },
+        { "type": "p", "text": "Beim Ofschécken ginn dës Daten un e Cloudflare-Worker-Service geschéckt, deen en **ëffentlech siichtbaren Issue** am GitHub-Repository vun der App erstellt. Dat heescht, datt den Text vun Ärer Noriicht fir jiddereen um Internet siichtbar wäert sinn, an datt, wann eng E-Mail-Adress derbäi ass, dës och ëffentlech am GitHub-Issue siichtbar wäert sinn." },
+        { "type": "p", "text": "D'App warnt viru dëser ëffentlecher Siichtbarkeet ier Dir ofschéckt. Sensibel Informatioune sollte net an eng Feedback-Noriicht agefüügt ginn, an d'E-Mail-Feld kann eidel gelooss ginn, wann dës ëffentlech Siichtbarkeet net gewollt ass." },
+        { "type": "p", "text": "**Et ginn ni agescannte Dokumenter oder hire Contenu geschéckt.** D'Feedback-Ofschécken ass strikt op déi hei uewen opgelëschte Felder limitéiert." }
+      ]
+    },
+    {
+      "id": "purchases",
+      "heading": "In-App-Käf a Tippen",
+      "body": [
+        { "type": "p", "text": "Op iOS bitt d'App en optionalen Tipp un. D'Opmaache vum Support-Écran freet den App Store no den disponibelen Tipp-Optiounen, ier iergendee Tipp gemaach gëtt. D'Tippe selwer ginn komplett vun **Apple** veraarbecht; den Entwéckler kritt keng Bezuelkaartendetailer, keng Fakturéiersadress, a keng aner Bezuelungsdaten — nëmmen den aggregéierten, anonyme Verkafsrapport vun Apple. Op Android gëtt et kee Kaf an der App; d'Don-Linken opmaachen Äre Browser." },
+        { "type": "p", "text": "Ofhängeg vun Ärer Plattform an App-Versioun kënne Ko-fi- a Bitcoin-Don-Optioune och ugebuede ginn. Dës sinn onofhängeg vun engem Apple-In-App-Kaf a maachen, wéi aner Don-Linken och, einfach eng Säit vun engem Drëttaanbieter an Ärem Browser op." }
+      ]
+    },
+    {
+      "id": "sharing",
+      "heading": "Deelen",
+      "body": [
+        { "type": "p", "text": "Wann e Dokument exportéiert oder gedeelt gëtt, gëtt d'Destinatioun iwwer de Share-Menü vun Ärem eegene Apparat gewielt. Dës Aktioun, an wouhin d'Datei geet, läit komplett a Ärer Kontroll." }
+      ]
+    },
+    {
+      "id": "retention",
+      "heading": "Späicherdauer",
+      "body": [
+        { "type": "p", "text": "En agescannt Dokument an seng Metadaten bleiwen op Ärem Apparat, esou laang wéi Dir se behalt — näischt gëtt automatesch geläscht, an näischt leeft vu selwer of. En Dokument gëtt nëmme gelëscht, wann Dir et an der App läscht, oder wann Dir d'App selwer desinstalléiert." },
+        { "type": "p", "text": "D'ScannerCam Light desinstalléieren läscht déi lokal Datebank an all Biller-Datei, déi si erstallt huet; näischt iwwerlieft d'Desinstalléiere. Well ni eng Kopie vun engem Dokument op engem Server gemaach gëtt, gëtt et keng Kopie op engem Server, deem seng Läschung Dir kéint froen — d'Läsche op Ärem Apparat ass d'Läschung, komplett a sofort." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Är Rechter",
+      "body": [
+        { "type": "p", "text": "Dateschutzgesetzer wéi d'EU/UK Datenschutz-Grundverordnung (**GDPR**) an de California Consumer Privacy Act (**CCPA**) ginn Individuen Rechter iwwer hir perséinlech Daten, dorënner d'Recht op Zougang, Korrektur, Läschung oder Widderspruch géint hir Veraarbechtung." },
+        { "type": "p", "text": "Well ScannerCam Light keng perséinlech Daten op iergendengem Server sammelt oder späichert, gëtt et normalerweis näischt z'exportéieren, ze korrigéieren oder ze läschen: d'Daten, déi an dëser Erklärung beschriwwe ginn, existéieren nëmmen als Dateien an eng Datebank op Ärem eegene Apparat, jidderzäit ënner Ärer direkter Kontroll, an si kënnen ewechgeholl ginn wann Dir wëllt, andeems Dir en Dokument läscht oder d'App desinstalléiert." },
+        { "type": "p", "text": "Déi eenzeg Ausnam ass Feedback, dat fräiwëlleg iwwer de Feedback-Formulaire an der App geschéckt gëtt. Dëst Schécken baséiert op Ärer **Zoustëmmung** als rechtlecher Basis: Är Noriicht, E-Mail an Diagnosdaten ginn geschéckt, wann Dir op Ofschécken klickt, an d'Feedback-Sektioun hei uewen beschreift separat déi automatesch Ufroen, déi d'Feedback-Funktioun scho virdrun mécht. En agereechte Feedback-Issue gëtt en ëffentlechen GitHub-Issue a kann op Ufro ewechgeholl ginn, andeems Dir un déi Support-E-Mail hei drënner schreift." }
+      ]
+    },
+    {
+      "id": "children",
+      "heading": "Dateschutz fir Kanner",
+      "body": [
+        { "type": "p", "text": "Well d'App keng Datesammlung am Hannergrond mécht an d'optional Feedback-Funktioun ausdrécklech vum Benotzer selwer gestart gëtt, stellt si kee Risiko vu passiver Datesammlung fir Benotzer vun egal wéi engem Alter duer." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Ännerunge vun dëser Erklärung",
+      "body": [
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light kann dës Erklärung vun Zäit zu Zäit aktualiséieren, zum Beispill fir eng nei Funktioun oder eng Ännerung am gëlle Recht ze reflektéieren. D'Datum vum Inkrafttrieden uewen an dësem Dokument weist, wéini déi aktuell Versioun a Kraaft getrueden ass." },
+        { "type": "p", "text": "Dir kritt keng separat Notifikatioun, wa sech dës Erklärung ännert. D'Kopie, déi an der App integréiert ass, reflektéiert d'Versioun, déi aktuell war, wéi dës Versioun vu ScannerCam Light gebaut gouf; d'aktuell Versioun ass déi, déi op der ScannerCam-Light-Websäit publizéiert ass, an d'Datum vum Inkrafttrieden hei uewen weist, wéi eng Versioun Dir liest." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Kontakt",
+      "body": [
+        { "type": "p", "text": "Froen kënnen un [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) geschéckt ginn. Kuckt och d'[Notzungsbedingungen](terms.html) fir déi juristesch Bedingunge fir d'Notzung vu ScannerCam Light." }
+      ]
+    }
+  ]
+}

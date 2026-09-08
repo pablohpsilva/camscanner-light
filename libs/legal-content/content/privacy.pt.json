@@ -1,0 +1,113 @@
+{
+  "doc": "privacy",
+  "locale": "pt",
+  "title": "Política de Privacidade",
+  "effectiveDateLabel": "Data de entrada em vigor",
+  "translationNotice": "Esta tradução é fornecida por conveniência. Em caso de conflito, prevalece a versão em inglês.",
+  "intro": "O ScannerCam Light é um digitalizador de documentos gratuito, offline e totalmente processado no dispositivo, para iOS e Android. Esta política explica que dados a aplicação chega a tocar, onde ficam guardados, e os poucos casos em que algo alguma vez sai do dispositivo.",
+  "sections": [
+    {
+      "id": "summary",
+      "heading": "Resumo",
+      "body": [
+        { "type": "p", "text": "O ScannerCam Light foi concebido para manter os documentos privados. Tudo fica no dispositivo, com uma exceção explícita: a funcionalidade opcional de feedback dentro da aplicação, descrita abaixo, que só transmite dados quando se escolhe ativamente enviá-los. Não existem contas de utilizador, análises, anúncios nem rastreio, e os dados pessoais nunca são vendidos." }
+      ]
+    },
+    {
+      "id": "what-we-collect",
+      "heading": "O que é recolhido",
+      "body": [
+        { "type": "p", "text": "**Quase nada.** Além da funcionalidade opcional de feedback descrita abaixo, o ScannerCam Light não recolhe, transmite nem armazena quaisquer dados pessoais em nenhum servidor. Não existem contas de utilizador nem qualquer tipo de análise ou rastreio. Não são apresentados anúncios, e nenhum dado é alguma vez vendido. Consulte a secção Feedback abaixo para a única exceção." }
+      ]
+    },
+    {
+      "id": "where-data-lives",
+      "heading": "Onde ficam os seus dados",
+      "body": [
+        { "type": "ul", "items": [
+          "As imagens digitalizadas são guardadas apenas como ficheiros no seu dispositivo.",
+          "Os títulos e o texto dos documentos são guardados numa base de dados local no seu dispositivo.",
+          "O reconhecimento de texto (OCR) é executado inteiramente no seu dispositivo — nenhuma imagem ou texto é enviado para qualquer lugar."
+        ] }
+      ]
+    },
+    {
+      "id": "network",
+      "heading": "Acesso à rede",
+      "body": [
+        { "type": "p", "text": "A aplicação não faz quaisquer pedidos de rede em segundo plano que não estejam relacionados com uma funcionalidade que esteja a usar ativamente. As ligações de saída acontecem quando toca numa ligação de doação opcional, que abre o seu navegador para uma página de doação de terceiros que o programador do ScannerCam Light não controla e da qual não recebe quaisquer dados; quando é oferecida uma gorjeta dentro da aplicação, abrir o ecrã de apoio pede à App Store as opções de gorjeta disponíveis antes de qualquer gorjeta ser feita, e a Apple trata separadamente o lado de rede de uma compra efetiva, conforme descrito na secção Compras abaixo; e, quando a funcionalidade opcional de feedback está ativada numa determinada versão, em ligação com essa funcionalidade conforme descrito na secção Feedback abaixo — o que inclui uma verificação de se o serviço de feedback está acessível quando o ecrã da biblioteca é aberto, e não apenas uma ligação quando envia o formulário." },
+        { "type": "p", "text": "No **Android**, a aplicação lançada não solicita de todo a permissão INTERNET, pelo que não pode fazer qualquer pedido de rede. No iOS não existe um sistema de permissões equivalente; ainda assim, a aplicação continua a não fazer pedidos em segundo plano." }
+      ]
+    },
+    {
+      "id": "feedback",
+      "heading": "Feedback",
+      "body": [
+        { "type": "p", "text": "A aplicação inclui uma funcionalidade opcional de **Enviar feedback**. Quando esta funcionalidade está ativada numa determinada versão, acontecem duas coisas antes de escrever seja o que for: quando o ecrã da biblioteca é carregado, a aplicação faz um pequeno pedido para verificar se o serviço de feedback está atualmente acessível; e quando abre o próprio formulário de feedback, este carrega um desafio de verificação humana **Cloudflare Turnstile** dentro do formulário, o que significa que, nesse momento, a Cloudflare recebe um pedido e o endereço IP do seu dispositivo. Nenhum destes dois passos envia a sua mensagem, o seu email, ou qualquer coisa sobre os seus documentos — acontecem automaticamente e não dependem de tocar em Enviar." },
+        { "type": "p", "text": "A sua mensagem, e os campos abaixo, só são enviados quando toca em **Enviar**:" },
+        { "type": "ul", "items": [
+          "A sua mensagem — o texto escrito no formulário de feedback (obrigatório).",
+          "O seu endereço de email — apenas se optar por introduzir um. Fornecer um email é totalmente opcional.",
+          "Diagnósticos não pessoais — versão da aplicação, versão do sistema operativo, modelo do dispositivo e idioma/região. Estes ajudam a reproduzir os problemas comunicados e não contêm qualquer informação sobre os seus documentos."
+        ] },
+        { "type": "p", "text": "Ao tocar em Enviar, estes dados são enviados para um serviço Cloudflare Worker, que cria um **problema (\"issue\") publicamente visível** no repositório GitHub da aplicação. Isto significa que o texto da sua mensagem ficará visível para qualquer pessoa na internet, e que, se for incluído um endereço de email, este também ficará publicamente visível no problema do GitHub." },
+        { "type": "p", "text": "A aplicação avisa sobre esta visibilidade pública antes do envio. Não deve incluir informação sensível numa mensagem de feedback, e o campo de email pode ser deixado em branco se não quiser essa visibilidade pública." },
+        { "type": "p", "text": "**Nenhum documento digitalizado ou o respetivo conteúdo é alguma vez enviado.** O envio de feedback está estritamente limitado aos campos listados acima." }
+      ]
+    },
+    {
+      "id": "purchases",
+      "heading": "Compras e gorjetas dentro da aplicação",
+      "body": [
+        { "type": "p", "text": "No iOS, a aplicação oferece uma gorjeta opcional. Abrir o ecrã de apoio pede à App Store as opções de gorjeta disponíveis, antes de qualquer gorjeta ser feita. As gorjetas em si são processadas inteiramente pela **Apple**; o programador não recebe quaisquer dados de cartão de pagamento, morada de faturação, ou outros dados de pagamento — apenas os relatórios de vendas agregados e anónimos da Apple. No Android não existe compra dentro da aplicação; as ligações de doação abrem o seu navegador." },
+        { "type": "p", "text": "Também podem ser oferecidas opções de doação através de Ko-fi e Bitcoin, consoante a plataforma e a versão da aplicação. Estas são independentes de qualquer compra dentro da aplicação da Apple e, tal como outras ligações de doação, limitam-se a abrir uma página de terceiros no seu navegador." }
+      ]
+    },
+    {
+      "id": "sharing",
+      "heading": "Partilha",
+      "body": [
+        { "type": "p", "text": "Quando um documento é exportado ou partilhado, o destino é escolhido através do próprio menu de partilha do seu dispositivo. Essa ação, e o destino do ficheiro, está inteiramente sob o seu controlo." }
+      ]
+    },
+    {
+      "id": "retention",
+      "heading": "Retenção",
+      "body": [
+        { "type": "p", "text": "Um documento digitalizado e os respetivos metadados ficam no seu dispositivo pelo tempo que os mantiver — nada é eliminado automaticamente, e nada expira por si só. Um documento só é removido quando o elimina dentro da aplicação, ou quando desinstala a própria aplicação." },
+        { "type": "p", "text": "Desinstalar o ScannerCam Light remove a base de dados local e todos os ficheiros de imagem que criou; nada sobrevive à desinstalação. Como nunca é feita qualquer cópia de um documento num servidor, não existe cópia no servidor cuja eliminação se possa pedir — eliminar no seu dispositivo é a eliminação, completa e imediata." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Os seus direitos",
+      "body": [
+        { "type": "p", "text": "Leis de privacidade como o Regulamento Geral sobre a Proteção de Dados da UE/Reino Unido (**GDPR**) e a Lei de Privacidade do Consumidor da Califórnia (**CCPA**) conferem aos indivíduos direitos sobre os seus dados pessoais, incluindo o direito de aceder, corrigir, eliminar ou opor-se ao respetivo tratamento." },
+        { "type": "p", "text": "Como o ScannerCam Light não recolhe nem armazena quaisquer dados pessoais em nenhum servidor, normalmente não há nada para exportar, corrigir ou apagar: os dados descritos nesta política existem apenas como ficheiros e uma base de dados no seu próprio dispositivo, sob o seu controlo direto em todos os momentos, e podem ser removidos sempre que quiser, eliminando um documento ou desinstalando a aplicação." },
+        { "type": "p", "text": "A única exceção é o feedback submetido voluntariamente através do formulário de feedback dentro da aplicação. Essa submissão assenta no seu **consentimento** como base legal: a sua mensagem, email e diagnósticos são enviados quando toca em Enviar, e a secção Feedback acima descreve separadamente os pedidos automáticos que a funcionalidade de feedback faz antes disso. Um problema de feedback submetido torna-se um problema público no GitHub e pode ser removido mediante pedido, escrevendo para o email de apoio abaixo." }
+      ]
+    },
+    {
+      "id": "children",
+      "heading": "Privacidade das crianças",
+      "body": [
+        { "type": "p", "text": "Como a aplicação não realiza qualquer recolha de dados em segundo plano e a funcionalidade opcional de feedback é explicitamente iniciada pelo utilizador, não representa qualquer risco de recolha passiva de dados para utilizadores de qualquer idade." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Alterações a esta política",
+      "body": [
+        { "type": "p", "text": "O programador do ScannerCam Light pode atualizar esta política periodicamente, por exemplo para refletir uma nova funcionalidade ou uma alteração na lei aplicável. A data de entrada em vigor no topo deste documento mostra quando a versão atual entrou em vigor." },
+        { "type": "p", "text": "Não é enviado qualquer aviso separado quando esta política muda. A cópia incluída na aplicação reflete a versão que era atual quando essa versão do ScannerCam Light foi criada; a versão atual é a publicada no sítio Web do ScannerCam Light, e a data de entrada em vigor acima indica qual a versão que está a ler." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Contacto",
+      "body": [
+        { "type": "p", "text": "As questões podem ser enviadas para [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). Consulte também os [Termos de Serviço](terms.html) para os termos legais que regem a utilização do ScannerCam Light." }
+      ]
+    }
+  ]
+}

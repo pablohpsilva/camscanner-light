@@ -1,0 +1,113 @@
+{
+  "doc": "privacy",
+  "locale": "fr",
+  "title": "Politique de confidentialité",
+  "effectiveDateLabel": "Date d'entrée en vigueur",
+  "translationNotice": "Cette traduction est fournie à titre de commodité. En cas de conflit, la version anglaise prévaut.",
+  "intro": "ScannerCam Light est un scanner de documents gratuit, hors ligne et entièrement traité sur l'appareil, pour iOS et Android. Cette politique explique quelles données l'application touche, où elles restent, et les rares cas où quelque chose quitte l'appareil.",
+  "sections": [
+    {
+      "id": "summary",
+      "heading": "Résumé",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light est conçu pour garder les documents privés. Tout reste sur l'appareil, à une exception explicite près : la fonction facultative de retour d'expérience dans l'application, décrite ci-dessous, qui ne transmet des données que lorsque vous choisissez activement de les envoyer. Il n'y a ni compte utilisateur, ni analyse, ni publicité, ni suivi, et les données personnelles ne sont jamais vendues." }
+      ]
+    },
+    {
+      "id": "what-we-collect",
+      "heading": "Ce qui est collecté",
+      "body": [
+        { "type": "p", "text": "**Presque rien.** En dehors de la fonction facultative de retour d'expérience décrite ci-dessous, ScannerCam Light ne collecte, ne transmet ni ne stocke aucune donnée personnelle sur aucun serveur. Il n'y a ni compte utilisateur ni aucune forme d'analyse ou de suivi. Aucune publicité n'est affichée, et aucune donnée n'est jamais vendue. Voir la section Retours ci-dessous pour l'unique exception." }
+      ]
+    },
+    {
+      "id": "where-data-lives",
+      "heading": "Où se trouvent vos données",
+      "body": [
+        { "type": "ul", "items": [
+          "Les images numérisées sont stockées uniquement sous forme de fichiers sur votre appareil.",
+          "Les titres et le texte des documents sont conservés dans une base de données locale sur votre appareil.",
+          "La reconnaissance de texte (OCR) s'exécute entièrement sur votre appareil — aucune image ni texte n'est envoyé où que ce soit."
+        ] }
+      ]
+    },
+    {
+      "id": "network",
+      "heading": "Accès réseau",
+      "body": [
+        { "type": "p", "text": "L'application n'effectue aucune requête réseau en arrière-plan sans rapport avec une fonctionnalité que vous utilisez activement. Des connexions sortantes se produisent lorsque vous touchez un lien de don facultatif, qui ouvre votre navigateur vers une page de don tierce que le développeur de ScannerCam Light ne contrôle pas et dont il ne reçoit aucune donnée ; lorsqu'un pourboire dans l'application est proposé, ouvrir l'écran d'assistance demande à l'App Store les options de pourboire disponibles avant qu'aucun pourboire ne soit effectué, et Apple gère séparément le volet réseau d'un achat réel, comme décrit dans la section Achats ci-dessous ; et, lorsque la fonction facultative de retour d'expérience est activée dans une version donnée, en lien avec cette fonction comme décrit dans la section Retours ci-dessous — ce qui inclut une vérification de l'accessibilité du service de retour d'expérience lorsque l'écran de la bibliothèque s'ouvre, et pas seulement une connexion lors de l'envoi du formulaire." },
+        { "type": "p", "text": "Sur **Android**, l'application publiée ne demande absolument pas la permission INTERNET, elle ne peut donc effectuer aucune requête réseau. Sur iOS, il n'existe pas de système de permissions équivalent ; l'application n'effectue néanmoins toujours aucune requête en arrière-plan." }
+      ]
+    },
+    {
+      "id": "feedback",
+      "heading": "Retours",
+      "body": [
+        { "type": "p", "text": "L'application inclut une fonction facultative **Envoyer un retour**. Lorsque cette fonction est activée dans une version donnée, deux choses se produisent avant que vous ne tapiez quoi que ce soit : lorsque l'écran de la bibliothèque se charge, l'application effectue une petite requête pour vérifier si le service de retour d'expérience est actuellement accessible ; et lorsque vous ouvrez le formulaire de retour lui-même, celui-ci charge à l'intérieur du formulaire un défi de vérification humaine **Cloudflare Turnstile**, ce qui signifie que Cloudflare reçoit à ce moment-là une requête et l'adresse IP de votre appareil. Aucune de ces deux étapes n'envoie votre message, votre e-mail, ni quoi que ce soit concernant vos documents — elles se produisent automatiquement et ne dépendent pas de l'envoi du formulaire." },
+        { "type": "p", "text": "Votre message, et les champs ci-dessous, ne sont envoyés que lorsque vous appuyez sur **Envoyer** :" },
+        { "type": "ul", "items": [
+          "Votre message — le texte saisi dans le formulaire de retour (obligatoire).",
+          "Votre adresse e-mail — uniquement si vous choisissez d'en saisir une. Fournir une adresse e-mail est entièrement facultatif.",
+          "Diagnostics non personnels — version de l'application, version du système d'exploitation, modèle de l'appareil, et langue/région. Ceux-ci aident à reproduire les problèmes signalés et ne contiennent aucune information sur vos documents."
+        ] },
+        { "type": "p", "text": "Lors de l'envoi, ces données sont transmises à un service Cloudflare Worker, qui crée un **ticket publiquement visible** dans le dépôt GitHub de l'application. Cela signifie que le texte de votre message sera visible par n'importe qui sur internet, et que, si une adresse e-mail est incluse, elle sera elle aussi publiquement visible dans le ticket GitHub." },
+        { "type": "p", "text": "L'application avertit de cette visibilité publique avant l'envoi. Aucune information sensible ne doit être incluse dans un message de retour, et le champ e-mail peut être laissé vide si cette visibilité publique n'est pas souhaitée." },
+        { "type": "p", "text": "**Aucun document numérisé ni son contenu n'est jamais envoyé.** L'envoi de retours est strictement limité aux champs énumérés ci-dessus." }
+      ]
+    },
+    {
+      "id": "purchases",
+      "heading": "Achats intégrés et pourboires",
+      "body": [
+        { "type": "p", "text": "Sur iOS, l'application propose un pourboire facultatif. Ouvrir l'écran d'assistance demande à l'App Store les options de pourboire disponibles, avant qu'aucun pourboire ne soit effectué. Les pourboires eux-mêmes sont entièrement traités par **Apple** ; le développeur ne reçoit aucune donnée de carte de paiement, aucune adresse de facturation, ni aucune autre donnée de paiement — uniquement les rapports de ventes agrégés et anonymes d'Apple. Sur Android, il n'existe aucun achat intégré ; les liens de don ouvrent votre navigateur." },
+        { "type": "p", "text": "Des options de don via Ko-fi et Bitcoin peuvent également être proposées, selon la plateforme et la version de l'application. Elles sont indépendantes de tout achat intégré Apple et, comme les autres liens de don, ouvrent simplement une page tierce dans votre navigateur." }
+      ]
+    },
+    {
+      "id": "sharing",
+      "heading": "Partage",
+      "body": [
+        { "type": "p", "text": "Lorsqu'un document est exporté ou partagé, la destination est choisie via le propre menu de partage de votre appareil. Cette action, et l'endroit où va le fichier, relèvent entièrement de votre contrôle." }
+      ]
+    },
+    {
+      "id": "retention",
+      "heading": "Conservation",
+      "body": [
+        { "type": "p", "text": "Un document numérisé et ses métadonnées restent sur votre appareil aussi longtemps que vous les conservez — rien n'est supprimé automatiquement, et rien n'expire de lui-même. Un document n'est supprimé que lorsque vous le supprimez dans l'application, ou lorsque vous désinstallez l'application elle-même." },
+        { "type": "p", "text": "Désinstaller ScannerCam Light supprime la base de données locale et tous les fichiers image qu'elle a créés ; rien ne survit à la désinstallation. Comme aucune copie côté serveur d'un document n'est jamais réalisée, il n'existe aucune copie côté serveur dont on pourrait demander la suppression — supprimer sur votre appareil, c'est la suppression, complète et immédiate." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Vos droits",
+      "body": [
+        { "type": "p", "text": "Des lois sur la protection de la vie privée telles que le Règlement général sur la protection des données de l'UE/du Royaume-Uni (**GDPR**) et le California Consumer Privacy Act (**CCPA**) accordent aux personnes des droits sur leurs données personnelles, notamment le droit d'y accéder, de les corriger, de les supprimer ou de s'opposer à leur traitement." },
+        { "type": "p", "text": "Comme ScannerCam Light ne collecte ni ne stocke aucune donnée personnelle sur aucun serveur, il n'y a normalement rien à exporter, corriger ou effacer : les données décrites dans cette politique existent uniquement sous forme de fichiers et d'une base de données sur votre propre appareil, sous votre contrôle direct à tout moment, et peuvent être supprimées quand vous le souhaitez en supprimant un document ou en désinstallant l'application." },
+        { "type": "p", "text": "La seule exception concerne les retours volontairement soumis via le formulaire de retour dans l'application. Cette soumission repose sur votre **consentement** comme base légale : votre message, votre e-mail et vos diagnostics sont envoyés lorsque vous appuyez sur Envoyer, et la section Retours ci-dessus décrit séparément les requêtes automatiques que la fonction de retour effectue avant cela. Un ticket de retour soumis devient un ticket GitHub public et peut être supprimé sur demande en écrivant à l'adresse d'assistance ci-dessous." }
+      ]
+    },
+    {
+      "id": "children",
+      "heading": "Confidentialité des mineurs",
+      "body": [
+        { "type": "p", "text": "Comme l'application n'effectue aucune collecte de données en arrière-plan et que la fonction facultative de retour d'expérience est explicitement initiée par l'utilisateur, elle ne présente aucun risque de collecte passive de données pour les utilisateurs de tout âge." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Modifications de cette politique",
+      "body": [
+        { "type": "p", "text": "Le développeur de ScannerCam Light peut mettre à jour cette politique de temps à autre, par exemple pour refléter une nouvelle fonctionnalité ou un changement de la loi applicable. La date d'entrée en vigueur en haut de ce document indique quand la version actuelle a pris effet." },
+        { "type": "p", "text": "Aucun avis distinct n'est envoyé lorsque cette politique change. La copie intégrée dans l'application reflète la version qui était en vigueur au moment de la création de cette version de ScannerCam Light ; la version actuelle est celle publiée sur le site web de ScannerCam Light, et la date d'entrée en vigueur ci-dessus indique quelle version vous lisez." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Contact",
+      "body": [
+        { "type": "p", "text": "Les questions peuvent être envoyées à [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). Consultez également les [Conditions d'utilisation](terms.html) pour les conditions légales régissant l'utilisation de ScannerCam Light." }
+      ]
+    }
+  ]
+}

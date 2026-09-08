@@ -1,0 +1,113 @@
+{
+  "doc": "privacy",
+  "locale": "de",
+  "title": "Datenschutzerklärung",
+  "effectiveDateLabel": "Datum des Inkrafttretens",
+  "translationNotice": "Diese Übersetzung dient lediglich der Verständlichkeit. Bei Widersprüchen gilt die englische Fassung.",
+  "intro": "ScannerCam Light ist ein kostenloser, offline funktionierender Dokumentenscanner für iOS und Android, der alles ausschließlich auf dem Gerät verarbeitet. Diese Erklärung beschreibt, mit welchen Daten die App überhaupt in Berührung kommt, wo diese verbleiben, und die wenigen Fälle, in denen jemals etwas das Gerät verlässt.",
+  "sections": [
+    {
+      "id": "summary",
+      "heading": "Zusammenfassung",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light wurde entwickelt, um Dokumente privat zu halten. Alles verbleibt auf dem Gerät, mit einer ausdrücklichen Ausnahme: der optionalen Feedback-Funktion in der App, die unten beschrieben wird und Daten nur überträgt, wenn dies aktiv gewählt wird. Es gibt keine Benutzerkonten, keine Analysen, keine Werbung, kein Tracking, und personenbezogene Daten werden niemals verkauft." }
+      ]
+    },
+    {
+      "id": "what-we-collect",
+      "heading": "Was erfasst wird",
+      "body": [
+        { "type": "p", "text": "**Fast nichts.** Abgesehen von der unten beschriebenen optionalen Feedback-Funktion erfasst, überträgt oder speichert ScannerCam Light keinerlei personenbezogene Daten auf irgendeinem Server. Es gibt keine Benutzerkonten und keinerlei Analyse oder Tracking. Es wird keine Werbung angezeigt, und es werden niemals Daten verkauft. Die einzige Ausnahme wird im Abschnitt Feedback unten beschrieben." }
+      ]
+    },
+    {
+      "id": "where-data-lives",
+      "heading": "Wo Ihre Daten liegen",
+      "body": [
+        { "type": "ul", "items": [
+          "Gescannte Bilder werden ausschließlich als Dateien auf Ihrem Gerät gespeichert.",
+          "Dokumenttitel und -text werden in einer lokalen Datenbank auf Ihrem Gerät aufbewahrt.",
+          "Die Texterkennung (OCR) läuft vollständig auf Ihrem Gerät — es werden keine Bilder oder Texte irgendwohin gesendet."
+        ] }
+      ]
+    },
+    {
+      "id": "network",
+      "heading": "Netzwerkzugriff",
+      "body": [
+        { "type": "p", "text": "Die App stellt keine Hintergrund-Netzwerkanfragen, die nicht mit einer von Ihnen aktiv genutzten Funktion zusammenhängen. Ausgehende Verbindungen entstehen, wenn Sie auf einen optionalen Spendenlink tippen, der Ihren Browser zu einer Spendenseite eines Drittanbieters öffnet, die der Entwickler von ScannerCam Light nicht kontrolliert und von der er keinerlei Daten erhält; wenn ein In-App-Trinkgeld angeboten wird, fragt das Öffnen des Support-Bildschirms den App Store nach den verfügbaren Trinkgeld-Optionen, bevor irgendein Trinkgeld gegeben wird, und Apple wickelt die Netzwerkseite eines tatsächlichen Kaufs separat ab, wie im Abschnitt Käufe unten beschrieben; und, wenn die optionale Feedback-Funktion in einer bestimmten Version aktiviert ist, im Zusammenhang mit dieser Funktion, wie im Abschnitt Feedback unten beschrieben — was eine Prüfung einschließt, ob der Feedback-Dienst erreichbar ist, sobald der Bibliotheksbildschirm geöffnet wird, und nicht nur eine Verbindung beim Absenden des Formulars." },
+        { "type": "p", "text": "Unter **Android** fordert die veröffentlichte App die Berechtigung INTERNET überhaupt nicht an, sodass sie keinerlei Netzwerkanfrage stellen kann. Unter iOS gibt es kein entsprechendes Berechtigungssystem; die App stellt dennoch weiterhin keine Hintergrundanfragen." }
+      ]
+    },
+    {
+      "id": "feedback",
+      "heading": "Feedback",
+      "body": [
+        { "type": "p", "text": "Die App enthält eine optionale Funktion **Feedback senden**. Wenn diese Funktion in einer bestimmten Version aktiviert ist, geschehen zwei Dinge, bevor Sie irgendetwas eingeben: Beim Laden des Bibliotheksbildschirms stellt die App eine kleine Anfrage, um zu prüfen, ob der Feedback-Dienst derzeit erreichbar ist; und wenn Sie das Feedback-Formular selbst öffnen, lädt es innerhalb des Formulars eine **Cloudflare-Turnstile**-Prüfung zur menschlichen Verifizierung, was bedeutet, dass Cloudflare zu diesem Zeitpunkt eine Anfrage und die IP-Adresse Ihres Geräts erhält. Keiner dieser beiden Schritte sendet Ihre Nachricht, Ihre E-Mail-Adresse oder irgendetwas über Ihre Dokumente — sie geschehen automatisch und sind nicht an das Absenden gebunden." },
+        { "type": "p", "text": "Ihre Nachricht sowie die untenstehenden Felder werden erst gesendet, wenn Sie auf **Senden** tippen:" },
+        { "type": "ul", "items": [
+          "Ihre Nachricht — der im Feedback-Formular eingegebene Text (erforderlich).",
+          "Ihre E-Mail-Adresse — nur wenn Sie sich entscheiden, eine anzugeben. Die Angabe einer E-Mail-Adresse ist vollständig optional.",
+          "Nicht-personenbezogene Diagnosedaten — App-Version, Betriebssystemversion, Gerätemodell und Sprache/Region. Diese helfen, gemeldete Probleme nachzuvollziehen, und enthalten keinerlei Informationen über Ihre Dokumente."
+        ] },
+        { "type": "p", "text": "Beim Absenden werden diese Daten an einen Cloudflare-Worker-Dienst gesendet, der ein **öffentlich sichtbares Issue** im GitHub-Repository der App erstellt. Das bedeutet, dass Ihr Nachrichtentext für jeden im Internet sichtbar sein wird, und dass, falls eine E-Mail-Adresse angegeben wurde, diese ebenfalls öffentlich im GitHub-Issue sichtbar sein wird." },
+        { "type": "p", "text": "Die App weist vor dem Absenden auf diese öffentliche Sichtbarkeit hin. Sensible Informationen sollten nicht in einer Feedback-Nachricht enthalten sein, und das E-Mail-Feld kann leer gelassen werden, wenn diese öffentliche Sichtbarkeit nicht gewünscht ist." },
+        { "type": "p", "text": "**Es werden niemals gescannte Dokumente oder deren Inhalte gesendet.** Das Absenden von Feedback ist strikt auf die oben aufgeführten Felder beschränkt." }
+      ]
+    },
+    {
+      "id": "purchases",
+      "heading": "In-App-Käufe und Trinkgelder",
+      "body": [
+        { "type": "p", "text": "Unter iOS bietet die App ein optionales Trinkgeld an. Das Öffnen des Support-Bildschirms fragt den App Store nach den verfügbaren Trinkgeld-Optionen, bevor irgendein Trinkgeld gegeben wird. Trinkgelder selbst werden vollständig von **Apple** verarbeitet; der Entwickler erhält keine Zahlungskartendaten, keine Rechnungsadresse und keine sonstigen Zahlungsdaten — nur Apples aggregierte, anonyme Verkaufsberichte. Unter Android gibt es keinen In-App-Kauf; die Spendenlinks öffnen Ihren Browser." },
+        { "type": "p", "text": "Je nach Plattform und App-Version können auch Spendenoptionen über Ko-fi und Bitcoin angeboten werden. Diese sind unabhängig von einem Apple-In-App-Kauf und öffnen, wie andere Spendenlinks auch, lediglich eine Drittanbieterseite in Ihrem Browser." }
+      ]
+    },
+    {
+      "id": "sharing",
+      "heading": "Teilen",
+      "body": [
+        { "type": "p", "text": "Wenn ein Dokument exportiert oder geteilt wird, wird das Ziel über das eigene Teilen-Menü Ihres Geräts gewählt. Diese Aktion, und wohin die Datei gelangt, liegt vollständig in Ihrer Kontrolle." }
+      ]
+    },
+    {
+      "id": "retention",
+      "heading": "Aufbewahrung",
+      "body": [
+        { "type": "p", "text": "Ein gescanntes Dokument und seine Metadaten bleiben so lange auf Ihrem Gerät, wie Sie sie behalten — nichts wird automatisch gelöscht, und nichts läuft von selbst ab. Ein Dokument wird nur entfernt, wenn Sie es innerhalb der App löschen oder wenn Sie die App selbst deinstallieren." },
+        { "type": "p", "text": "Das Deinstallieren von ScannerCam Light entfernt die lokale Datenbank und alle von ihr erstellten Bilddateien; nichts überdauert die Deinstallation. Da niemals eine serverseitige Kopie eines Dokuments erstellt wird, gibt es keine serverseitige Kopie, deren Löschung beantragt werden könnte — das Löschen auf Ihrem Gerät ist die Löschung, vollständig und sofort." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Ihre Rechte",
+      "body": [
+        { "type": "p", "text": "Datenschutzgesetze wie die EU/UK-Datenschutz-Grundverordnung (**GDPR**) und der California Consumer Privacy Act (**CCPA**) geben Einzelpersonen Rechte an ihren personenbezogenen Daten, einschließlich des Rechts auf Auskunft, Berichtigung, Löschung oder Widerspruch gegen deren Verarbeitung." },
+        { "type": "p", "text": "Da ScannerCam Light keinerlei personenbezogene Daten auf irgendeinem Server erfasst oder speichert, gibt es normalerweise nichts zu exportieren, zu berichtigen oder zu löschen: Die in dieser Erklärung beschriebenen Daten existieren nur als Dateien und eine Datenbank auf Ihrem eigenen Gerät, jederzeit unter Ihrer direkten Kontrolle, und können jederzeit entfernt werden, indem Sie ein Dokument löschen oder die App deinstallieren." },
+        { "type": "p", "text": "Die einzige Ausnahme ist Feedback, das freiwillig über das In-App-Feedback-Formular übermittelt wird. Diese Übermittlung stützt sich auf Ihre **Einwilligung** als Rechtsgrundlage: Ihre Nachricht, E-Mail-Adresse und Diagnosedaten werden gesendet, wenn Sie auf Senden tippen, und der Abschnitt Feedback oben beschreibt gesondert die automatischen Anfragen, die die Feedback-Funktion bereits davor stellt. Ein übermitteltes Feedback-Issue wird zu einem öffentlichen GitHub-Issue und kann auf Anfrage entfernt werden, indem Sie an die unten stehende Support-E-Mail-Adresse schreiben." }
+      ]
+    },
+    {
+      "id": "children",
+      "heading": "Datenschutz für Kinder",
+      "body": [
+        { "type": "p", "text": "Da die App keine Hintergrund-Datenerfassung durchführt und die optionale Feedback-Funktion ausdrücklich vom Nutzer selbst ausgelöst wird, stellt sie für Nutzer jeden Alters kein Risiko passiver Datenerfassung dar." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Änderungen dieser Erklärung",
+      "body": [
+        { "type": "p", "text": "Der Entwickler von ScannerCam Light kann diese Erklärung von Zeit zu Zeit aktualisieren, zum Beispiel um eine neue Funktion oder eine Änderung des geltenden Rechts widerzuspiegeln. Das Datum des Inkrafttretens oben in diesem Dokument zeigt, wann die aktuelle Version in Kraft getreten ist." },
+        { "type": "p", "text": "Es wird kein gesonderter Hinweis gesendet, wenn sich diese Erklärung ändert. Die in der App enthaltene Kopie spiegelt die Version wider, die zum Zeitpunkt der Erstellung dieser ScannerCam-Light-Version aktuell war; die aktuelle Version ist die auf der ScannerCam-Light-Website veröffentlichte, und das obige Datum des Inkrafttretens zeigt, welche Version Sie lesen." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Kontakt",
+      "body": [
+        { "type": "p", "text": "Fragen können an [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) gesendet werden. Siehe auch die [Nutzungsbedingungen](terms.html) für die rechtlichen Bedingungen, die die Nutzung von ScannerCam Light regeln." }
+      ]
+    }
+  ]
+}

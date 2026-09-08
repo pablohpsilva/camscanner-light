@@ -1,0 +1,113 @@
+{
+  "doc": "privacy",
+  "locale": "es",
+  "title": "Política de Privacidad",
+  "effectiveDateLabel": "Fecha de entrada en vigor",
+  "translationNotice": "Esta traducción se proporciona por comodidad. En caso de conflicto, prevalece la versión en inglés.",
+  "intro": "ScannerCam Light es un escáner de documentos gratuito, sin conexión y procesado enteramente en el dispositivo, para iOS y Android. Esta política explica qué datos llega a tocar la aplicación, dónde permanecen, y los pocos casos en los que algo llega a salir del dispositivo.",
+  "sections": [
+    {
+      "id": "summary",
+      "heading": "Resumen",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light está diseñado para mantener los documentos privados. Todo permanece en el dispositivo, con una excepción explícita: la función opcional de comentarios dentro de la aplicación descrita más abajo, que solo transmite datos cuando se elige activamente enviarlos. No hay cuentas de usuario, análisis, anuncios ni seguimiento, y los datos personales nunca se venden." }
+      ]
+    },
+    {
+      "id": "what-we-collect",
+      "heading": "Qué se recopila",
+      "body": [
+        { "type": "p", "text": "**Casi nada.** Aparte de la función opcional de comentarios descrita más abajo, ScannerCam Light no recopila, transmite ni almacena ningún dato personal en ningún servidor. No hay cuentas de usuario ni ningún tipo de análisis o seguimiento. No se muestra publicidad, y ningún dato se vende jamás. Consulte la sección Comentarios más abajo para conocer la única excepción." }
+      ]
+    },
+    {
+      "id": "where-data-lives",
+      "heading": "Dónde están sus datos",
+      "body": [
+        { "type": "ul", "items": [
+          "Las imágenes escaneadas se almacenan únicamente como archivos en su dispositivo.",
+          "Los títulos y el texto de los documentos se guardan en una base de datos local en su dispositivo.",
+          "El reconocimiento de texto (OCR) se ejecuta enteramente en su dispositivo — no se envía ninguna imagen ni texto a ningún lugar."
+        ] }
+      ]
+    },
+    {
+      "id": "network",
+      "heading": "Acceso a la red",
+      "body": [
+        { "type": "p", "text": "La aplicación no realiza ninguna solicitud de red en segundo plano que no esté relacionada con una función que esté usando activamente. Las conexiones salientes ocurren cuando toca un enlace de donación opcional, que abre su navegador hacia una página de donación de terceros que el desarrollador de ScannerCam Light no controla y de la que no recibe ningún dato; cuando se ofrece una propina dentro de la aplicación, abrir la pantalla de soporte pregunta a la App Store por las opciones de propina disponibles antes de que se realice ninguna propina, y Apple gestiona por separado el lado de red de una compra real, tal como se describe en la sección Compras más abajo; y, cuando la función opcional de comentarios está habilitada en una versión determinada, en relación con esa función tal como se describe en la sección Comentarios más abajo — lo que incluye una comprobación de si el servicio de comentarios está accesible cuando se abre la pantalla de la biblioteca, y no solo una conexión al enviar el formulario." },
+        { "type": "p", "text": "En **Android**, la aplicación publicada no solicita en absoluto el permiso INTERNET, por lo que no puede realizar ninguna solicitud de red. En iOS no existe un sistema de permisos equivalente; aun así, la aplicación sigue sin realizar solicitudes en segundo plano." }
+      ]
+    },
+    {
+      "id": "feedback",
+      "heading": "Comentarios",
+      "body": [
+        { "type": "p", "text": "La aplicación incluye una función opcional de **Enviar comentarios**. Cuando esta función está habilitada en una versión determinada, ocurren dos cosas antes de que escriba nada: cuando se carga la pantalla de la biblioteca, la aplicación realiza una pequeña solicitud para comprobar si el servicio de comentarios está accesible en ese momento; y cuando abre el propio formulario de comentarios, este carga dentro del formulario un desafío de verificación humana **Cloudflare Turnstile**, lo que significa que, en ese momento, Cloudflare recibe una solicitud y la dirección IP de su dispositivo. Ninguno de estos dos pasos envía su mensaje, su correo electrónico, ni nada sobre sus documentos — ocurren automáticamente y no dependen de que pulse Enviar." },
+        { "type": "p", "text": "Su mensaje, y los campos siguientes, solo se envían cuando pulsa **Enviar**:" },
+        { "type": "ul", "items": [
+          "Su mensaje — el texto escrito en el formulario de comentarios (obligatorio).",
+          "Su dirección de correo electrónico — solo si elige introducir una. Proporcionar un correo electrónico es totalmente opcional.",
+          "Diagnósticos no personales — versión de la aplicación, versión del sistema operativo, modelo del dispositivo e idioma/región. Estos ayudan a reproducir los problemas notificados y no contienen ninguna información sobre sus documentos."
+        ] },
+        { "type": "p", "text": "Al pulsar Enviar, estos datos se envían a un servicio Cloudflare Worker, que crea un **incidente (\"issue\") públicamente visible** en el repositorio de GitHub de la aplicación. Esto significa que el texto de su mensaje será visible para cualquier persona en internet, y que, si se incluye una dirección de correo electrónico, también será públicamente visible en el incidente de GitHub." },
+        { "type": "p", "text": "La aplicación advierte sobre esta visibilidad pública antes del envío. No debe incluirse información sensible en un mensaje de comentarios, y el campo de correo electrónico puede dejarse en blanco si no se desea esa visibilidad pública." },
+        { "type": "p", "text": "**Nunca se envía ningún documento escaneado ni su contenido.** El envío de comentarios se limita estrictamente a los campos enumerados arriba." }
+      ]
+    },
+    {
+      "id": "purchases",
+      "heading": "Compras dentro de la aplicación y propinas",
+      "body": [
+        { "type": "p", "text": "En iOS, la aplicación ofrece una propina opcional. Abrir la pantalla de soporte pregunta a la App Store por las opciones de propina disponibles, antes de que se realice ninguna propina. Las propinas en sí son procesadas enteramente por **Apple**; el desarrollador no recibe ningún dato de tarjeta de pago, dirección de facturación, ni ningún otro dato de pago — solo los informes de ventas agregados y anónimos de Apple. En Android no existe compra dentro de la aplicación; los enlaces de donación abren su navegador." },
+        { "type": "p", "text": "También pueden ofrecerse opciones de donación a través de Ko-fi y Bitcoin, según la plataforma y la versión de la aplicación. Estas son independientes de cualquier compra dentro de la aplicación de Apple y, al igual que otros enlaces de donación, simplemente abren una página de terceros en su navegador." }
+      ]
+    },
+    {
+      "id": "sharing",
+      "heading": "Compartir",
+      "body": [
+        { "type": "p", "text": "Cuando se exporta o comparte un documento, el destino se elige a través del propio panel de compartir de su dispositivo. Esa acción, y adónde va el archivo, está enteramente bajo su control." }
+      ]
+    },
+    {
+      "id": "retention",
+      "heading": "Conservación",
+      "body": [
+        { "type": "p", "text": "Un documento escaneado y sus metadatos permanecen en su dispositivo mientras usted los conserve — nada se elimina automáticamente, y nada caduca por sí solo. Un documento solo se elimina cuando usted lo borra dentro de la aplicación, o cuando desinstala la propia aplicación." },
+        { "type": "p", "text": "Desinstalar ScannerCam Light elimina la base de datos local y todos los archivos de imagen que creó; nada sobrevive a la desinstalación. Como nunca se realiza una copia de ningún documento en un servidor, no existe ninguna copia en servidor cuya eliminación pueda solicitarse — eliminar en su dispositivo es la eliminación, completa e inmediata." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Sus derechos",
+      "body": [
+        { "type": "p", "text": "Leyes de privacidad como el Reglamento General de Protección de Datos de la UE/Reino Unido (**GDPR**) y la California Consumer Privacy Act (**CCPA**) otorgan a las personas derechos sobre sus datos personales, incluido el derecho a acceder, corregir, eliminar u oponerse a su tratamiento." },
+        { "type": "p", "text": "Como ScannerCam Light no recopila ni almacena ningún dato personal en ningún servidor, normalmente no hay nada que exportar, corregir o borrar: los datos descritos en esta política existen únicamente como archivos y una base de datos en su propio dispositivo, bajo su control directo en todo momento, y pueden eliminarse cuando lo desee borrando un documento o desinstalando la aplicación." },
+        { "type": "p", "text": "La única excepción son los comentarios enviados voluntariamente a través del formulario de comentarios dentro de la aplicación. Ese envío se basa en su **consentimiento** como base legal: su mensaje, correo electrónico y diagnósticos se envían cuando pulsa Enviar, y la sección Comentarios anterior describe por separado las solicitudes automáticas que realiza la función de comentarios antes de eso. Un incidente de comentarios enviado se convierte en un incidente público de GitHub y puede eliminarse a petición escribiendo al correo de soporte que figura abajo." }
+      ]
+    },
+    {
+      "id": "children",
+      "heading": "Privacidad de los menores",
+      "body": [
+        { "type": "p", "text": "Dado que la aplicación no realiza ninguna recopilación de datos en segundo plano y la función opcional de comentarios se inicia explícitamente por el usuario, no supone ningún riesgo de recopilación pasiva de datos para usuarios de cualquier edad." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Cambios en esta política",
+      "body": [
+        { "type": "p", "text": "El desarrollador de ScannerCam Light puede actualizar esta política de vez en cuando, por ejemplo para reflejar una nueva función o un cambio en la ley aplicable. La fecha de entrada en vigor en la parte superior de este documento muestra cuándo entró en vigor la versión actual." },
+        { "type": "p", "text": "No se envía ningún aviso independiente cuando esta política cambia. La copia incluida en la aplicación refleja la versión que estaba vigente cuando se creó esa versión de ScannerCam Light; la versión actual es la publicada en el sitio web de ScannerCam Light, y la fecha de entrada en vigor de arriba muestra qué versión está leyendo." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Contacto",
+      "body": [
+        { "type": "p", "text": "Las preguntas pueden enviarse a [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). Consulte también los [Términos de Servicio](terms.html) para conocer los términos legales que rigen el uso de ScannerCam Light." }
+      ]
+    }
+  ]
+}
