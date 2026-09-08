@@ -12,7 +12,9 @@ class LegalInlineSpan {
 // Bold content must begin AND end with non-whitespace; the `??` (lazy
 // optional) is load-bearing — without it, a stray `**` pairs with the far
 // end of a later, unrelated `**bold**` instead of leaving itself literal.
-final _pattern = RegExp(r'\*\*(\S(?:[\s\S]*?\S)??)\*\*|\[([^\]]+)\]\(([^)\s]+)\)');
+final _pattern = RegExp(
+  r'\*\*(\S(?:[\s\S]*?\S)??)\*\*|\[([^\]]+)\]\(([^)\s]+)\)',
+);
 
 /// Splits [text] into spans. Only `**bold**` and `[label](url)` are markup;
 /// anything else is literal.
@@ -20,7 +22,9 @@ List<LegalInlineSpan> parseLegalInline(String text) {
   final spans = <LegalInlineSpan>[];
   var last = 0;
   for (final m in _pattern.allMatches(text)) {
-    if (m.start > last) spans.add(LegalInlineSpan(text.substring(last, m.start)));
+    if (m.start > last) {
+      spans.add(LegalInlineSpan(text.substring(last, m.start)));
+    }
     if (m.group(1) != null) {
       spans.add(LegalInlineSpan(m.group(1)!, bold: true));
     } else {

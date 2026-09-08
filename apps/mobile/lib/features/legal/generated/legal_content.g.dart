@@ -1,6 +1,8 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source: libs/legal-content/content/*.json
-// Regenerate: node libs/legal-content/src/generate.mjs (from the repo root)
+// Regenerate (both, from the repo root):
+//   node libs/legal-content/src/generate.mjs
+//   node libs/legal-content/src/inline-parity-fixture.mjs
 // ignore_for_file: type=lint, type=warning
 // dart format off
 

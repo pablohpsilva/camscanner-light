@@ -17,12 +17,17 @@ on:
       - 'libs/legal-content/**'
       - 'apps/web/**'
       - 'apps/mobile/lib/features/legal/**'
+      - 'apps/mobile/test/features/legal/**'
+      - 'scripts/check-legal-content.sh'
       - '.github/workflows/legal-content.yml'
   pull_request:
     paths:
       - 'libs/legal-content/**'
       - 'apps/web/**'
       - 'apps/mobile/lib/features/legal/**'
+      - 'apps/mobile/test/features/legal/**'
+      - 'scripts/check-legal-content.sh'
+      - '.github/workflows/legal-content.yml'
   workflow_dispatch:
 
 jobs:

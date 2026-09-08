@@ -44,7 +44,11 @@ void main() {
 
   test('stray ** does not pair with later **bold**', () {
     final spans = parseLegalInline('2 ** 3 and **real bold** end');
-    expect(spans.map((s) => s.text).toList(), ['2 ** 3 and ', 'real bold', ' end']);
+    expect(spans.map((s) => s.text).toList(), [
+      '2 ** 3 and ',
+      'real bold',
+      ' end',
+    ]);
     expect(spans.map((s) => s.bold).toList(), [false, true, false]);
   });
 

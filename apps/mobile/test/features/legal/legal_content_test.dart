@@ -13,11 +13,14 @@ void main() {
     expect(d.sections, isNotEmpty);
   });
 
-  test('returns a translated document with a notice for a non-English locale', () {
-    final d = legalDocument(LegalDoc.terms, const Locale('de'));
-    expect(d.title, isNot('Terms of Service'));
-    expect(d.translationNotice, isNotEmpty);
-  });
+  test(
+    'returns a translated document with a notice for a non-English locale',
+    () {
+      final d = legalDocument(LegalDoc.terms, const Locale('de'));
+      expect(d.title, isNot('Terms of Service'));
+      expect(d.translationNotice, isNotEmpty);
+    },
+  );
 
   test('distinguishes pt from pt_BR', () {
     final pt = legalDocument(LegalDoc.faq, const Locale('pt'));
@@ -47,10 +50,16 @@ void main() {
 
   test('all locales of a document share the same section ids', () {
     for (final doc in LegalDoc.values) {
-      final en = legalDocument(doc, const Locale('en')).sections.map((s) => s.id).toList();
+      final en = legalDocument(
+        doc,
+        const Locale('en'),
+      ).sections.map((s) => s.id).toList();
       for (final locale in kSupportedAppLocales) {
-        expect(legalDocument(doc, locale).sections.map((s) => s.id).toList(), en,
-            reason: '$doc/$locale diverges from English');
+        expect(
+          legalDocument(doc, locale).sections.map((s) => s.id).toList(),
+          en,
+          reason: '$doc/$locale diverges from English',
+        );
       }
     }
   });

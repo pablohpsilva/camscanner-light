@@ -7,28 +7,31 @@ import 'package:mobile/features/legal/legal_document_screen.dart';
 
 import '../../support/localized_app.dart';
 
-Widget _host(LegalDoc doc, {Locale locale = const Locale('en'), List<Uri>? opened}) =>
-    localizedTestApp(
-      locale: locale,
-      home: LegalDocumentScreen(
-        doc: doc,
-        openUrl: (uri) async {
-          opened?.add(uri);
-          return true;
-        },
-      ),
-    );
+Widget _host(
+  LegalDoc doc, {
+  Locale locale = const Locale('en'),
+  List<Uri>? opened,
+}) => localizedTestApp(
+  locale: locale,
+  home: LegalDocumentScreen(
+    doc: doc,
+    openUrl: (uri) async {
+      opened?.add(uri);
+      return true;
+    },
+  ),
+);
 
 /// Host whose opener FAILS, either by returning false or by throwing.
 Widget _failingHost(LegalDoc doc, {required bool throws}) => localizedTestApp(
-      home: LegalDocumentScreen(
-        doc: doc,
-        openUrl: (uri) async {
-          if (throws) throw Exception('no handler');
-          return false;
-        },
-      ),
-    );
+  home: LegalDocumentScreen(
+    doc: doc,
+    openUrl: (uri) async {
+      if (throws) throw Exception('no handler');
+      return false;
+    },
+  ),
+);
 
 void main() {
   testWidgets('shows the document title in the header', (t) async {
@@ -61,7 +64,9 @@ void main() {
     expect(find.byKey(const Key('legal-translation-notice')), findsOneWidget);
   });
 
-  testWidgets('the FAQ renders collapsed questions that expand on tap', (t) async {
+  testWidgets('the FAQ renders collapsed questions that expand on tap', (
+    t,
+  ) async {
     await t.pumpWidget(_host(LegalDoc.faq));
     final doc = legalDocument(LegalDoc.faq, const Locale('en'));
     final first = doc.sections.first;
@@ -73,11 +78,18 @@ void main() {
     expect(find.textContaining(answer.substring(0, 12)), findsOneWidget);
   });
 
-  testWidgets('tapping an inline link opens it through the injected opener', (t) async {
+  testWidgets('tapping an inline link opens it through the injected opener', (
+    t,
+  ) async {
     final opened = <Uri>[];
     await t.pumpWidget(_host(LegalDoc.terms, opened: opened));
-    await t.scrollUntilVisible(find.byKey(const Key('legal-section-contact')), 300);
-    await t.tap(find.textContaining('scannercamlight.line149@passmail.net').first);
+    await t.scrollUntilVisible(
+      find.byKey(const Key('legal-section-contact')),
+      300,
+    );
+    await t.tap(
+      find.textContaining('scannercamlight.line149@passmail.net').first,
+    );
     await t.pumpAndSettle();
     expect(opened.single.scheme, 'mailto');
   });
@@ -92,12 +104,19 @@ void main() {
     (t) async {
       final opened = <Uri>[];
       await t.pumpWidget(_host(LegalDoc.terms, opened: opened));
-      await t.scrollUntilVisible(find.byKey(const Key('legal-section-acceptance')), 300);
+      await t.scrollUntilVisible(
+        find.byKey(const Key('legal-section-acceptance')),
+        300,
+      );
 
       await t.tap(find.textContaining('Privacy Policy').first);
       await t.pumpAndSettle();
 
-      expect(opened, isEmpty, reason: 'a relative sibling link must never reach the URL opener');
+      expect(
+        opened,
+        isEmpty,
+        reason: 'a relative sibling link must never reach the URL opener',
+      );
       // The pushed screen is the Privacy Policy document.
       expect(find.text('Privacy Policy'), findsOneWidget);
     },
@@ -124,7 +143,11 @@ void main() {
         await t.pumpAndSettle();
 
         final recognizer = _mailtoRecognizer(t);
-        expect(recognizer, isNotNull, reason: 'contact mailto link should render');
+        expect(
+          recognizer,
+          isNotNull,
+          reason: 'contact mailto link should render',
+        );
         recognizer!.onTap!();
         await t.pumpAndSettle();
 

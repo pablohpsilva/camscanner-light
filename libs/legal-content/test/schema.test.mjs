@@ -85,3 +85,21 @@ test('rejects unescaped ** in a list item', () => {
   d.sections[0].body = [{ type: 'ul', items: ['Item with 2 ** 3 in it'] }]
   assert.throws(() => validateDocument(d, { doc: 'terms', locale: 'en' }), /unescaped \*\*.*list item/)
 })
+
+// Final review L2: the stray-`**` scan covered 2 of the 6 rendered string
+// slots. `intro` is inline-rendered on BOTH surfaces (render-html.mjs
+// `<p class="lead">`, legal_document_screen.dart), so a stray `**` there
+// shipped as literal asterisks with a green build.
+for (const field of ['title', 'intro', 'translationNotice']) {
+  test(`rejects unescaped ** in ${field}`, () => {
+    const doc = { ...valid(), locale: 'pt', translationNotice: 'Notice.' }
+    doc[field] = 'a ** stray marker'
+    assert.throws(() => validateDocument(doc, { doc: 'terms', locale: 'pt' }), /unescaped \*\*/)
+  })
+}
+
+test('rejects unescaped ** in a section heading', () => {
+  const doc = valid()
+  doc.sections[0].heading = 'Heading ** with a stray marker'
+  assert.throws(() => validateDocument(doc, { doc: 'terms', locale: 'en' }), /unescaped \*\*/)
+})

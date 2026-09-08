@@ -61,7 +61,9 @@ class LegalDocumentScreen extends StatelessWidget {
   Future<void> _handleLink(BuildContext context, String url) async {
     final sibling = _siblingDocs[url];
     if (sibling != null) {
-      Navigator.of(context).push(LegalDocumentScreen.route(sibling, openUrl: openUrl));
+      Navigator.of(
+        context,
+      ).push(LegalDocumentScreen.route(sibling, openUrl: openUrl));
       return;
     }
     final uri = Uri.tryParse(url);
@@ -96,7 +98,11 @@ class LegalDocumentScreen extends StatelessWidget {
         children: [
           Text(
             '${document.effectiveDateLabel}: ${document.effectiveDate}',
-            style: TextStyle(fontFamily: 'Figtree', fontSize: 13, color: r.muted),
+            style: TextStyle(
+              fontFamily: 'Figtree',
+              fontSize: 13,
+              color: r.muted,
+            ),
           ),
           if (document.translationNotice.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -145,7 +151,11 @@ class LegalDocumentScreen extends StatelessWidget {
 /// [ExpansionTile] (`heading` = question, `body` = answer); `terms` and
 /// `privacy` render heading + blocks flat.
 class _LegalSection extends StatelessWidget {
-  const _LegalSection({required this.doc, required this.section, required this.onLink});
+  const _LegalSection({
+    required this.doc,
+    required this.section,
+    required this.onLink,
+  });
 
   final LegalDoc doc;
   final LegalSection section;
@@ -162,7 +172,12 @@ class _LegalSection extends StatelessWidget {
     );
     final blocks = [
       for (final block in section.body) ...[
-        _LegalBlockView(block: block, onLink: onLink, linkColor: r.blue, textColor: r.ink2),
+        _LegalBlockView(
+          block: block,
+          onLink: onLink,
+          linkColor: r.blue,
+          textColor: r.ink2,
+        ),
         const SizedBox(height: 8),
       ],
     ];
@@ -224,7 +239,14 @@ class _LegalBlockView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('•  ', style: TextStyle(fontFamily: 'Figtree', fontSize: 14.5, color: textColor)),
+                  Text(
+                    '•  ',
+                    style: TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 14.5,
+                      color: textColor,
+                    ),
+                  ),
                   Expanded(
                     child: _LegalParagraph(
                       text: item,
@@ -292,7 +314,8 @@ class _LegalParagraphState extends State<_LegalParagraph> {
     final children = <InlineSpan>[];
     for (final span in parseLegalInline(widget.text)) {
       if (span.url != null) {
-        final recognizer = TapGestureRecognizer()..onTap = () => widget.onLink(span.url!);
+        final recognizer = TapGestureRecognizer()
+          ..onTap = () => widget.onLink(span.url!);
         _recognizers.add(recognizer);
         // A link gets its own inline widget (WidgetSpan) rather than sharing
         // the paragraph's single RenderParagraph. Two reasons: it keeps the
@@ -323,7 +346,9 @@ class _LegalParagraphState extends State<_LegalParagraph> {
         children.add(
           TextSpan(
             text: span.text,
-            style: span.bold ? const TextStyle(fontWeight: FontWeight.w700) : null,
+            style: span.bold
+                ? const TextStyle(fontWeight: FontWeight.w700)
+                : null,
           ),
         );
       }

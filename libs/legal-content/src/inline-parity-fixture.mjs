@@ -8,6 +8,7 @@
 // bold span, link, stray asterisk and RTL string in the documents.
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { DOCS, LOCALES, repoRoot } from './constants.mjs'
 import { loadDocument } from './schema.mjs'
 import { parseInline } from './inline.mjs'
@@ -45,6 +46,6 @@ export function writeInlineParityFixture () {
   return cases.length
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   console.log(`wrote ${FIXTURE_PATH} (${writeInlineParityFixture()} strings)`)
 }
