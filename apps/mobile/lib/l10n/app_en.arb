@@ -199,6 +199,10 @@
   "@settingsSectionFeedback": {
     "description": "Section label"
   },
+  "settingsSectionLegal": "Legal",
+  "@settingsSectionLegal": {
+    "description": "Settings section heading above the Terms, Privacy and FAQ rows"
+  },
   "settingsSupportApp": "Support the app",
   "@settingsSupportApp": {
     "description": "Settings row + donation title"

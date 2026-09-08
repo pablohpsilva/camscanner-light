@@ -158,6 +158,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSectionFeedback => '反馈与支持';
 
   @override
+  String get settingsSectionLegal => '法律信息';
+
+  @override
   String get settingsSupportApp => '支持本应用';
 
   @override

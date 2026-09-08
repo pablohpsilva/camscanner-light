@@ -13,6 +13,11 @@
 /// widgets read it from their dependencies, never as a bare global const —
 /// `bool.fromEnvironment` is a compile-time constant, so a global could not be
 /// varied in a widget test.
+///
+/// DELIBERATE EXCEPTION: the Legal section in Settings (Terms, Privacy, FAQ)
+/// carries no flag. Apple and Google both require the privacy policy to be
+/// reachable from inside the app, so a build that could hide it is a
+/// store-rejection risk, not a feature.
 class FeatureFlags {
   final bool crop;
   final bool rotate;

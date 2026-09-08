@@ -162,6 +162,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsSectionFeedback => 'Retours & assistance';
 
   @override
+  String get settingsSectionLegal => 'Mentions légales';
+
+  @override
   String get settingsSupportApp => 'Soutenir l\'application';
 
   @override

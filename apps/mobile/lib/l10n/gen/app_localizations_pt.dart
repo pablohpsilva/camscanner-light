@@ -162,6 +162,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsSectionFeedback => 'Comentários e suporte';
 
   @override
+  String get settingsSectionLegal => 'Jurídico';
+
+  @override
   String get settingsSupportApp => 'Apoiar a aplicação';
 
   @override
@@ -742,6 +745,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settingsSectionFeedback => 'Feedback e suporte';
+
+  @override
+  String get settingsSectionLegal => 'Jurídico';
 
   @override
   String get settingsSupportApp => 'Apoiar o app';

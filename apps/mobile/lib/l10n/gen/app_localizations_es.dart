@@ -161,6 +161,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSectionFeedback => 'Comentarios y ayuda';
 
   @override
+  String get settingsSectionLegal => 'Legal';
+
+  @override
   String get settingsSupportApp => 'Apoya la app';
 
   @override

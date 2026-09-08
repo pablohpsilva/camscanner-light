@@ -14,6 +14,9 @@ import '../donation/donation_availability.dart';
 import '../donation/donation_screen.dart';
 import '../feedback/feedback_dependencies.dart';
 import '../feedback/feedback_screen.dart';
+import '../legal/legal_content.dart';
+import '../legal/legal_doc.dart';
+import '../legal/legal_document_screen.dart';
 import 'handedness_controller.dart';
 import 'handedness_store.dart';
 
@@ -51,81 +54,111 @@ class SettingsScreen extends StatelessWidget {
           localeController,
           handednessController,
         ]),
-        builder: (context, _) => ListView(
+        builder: (context, _) => SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          children: [
-            AppSectionLabel(context.l10n.settingsSectionAppearance),
-            const SizedBox(height: 10),
-            AppSegmented<ThemeMode>(
-              key: const Key('settings-theme-mode'),
-              expanded: true,
-              value: themeController.mode,
-              onChanged: themeController.setMode,
-              segments: [
-                AppSegment(
-                  value: ThemeMode.light,
-                  label: context.l10n.settingsThemeLight,
-                ),
-                AppSegment(
-                  value: ThemeMode.dark,
-                  label: context.l10n.settingsThemeDark,
-                ),
-                AppSegment(
-                  value: ThemeMode.system,
-                  label: context.l10n.settingsThemeSystem,
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-            AppSectionLabel(context.l10n.settingsHandednessLabel),
-            const SizedBox(height: 10),
-            AppSegmented<Handedness>(
-              key: const Key('settings-handedness'),
-              expanded: true,
-              value: handednessController.value,
-              onChanged: handednessController.setHandedness,
-              segments: [
-                AppSegment(
-                  value: Handedness.left,
-                  label: context.l10n.settingsHandednessLeft,
-                ),
-                AppSegment(
-                  value: Handedness.right,
-                  label: context.l10n.settingsHandednessRight,
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-            AppSectionLabel(context.l10n.settingsSectionLanguage),
-            const SizedBox(height: 10),
-            _NavRow(
-              key: const Key('settings-language'),
-              icon: Icons.language,
-              label: _currentLanguageLabel(context),
-              onTap: () => _showLanguagePicker(context),
-            ),
-            const SizedBox(height: 28),
-            AppSectionLabel(context.l10n.settingsSectionFeedback),
-            const SizedBox(height: 10),
-            if (feedbackAvailable)
-              _NavRow(
-                key: const Key('settings-feedback'),
-                icon: Icons.chat_bubble_outline,
-                label: context.l10n.feedbackTitle,
-                onTap: () => Navigator.of(
-                  context,
-                ).push(FeedbackScreen.route(feedbackDependencies)),
+          // A short, static list of settings rows (never more than a
+          // couple dozen). A Column always builds every child eagerly,
+          // unlike ListView's lazy sliver — the right trade-off here since
+          // there is no long/unbounded data to virtualize.
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppSectionLabel(context.l10n.settingsSectionAppearance),
+              const SizedBox(height: 10),
+              AppSegmented<ThemeMode>(
+                key: const Key('settings-theme-mode'),
+                expanded: true,
+                value: themeController.mode,
+                onChanged: themeController.setMode,
+                segments: [
+                  AppSegment(
+                    value: ThemeMode.light,
+                    label: context.l10n.settingsThemeLight,
+                  ),
+                  AppSegment(
+                    value: ThemeMode.dark,
+                    label: context.l10n.settingsThemeDark,
+                  ),
+                  AppSegment(
+                    value: ThemeMode.system,
+                    label: context.l10n.settingsThemeSystem,
+                  ),
+                ],
               ),
-            if (donationEntryPointsAvailable)
-              _NavRow(
-                key: const Key('settings-support'),
-                icon: Icons.favorite_outline,
-                label: context.l10n.settingsSupportApp,
-                onTap: () => Navigator.of(context).push(DonationScreen.route()),
+              const SizedBox(height: 28),
+              AppSectionLabel(context.l10n.settingsHandednessLabel),
+              const SizedBox(height: 10),
+              AppSegmented<Handedness>(
+                key: const Key('settings-handedness'),
+                expanded: true,
+                value: handednessController.value,
+                onChanged: handednessController.setHandedness,
+                segments: [
+                  AppSegment(
+                    value: Handedness.left,
+                    label: context.l10n.settingsHandednessLeft,
+                  ),
+                  AppSegment(
+                    value: Handedness.right,
+                    label: context.l10n.settingsHandednessRight,
+                  ),
+                ],
               ),
-            const SizedBox(height: 36),
-            _About(key: const Key('settings-about')),
-          ],
+              const SizedBox(height: 28),
+              AppSectionLabel(context.l10n.settingsSectionLanguage),
+              const SizedBox(height: 10),
+              _NavRow(
+                key: const Key('settings-language'),
+                icon: Icons.language,
+                label: _currentLanguageLabel(context),
+                onTap: () => _showLanguagePicker(context),
+              ),
+              const SizedBox(height: 28),
+              AppSectionLabel(context.l10n.settingsSectionFeedback),
+              const SizedBox(height: 10),
+              if (feedbackAvailable)
+                _NavRow(
+                  key: const Key('settings-feedback'),
+                  icon: Icons.chat_bubble_outline,
+                  label: context.l10n.feedbackTitle,
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(FeedbackScreen.route(feedbackDependencies)),
+                ),
+              if (donationEntryPointsAvailable)
+                _NavRow(
+                  key: const Key('settings-support'),
+                  icon: Icons.favorite_outline,
+                  label: context.l10n.settingsSupportApp,
+                  onTap: () =>
+                      Navigator.of(context).push(DonationScreen.route()),
+                ),
+              const SizedBox(height: 28),
+              AppSectionLabel(context.l10n.settingsSectionLegal),
+              const SizedBox(height: 10),
+              for (final entry in const [
+                (LegalDoc.terms, 'settings-terms', Icons.gavel_outlined),
+                (LegalDoc.privacy, 'settings-privacy', Icons.lock_outline),
+                (LegalDoc.faq, 'settings-faq', Icons.help_outline),
+              ])
+                _NavRow(
+                  key: Key(entry.$2),
+                  icon: entry.$3,
+                  // Row labels come from the content package, not ARB, so the
+                  // app and the website always show the same document names.
+                  label: legalDocument(
+                    entry.$1,
+                    Localizations.localeOf(context),
+                  ).title,
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(LegalDocumentScreen.route(entry.$1)),
+                ),
+              const SizedBox(height: 36),
+              _About(key: const Key('settings-about')),
+            ],
+          ),
         ),
       ),
     );

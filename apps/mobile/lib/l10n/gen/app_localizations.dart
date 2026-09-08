@@ -391,6 +391,12 @@ abstract class AppLocalizations {
   /// **'Feedback & support'**
   String get settingsSectionFeedback;
 
+  /// Settings section heading above the Terms, Privacy and FAQ rows
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get settingsSectionLegal;
+
   /// Settings row + donation title
   ///
   /// In en, this message translates to:

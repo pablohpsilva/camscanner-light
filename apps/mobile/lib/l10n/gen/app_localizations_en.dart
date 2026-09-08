@@ -159,6 +159,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionFeedback => 'Feedback & support';
 
   @override
+  String get settingsSectionLegal => 'Legal';
+
+  @override
   String get settingsSupportApp => 'Support the app';
 
   @override

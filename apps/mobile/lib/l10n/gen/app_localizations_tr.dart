@@ -159,6 +159,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsSectionFeedback => 'Geri bildirim ve destek';
 
   @override
+  String get settingsSectionLegal => 'Yasal';
+
+  @override
   String get settingsSupportApp => 'Uygulamayı destekle';
 
   @override

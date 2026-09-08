@@ -173,6 +173,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsSectionFeedback => 'الملاحظات والدعم';
 
   @override
+  String get settingsSectionLegal => 'الشؤون القانونية';
+
+  @override
   String get settingsSupportApp => 'ادعم التطبيق';
 
   @override

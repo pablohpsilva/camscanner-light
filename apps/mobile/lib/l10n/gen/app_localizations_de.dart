@@ -162,6 +162,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsSectionFeedback => 'Feedback & Support';
 
   @override
+  String get settingsSectionLegal => 'Rechtliches';
+
+  @override
   String get settingsSupportApp => 'App unterstützen';
 
   @override

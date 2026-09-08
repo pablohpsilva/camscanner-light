@@ -163,6 +163,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsSectionFeedback => 'Отзывы и поддержка';
 
   @override
+  String get settingsSectionLegal => 'Правовая информация';
+
+  @override
   String get settingsSupportApp => 'Поддержать приложение';
 
   @override

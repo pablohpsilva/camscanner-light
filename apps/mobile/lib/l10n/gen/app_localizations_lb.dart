@@ -161,6 +161,9 @@ class AppLocalizationsLb extends AppLocalizations {
   String get settingsSectionFeedback => 'Feedback & Ënnerstëtzung';
 
   @override
+  String get settingsSectionLegal => 'Rechtleches';
+
+  @override
   String get settingsSupportApp => 'D\'App ënnerstëtzen';
 
   @override

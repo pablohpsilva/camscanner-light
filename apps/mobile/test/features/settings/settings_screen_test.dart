@@ -101,6 +101,8 @@ void main() {
   testWidgets('about footer shows the app name', (t) async {
     final c = ThemeController(store: InMemoryThemeModeStore());
     await t.pumpWidget(_host(c));
+    // The Legal section pushed the footer below the initial render cache.
+    await t.scrollUntilVisible(find.byKey(const Key('settings-about')), 300);
     expect(find.byKey(const Key('settings-about')), findsOneWidget);
     expect(find.textContaining('ScannerCam Light'), findsOneWidget);
   });
@@ -127,5 +129,56 @@ void main() {
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
+  });
+
+  testWidgets('shows a Legal section with all three documents', (t) async {
+    final c = ThemeController(store: InMemoryThemeModeStore());
+    await t.pumpWidget(_host(c));
+    await t.scrollUntilVisible(find.byKey(const Key('settings-terms')), 300);
+    expect(find.byKey(const Key('settings-terms')), findsOneWidget);
+    expect(find.byKey(const Key('settings-privacy')), findsOneWidget);
+    expect(find.byKey(const Key('settings-faq')), findsOneWidget);
+    expect(find.text('LEGAL'), findsOneWidget); // AppSectionLabel upper-cases
+  });
+
+  testWidgets('the legal rows are labelled from the content package', (
+    t,
+  ) async {
+    final c = ThemeController(store: InMemoryThemeModeStore());
+    await t.pumpWidget(_host(c));
+    await t.scrollUntilVisible(find.byKey(const Key('settings-terms')), 300);
+    expect(find.text('Terms of Service'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('Frequently Asked Questions'), findsOneWidget);
+  });
+
+  testWidgets('the terms row opens the terms document', (t) async {
+    final c = ThemeController(store: InMemoryThemeModeStore());
+    await t.pumpWidget(_host(c));
+    await t.scrollUntilVisible(find.byKey(const Key('settings-terms')), 300);
+    await t.tap(find.byKey(const Key('settings-terms')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('legal-section-acceptance')), findsOneWidget);
+  });
+
+  testWidgets('the privacy row opens the privacy document', (t) async {
+    final c = ThemeController(store: InMemoryThemeModeStore());
+    await t.pumpWidget(_host(c));
+    await t.scrollUntilVisible(
+      find.byKey(const Key('settings-privacy')),
+      300,
+    );
+    await t.tap(find.byKey(const Key('settings-privacy')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('legal-section-summary')), findsOneWidget);
+  });
+
+  testWidgets('the faq row opens the faq document', (t) async {
+    final c = ThemeController(store: InMemoryThemeModeStore());
+    await t.pumpWidget(_host(c));
+    await t.scrollUntilVisible(find.byKey(const Key('settings-faq')), 300);
+    await t.tap(find.byKey(const Key('settings-faq')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('legal-section-offline')), findsOneWidget);
   });
 }
