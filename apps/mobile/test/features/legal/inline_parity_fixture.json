@@ -6561,7 +6561,7 @@
   ]
  },
  {
-  "input": "The main exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit. The requests the feedback feature makes before that — described in the Feedback section above — are automatic and are not gated on that consent, and one of them discloses your device's IP address to Cloudflare when the form opens. A submitted feedback issue becomes a public GitHub issue; its removal can be requested by writing to the support email below, though no timeframe is promised, and by then the issue may already have been copied, cached, or indexed elsewhere, which the developer of ScannerCam Light has no way to undo.",
+  "input": "The main exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit. The requests the feedback feature makes before that — described in the Feedback section above — are automatic and are not gated on that consent, and one of them discloses your device's IP address to Cloudflare when the form opens. A submitted feedback issue becomes a public GitHub issue; its removal can be requested by writing to the support email below, though no timeframe is promised, and by then the issue may already have been copied, cached, or indexed elsewhere, which the developer of ScannerCam Light has no way to undo. Where the law that applies to you requires a response within a set period, that requirement applies regardless of anything above.",
   "tokens": [
    {
     "type": "text",
@@ -6573,7 +6573,7 @@
    },
    {
     "type": "text",
-    "text": " as its lawful basis: your message, email, and diagnostics are sent when you tap Submit. The requests the feedback feature makes before that — described in the Feedback section above — are automatic and are not gated on that consent, and one of them discloses your device's IP address to Cloudflare when the form opens. A submitted feedback issue becomes a public GitHub issue; its removal can be requested by writing to the support email below, though no timeframe is promised, and by then the issue may already have been copied, cached, or indexed elsewhere, which the developer of ScannerCam Light has no way to undo."
+    "text": " as its lawful basis: your message, email, and diagnostics are sent when you tap Submit. The requests the feedback feature makes before that — described in the Feedback section above — are automatic and are not gated on that consent, and one of them discloses your device's IP address to Cloudflare when the form opens. A submitted feedback issue becomes a public GitHub issue; its removal can be requested by writing to the support email below, though no timeframe is promised, and by then the issue may already have been copied, cached, or indexed elsewhere, which the developer of ScannerCam Light has no way to undo. Where the law that applies to you requires a response within a set period, that requirement applies regardless of anything above."
    }
   ]
  },
@@ -6587,7 +6587,7 @@
   ]
  },
  {
-  "input": "The app is not directed at children, has no user accounts, asks no one for their age or any other personal detail, shows no ads, contains no analytics or tracking SDKs, and never sends a scanned document anywhere. It is not, however, silent on the network: where the optional feedback feature is available, the app checks whether the feedback service is reachable when the library screen opens, and opening the feedback form loads a **Cloudflare Turnstile** challenge that discloses the device's IP address to Cloudflare — both automatically, without anyone choosing to send anything. That applies to users of any age, and is the whole of what happens without a deliberate action.",
+  "input": "The app is not directed at children, has no user accounts, asks no one for their age or any other personal detail, shows no ads, contains no analytics or tracking SDKs, and never sends a scanned document anywhere. It is not, however, silent on the network: where the optional feedback feature is available, the app checks whether the feedback service is reachable when the library screen opens, and opening the feedback form loads a **Cloudflare Turnstile** challenge that discloses the device's IP address to Cloudflare — both automatically, without anyone choosing to send anything. On iOS, opening the support screen also asks the App Store for the available tip options, again without any deliberate action. All of this applies to users of any age; the Network access section above lists every case.",
   "tokens": [
    {
     "type": "text",
@@ -6599,7 +6599,7 @@
    },
    {
     "type": "text",
-    "text": " challenge that discloses the device's IP address to Cloudflare — both automatically, without anyone choosing to send anything. That applies to users of any age, and is the whole of what happens without a deliberate action."
+    "text": " challenge that discloses the device's IP address to Cloudflare — both automatically, without anyone choosing to send anything. On iOS, opening the support screen also asks the App Store for the available tip options, again without any deliberate action. All of this applies to users of any age; the Network access section above lists every case."
    }
   ]
  },
@@ -7041,7 +7041,7 @@
   ]
  },
  {
-  "input": "A principal exceção é o feedback submetido voluntariamente através do formulário de feedback dentro da aplicação. Essa submissão assenta no seu **consentimento** como base legal: a sua mensagem, email e diagnósticos são enviados quando toca em Enviar. Os pedidos que a funcionalidade de feedback faz antes disso — descritos na secção Feedback acima — são automáticos e não dependem desse consentimento, e um deles divulga o endereço IP do seu dispositivo à Cloudflare quando o formulário é aberto. Um problema (\"issue\") de feedback submetido torna-se um problema público no GitHub; a sua remoção pode ser pedida escrevendo para o email de apoio abaixo, embora não seja prometido qualquer prazo e, nessa altura, o problema possa já ter sido copiado, colocado em cache ou indexado noutro lado, o que o programador do ScannerCam Light não tem forma de desfazer.",
+  "input": "A principal exceção é o feedback submetido voluntariamente através do formulário de feedback dentro da aplicação. Essa submissão assenta no seu **consentimento** como base legal: a sua mensagem, email e diagnósticos são enviados quando toca em Enviar. Os pedidos que a funcionalidade de feedback faz antes disso — descritos na secção Feedback acima — são automáticos e não dependem desse consentimento, e um deles divulga o endereço IP do seu dispositivo à Cloudflare quando o formulário é aberto. Um problema (\"issue\") de feedback submetido torna-se um problema público no GitHub; a sua remoção pode ser pedida escrevendo para o email de apoio abaixo, embora não seja prometido qualquer prazo e, nessa altura, o problema possa já ter sido copiado, colocado em cache ou indexado noutro lado, o que o programador do ScannerCam Light não tem forma de desfazer. Quando a lei que lhe é aplicável exigir uma resposta dentro de um prazo determinado, essa exigência aplica-se independentemente de tudo o que fica dito acima.",
   "tokens": [
    {
     "type": "text",
@@ -7053,7 +7053,7 @@
    },
    {
     "type": "text",
-    "text": " como base legal: a sua mensagem, email e diagnósticos são enviados quando toca em Enviar. Os pedidos que a funcionalidade de feedback faz antes disso — descritos na secção Feedback acima — são automáticos e não dependem desse consentimento, e um deles divulga o endereço IP do seu dispositivo à Cloudflare quando o formulário é aberto. Um problema (\"issue\") de feedback submetido torna-se um problema público no GitHub; a sua remoção pode ser pedida escrevendo para o email de apoio abaixo, embora não seja prometido qualquer prazo e, nessa altura, o problema possa já ter sido copiado, colocado em cache ou indexado noutro lado, o que o programador do ScannerCam Light não tem forma de desfazer."
+    "text": " como base legal: a sua mensagem, email e diagnósticos são enviados quando toca em Enviar. Os pedidos que a funcionalidade de feedback faz antes disso — descritos na secção Feedback acima — são automáticos e não dependem desse consentimento, e um deles divulga o endereço IP do seu dispositivo à Cloudflare quando o formulário é aberto. Um problema (\"issue\") de feedback submetido torna-se um problema público no GitHub; a sua remoção pode ser pedida escrevendo para o email de apoio abaixo, embora não seja prometido qualquer prazo e, nessa altura, o problema possa já ter sido copiado, colocado em cache ou indexado noutro lado, o que o programador do ScannerCam Light não tem forma de desfazer. Quando a lei que lhe é aplicável exigir uma resposta dentro de um prazo determinado, essa exigência aplica-se independentemente de tudo o que fica dito acima."
    }
   ]
  },
@@ -7067,7 +7067,7 @@
   ]
  },
  {
-  "input": "A aplicação não se dirige a crianças, não tem contas de utilizador, não pede a ninguém a idade nem qualquer outro dado pessoal, não mostra anúncios, não contém SDKs de análise ou rastreio e nunca envia um documento digitalizado para lado nenhum. Não é, contudo, silenciosa na rede: quando a funcionalidade opcional de feedback está disponível, a aplicação verifica se o serviço de feedback está acessível quando o ecrã da biblioteca é aberto, e abrir o formulário de feedback carrega um desafio **Cloudflare Turnstile** que divulga o endereço IP do dispositivo à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar seja o que for. Isto aplica-se a utilizadores de qualquer idade e é tudo o que acontece sem uma ação deliberada.",
+  "input": "A aplicação não se dirige a crianças, não tem contas de utilizador, não pede a ninguém a idade nem qualquer outro dado pessoal, não mostra anúncios, não contém SDKs de análise ou rastreio e nunca envia um documento digitalizado para lado nenhum. Não é, contudo, silenciosa na rede: quando a funcionalidade opcional de feedback está disponível, a aplicação verifica se o serviço de feedback está acessível quando o ecrã da biblioteca é aberto, e abrir o formulário de feedback carrega um desafio **Cloudflare Turnstile** que divulga o endereço IP do dispositivo à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar seja o que for. No iOS, abrir o ecrã de apoio pede também à App Store as opções de gorjeta disponíveis, mais uma vez sem qualquer ação deliberada. Tudo isto se aplica a utilizadores de qualquer idade; a secção Acesso à rede acima enumera todos os casos.",
   "tokens": [
    {
     "type": "text",
@@ -7079,7 +7079,7 @@
    },
    {
     "type": "text",
-    "text": " que divulga o endereço IP do dispositivo à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar seja o que for. Isto aplica-se a utilizadores de qualquer idade e é tudo o que acontece sem uma ação deliberada."
+    "text": " que divulga o endereço IP do dispositivo à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar seja o que for. No iOS, abrir o ecrã de apoio pede também à App Store as opções de gorjeta disponíveis, mais uma vez sem qualquer ação deliberada. Tudo isto se aplica a utilizadores de qualquer idade; a secção Acesso à rede acima enumera todos os casos."
    }
   ]
  },
@@ -7147,11 +7147,11 @@
   ]
  },
  {
-  "input": "O ScannerCam Light foi criado para manter os documentos privados. Seus documentos digitalizados, o texto reconhecido a partir deles e tudo o que deles deriva ficam no seu aparelho e nunca são enviados para a nuvem. Alguns recursos opcionais realmente usam a rede, e parte disso acontece automaticamente, e não apenas quando você pede: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio de verificação da **Cloudflare** que recebe o endereço IP do seu aparelho — ambos antes de você digitar ou enviar qualquer coisa. Quando uma gorjeta dentro do aplicativo é oferecida, abrir a tela de suporte pergunta à App Store quais são as opções de gorjeta disponíveis. As seções Acesso à rede, Feedback e Compras dentro do aplicativo e gorjetas, abaixo, descrevem cada caso. Não há contas de usuário, análises, anúncios nem rastreamento, e dados pessoais nunca são vendidos.",
+  "input": "O ScannerCam Light foi criado para manter os documentos privados. Seus documentos digitalizados, o texto reconhecido a partir deles e tudo o que deles deriva ficam no seu aparelho e nunca são enviados para lugar nenhum. Alguns recursos opcionais realmente usam a rede, e parte disso acontece automaticamente, e não apenas quando você pede: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio de verificação da **Cloudflare** que recebe o endereço IP do seu aparelho — ambos antes de você digitar ou enviar qualquer coisa. Quando uma gorjeta dentro do aplicativo é oferecida, abrir a tela de suporte pergunta à App Store quais são as opções de gorjeta disponíveis. As seções Acesso à rede, Feedback e Compras dentro do aplicativo e gorjetas, abaixo, descrevem cada caso. Não há contas de usuário, análises, anúncios nem rastreamento, e dados pessoais nunca são vendidos.",
   "tokens": [
    {
     "type": "text",
-    "text": "O ScannerCam Light foi criado para manter os documentos privados. Seus documentos digitalizados, o texto reconhecido a partir deles e tudo o que deles deriva ficam no seu aparelho e nunca são enviados para a nuvem. Alguns recursos opcionais realmente usam a rede, e parte disso acontece automaticamente, e não apenas quando você pede: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio de verificação da "
+    "text": "O ScannerCam Light foi criado para manter os documentos privados. Seus documentos digitalizados, o texto reconhecido a partir deles e tudo o que deles deriva ficam no seu aparelho e nunca são enviados para lugar nenhum. Alguns recursos opcionais realmente usam a rede, e parte disso acontece automaticamente, e não apenas quando você pede: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio de verificação da "
    },
    {
     "type": "bold",
@@ -7476,7 +7476,7 @@
   ]
  },
  {
-  "input": "A principal exceção é o feedback enviado voluntariamente pelo formulário de feedback dentro do aplicativo. Esse envio se baseia no seu **consentimento** como base legal: sua mensagem, e-mail e diagnósticos são enviados quando você toca em Enviar. As solicitações que o recurso de feedback faz antes disso — descritas na seção Feedback acima — são automáticas e não dependem desse consentimento, e uma delas revela o endereço IP do seu aparelho à Cloudflare quando o formulário é aberto. Um issue de feedback enviado se torna um issue público no GitHub; sua remoção pode ser solicitada escrevendo para o e-mail de suporte abaixo, embora nenhum prazo seja prometido e, a essa altura, o issue talvez já tenha sido copiado, armazenado em cache ou indexado em outro lugar, o que o desenvolvedor do ScannerCam Light não tem como desfazer.",
+  "input": "A principal exceção é o feedback enviado voluntariamente pelo formulário de feedback dentro do aplicativo. Esse envio se baseia no seu **consentimento** como base legal: sua mensagem, e-mail e diagnósticos são enviados quando você toca em Enviar. As solicitações que o recurso de feedback faz antes disso — descritas na seção Feedback acima — são automáticas e não dependem desse consentimento, e uma delas revela o endereço IP do seu aparelho à Cloudflare quando o formulário é aberto. Um issue de feedback enviado se torna um issue público no GitHub; sua remoção pode ser solicitada escrevendo para o e-mail de suporte abaixo, embora nenhum prazo seja prometido e, a essa altura, o issue talvez já tenha sido copiado, armazenado em cache ou indexado em outro lugar, o que o desenvolvedor do ScannerCam Light não tem como desfazer. Quando a lei aplicável a você exigir uma resposta dentro de um prazo determinado, essa exigência vale independentemente de tudo o que foi dito acima.",
   "tokens": [
    {
     "type": "text",
@@ -7488,7 +7488,7 @@
    },
    {
     "type": "text",
-    "text": " como base legal: sua mensagem, e-mail e diagnósticos são enviados quando você toca em Enviar. As solicitações que o recurso de feedback faz antes disso — descritas na seção Feedback acima — são automáticas e não dependem desse consentimento, e uma delas revela o endereço IP do seu aparelho à Cloudflare quando o formulário é aberto. Um issue de feedback enviado se torna um issue público no GitHub; sua remoção pode ser solicitada escrevendo para o e-mail de suporte abaixo, embora nenhum prazo seja prometido e, a essa altura, o issue talvez já tenha sido copiado, armazenado em cache ou indexado em outro lugar, o que o desenvolvedor do ScannerCam Light não tem como desfazer."
+    "text": " como base legal: sua mensagem, e-mail e diagnósticos são enviados quando você toca em Enviar. As solicitações que o recurso de feedback faz antes disso — descritas na seção Feedback acima — são automáticas e não dependem desse consentimento, e uma delas revela o endereço IP do seu aparelho à Cloudflare quando o formulário é aberto. Um issue de feedback enviado se torna um issue público no GitHub; sua remoção pode ser solicitada escrevendo para o e-mail de suporte abaixo, embora nenhum prazo seja prometido e, a essa altura, o issue talvez já tenha sido copiado, armazenado em cache ou indexado em outro lugar, o que o desenvolvedor do ScannerCam Light não tem como desfazer. Quando a lei aplicável a você exigir uma resposta dentro de um prazo determinado, essa exigência vale independentemente de tudo o que foi dito acima."
    }
   ]
  },
@@ -7502,7 +7502,7 @@
   ]
  },
  {
-  "input": "O aplicativo não é direcionado a crianças, não tem contas de usuário, não pergunta a idade nem qualquer outro dado pessoal de ninguém, não exibe anúncios, não contém SDKs de análise ou rastreamento e nunca envia um documento digitalizado para lugar nenhum. Ele não é, porém, silencioso na rede: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio **Cloudflare Turnstile** que revela o endereço IP do aparelho à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar coisa alguma. Isso vale para usuários de qualquer idade, e é tudo o que acontece sem uma ação deliberada.",
+  "input": "O aplicativo não é direcionado a crianças, não tem contas de usuário, não pergunta a idade nem qualquer outro dado pessoal de ninguém, não exibe anúncios, não contém SDKs de análise ou rastreamento e nunca envia um documento digitalizado para lugar nenhum. Ele não é, porém, silencioso na rede: quando o recurso opcional de feedback está disponível, o aplicativo verifica se o serviço de feedback está acessível quando a tela da biblioteca é aberta, e abrir o formulário de feedback carrega um desafio **Cloudflare Turnstile** que revela o endereço IP do aparelho à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar coisa alguma. No iOS, abrir a tela de suporte também pede à App Store as opções de gorjeta disponíveis, novamente sem nenhuma ação deliberada. Tudo isso vale para usuários de qualquer idade; a seção Acesso à rede acima lista todos os casos.",
   "tokens": [
    {
     "type": "text",
@@ -7514,7 +7514,7 @@
    },
    {
     "type": "text",
-    "text": " que revela o endereço IP do aparelho à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar coisa alguma. Isso vale para usuários de qualquer idade, e é tudo o que acontece sem uma ação deliberada."
+    "text": " que revela o endereço IP do aparelho à Cloudflare — ambos automaticamente, sem que ninguém escolha enviar coisa alguma. No iOS, abrir a tela de suporte também pede à App Store as opções de gorjeta disponíveis, novamente sem nenhuma ação deliberada. Tudo isso vale para usuários de qualquer idade; a seção Acesso à rede acima lista todos os casos."
    }
   ]
  },
@@ -7956,7 +7956,7 @@
   ]
  },
  {
-  "input": "La principal excepción son los comentarios enviados voluntariamente a través del formulario de comentarios dentro de la aplicación. Ese envío se basa en su **consentimiento** como base legal: su mensaje, correo electrónico y diagnósticos se envían cuando pulsa Enviar. Las solicitudes que la función de comentarios realiza antes de eso — descritas en la sección Comentarios anterior — son automáticas y no dependen de ese consentimiento, y una de ellas revela la dirección IP de su dispositivo a Cloudflare cuando se abre el formulario. Un incidente de comentarios enviado se convierte en un incidente público de GitHub; su eliminación puede solicitarse escribiendo al correo de soporte que figura abajo, aunque no se promete ningún plazo y, para entonces, el incidente puede haber sido ya copiado, almacenado en caché o indexado en otros lugares, algo que el desarrollador de ScannerCam Light no tiene forma de deshacer.",
+  "input": "La principal excepción son los comentarios enviados voluntariamente a través del formulario de comentarios dentro de la aplicación. Ese envío se basa en su **consentimiento** como base legal: su mensaje, correo electrónico y diagnósticos se envían cuando pulsa Enviar. Las solicitudes que la función de comentarios realiza antes de eso — descritas en la sección Comentarios anterior — son automáticas y no dependen de ese consentimiento, y una de ellas revela la dirección IP de su dispositivo a Cloudflare cuando se abre el formulario. Un incidente de comentarios enviado se convierte en un incidente público de GitHub; su eliminación puede solicitarse escribiendo al correo de soporte que figura abajo, aunque no se promete ningún plazo y, para entonces, el incidente puede haber sido ya copiado, almacenado en caché o indexado en otros lugares, algo que el desarrollador de ScannerCam Light no tiene forma de deshacer. Cuando la ley que le resulte aplicable exija una respuesta dentro de un plazo determinado, ese requisito se aplica con independencia de todo lo anterior.",
   "tokens": [
    {
     "type": "text",
@@ -7968,7 +7968,7 @@
    },
    {
     "type": "text",
-    "text": " como base legal: su mensaje, correo electrónico y diagnósticos se envían cuando pulsa Enviar. Las solicitudes que la función de comentarios realiza antes de eso — descritas en la sección Comentarios anterior — son automáticas y no dependen de ese consentimiento, y una de ellas revela la dirección IP de su dispositivo a Cloudflare cuando se abre el formulario. Un incidente de comentarios enviado se convierte en un incidente público de GitHub; su eliminación puede solicitarse escribiendo al correo de soporte que figura abajo, aunque no se promete ningún plazo y, para entonces, el incidente puede haber sido ya copiado, almacenado en caché o indexado en otros lugares, algo que el desarrollador de ScannerCam Light no tiene forma de deshacer."
+    "text": " como base legal: su mensaje, correo electrónico y diagnósticos se envían cuando pulsa Enviar. Las solicitudes que la función de comentarios realiza antes de eso — descritas en la sección Comentarios anterior — son automáticas y no dependen de ese consentimiento, y una de ellas revela la dirección IP de su dispositivo a Cloudflare cuando se abre el formulario. Un incidente de comentarios enviado se convierte en un incidente público de GitHub; su eliminación puede solicitarse escribiendo al correo de soporte que figura abajo, aunque no se promete ningún plazo y, para entonces, el incidente puede haber sido ya copiado, almacenado en caché o indexado en otros lugares, algo que el desarrollador de ScannerCam Light no tiene forma de deshacer. Cuando la ley que le resulte aplicable exija una respuesta dentro de un plazo determinado, ese requisito se aplica con independencia de todo lo anterior."
    }
   ]
  },
@@ -7982,7 +7982,7 @@
   ]
  },
  {
-  "input": "La aplicación no está dirigida a menores, no tiene cuentas de usuario, no pide a nadie su edad ni ningún otro dato personal, no muestra anuncios, no contiene análisis ni SDK de seguimiento, y nunca envía un documento escaneado a ningún sitio. Sin embargo, no está en silencio en la red: cuando la función opcional de comentarios está disponible, la aplicación comprueba si el servicio de comentarios está accesible al abrirse la pantalla de la biblioteca, y abrir el formulario de comentarios carga un desafío **Cloudflare Turnstile** que revela la dirección IP del dispositivo a Cloudflare — ambas cosas automáticamente, sin que nadie elija enviar nada. Esto se aplica a usuarios de cualquier edad, y es todo lo que ocurre sin una acción deliberada.",
+  "input": "La aplicación no está dirigida a menores, no tiene cuentas de usuario, no pide a nadie su edad ni ningún otro dato personal, no muestra anuncios, no contiene análisis ni SDK de seguimiento, y nunca envía un documento escaneado a ningún sitio. Sin embargo, no está en silencio en la red: cuando la función opcional de comentarios está disponible, la aplicación comprueba si el servicio de comentarios está accesible al abrirse la pantalla de la biblioteca, y abrir el formulario de comentarios carga un desafío **Cloudflare Turnstile** que revela la dirección IP del dispositivo a Cloudflare — ambas cosas automáticamente, sin que nadie elija enviar nada. En iOS, abrir la pantalla de soporte también consulta a la App Store las opciones de propina disponibles, de nuevo sin ninguna acción deliberada. Todo esto se aplica a usuarios de cualquier edad; la sección Acceso a la red anterior enumera todos los casos.",
   "tokens": [
    {
     "type": "text",
@@ -7994,7 +7994,7 @@
    },
    {
     "type": "text",
-    "text": " que revela la dirección IP del dispositivo a Cloudflare — ambas cosas automáticamente, sin que nadie elija enviar nada. Esto se aplica a usuarios de cualquier edad, y es todo lo que ocurre sin una acción deliberada."
+    "text": " que revela la dirección IP del dispositivo a Cloudflare — ambas cosas automáticamente, sin que nadie elija enviar nada. En iOS, abrir la pantalla de soporte también consulta a la App Store las opciones de propina disponibles, de nuevo sin ninguna acción deliberada. Todo esto se aplica a usuarios de cualquier edad; la sección Acceso a la red anterior enumera todos los casos."
    }
   ]
  },
@@ -8445,7 +8445,7 @@
   ]
  },
  {
-  "input": "La principale exception concerne les retours volontairement soumis via le formulaire de retour dans l'application. Cette soumission repose sur votre **consentement** comme base légale : votre message, votre e-mail et vos diagnostics sont envoyés lorsque vous appuyez sur Envoyer. Les requêtes que la fonction de retour effectue avant cela — décrites dans la section Retours ci-dessus — sont automatiques et ne dépendent pas de ce consentement, et l'une d'elles divulgue l'adresse IP de votre appareil à Cloudflare lorsque le formulaire s'ouvre. Un retour soumis devient un ticket GitHub public ; sa suppression peut être demandée en écrivant à l'adresse d'assistance ci-dessous, sans qu'aucun délai ne soit promis, et il se peut qu'à ce moment-là le ticket ait déjà été copié, mis en cache ou indexé ailleurs, ce que le développeur de ScannerCam Light n'a aucun moyen d'annuler.",
+  "input": "La principale exception concerne les retours volontairement soumis via le formulaire de retour dans l'application. Cette soumission repose sur votre **consentement** comme base légale : votre message, votre e-mail et vos diagnostics sont envoyés lorsque vous appuyez sur Envoyer. Les requêtes que la fonction de retour effectue avant cela — décrites dans la section Retours ci-dessus — sont automatiques et ne dépendent pas de ce consentement, et l'une d'elles divulgue l'adresse IP de votre appareil à Cloudflare lorsque le formulaire s'ouvre. Un retour soumis devient un ticket GitHub public ; sa suppression peut être demandée en écrivant à l'adresse d'assistance ci-dessous, sans qu'aucun délai ne soit promis, et il se peut qu'à ce moment-là le ticket ait déjà été copié, mis en cache ou indexé ailleurs, ce que le développeur de ScannerCam Light n'a aucun moyen d'annuler. Lorsque la loi qui vous est applicable exige une réponse dans un délai déterminé, cette exigence s'applique indépendamment de tout ce qui précède.",
   "tokens": [
    {
     "type": "text",
@@ -8457,7 +8457,7 @@
    },
    {
     "type": "text",
-    "text": " comme base légale : votre message, votre e-mail et vos diagnostics sont envoyés lorsque vous appuyez sur Envoyer. Les requêtes que la fonction de retour effectue avant cela — décrites dans la section Retours ci-dessus — sont automatiques et ne dépendent pas de ce consentement, et l'une d'elles divulgue l'adresse IP de votre appareil à Cloudflare lorsque le formulaire s'ouvre. Un retour soumis devient un ticket GitHub public ; sa suppression peut être demandée en écrivant à l'adresse d'assistance ci-dessous, sans qu'aucun délai ne soit promis, et il se peut qu'à ce moment-là le ticket ait déjà été copié, mis en cache ou indexé ailleurs, ce que le développeur de ScannerCam Light n'a aucun moyen d'annuler."
+    "text": " comme base légale : votre message, votre e-mail et vos diagnostics sont envoyés lorsque vous appuyez sur Envoyer. Les requêtes que la fonction de retour effectue avant cela — décrites dans la section Retours ci-dessus — sont automatiques et ne dépendent pas de ce consentement, et l'une d'elles divulgue l'adresse IP de votre appareil à Cloudflare lorsque le formulaire s'ouvre. Un retour soumis devient un ticket GitHub public ; sa suppression peut être demandée en écrivant à l'adresse d'assistance ci-dessous, sans qu'aucun délai ne soit promis, et il se peut qu'à ce moment-là le ticket ait déjà été copié, mis en cache ou indexé ailleurs, ce que le développeur de ScannerCam Light n'a aucun moyen d'annuler. Lorsque la loi qui vous est applicable exige une réponse dans un délai déterminé, cette exigence s'applique indépendamment de tout ce qui précède."
    }
   ]
  },
@@ -8471,7 +8471,7 @@
   ]
  },
  {
-  "input": "L'application ne s'adresse pas aux enfants, n'a aucun compte utilisateur, ne demande à personne son âge ni aucune autre donnée personnelle, n'affiche aucune publicité, ne contient aucun SDK d'analyse ou de suivi et n'envoie jamais un document numérisé où que ce soit. Elle n'est pas pour autant silencieuse sur le réseau : lorsque la fonction facultative de retour d'expérience est disponible, l'application vérifie si le service de retour d'expérience est accessible à l'ouverture de l'écran de la bibliothèque, et l'ouverture du formulaire de retour charge un défi **Cloudflare Turnstile** qui divulgue l'adresse IP de l'appareil à Cloudflare — les deux automatiquement, sans que quiconque ait choisi d'envoyer quoi que ce soit. Cela vaut pour les utilisateurs de tout âge, et c'est là tout ce qui se produit sans action délibérée.",
+  "input": "L'application ne s'adresse pas aux enfants, n'a aucun compte utilisateur, ne demande à personne son âge ni aucune autre donnée personnelle, n'affiche aucune publicité, ne contient aucun SDK d'analyse ou de suivi et n'envoie jamais un document numérisé où que ce soit. Elle n'est pas pour autant silencieuse sur le réseau : lorsque la fonction facultative de retour d'expérience est disponible, l'application vérifie si le service de retour d'expérience est accessible à l'ouverture de l'écran de la bibliothèque, et l'ouverture du formulaire de retour charge un défi **Cloudflare Turnstile** qui divulgue l'adresse IP de l'appareil à Cloudflare — les deux automatiquement, sans que quiconque ait choisi d'envoyer quoi que ce soit. Sur iOS, l'ouverture de l'écran d'assistance interroge également l'App Store sur les options de pourboire disponibles, là encore sans aucune action délibérée. Tout cela vaut pour les utilisateurs de tout âge ; la section Accès au réseau ci-dessus énumère chacun de ces cas.",
   "tokens": [
    {
     "type": "text",
@@ -8483,7 +8483,7 @@
    },
    {
     "type": "text",
-    "text": " qui divulgue l'adresse IP de l'appareil à Cloudflare — les deux automatiquement, sans que quiconque ait choisi d'envoyer quoi que ce soit. Cela vaut pour les utilisateurs de tout âge, et c'est là tout ce qui se produit sans action délibérée."
+    "text": " qui divulgue l'adresse IP de l'appareil à Cloudflare — les deux automatiquement, sans que quiconque ait choisi d'envoyer quoi que ce soit. Sur iOS, l'ouverture de l'écran d'assistance interroge également l'App Store sur les options de pourboire disponibles, là encore sans aucune action délibérée. Tout cela vaut pour les utilisateurs de tout âge ; la section Accès au réseau ci-dessus énumère chacun de ces cas."
    }
   ]
  },
@@ -8925,7 +8925,7 @@
   ]
  },
  {
-  "input": "Die wichtigste Ausnahme ist Feedback, das freiwillig über das In-App-Feedback-Formular übermittelt wird. Diese Übermittlung stützt sich auf Ihre **Einwilligung** als Rechtsgrundlage: Ihre Nachricht, E-Mail-Adresse und Diagnosedaten werden gesendet, wenn Sie auf Senden tippen. Die Anfragen, die die Feedback-Funktion bereits davor stellt — im Abschnitt Feedback oben beschrieben —, erfolgen automatisch und sind nicht an diese Einwilligung gebunden, und eine von ihnen offenbart Cloudflare beim Öffnen des Formulars die IP-Adresse Ihres Geräts. Ein übermitteltes Feedback-Issue wird zu einem öffentlichen GitHub-Issue; seine Entfernung kann per E-Mail an die unten stehende Support-Adresse beantragt werden, wobei jedoch keine Frist zugesagt wird und das Issue bis dahin bereits anderswo kopiert, zwischengespeichert oder indexiert worden sein kann, was der Entwickler von ScannerCam Light nicht rückgängig machen kann.",
+  "input": "Die wichtigste Ausnahme ist Feedback, das freiwillig über das In-App-Feedback-Formular übermittelt wird. Diese Übermittlung stützt sich auf Ihre **Einwilligung** als Rechtsgrundlage: Ihre Nachricht, E-Mail-Adresse und Diagnosedaten werden gesendet, wenn Sie auf Senden tippen. Die Anfragen, die die Feedback-Funktion bereits davor stellt — im Abschnitt Feedback oben beschrieben —, erfolgen automatisch und sind nicht an diese Einwilligung gebunden, und eine von ihnen offenbart Cloudflare beim Öffnen des Formulars die IP-Adresse Ihres Geräts. Ein übermitteltes Feedback-Issue wird zu einem öffentlichen GitHub-Issue; seine Entfernung kann per E-Mail an die unten stehende Support-Adresse beantragt werden, wobei jedoch keine Frist zugesagt wird und das Issue bis dahin bereits anderswo kopiert, zwischengespeichert oder indexiert worden sein kann, was der Entwickler von ScannerCam Light nicht rückgängig machen kann. Soweit das für Sie geltende Recht eine Antwort innerhalb einer bestimmten Frist verlangt, gilt diese Pflicht unabhängig von allem oben Gesagten.",
   "tokens": [
    {
     "type": "text",
@@ -8937,7 +8937,7 @@
    },
    {
     "type": "text",
-    "text": " als Rechtsgrundlage: Ihre Nachricht, E-Mail-Adresse und Diagnosedaten werden gesendet, wenn Sie auf Senden tippen. Die Anfragen, die die Feedback-Funktion bereits davor stellt — im Abschnitt Feedback oben beschrieben —, erfolgen automatisch und sind nicht an diese Einwilligung gebunden, und eine von ihnen offenbart Cloudflare beim Öffnen des Formulars die IP-Adresse Ihres Geräts. Ein übermitteltes Feedback-Issue wird zu einem öffentlichen GitHub-Issue; seine Entfernung kann per E-Mail an die unten stehende Support-Adresse beantragt werden, wobei jedoch keine Frist zugesagt wird und das Issue bis dahin bereits anderswo kopiert, zwischengespeichert oder indexiert worden sein kann, was der Entwickler von ScannerCam Light nicht rückgängig machen kann."
+    "text": " als Rechtsgrundlage: Ihre Nachricht, E-Mail-Adresse und Diagnosedaten werden gesendet, wenn Sie auf Senden tippen. Die Anfragen, die die Feedback-Funktion bereits davor stellt — im Abschnitt Feedback oben beschrieben —, erfolgen automatisch und sind nicht an diese Einwilligung gebunden, und eine von ihnen offenbart Cloudflare beim Öffnen des Formulars die IP-Adresse Ihres Geräts. Ein übermitteltes Feedback-Issue wird zu einem öffentlichen GitHub-Issue; seine Entfernung kann per E-Mail an die unten stehende Support-Adresse beantragt werden, wobei jedoch keine Frist zugesagt wird und das Issue bis dahin bereits anderswo kopiert, zwischengespeichert oder indexiert worden sein kann, was der Entwickler von ScannerCam Light nicht rückgängig machen kann. Soweit das für Sie geltende Recht eine Antwort innerhalb einer bestimmten Frist verlangt, gilt diese Pflicht unabhängig von allem oben Gesagten."
    }
   ]
  },
@@ -8951,7 +8951,7 @@
   ]
  },
  {
-  "input": "Die App richtet sich nicht an Kinder, hat keine Benutzerkonten, fragt niemanden nach dem Alter oder anderen persönlichen Angaben, zeigt keine Werbung, enthält keine Analyse- oder Tracking-SDKs und sendet niemals ein gescanntes Dokument irgendwohin. Im Netzwerk ist sie allerdings nicht völlig stumm: Dort, wo die optionale Feedback-Funktion verfügbar ist, prüft die App beim Öffnen des Bibliotheksbildschirms, ob der Feedback-Dienst erreichbar ist, und das Öffnen des Feedback-Formulars lädt eine **Cloudflare-Turnstile**-Prüfung, die Cloudflare die IP-Adresse des Geräts offenlegt — beides automatisch, ohne dass sich jemand dafür entschieden hätte, etwas zu senden. Das gilt für Nutzer jeden Alters und ist alles, was ohne eine bewusste Handlung geschieht.",
+  "input": "Die App richtet sich nicht an Kinder, hat keine Benutzerkonten, fragt niemanden nach dem Alter oder anderen persönlichen Angaben, zeigt keine Werbung, enthält keine Analyse- oder Tracking-SDKs und sendet niemals ein gescanntes Dokument irgendwohin. Im Netzwerk ist sie allerdings nicht völlig stumm: Dort, wo die optionale Feedback-Funktion verfügbar ist, prüft die App beim Öffnen des Bibliotheksbildschirms, ob der Feedback-Dienst erreichbar ist, und das Öffnen des Feedback-Formulars lädt eine **Cloudflare-Turnstile**-Prüfung, die Cloudflare die IP-Adresse des Geräts offenlegt — beides automatisch, ohne dass sich jemand dafür entschieden hätte, etwas zu senden. Unter iOS fragt das Öffnen des Support-Bildschirms außerdem den App Store nach den verfügbaren Trinkgeld-Optionen ab, ebenfalls ohne eine bewusste Handlung. All das gilt für Nutzer jeden Alters; der Abschnitt Netzwerkzugriff oben führt jeden einzelnen Fall auf.",
   "tokens": [
    {
     "type": "text",
@@ -8963,7 +8963,7 @@
    },
    {
     "type": "text",
-    "text": "-Prüfung, die Cloudflare die IP-Adresse des Geräts offenlegt — beides automatisch, ohne dass sich jemand dafür entschieden hätte, etwas zu senden. Das gilt für Nutzer jeden Alters und ist alles, was ohne eine bewusste Handlung geschieht."
+    "text": "-Prüfung, die Cloudflare die IP-Adresse des Geräts offenlegt — beides automatisch, ohne dass sich jemand dafür entschieden hätte, etwas zu senden. Unter iOS fragt das Öffnen des Support-Bildschirms außerdem den App Store nach den verfügbaren Trinkgeld-Optionen ab, ebenfalls ohne eine bewusste Handlung. All das gilt für Nutzer jeden Alters; der Abschnitt Netzwerkzugriff oben führt jeden einzelnen Fall auf."
    }
   ]
  },
@@ -9405,7 +9405,7 @@
   ]
  },
  {
-  "input": "Déi wichtegst Ausnam ass Feedback, dat fräiwëlleg iwwer de Feedback-Formulaire an der App geschéckt gëtt. Dëst Schécken baséiert op Ärer **Zoustëmmung** als rechtlecher Basis: Är Noriicht, E-Mail an Diagnosdaten ginn geschéckt, wann Dir op Ofschécken klickt. D'Ufroen, déi d'Feedback-Funktioun scho virdrun mécht — beschriwwen an der Feedback-Sektioun hei uewen —, geschéien automatesch a si net un dës Zoustëmmung gebonnen, an eng dovu gëtt d'IP-Adress vun Ärem Apparat un Cloudflare weider, wann de Formulaire opgeet. En agereechte Feedback-Issue gëtt en ëffentlechen GitHub-Issue; seng Läschung kann ugefrot ginn, andeems Dir un déi Support-E-Mail hei drënner schreift, woubäi awer keng Frist zougesot gëtt an den Issue bis dohinner scho konnt anzwousch anescht kopéiert, gecachet oder indexéiert ginn sinn, wat den Entwéckler vu ScannerCam Light net méi réckgängeg maache kann.",
+  "input": "Déi wichtegst Ausnam ass Feedback, dat fräiwëlleg iwwer de Feedback-Formulaire an der App geschéckt gëtt. Dëst Schécken baséiert op Ärer **Zoustëmmung** als rechtlecher Basis: Är Noriicht, E-Mail an Diagnosdaten ginn geschéckt, wann Dir op Ofschécken klickt. D'Ufroen, déi d'Feedback-Funktioun scho virdrun mécht — beschriwwen an der Feedback-Sektioun hei uewen —, geschéien automatesch a si net un dës Zoustëmmung gebonnen, an eng dovu gëtt d'IP-Adress vun Ärem Apparat un Cloudflare weider, wann de Formulaire opgeet. En agereechte Feedback-Issue gëtt en ëffentlechen GitHub-Issue; seng Läschung kann ugefrot ginn, andeems Dir un déi Support-E-Mail hei drënner schreift, woubäi awer keng Frist zougesot gëtt an den Issue bis dohinner scho konnt anzwousch anescht kopéiert, gecachet oder indexéiert ginn sinn, wat den Entwéckler vu ScannerCam Light net méi réckgängeg maache kann. Wou d'Gesetz, dat fir Iech gëllt, eng Äntwert bannent enger festgeluechter Frist verlaangt, gëllt dës Flicht onofhängeg vun allem, wat hei uewen steet.",
   "tokens": [
    {
     "type": "text",
@@ -9417,7 +9417,7 @@
    },
    {
     "type": "text",
-    "text": " als rechtlecher Basis: Är Noriicht, E-Mail an Diagnosdaten ginn geschéckt, wann Dir op Ofschécken klickt. D'Ufroen, déi d'Feedback-Funktioun scho virdrun mécht — beschriwwen an der Feedback-Sektioun hei uewen —, geschéien automatesch a si net un dës Zoustëmmung gebonnen, an eng dovu gëtt d'IP-Adress vun Ärem Apparat un Cloudflare weider, wann de Formulaire opgeet. En agereechte Feedback-Issue gëtt en ëffentlechen GitHub-Issue; seng Läschung kann ugefrot ginn, andeems Dir un déi Support-E-Mail hei drënner schreift, woubäi awer keng Frist zougesot gëtt an den Issue bis dohinner scho konnt anzwousch anescht kopéiert, gecachet oder indexéiert ginn sinn, wat den Entwéckler vu ScannerCam Light net méi réckgängeg maache kann."
+    "text": " als rechtlecher Basis: Är Noriicht, E-Mail an Diagnosdaten ginn geschéckt, wann Dir op Ofschécken klickt. D'Ufroen, déi d'Feedback-Funktioun scho virdrun mécht — beschriwwen an der Feedback-Sektioun hei uewen —, geschéien automatesch a si net un dës Zoustëmmung gebonnen, an eng dovu gëtt d'IP-Adress vun Ärem Apparat un Cloudflare weider, wann de Formulaire opgeet. En agereechte Feedback-Issue gëtt en ëffentlechen GitHub-Issue; seng Läschung kann ugefrot ginn, andeems Dir un déi Support-E-Mail hei drënner schreift, woubäi awer keng Frist zougesot gëtt an den Issue bis dohinner scho konnt anzwousch anescht kopéiert, gecachet oder indexéiert ginn sinn, wat den Entwéckler vu ScannerCam Light net méi réckgängeg maache kann. Wou d'Gesetz, dat fir Iech gëllt, eng Äntwert bannent enger festgeluechter Frist verlaangt, gëllt dës Flicht onofhängeg vun allem, wat hei uewen steet."
    }
   ]
  },
@@ -9431,7 +9431,7 @@
   ]
  },
  {
-  "input": "D'App riicht sech net u Kanner, huet keng Benotzerkonten, freet keen no sengem Alter oder aneren perséinlechen Detailer, weist keng Reklamm, enthält keng Analyse- oder Tracking-SDKen a schéckt ni en agescannten Dokument iergendwouhin. Am Netzwierk ass si awer net ganz roueg: do wou déi optional Feedback-Funktioun disponibel ass, kontrolléiert d'App beim Opmaache vum Bibliothéik-Écran, ob de Feedback-Service erreechbar ass, an d'Opmaache vum Feedback-Formulaire lued eng **Cloudflare-Turnstile**-Verifikatioun, wouduerch Cloudflare d'IP-Adress vum Apparat kritt — béides automatesch, ouni datt iergendeen entscheet hätt, eppes ze schécken. Dat gëllt fir Benotzer vun all Alter, an dat ass alles, wat ouni eng bewosst Handlung geschitt.",
+  "input": "D'App riicht sech net u Kanner, huet keng Benotzerkonten, freet keen no sengem Alter oder aneren perséinlechen Detailer, weist keng Reklamm, enthält keng Analyse- oder Tracking-SDKen a schéckt ni en agescannten Dokument iergendwouhin. Am Netzwierk ass si awer net ganz roueg: do wou déi optional Feedback-Funktioun disponibel ass, kontrolléiert d'App beim Opmaache vum Bibliothéik-Écran, ob de Feedback-Service erreechbar ass, an d'Opmaache vum Feedback-Formulaire lued eng **Cloudflare-Turnstile**-Verifikatioun, wouduerch Cloudflare d'IP-Adress vum Apparat kritt — béides automatesch, ouni datt iergendeen entscheet hätt, eppes ze schécken. Op iOS freet d'Opmaache vum Support-Écran ausserdeem den App Store no de verfügbaren Drénkgeld-Optiounen, och dat ouni eng bewosst Handlung. Dat alles gëllt fir Benotzer vun all Alter; d'Sektioun Netzwierkzougrëff hei uewen zielt all eenzele Fall op.",
   "tokens": [
    {
     "type": "text",
@@ -9443,7 +9443,7 @@
    },
    {
     "type": "text",
-    "text": "-Verifikatioun, wouduerch Cloudflare d'IP-Adress vum Apparat kritt — béides automatesch, ouni datt iergendeen entscheet hätt, eppes ze schécken. Dat gëllt fir Benotzer vun all Alter, an dat ass alles, wat ouni eng bewosst Handlung geschitt."
+    "text": "-Verifikatioun, wouduerch Cloudflare d'IP-Adress vum Apparat kritt — béides automatesch, ouni datt iergendeen entscheet hätt, eppes ze schécken. Op iOS freet d'Opmaache vum Support-Écran ausserdeem den App Store no de verfügbaren Drénkgeld-Optiounen, och dat ouni eng bewosst Handlung. Dat alles gëllt fir Benotzer vun all Alter; d'Sektioun Netzwierkzougrëff hei uewen zielt all eenzele Fall op."
    }
   ]
  },
@@ -9890,7 +9890,7 @@
   ]
  },
  {
-  "input": "Başlıca istisna, uygulama içi geri bildirim formu aracılığıyla gönüllü olarak gönderilen geri bildirimdir. Bu gönderim, yasal dayanağı olarak **onayınıza** dayanır: mesajınız, e-postanız ve tanılama verileriniz Gönder'e dokunduğunuzda gönderilir. Geri bildirim özelliğinin bundan önce yaptığı istekler — yukarıdaki Geri Bildirim bölümünde açıklananlar — otomatiktir ve bu onaya bağlı değildir; bunlardan biri, form açıldığında cihazınızın IP adresini Cloudflare'e açıklar. Gönderilen bir geri bildirim, herkese açık bir GitHub issue'suna dönüşür; kaldırılması aşağıdaki destek e-postasına yazılarak talep edilebilir, ancak herhangi bir süre taahhüt edilmez ve o zamana kadar issue başka yerlerde çoktan kopyalanmış, önbelleğe alınmış veya dizine eklenmiş olabilir; ScannerCam Light geliştiricisinin bunu geri almasının hiçbir yolu yoktur.",
+  "input": "Başlıca istisna, uygulama içi geri bildirim formu aracılığıyla gönüllü olarak gönderilen geri bildirimdir. Bu gönderim, yasal dayanağı olarak **onayınıza** dayanır: mesajınız, e-postanız ve tanılama verileriniz Gönder'e dokunduğunuzda gönderilir. Geri bildirim özelliğinin bundan önce yaptığı istekler — yukarıdaki Geri Bildirim bölümünde açıklananlar — otomatiktir ve bu onaya bağlı değildir; bunlardan biri, form açıldığında cihazınızın IP adresini Cloudflare'e açıklar. Gönderilen bir geri bildirim, herkese açık bir GitHub issue'suna dönüşür; kaldırılması aşağıdaki destek e-postasına yazılarak talep edilebilir, ancak herhangi bir süre taahhüt edilmez ve o zamana kadar issue başka yerlerde çoktan kopyalanmış, önbelleğe alınmış veya dizine eklenmiş olabilir; ScannerCam Light geliştiricisinin bunu geri almasının hiçbir yolu yoktur. Size uygulanan yasa belirli bir süre içinde yanıt verilmesini zorunlu kılıyorsa, bu zorunluluk yukarıda yazılanlardan bağımsız olarak geçerlidir.",
   "tokens": [
    {
     "type": "text",
@@ -9902,7 +9902,7 @@
    },
    {
     "type": "text",
-    "text": " dayanır: mesajınız, e-postanız ve tanılama verileriniz Gönder'e dokunduğunuzda gönderilir. Geri bildirim özelliğinin bundan önce yaptığı istekler — yukarıdaki Geri Bildirim bölümünde açıklananlar — otomatiktir ve bu onaya bağlı değildir; bunlardan biri, form açıldığında cihazınızın IP adresini Cloudflare'e açıklar. Gönderilen bir geri bildirim, herkese açık bir GitHub issue'suna dönüşür; kaldırılması aşağıdaki destek e-postasına yazılarak talep edilebilir, ancak herhangi bir süre taahhüt edilmez ve o zamana kadar issue başka yerlerde çoktan kopyalanmış, önbelleğe alınmış veya dizine eklenmiş olabilir; ScannerCam Light geliştiricisinin bunu geri almasının hiçbir yolu yoktur."
+    "text": " dayanır: mesajınız, e-postanız ve tanılama verileriniz Gönder'e dokunduğunuzda gönderilir. Geri bildirim özelliğinin bundan önce yaptığı istekler — yukarıdaki Geri Bildirim bölümünde açıklananlar — otomatiktir ve bu onaya bağlı değildir; bunlardan biri, form açıldığında cihazınızın IP adresini Cloudflare'e açıklar. Gönderilen bir geri bildirim, herkese açık bir GitHub issue'suna dönüşür; kaldırılması aşağıdaki destek e-postasına yazılarak talep edilebilir, ancak herhangi bir süre taahhüt edilmez ve o zamana kadar issue başka yerlerde çoktan kopyalanmış, önbelleğe alınmış veya dizine eklenmiş olabilir; ScannerCam Light geliştiricisinin bunu geri almasının hiçbir yolu yoktur. Size uygulanan yasa belirli bir süre içinde yanıt verilmesini zorunlu kılıyorsa, bu zorunluluk yukarıda yazılanlardan bağımsız olarak geçerlidir."
    }
   ]
  },
@@ -9916,7 +9916,7 @@
   ]
  },
  {
-  "input": "Uygulama çocuklara yönelik değildir, kullanıcı hesabı yoktur, kimseden yaşını veya başka bir kişisel bilgisini istemez, reklam göstermez, analiz veya izleme SDK'sı içermez ve taranan bir belgeyi asla hiçbir yere göndermez. Bununla birlikte ağ üzerinde tamamen sessiz de değildir: isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, uygulama kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığını kontrol eder; geri bildirim formunun açılması ise cihazın IP adresini Cloudflare'e açıklayan bir **Cloudflare Turnstile** testi yükler — her ikisi de otomatik olarak, hiç kimse bir şey göndermeyi seçmeden gerçekleşir. Bu, her yaştan kullanıcı için geçerlidir ve bilinçli bir eylem olmaksızın gerçekleşen her şey bundan ibarettir.",
+  "input": "Uygulama çocuklara yönelik değildir, kullanıcı hesabı yoktur, kimseden yaşını veya başka bir kişisel bilgisini istemez, reklam göstermez, analiz veya izleme SDK'sı içermez ve taranan bir belgeyi asla hiçbir yere göndermez. Bununla birlikte ağ üzerinde tamamen sessiz de değildir: isteğe bağlı geri bildirim özelliğinin kullanılabilir olduğu durumlarda, uygulama kitaplık ekranı açıldığında geri bildirim hizmetinin erişilebilir olup olmadığını kontrol eder; geri bildirim formunun açılması ise cihazın IP adresini Cloudflare'e açıklayan bir **Cloudflare Turnstile** testi yükler — her ikisi de otomatik olarak, hiç kimse bir şey göndermeyi seçmeden gerçekleşir. iOS'ta ayrıca destek ekranının açılması, yine bilinçli herhangi bir eylem olmaksızın, App Store'dan mevcut bahşiş seçeneklerini ister. Bunların tümü her yaştan kullanıcı için geçerlidir; ilgili durumların tamamı yukarıdaki Ağ erişimi bölümünde listelenmiştir.",
   "tokens": [
    {
     "type": "text",
@@ -9928,7 +9928,7 @@
    },
    {
     "type": "text",
-    "text": " testi yükler — her ikisi de otomatik olarak, hiç kimse bir şey göndermeyi seçmeden gerçekleşir. Bu, her yaştan kullanıcı için geçerlidir ve bilinçli bir eylem olmaksızın gerçekleşen her şey bundan ibarettir."
+    "text": " testi yükler — her ikisi de otomatik olarak, hiç kimse bir şey göndermeyi seçmeden gerçekleşir. iOS'ta ayrıca destek ekranının açılması, yine bilinçli herhangi bir eylem olmaksızın, App Store'dan mevcut bahşiş seçeneklerini ister. Bunların tümü her yaştan kullanıcı için geçerlidir; ilgili durumların tamamı yukarıdaki Ağ erişimi bölümünde listelenmiştir."
    }
   ]
  },
@@ -10379,7 +10379,7 @@
   ]
  },
  {
-  "input": "Основное исключение — обратная связь, добровольно отправленная через форму обратной связи в приложении. Такая отправка опирается на ваше **согласие** как на правовое основание: ваше сообщение, email и диагностические данные отправляются, когда вы нажимаете «Отправить». Запросы, которые функция обратной связи выполняет до этого и которые описаны в разделе «Обратная связь» выше, происходят автоматически и от этого согласия не зависят, а один из них раскрывает IP-адрес вашего устройства сервису Cloudflare в момент открытия формы. Отправленная обратная связь становится публичным issue на GitHub; его удаление можно запросить, написав на адрес поддержки, указанный ниже, однако никакие сроки не гарантируются, и к этому моменту issue уже может быть скопирован, сохранён в кэше или проиндексирован в других местах, что разработчик ScannerCam Light никак не может отменить.",
+  "input": "Основное исключение — обратная связь, добровольно отправленная через форму обратной связи в приложении. Такая отправка опирается на ваше **согласие** как на правовое основание: ваше сообщение, email и диагностические данные отправляются, когда вы нажимаете «Отправить». Запросы, которые функция обратной связи выполняет до этого и которые описаны в разделе «Обратная связь» выше, происходят автоматически и от этого согласия не зависят, а один из них раскрывает IP-адрес вашего устройства сервису Cloudflare в момент открытия формы. Отправленная обратная связь становится публичным issue на GitHub; его удаление можно запросить, написав на адрес поддержки, указанный ниже, однако никакие сроки не гарантируются, и к этому моменту issue уже может быть скопирован, сохранён в кэше или проиндексирован в других местах, что разработчик ScannerCam Light никак не может отменить. Если применимое к вам законодательство требует ответа в течение определённого срока, это требование действует независимо от всего сказанного выше.",
   "tokens": [
    {
     "type": "text",
@@ -10391,7 +10391,7 @@
    },
    {
     "type": "text",
-    "text": " как на правовое основание: ваше сообщение, email и диагностические данные отправляются, когда вы нажимаете «Отправить». Запросы, которые функция обратной связи выполняет до этого и которые описаны в разделе «Обратная связь» выше, происходят автоматически и от этого согласия не зависят, а один из них раскрывает IP-адрес вашего устройства сервису Cloudflare в момент открытия формы. Отправленная обратная связь становится публичным issue на GitHub; его удаление можно запросить, написав на адрес поддержки, указанный ниже, однако никакие сроки не гарантируются, и к этому моменту issue уже может быть скопирован, сохранён в кэше или проиндексирован в других местах, что разработчик ScannerCam Light никак не может отменить."
+    "text": " как на правовое основание: ваше сообщение, email и диагностические данные отправляются, когда вы нажимаете «Отправить». Запросы, которые функция обратной связи выполняет до этого и которые описаны в разделе «Обратная связь» выше, происходят автоматически и от этого согласия не зависят, а один из них раскрывает IP-адрес вашего устройства сервису Cloudflare в момент открытия формы. Отправленная обратная связь становится публичным issue на GitHub; его удаление можно запросить, написав на адрес поддержки, указанный ниже, однако никакие сроки не гарантируются, и к этому моменту issue уже может быть скопирован, сохранён в кэше или проиндексирован в других местах, что разработчик ScannerCam Light никак не может отменить. Если применимое к вам законодательство требует ответа в течение определённого срока, это требование действует независимо от всего сказанного выше."
    }
   ]
  },
@@ -10405,7 +10405,7 @@
   ]
  },
  {
-  "input": "Приложение не предназначено для детей, в нём нет учётных записей, оно ни у кого не спрашивает возраст или иные личные сведения, не показывает рекламы, не содержит SDK аналитики или отслеживания и никогда никуда не отправляет отсканированные документы. При этом в сети оно не молчит полностью: там, где доступна необязательная функция обратной связи, приложение проверяет доступность сервиса обратной связи при открытии экрана библиотеки, а открытие формы обратной связи загружает проверку **Cloudflare Turnstile**, которая раскрывает IP-адрес устройства сервису Cloudflare, — и то и другое автоматически, без чьего-либо решения что-либо отправить. Это относится к пользователям любого возраста и составляет всё, что происходит без намеренного действия.",
+  "input": "Приложение не предназначено для детей, в нём нет учётных записей, оно ни у кого не спрашивает возраст или иные личные сведения, не показывает рекламы, не содержит SDK аналитики или отслеживания и никогда никуда не отправляет отсканированные документы. При этом в сети оно не молчит полностью: там, где доступна необязательная функция обратной связи, приложение проверяет доступность сервиса обратной связи при открытии экрана библиотеки, а открытие формы обратной связи загружает проверку **Cloudflare Turnstile**, которая раскрывает IP-адрес устройства сервису Cloudflare, — и то и другое автоматически, без чьего-либо решения что-либо отправить. На iOS открытие экрана поддержки, опять же без каких-либо намеренных действий, дополнительно запрашивает у App Store доступные варианты чаевых. Всё это относится к пользователям любого возраста; все такие случаи перечислены в разделе «Доступ к сети» выше.",
   "tokens": [
    {
     "type": "text",
@@ -10417,7 +10417,7 @@
    },
    {
     "type": "text",
-    "text": ", которая раскрывает IP-адрес устройства сервису Cloudflare, — и то и другое автоматически, без чьего-либо решения что-либо отправить. Это относится к пользователям любого возраста и составляет всё, что происходит без намеренного действия."
+    "text": ", которая раскрывает IP-адрес устройства сервису Cloudflare, — и то и другое автоматически, без чьего-либо решения что-либо отправить. На iOS открытие экрана поддержки, опять же без каких-либо намеренных действий, дополнительно запрашивает у App Store доступные варианты чаевых. Всё это относится к пользователям любого возраста; все такие случаи перечислены в разделе «Доступ к сети» выше."
    }
   ]
  },
@@ -10868,7 +10868,7 @@
   ]
  },
  {
-  "input": "主要的例外是通过应用内反馈表单自愿提交的反馈。该提交以您的**同意**作为法律依据：您的消息、邮箱和诊断信息会在您点按“提交”时被发送。而反馈功能在此之前发出的那些请求——见上文“反馈”部分——是自动发生的，并不以该同意为前提，其中一个请求还会在表单打开时向 Cloudflare 披露您设备的 IP 地址。已提交的反馈 issue 会成为一个公开的 GitHub issue；可以通过写信至下方的支持邮箱申请将其移除，但不承诺任何处理时限，而且到那时该 issue 可能已被他处复制、缓存或收录，对此 ScannerCam Light 的开发者无从撤销。",
+  "input": "主要的例外是通过应用内反馈表单自愿提交的反馈。该提交以您的**同意**作为法律依据：您的消息、邮箱和诊断信息会在您点按“提交”时被发送。而反馈功能在此之前发出的那些请求——见上文“反馈”部分——是自动发生的，并不以该同意为前提，其中一个请求还会在表单打开时向 Cloudflare 披露您设备的 IP 地址。已提交的反馈 issue 会成为一个公开的 GitHub issue；可以通过写信至下方的支持邮箱申请将其移除，但不承诺任何处理时限，而且到那时该 issue 可能已被他处复制、缓存或收录，对此 ScannerCam Light 的开发者无从撤销。若适用于您的法律要求在规定期限内作出答复，则无论上文有何表述，该要求均须遵守。",
   "tokens": [
    {
     "type": "text",
@@ -10880,7 +10880,7 @@
    },
    {
     "type": "text",
-    "text": "作为法律依据：您的消息、邮箱和诊断信息会在您点按“提交”时被发送。而反馈功能在此之前发出的那些请求——见上文“反馈”部分——是自动发生的，并不以该同意为前提，其中一个请求还会在表单打开时向 Cloudflare 披露您设备的 IP 地址。已提交的反馈 issue 会成为一个公开的 GitHub issue；可以通过写信至下方的支持邮箱申请将其移除，但不承诺任何处理时限，而且到那时该 issue 可能已被他处复制、缓存或收录，对此 ScannerCam Light 的开发者无从撤销。"
+    "text": "作为法律依据：您的消息、邮箱和诊断信息会在您点按“提交”时被发送。而反馈功能在此之前发出的那些请求——见上文“反馈”部分——是自动发生的，并不以该同意为前提，其中一个请求还会在表单打开时向 Cloudflare 披露您设备的 IP 地址。已提交的反馈 issue 会成为一个公开的 GitHub issue；可以通过写信至下方的支持邮箱申请将其移除，但不承诺任何处理时限，而且到那时该 issue 可能已被他处复制、缓存或收录，对此 ScannerCam Light 的开发者无从撤销。若适用于您的法律要求在规定期限内作出答复，则无论上文有何表述，该要求均须遵守。"
    }
   ]
  },
@@ -10894,7 +10894,7 @@
   ]
  },
  {
-  "input": "本应用并非面向儿童，没有用户账户，不会询问任何人的年龄或其他个人信息，不显示广告，不包含任何数据分析或跟踪 SDK，也绝不会将扫描的文档发送到任何地方。不过，它在网络上并非完全静默：在提供可选反馈功能的情况下，资料库页面打开时，应用就会检查反馈服务是否可访问；而打开反馈表单会加载一个 **Cloudflare Turnstile** 质询，该质询会向 Cloudflare 披露设备的 IP 地址——这两件事都是自动发生的，无需任何人选择发送任何内容。这适用于任何年龄段的用户，并且就是在没有刻意操作的情况下所发生的全部内容。",
+  "input": "本应用并非面向儿童，没有用户账户，不会询问任何人的年龄或其他个人信息，不显示广告，不包含任何数据分析或跟踪 SDK，也绝不会将扫描的文档发送到任何地方。不过，它在网络上并非完全静默：在提供可选反馈功能的情况下，资料库页面打开时，应用就会检查反馈服务是否可访问；而打开反馈表单会加载一个 **Cloudflare Turnstile** 质询，该质询会向 Cloudflare 披露设备的 IP 地址——这两件事都是自动发生的，无需任何人选择发送任何内容。在 iOS 上，打开支持页面时，应用还会向 App Store 查询可用的打赏选项，同样无需任何刻意操作。以上内容适用于任何年龄段的用户；上文“网络访问”部分列出了所有这些情形。",
   "tokens": [
    {
     "type": "text",
@@ -10906,7 +10906,7 @@
    },
    {
     "type": "text",
-    "text": " 质询，该质询会向 Cloudflare 披露设备的 IP 地址——这两件事都是自动发生的，无需任何人选择发送任何内容。这适用于任何年龄段的用户，并且就是在没有刻意操作的情况下所发生的全部内容。"
+    "text": " 质询，该质询会向 Cloudflare 披露设备的 IP 地址——这两件事都是自动发生的，无需任何人选择发送任何内容。在 iOS 上，打开支持页面时，应用还会向 App Store 查询可用的打赏选项，同样无需任何刻意操作。以上内容适用于任何年龄段的用户；上文“网络访问”部分列出了所有这些情形。"
    }
   ]
  },
@@ -11357,7 +11357,7 @@
   ]
  },
  {
-  "input": "والاستثناء الرئيسي هو الملاحظات المُرسَلة طواعيةً عبر نموذج الملاحظات داخل التطبيق. يستند هذا الإرسال إلى **موافقتك** بوصفها الأساس القانوني له: تُرسل رسالتك وبريدك الإلكتروني وبياناتك التشخيصية عند الضغط على إرسال. أما الطلبات التي تجريها ميزة الملاحظات قبل ذلك — والموضحة في قسم «الملاحظات» أعلاه — فهي تلقائية ولا ترتبط بتلك الموافقة، ويكشف أحدها عنوان IP الخاص بجهازك لشركة Cloudflare عند فتح النموذج. ويصبح بلاغ الملاحظات المُرسَل بلاغ GitHub علنيًا؛ ويمكن طلب إزالته بالكتابة إلى بريد الدعم أدناه، وإن كان لا يوجد وعد بأي مهلة زمنية، وقد يكون البلاغ بحلول ذلك الوقت قد نُسخ أو خُزّن مؤقتًا أو فُهرِس في أماكن أخرى، وهو ما لا سبيل لمطوّر ScannerCam Light إلى التراجع عنه.",
+  "input": "والاستثناء الرئيسي هو الملاحظات المُرسَلة طواعيةً عبر نموذج الملاحظات داخل التطبيق. يستند هذا الإرسال إلى **موافقتك** بوصفها الأساس القانوني له: تُرسل رسالتك وبريدك الإلكتروني وبياناتك التشخيصية عند الضغط على إرسال. أما الطلبات التي تجريها ميزة الملاحظات قبل ذلك — والموضحة في قسم «الملاحظات» أعلاه — فهي تلقائية ولا ترتبط بتلك الموافقة، ويكشف أحدها عنوان IP الخاص بجهازك لشركة Cloudflare عند فتح النموذج. ويصبح بلاغ الملاحظات المُرسَل بلاغ GitHub علنيًا؛ ويمكن طلب إزالته بالكتابة إلى بريد الدعم أدناه، وإن كان لا يوجد وعد بأي مهلة زمنية، وقد يكون البلاغ بحلول ذلك الوقت قد نُسخ أو خُزّن مؤقتًا أو فُهرِس في أماكن أخرى، وهو ما لا سبيل لمطوّر ScannerCam Light إلى التراجع عنه. وحيثما يقتضي القانون المنطبق عليك الرد خلال مدة محددة، فإن ذلك الاقتضاء يسري بصرف النظر عن أي شيء مما ورد أعلاه.",
   "tokens": [
    {
     "type": "text",
@@ -11369,7 +11369,7 @@
    },
    {
     "type": "text",
-    "text": " بوصفها الأساس القانوني له: تُرسل رسالتك وبريدك الإلكتروني وبياناتك التشخيصية عند الضغط على إرسال. أما الطلبات التي تجريها ميزة الملاحظات قبل ذلك — والموضحة في قسم «الملاحظات» أعلاه — فهي تلقائية ولا ترتبط بتلك الموافقة، ويكشف أحدها عنوان IP الخاص بجهازك لشركة Cloudflare عند فتح النموذج. ويصبح بلاغ الملاحظات المُرسَل بلاغ GitHub علنيًا؛ ويمكن طلب إزالته بالكتابة إلى بريد الدعم أدناه، وإن كان لا يوجد وعد بأي مهلة زمنية، وقد يكون البلاغ بحلول ذلك الوقت قد نُسخ أو خُزّن مؤقتًا أو فُهرِس في أماكن أخرى، وهو ما لا سبيل لمطوّر ScannerCam Light إلى التراجع عنه."
+    "text": " بوصفها الأساس القانوني له: تُرسل رسالتك وبريدك الإلكتروني وبياناتك التشخيصية عند الضغط على إرسال. أما الطلبات التي تجريها ميزة الملاحظات قبل ذلك — والموضحة في قسم «الملاحظات» أعلاه — فهي تلقائية ولا ترتبط بتلك الموافقة، ويكشف أحدها عنوان IP الخاص بجهازك لشركة Cloudflare عند فتح النموذج. ويصبح بلاغ الملاحظات المُرسَل بلاغ GitHub علنيًا؛ ويمكن طلب إزالته بالكتابة إلى بريد الدعم أدناه، وإن كان لا يوجد وعد بأي مهلة زمنية، وقد يكون البلاغ بحلول ذلك الوقت قد نُسخ أو خُزّن مؤقتًا أو فُهرِس في أماكن أخرى، وهو ما لا سبيل لمطوّر ScannerCam Light إلى التراجع عنه. وحيثما يقتضي القانون المنطبق عليك الرد خلال مدة محددة، فإن ذلك الاقتضاء يسري بصرف النظر عن أي شيء مما ورد أعلاه."
    }
   ]
  },
@@ -11383,7 +11383,7 @@
   ]
  },
  {
-  "input": "التطبيق ليس موجّهًا إلى الأطفال، ولا يحتوي على حسابات مستخدمين، ولا يسأل أحدًا عن عمره أو عن أي تفصيل شخصي آخر، ولا يعرض إعلانات، ولا يتضمن أي أدوات تحليلات أو تتبّع (SDKs)، ولا يرسل أبدًا أي مستند ممسوح ضوئيًا إلى أي مكان. غير أنه ليس صامتًا على الشبكة: فحيثما تكون ميزة الملاحظات الاختيارية متاحة، يتحقق التطبيق مما إذا كانت خدمة الملاحظات قابلة للوصول عند فتح شاشة المكتبة، كما أن فتح نموذج الملاحظات يُحمِّل تحدّي **Cloudflare Turnstile** الذي يكشف عنوان IP الخاص بالجهاز لشركة Cloudflare — وكلا الأمرين يحدث تلقائيًا، دون أن يختار أحد إرسال أي شيء. وينطبق ذلك على المستخدمين من أي عمر، وهو كل ما يحدث دون إجراء متعمّد.",
+  "input": "التطبيق ليس موجّهًا إلى الأطفال، ولا يحتوي على حسابات مستخدمين، ولا يسأل أحدًا عن عمره أو عن أي تفصيل شخصي آخر، ولا يعرض إعلانات، ولا يتضمن أي أدوات تحليلات أو تتبّع (SDKs)، ولا يرسل أبدًا أي مستند ممسوح ضوئيًا إلى أي مكان. غير أنه ليس صامتًا على الشبكة: فحيثما تكون ميزة الملاحظات الاختيارية متاحة، يتحقق التطبيق مما إذا كانت خدمة الملاحظات قابلة للوصول عند فتح شاشة المكتبة، كما أن فتح نموذج الملاحظات يُحمِّل تحدّي **Cloudflare Turnstile** الذي يكشف عنوان IP الخاص بالجهاز لشركة Cloudflare — وكلا الأمرين يحدث تلقائيًا، دون أن يختار أحد إرسال أي شيء. وعلى نظام iOS، يؤدي فتح شاشة الدعم أيضًا إلى الاستعلام من App Store عن خيارات الإكرامية المتاحة، وذلك كذلك دون أي إجراء متعمّد. وينطبق هذا كله على المستخدمين من أي عمر؛ ويورد قسم «الوصول إلى الشبكة» أعلاه كل حالة من هذه الحالات.",
   "tokens": [
    {
     "type": "text",
@@ -11395,7 +11395,7 @@
    },
    {
     "type": "text",
-    "text": " الذي يكشف عنوان IP الخاص بالجهاز لشركة Cloudflare — وكلا الأمرين يحدث تلقائيًا، دون أن يختار أحد إرسال أي شيء. وينطبق ذلك على المستخدمين من أي عمر، وهو كل ما يحدث دون إجراء متعمّد."
+    "text": " الذي يكشف عنوان IP الخاص بالجهاز لشركة Cloudflare — وكلا الأمرين يحدث تلقائيًا، دون أن يختار أحد إرسال أي شيء. وعلى نظام iOS، يؤدي فتح شاشة الدعم أيضًا إلى الاستعلام من App Store عن خيارات الإكرامية المتاحة، وذلك كذلك دون أي إجراء متعمّد. وينطبق هذا كله على المستخدمين من أي عمر؛ ويورد قسم «الوصول إلى الشبكة» أعلاه كل حالة من هذه الحالات."
    }
   ]
  },

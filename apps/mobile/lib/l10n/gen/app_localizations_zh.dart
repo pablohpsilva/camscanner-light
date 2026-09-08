@@ -564,4 +564,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feedbackSubmit => '发送反馈';
+
+  @override
+  String get legalErrorOpenLink => '无法打开该链接';
 }

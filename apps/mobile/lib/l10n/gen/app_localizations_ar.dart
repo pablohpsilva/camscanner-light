@@ -598,4 +598,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'إرسال التقرير';
+
+  @override
+  String get legalErrorOpenLink => 'تعذّر فتح هذا الرابط';
 }

@@ -250,18 +250,32 @@
   "donationTipButtonLabel": "Tip {price}",
   "@donationTipButtonLabel": {
     "description": "Tip jar button; {price} is the StoreKit-localized price",
-    "placeholders": { "price": { "type": "String" } }
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
   },
   "donationTipThankYouTitle": "Thank you ❤️",
-  "@donationTipThankYouTitle": { "description": "Tip success dialog title" },
+  "@donationTipThankYouTitle": {
+    "description": "Tip success dialog title"
+  },
   "donationTipThankYouBody": "Your support keeps this app going.",
-  "@donationTipThankYouBody": { "description": "Tip success dialog body" },
+  "@donationTipThankYouBody": {
+    "description": "Tip success dialog body"
+  },
   "donationTipThankYouClose": "Close",
-  "@donationTipThankYouClose": { "description": "Dismiss the tip thank-you dialog" },
+  "@donationTipThankYouClose": {
+    "description": "Dismiss the tip thank-you dialog"
+  },
   "donationTipUnavailable": "Tips aren't available right now. Please try again later.",
-  "@donationTipUnavailable": { "description": "Shown when the store or products fail to load" },
+  "@donationTipUnavailable": {
+    "description": "Shown when the store or products fail to load"
+  },
   "donationTipError": "Couldn't complete your tip",
-  "@donationTipError": { "description": "Snackbar when a tip purchase fails" },
+  "@donationTipError": {
+    "description": "Snackbar when a tip purchase fails"
+  },
   "scanTitle": "Scan",
   "@scanTitle": {
     "description": "Scan app bar"
@@ -730,5 +744,9 @@
   "feedbackSubmit": "Send report",
   "@feedbackSubmit": {
     "description": "Submit button"
+  },
+  "legalErrorOpenLink": "Couldn't open that link",
+  "@legalErrorOpenLink": {
+    "description": "Shown when a link inside a legal document cannot be opened"
   }
 }

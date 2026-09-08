@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "Masquer ce qui sera envoyé",
   "feedbackDiagnosticsTitle": "Ce que nous incluons",
   "feedbackDiagnosticsBody": "Diagnostics joints : version de l'application, version du système, modèle de l'appareil et langue. Aucun document scanné ni son contenu n'est jamais envoyé.",
-  "feedbackSubmit": "Envoyer le rapport"
+  "feedbackSubmit": "Envoyer le rapport",
+  "legalErrorOpenLink": "Impossible d'ouvrir ce lien"
 }

@@ -589,4 +589,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'Отправить отчёт';
+
+  @override
+  String get legalErrorOpenLink => 'Не удалось открыть эту ссылку';
 }

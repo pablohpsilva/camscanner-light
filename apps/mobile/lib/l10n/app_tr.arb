@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "Gönderilecekleri gizle",
   "feedbackDiagnosticsTitle": "Neleri dahil ediyoruz",
   "feedbackDiagnosticsBody": "Eklenen tanılama bilgileri: uygulama sürümü, işletim sistemi sürümü, cihaz modeli ve dil. Taranan belgeler veya içerikleri asla gönderilmez.",
-  "feedbackSubmit": "Raporu gönder"
+  "feedbackSubmit": "Raporu gönder",
+  "legalErrorOpenLink": "Bu bağlantı açılamadı"
 }

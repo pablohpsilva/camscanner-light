@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "Verbergen, was gesendet wird",
   "feedbackDiagnosticsTitle": "Was wir einschließen",
   "feedbackDiagnosticsBody": "Beigefügte Diagnosedaten: App-Version, Betriebssystemversion, Gerätemodell und Sprache. Gescannte Dokumente oder ihre Inhalte werden nie gesendet.",
-  "feedbackSubmit": "Bericht senden"
+  "feedbackSubmit": "Bericht senden",
+  "legalErrorOpenLink": "Dieser Link konnte nicht geöffnet werden"
 }

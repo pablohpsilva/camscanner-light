@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "Ocultar o que será enviado",
   "feedbackDiagnosticsTitle": "O que incluímos",
   "feedbackDiagnosticsBody": "Diagnósticos incluídos: versão do app, versão do sistema, modelo do dispositivo e idioma. Nenhum documento digitalizado ou seu conteúdo é enviado.",
-  "feedbackSubmit": "Enviar relatório"
+  "feedbackSubmit": "Enviar relatório",
+  "legalErrorOpenLink": "Não foi possível abrir esse link"
 }

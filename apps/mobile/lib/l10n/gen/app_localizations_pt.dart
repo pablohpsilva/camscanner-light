@@ -587,6 +587,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'Enviar relatório';
+
+  @override
+  String get legalErrorOpenLink => 'Não foi possível abrir essa ligação';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1173,4 +1176,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get feedbackSubmit => 'Enviar relatório';
+
+  @override
+  String get legalErrorOpenLink => 'Não foi possível abrir esse link';
 }

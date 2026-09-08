@@ -583,4 +583,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'Raporu gönder';
+
+  @override
+  String get legalErrorOpenLink => 'Bu bağlantı açılamadı';
 }

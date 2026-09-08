@@ -1182,6 +1182,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send report'**
   String get feedbackSubmit;
+
+  /// Shown when a link inside a legal document cannot be opened
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that link'**
+  String get legalErrorOpenLink;
 }
 
 class _AppLocalizationsDelegate

@@ -588,4 +588,7 @@ class AppLocalizationsLb extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'Bericht schécken';
+
+  @override
+  String get legalErrorOpenLink => 'Dëse Link konnt net opgemaach ginn';
 }

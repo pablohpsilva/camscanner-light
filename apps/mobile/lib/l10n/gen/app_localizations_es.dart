@@ -585,4 +585,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'Enviar informe';
+
+  @override
+  String get legalErrorOpenLink => 'No se pudo abrir ese enlace';
 }

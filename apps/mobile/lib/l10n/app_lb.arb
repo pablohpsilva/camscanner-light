@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "Verstopp wat geschéckt gëtt",
   "feedbackDiagnosticsTitle": "Wat mir mateschécken",
   "feedbackDiagnosticsBody": "Diagnosdate matgeschéckt: App-Versioun, OS-Versioun, Apparatmodell a Sprooch. Et gi ni gescannten Dokumenter oder hiren Inhalt geschéckt.",
-  "feedbackSubmit": "Bericht schécken"
+  "feedbackSubmit": "Bericht schécken",
+  "legalErrorOpenLink": "Dëse Link konnt net opgemaach ginn"
 }

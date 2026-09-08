@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "إخفاء ما سيتم إرساله",
   "feedbackDiagnosticsTitle": "ما نقوم بتضمينه",
   "feedbackDiagnosticsBody": "التشخيصات المرفقة: إصدار التطبيق، إصدار نظام التشغيل، طراز الجهاز، واللغة. لا يتم إرسال أي مستندات ممسوحة ضوئيًا أو محتواها مطلقًا.",
-  "feedbackSubmit": "إرسال التقرير"
+  "feedbackSubmit": "إرسال التقرير",
+  "legalErrorOpenLink": "تعذّر فتح هذا الرابط"
 }

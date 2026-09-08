@@ -259,3 +259,47 @@ test('cross-references the purchases section by the heading it actually has', ()
   assert.match(t, /in-app purchases and tips section/)
   assert.doesNotMatch(t, /the purchases section/)
 })
+
+// --- the tenth instance of the gating-claim class (final review, H1) --------
+// `children` enumerated two automatic requests and then closed the scope: "is
+// the whole of what happens without a deliberate action". There are THREE — the
+// App Store tip-options query fires on the iOS support screen opening — and this
+// same file enumerates all three twice, 55 lines away. A direct self-
+// contradiction in the most legally sensitive section of the document whose URL
+// is registered with Apple and Google.
+//
+// None of the 181 tests could see it: the absence guards target the PHRASINGS of
+// universal claims ("nothing is sent unless..."), and this used a scope-CLOSING
+// construction instead. Blind back-translation could not see it either — the
+// translations rendered the wrong English faithfully.
+//
+// Presence, not absence, for the fact itself (R26: an absence test here would
+// pressure deleting true content). The absence guard is scoped to the narrow
+// family of exhaustiveness closers, which have no legitimate use in a section
+// that enumerates a subset.
+test('the children section names all three automatic requests, not two', () => {
+  const t = section('children')
+  assert.match(t, /feedback service|reachable/)
+  assert.match(t, /cloudflare|turnstile/)
+  assert.match(t, /app store/, 'the App Store tip-options query is the one that keeps being dropped')
+})
+
+test('no section closes the scope of the automatic requests it enumerates', () => {
+  const t = allText(doc())
+  assert.doesNotMatch(
+    t,
+    /is the whole of what happens|is all that happens without|are the only things that happen without|nothing else happens without/,
+  )
+})
+
+// --- mandatory-rights backstop (final review, M5) --------------------------
+// your-rights honestly says no removal timeframe is promised. For feedback data
+// the developer IS a controller (they run the Worker and the repository), and
+// GDPR Art. 12(3) sets a one-month deadline — so that sentence read as
+// disclaiming a statutory duty. The Terms carry a mandatory-rights carve-out;
+// the Privacy Policy did not, and it is the document that discusses GDPR.
+test('the privacy policy carries its own mandatory-rights saving clause', () => {
+  const t = section('your-rights')
+  assert.match(t, /law that applies to you|applicable law/)
+  assert.match(t, /regardless of anything above|cannot be excluded|applies regardless/)
+})

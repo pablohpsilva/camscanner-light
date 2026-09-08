@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/legal/legal_content.dart';
@@ -14,6 +15,17 @@ Widget _host(LegalDoc doc, {Locale locale = const Locale('en'), List<Uri>? opene
         openUrl: (uri) async {
           opened?.add(uri);
           return true;
+        },
+      ),
+    );
+
+/// Host whose opener FAILS, either by returning false or by throwing.
+Widget _failingHost(LegalDoc doc, {required bool throws}) => localizedTestApp(
+      home: LegalDocumentScreen(
+        doc: doc,
+        openUrl: (uri) async {
+          if (throws) throw Exception('no handler');
+          return false;
         },
       ),
     );
@@ -90,4 +102,52 @@ void main() {
       expect(find.text('Privacy Policy'), findsOneWidget);
     },
   );
+
+  // The only link that reaches the opener after sibling interception is the
+  // contact `mailto:`, present in all 3 documents x 11 locales. url_launcher
+  // returns false OR throws depending on the failure, and a device with no mail
+  // client is routine on Android. Both paths previously produced silence: the
+  // Future was dropped, so nothing told the user the tap did nothing.
+  for (final throws in [false, true]) {
+    testWidgets(
+      'a link that fails to open (${throws ? "throws" : "returns false"}) tells the user',
+      (t) async {
+        await t.pumpWidget(_failingHost(LegalDoc.privacy, throws: throws));
+        await t.pumpAndSettle();
+
+        // The contact section is the last one; scroll it into view so its
+        // RichText is actually built.
+        await t.scrollUntilVisible(
+          find.byKey(const Key('legal-section-contact')),
+          400,
+        );
+        await t.pumpAndSettle();
+
+        final recognizer = _mailtoRecognizer(t);
+        expect(recognizer, isNotNull, reason: 'contact mailto link should render');
+        recognizer!.onTap!();
+        await t.pumpAndSettle();
+
+        expect(find.byType(SnackBar), findsOneWidget);
+      },
+    );
+  }
+}
+
+/// Finds the tap recognizer attached to the contact `mailto:` span.
+TapGestureRecognizer? _mailtoRecognizer(WidgetTester t) {
+  for (final w in t.widgetList<RichText>(find.byType(RichText))) {
+    TapGestureRecognizer? found;
+    w.text.visitChildren((span) {
+      if (span is TextSpan &&
+          span.recognizer is TapGestureRecognizer &&
+          (span.text ?? '').contains('scannercamlight')) {
+        found = span.recognizer as TapGestureRecognizer;
+        return false;
+      }
+      return true;
+    });
+    if (found != null) return found;
+  }
+  return null;
 }

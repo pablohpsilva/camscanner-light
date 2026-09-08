@@ -587,4 +587,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get feedbackSubmit => 'Bericht senden';
+
+  @override
+  String get legalErrorOpenLink => 'Dieser Link konnte nicht geöffnet werden';
 }

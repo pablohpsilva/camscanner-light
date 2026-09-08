@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/ui/error_snack.dart';
+import '../../l10n/l10n.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/widgets/app_back_header.dart';
 import 'legal_content.dart';
@@ -54,14 +58,27 @@ class LegalDocumentScreen extends StatelessWidget {
             : LegalDocumentScreen(doc: doc, openUrl: openUrl),
       );
 
-  void _handleLink(BuildContext context, String url) {
+  Future<void> _handleLink(BuildContext context, String url) async {
     final sibling = _siblingDocs[url];
     if (sibling != null) {
       Navigator.of(context).push(LegalDocumentScreen.route(sibling, openUrl: openUrl));
       return;
     }
     final uri = Uri.tryParse(url);
-    if (uri != null) openUrl(uri);
+    if (uri == null) return;
+    // After sibling interception the only link that reaches here is the
+    // contact `mailto:`, present in all 3 documents x 11 locales. url_launcher
+    // returns false OR throws depending on the failure, and a device with no
+    // mail client is routine on Android — so dropping both meant the user
+    // tapped "contact" and nothing happened at all. Mirrors
+    // donation_screen.dart's _openKofi.
+    try {
+      if (await openUrl(uri)) return;
+    } catch (_) {
+      // fall through to failure feedback
+    }
+    if (!context.mounted) return;
+    context.showErrorSnack(context.l10n.legalErrorOpenLink);
   }
 
   @override
@@ -106,7 +123,7 @@ class LegalDocumentScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _LegalParagraph(
               text: document.intro,
-              onLink: (url) => _handleLink(context, url),
+              onLink: (url) => unawaited(_handleLink(context, url)),
               linkColor: r.blue,
               textColor: r.ink2,
             ),
@@ -116,7 +133,7 @@ class LegalDocumentScreen extends StatelessWidget {
             _LegalSection(
               doc: doc,
               section: section,
-              onLink: (url) => _handleLink(context, url),
+              onLink: (url) => unawaited(_handleLink(context, url)),
             ),
         ],
       ),

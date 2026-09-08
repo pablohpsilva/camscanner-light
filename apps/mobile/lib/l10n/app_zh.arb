@@ -177,5 +177,6 @@
   "feedbackDiagnosticsHide": "隐藏发送内容",
   "feedbackDiagnosticsTitle": "我们会包含以下内容",
   "feedbackDiagnosticsBody": "附带的诊断信息包括：应用版本、系统版本、设备型号和语言。绝不会发送任何扫描文档或其内容。",
-  "feedbackSubmit": "发送反馈"
+  "feedbackSubmit": "发送反馈",
+  "legalErrorOpenLink": "无法打开该链接"
 }
