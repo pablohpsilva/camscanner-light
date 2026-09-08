@@ -65,3 +65,8 @@ test('the languages answer is honest that ocr and search are latin-script only',
   assert.match(t, /latin/)
   assert.match(t, /search/)
 })
+
+test('the offline answer does not gate the feedback reachability check on active use', () => {
+  const t = section('offline')
+  assert.doesNotMatch(t, /when actively used|only when you use/)
+})
