@@ -1256,11 +1256,48 @@ for (const doc of DOCS) {
     }
   })
 
+  // A title-only check is not enough: a file whose title was translated but whose
+  // BODY was left in English would pass every other structural assertion and ship
+  // as a "translation". Compare the whole body text too.
   test(`${doc}: translations are not just copied English`, () => {
+    const bodyText = (d) =>
+      d.sections.map((s) => s.body.map((b) => (b.type === 'p' ? b.text : b.items.join(' '))).join(' ')).join(' ')
     const en = loadDocument(doc, 'en')
-    for (const locale of LOCALES.filter((l) => !['en'].includes(l))) {
+    for (const locale of LOCALES.filter((l) => l !== 'en')) {
       const other = loadDocument(doc, locale)
       assert.notEqual(other.title, en.title, `${doc}.${locale}.json title is still English`)
+      assert.notEqual(other.effectiveDateLabel, en.effectiveDateLabel,
+        `${doc}.${locale}.json effectiveDateLabel is still English`)
+      assert.notEqual(bodyText(other), bodyText(en), `${doc}.${locale}.json body is still English`)
+    }
+  })
+
+  // Section ids are keys, not prose: the Dart renderer, the HTML renderer and the
+  // widget tests all key off them (`legal-section-<id>`). A translated id breaks
+  // the app silently.
+  test(`${doc}: section ids are never translated`, () => {
+    const en = loadDocument(doc, 'en').sections.map((s) => s.id)
+    for (const locale of LOCALES) {
+      assert.deepEqual(loadDocument(doc, locale).sections.map((s) => s.id), en,
+        `${doc}.${locale}.json has translated or reordered section ids`)
+    }
+  })
+
+  // Guards a copy-paste that forgets to update the file's own identity fields.
+  test(`${doc}: each file's doc and locale fields match its filename`, () => {
+    for (const locale of LOCALES) {
+      const d = loadDocument(doc, locale)
+      assert.equal(d.doc, doc, `${doc}.${locale}.json has doc "${d.doc}"`)
+      assert.equal(d.locale, locale, `${doc}.${locale}.json has locale "${d.locale}"`)
+    }
+  })
+
+  // version/effectiveDate live once in meta.json; a per-locale copy would drift.
+  test(`${doc}: no locale file carries a version or effective date`, () => {
+    for (const locale of LOCALES) {
+      const d = loadDocument(doc, locale)
+      assert.equal(d.version, undefined, `${doc}.${locale}.json must not carry a version`)
+      assert.equal(d.effectiveDate, undefined, `${doc}.${locale}.json must not carry an effectiveDate`)
     }
   })
 
