@@ -920,7 +920,7 @@ export function renderDart (documents, meta) {
 
   return `// GENERATED CODE - DO NOT MODIFY BY HAND
 // Source: libs/legal-content/content/*.json
-// Regenerate: cd /Users/pablohpsilva/Documents/camscanner-light && node libs/legal-content/src/generate.mjs
+// Regenerate: node libs/legal-content/src/generate.mjs (from the repo root)
 // ignore_for_file: type=lint, type=warning
 
 import '../legal_models.dart';
@@ -978,7 +978,7 @@ Expected: PASS, 5 tests.
 
 Run:
 ```bash
-cd /Users/pablohpsilva/Documents/camscanner-light && cd /Users/pablohpsilva/Documents/camscanner-light && node libs/legal-content/src/generate.mjs
+node libs/legal-content/src/generate.mjs
 cd apps/mobile && flutter analyze
 ```
 Expected: the generator prints `wrote apps/mobile/lib/features/legal/generated/legal_content.g.dart`; `flutter analyze` reports **no issues** (the repo holds a zero-warning bar).
@@ -1160,7 +1160,7 @@ Expected: PASS, 11 tests.
 
 Run:
 ```bash
-cd /Users/pablohpsilva/Documents/camscanner-light && cd /Users/pablohpsilva/Documents/camscanner-light && node libs/legal-content/src/generate.mjs
+node libs/legal-content/src/generate.mjs
 cd apps/web && python3 -m http.server 8000
 ```
 Open `http://localhost:8000/privacy.html`, `terms.html`, `faq.html`, and `legal/terms.pt-BR.html`. Confirm: site styling matches the hand-written pages, the nav and footer work from both directory depths, and the language switcher navigates correctly.
@@ -2072,7 +2072,7 @@ Change the fourth check from `Free to use` to `Free, with an optional tip`, and 
 
 - [ ] **Step 4: Update the site README**
 
-In `apps/web/README.md`, add `terms.html`, `faq.html`, and `legal/` to the Pages list, and add a line stating these are **generated** by `cd /Users/pablohpsilva/Documents/camscanner-light && node libs/legal-content/src/generate.mjs` and must not be hand-edited.
+In `apps/web/README.md`, add `terms.html`, `faq.html`, and `legal/` to the Pages list, and add a line stating these are **generated** by `node libs/legal-content/src/generate.mjs` (run from the repo root) and must not be hand-edited.
 
 - [ ] **Step 5: Keep the deploy trigger honest**
 
@@ -2111,7 +2111,7 @@ Depends on Tasks 6, 7, 8.
 - Create: `libs/legal-content/README.md`
 
 **Interfaces:**
-- Consumes: `cd /Users/pablohpsilva/Documents/camscanner-light && node libs/legal-content/src/generate.mjs`.
+- Consumes: `node libs/legal-content/src/generate.mjs` (run from the repo root).
 - Produces: a script that exits non-zero when committed outputs differ from freshly generated ones.
 
 - [ ] **Step 1: Write the failing check**
@@ -2163,7 +2163,7 @@ if ! git diff --quiet -- "${OUTPUTS[@]}"; then
   echo
   echo "FAIL: generated legal content is out of date."
   echo "Someone edited a generated file by hand, or edited content/ without regenerating."
-  echo "Fix: cd /Users/pablohpsilva/Documents/camscanner-light && node libs/legal-content/src/generate.mjs, then commit the result."
+  echo "Fix: node libs/legal-content/src/generate.mjs (from the repo root), then commit the result."
   echo
   git diff --stat -- "${OUTPUTS[@]}"
   exit 1

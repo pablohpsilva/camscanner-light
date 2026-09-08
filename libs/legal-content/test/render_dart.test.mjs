@@ -40,3 +40,74 @@ test('renders both block types', () => {
   assert.match(out, /LegalParagraph\('/)
   assert.match(out, /LegalBullets\(\['one'\]\)/)
 })
+
+// --- completeness (review finding M1) -------------------------------------
+// renderDart silently drops absent documents/locales, so an incomplete corpus
+// produces a smaller const map that still compiles and still passes every
+// other check — the locale just falls back to English at runtime with no
+// signal. Mutation-testing showed dropping 'ar' passed the whole suite.
+import { assertComplete } from '../src/generate.mjs'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { DOCS, LOCALES, repoRoot } from '../src/constants.mjs'
+
+const fullCorpus = () => {
+  const d = {}
+  for (const doc of DOCS) {
+    d[doc] = {}
+    for (const l of LOCALES) d[doc][l] = { sections: [] }
+  }
+  return d
+}
+
+test('assertComplete accepts a full corpus', () => {
+  assert.doesNotThrow(() => assertComplete(fullCorpus()))
+})
+
+test('assertComplete rejects a missing locale and names it', () => {
+  const corpus = fullCorpus()
+  delete corpus.faq.ar
+  assert.throws(() => assertComplete(corpus), /faq\.ar/)
+})
+
+test('assertComplete rejects a missing document and names it', () => {
+  const corpus = fullCorpus()
+  delete corpus.privacy
+  assert.throws(() => assertComplete(corpus), /privacy/)
+})
+
+test('the committed Dart artifact holds all 33 documents', () => {
+  const artifact = readFileSync(
+    resolve(repoRoot, 'apps/mobile/lib/features/legal/generated/legal_content.g.dart'),
+    'utf8',
+  )
+  const entries = artifact.match(/': LegalDocument\(/g) ?? []
+  assert.equal(entries.length, DOCS.length * LOCALES.length)
+  for (const l of LOCALES) {
+    assert.ok(artifact.includes(`'${l}': LegalDocument(`), `artifact is missing locale ${l}`)
+  }
+})
+
+// --- field fidelity (review finding M2) -----------------------------------
+// Mutation-testing showed that rendering `heading` from `sec.id` compiles and
+// ships wrong text while passing every existing test. These pin the actual
+// field values, not just the shape.
+test('renders section id and heading as distinct fields, in order', () => {
+  const out = renderDart(docs, meta)
+  assert.match(out, /LegalSection\('a', 'A', \[/)
+})
+
+test('round-trips a backslash and a newline without breaking the literal', () => {
+  const tricky = {
+    terms: {
+      en: {
+        doc: 'terms', locale: 'en', title: 'T', effectiveDateLabel: 'E',
+        translationNotice: '', intro: 'I',
+        sections: [{ id: 'x', heading: 'H', body: [{ type: 'p', text: 'a\\b\nc' }] }],
+      },
+    },
+  }
+  const out = renderDart(tricky, meta)
+  assert.match(out, /'a\\\\b\\nc'/)
+  assert.ok(!/'a\\b$/m.test(out), 'a raw newline must not break the Dart literal')
+})

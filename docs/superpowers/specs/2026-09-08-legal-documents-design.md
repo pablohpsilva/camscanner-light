@@ -119,7 +119,7 @@ chrome and legal prose out of it entirely.
 
 ### Generator and outputs
 
-`pnpm --filter @camscanner/legal-content generate` writes, and **commits**:
+`node libs/legal-content/src/generate.mjs` (from the repo root) writes, and **commits**:
 
 - `apps/mobile/lib/features/legal/generated/legal_content.g.dart` — `const` maps
   keyed by document and locale. Synchronous, no assets, no `rootBundle`, so

@@ -39,6 +39,7 @@ export function renderDart (documents, meta) {
 // Source: libs/legal-content/content/*.json
 // Regenerate: node libs/legal-content/src/generate.mjs (from the repo root)
 // ignore_for_file: type=lint, type=warning
+// dart format off
 
 import '../legal_models.dart';
 
