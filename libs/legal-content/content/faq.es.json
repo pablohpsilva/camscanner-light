@@ -1,0 +1,116 @@
+{
+  "doc": "faq",
+  "locale": "es",
+  "title": "Preguntas frecuentes",
+  "effectiveDateLabel": "Fecha de entrada en vigor",
+  "translationNotice": "Esta traducción se proporciona por comodidad. En caso de conflicto, prevalece la versión en inglés.",
+  "intro": "Respuestas a preguntas habituales sobre ScannerCam Light. Para todo el detalle legal completo detrás de cualquiera de ellas, consulte la [Política de Privacidad](privacy.html) y los [Términos de Servicio](terms.html).",
+  "sections": [
+    {
+      "id": "offline",
+      "heading": "¿Funciona sin conexión?",
+      "body": [
+        { "type": "p", "text": "Sí. El escaneo, la detección de bordes, la mejora de imagen y el reconocimiento de texto en el dispositivo (OCR) se ejecutan íntegramente en el dispositivo y no necesitan ninguna conexión a internet. En **Android**, la aplicación publicada ni siquiera solicita el permiso INTERNET, por lo que no tiene ninguna forma de realizar una solicitud de red." },
+        { "type": "p", "text": "En **iOS** no existe un sistema de permisos equivalente, pero lo mismo es válido para todo lo relacionado con los documentos — nada relativo a un documento toca la red jamás. Cuando la función opcional de comentarios está habilitada en una versión, la aplicación comprueba automáticamente si el servicio de comentarios está accesible cada vez que se abre la pantalla de la biblioteca, se llegue o no a usar la función de comentarios — vea la pregunta sobre comentarios más abajo para el detalle completo de qué envía esa comprobación y cuándo. Cuando se ofrece una propina dentro de la aplicación, abrir la pantalla de soporte pregunta a la App Store por las opciones de propina disponibles antes de que se realice ninguna propina; Apple gestiona el lado de red de una compra real." }
+      ]
+    },
+    {
+      "id": "where-stored",
+      "heading": "¿Dónde se almacenan mis documentos?",
+      "body": [
+        { "type": "p", "text": "Solo en el dispositivo. Las imágenes escaneadas se guardan como archivos en el almacenamiento propio de la aplicación, y los títulos de los documentos y el texto extraído se indexan en una base de datos local — nada se sube a ningún sitio. Vea la [Política de Privacidad](privacy.html) para el detalle completo de qué se almacena y dónde." }
+      ]
+    },
+    {
+      "id": "is-it-free",
+      "heading": "¿Es gratuita?",
+      "body": [
+        { "type": "p", "text": "Sí — ScannerCam Light es gratuita en su totalidad, sin anuncios. Según la plataforma y la versión de la aplicación, puede ofrecerse una forma opcional de apoyar el proyecto: una propina dentro de la aplicación procesada por Apple en iOS, un enlace de Ko-fi, o una dirección de donación en Bitcoin. Ninguna de estas opciones cambia lo que la aplicación puede hacer." }
+      ]
+    },
+    {
+      "id": "tips",
+      "heading": "¿Qué desbloquean las propinas o donaciones?",
+      "body": [
+        { "type": "p", "text": "Nada. Cualquier propina o donación — una propina opcional dentro de la aplicación procesada por Apple, una contribución mediante Ko-fi, o una donación en Bitcoin, según la opción ofrecida — es enteramente **voluntaria** y no desbloquea ninguna función, elimina ningún límite ni cambia el comportamiento de la aplicación. ScannerCam Light ya incluye todo lo que ofrece antes de que se dé ninguna propina." },
+        { "type": "p", "text": "Las propinas y donaciones no son reembolsables. Vea los [Términos de Servicio](terms.html) para las condiciones completas." }
+      ]
+    },
+    {
+      "id": "export-pdf",
+      "heading": "¿Cómo exporto un PDF?",
+      "body": [
+        { "type": "p", "text": "Abra un documento, elija exportar y seleccione PDF. El panel de compartir del sistema permite entonces guardar, imprimir o enviar el PDF a cualquier aplicación o destino elegido en ese momento — ScannerCam Light no controla ni ve dónde termina." }
+      ]
+    },
+    {
+      "id": "ocr-accuracy",
+      "heading": "¿Qué tan preciso es el reconocimiento de texto (OCR)?",
+      "body": [
+        { "type": "p", "text": "No es perfecta. El reconocimiento de texto, al igual que la detección de bordes y la mejora de imagen, es automatizado y puede leer mal, omitir o distorsionar texto — especialmente en fotos de mala calidad, diseños poco habituales o escritura manuscrita." },
+        { "type": "p", "text": "Compruebe siempre el texto reconocido frente al original antes de confiar en él, especialmente para cuestiones legales, médicas o financieras. Vea los [Términos de Servicio](terms.html) para el descargo de responsabilidad completo sobre precisión." }
+      ]
+    },
+    {
+      "id": "search",
+      "heading": "¿Cómo funciona la búsqueda, y qué no puede encontrar?",
+      "body": [
+        { "type": "p", "text": "La búsqueda recorre los títulos de los documentos y el texto capturado por el OCR en el dispositivo. Como el OCR solo lee texto en alfabeto latino, un documento cuyo contenido esté en chino, árabe, ruso u otro alfabeto no latino no se encontrará al buscar su texto — solo se encontrará su título, y solo el texto OCR de documentos en alfabeto latino es buscable." }
+      ]
+    },
+    {
+      "id": "backups",
+      "heading": "¿Mis documentos tienen alguna copia de seguridad?",
+      "body": [
+        { "type": "p", "text": "No. ScannerCam Light almacena los documentos únicamente en el dispositivo — **no hay almacenamiento en la nube ni copia de seguridad** creada por la aplicación, y nada se copia a un servidor. Si la aplicación se desinstala, o si el dispositivo se pierde, se restablece o se daña, esos documentos desaparecen para siempre." },
+        { "type": "p", "text": "Conserve sus propias copias de todo aquello que no pueda permitirse perder — por ejemplo, exportando documentos importantes a otra aplicación, a un ordenador o a un servicio en la nube de su elección antes de desinstalar la aplicación o cambiar de dispositivo. Vea los [Términos de Servicio](terms.html) para las condiciones completas sobre pérdida de datos." }
+      ]
+    },
+    {
+      "id": "free-space",
+      "heading": "¿Cómo libero espacio?",
+      "body": [
+        { "type": "p", "text": "Elimine de la biblioteca los documentos que ya no necesite. Eliminar un documento quita por completo sus archivos de imagen del dispositivo, no solo su entrada en la lista, de modo que el espacio se libera de verdad." }
+      ]
+    },
+    {
+      "id": "feedback-public",
+      "heading": "¿Los comentarios enviados a través de la aplicación se hacen públicos?",
+      "body": [
+        { "type": "p", "text": "Sí — cuando la función opcional de comentarios está habilitada en una versión, un mensaje enviado se convierte en un **incidente (\"issue\") públicamente visible** en el repositorio de **GitHub** de ScannerCam Light, y cualquier persona en internet puede leer el texto del mensaje y, si se introdujo, la dirección de correo electrónico." },
+        { "type": "p", "text": "También ocurre algo de actividad de red antes de ese punto: cuando se carga la pantalla de la biblioteca, la aplicación comprueba si el servicio de comentarios está accesible, y abrir el formulario de comentarios carga un desafío de verificación **Cloudflare Turnstile** — lo que significa que Cloudflare recibe una solicitud y la dirección IP del dispositivo. Ninguno de estos dos pasos envía el mensaje ni el correo electrónico; eso ocurre al pulsar **Enviar**." },
+        { "type": "p", "text": "Ningún documento escaneado ni su contenido se incluye jamás en los comentarios. El campo de correo electrónico puede dejarse en blanco para que no aparezca en el incidente público, y no debe incluirse información sensible en el propio mensaje. Vea la sección de Comentarios de la [Política de Privacidad](privacy.html) para el detalle completo." }
+      ]
+    },
+    {
+      "id": "languages",
+      "heading": "¿La aplicación está disponible en mi idioma, y eso incluye el OCR y la búsqueda?",
+      "body": [
+        { "type": "p", "text": "La interfaz de la aplicación está traducida a 11 idiomas, incluidos el chino, el ruso y el árabe. El reconocimiento de texto es más limitado: el OCR de ScannerCam Light lee únicamente texto en **alfabeto latino** — el alfabeto que usan el inglés, el español, el francés y lenguas similares — no texto en chino, árabe o cirílico." },
+        { "type": "p", "text": "Como la búsqueda de texto completo se basa en el resultado del OCR, esto repercute también en la búsqueda: un documento escaneado en chino, árabe o ruso no se encontrará al buscar su texto, aunque su título sigue siendo buscable. Escanear, ver y exportar esos documentos funciona con normalidad — solo se ven afectados el reconocimiento y la búsqueda de texto." }
+      ]
+    },
+    {
+      "id": "ads-tracking",
+      "heading": "¿ScannerCam Light muestra anuncios o rastrea el uso?",
+      "body": [
+        { "type": "p", "text": "No. No hay anuncios, análisis, informes de fallos ni SDK de rastreo en ninguna parte de la aplicación, y no hay cuentas de usuario. No se recopila ni se envía a ningún sitio nada sobre el uso de la aplicación. Vea la [Política de Privacidad](privacy.html) para el detalle completo de qué hace y qué no hace la aplicación con los datos." }
+      ]
+    },
+    {
+      "id": "lost-phone",
+      "heading": "¿Qué pasa con mis documentos si pierdo el teléfono?",
+      "body": [
+        { "type": "p", "text": "Se pierden. ScannerCam Light guarda los documentos únicamente en el dispositivo que los escaneó — no hay copia en la nube ni una cuenta con la que volver a iniciar sesión en otro dispositivo. Si un teléfono se pierde, se restablece o se daña, o si la aplicación se desinstala, sus documentos no pueden recuperarse ni por el desarrollador de ScannerCam Light ni por nadie más." },
+        { "type": "p", "text": "La única protección es exportar copias de antemano de todo lo que sea importante — a otra aplicación, a un ordenador, o a un servicio en la nube de su elección. Vea los [Términos de Servicio](terms.html) para las condiciones completas sobre pérdida de datos." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "¿Cómo puedo ponerme en contacto?",
+      "body": [
+        { "type": "p", "text": "Escriba a [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) con preguntas, informes de errores o comentarios. El formulario integrado **Enviar comentarios**, donde esté habilitado, es otra forma de informar de un problema — vea la [Política de Privacidad](privacy.html) para saber qué envía eso y a quién, y los [Términos de Servicio](terms.html) para las condiciones que rigen el uso de la aplicación." }
+      ]
+    }
+  ]
+}

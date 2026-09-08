@@ -1,0 +1,116 @@
+{
+  "doc": "faq",
+  "locale": "fr",
+  "title": "Foire aux questions",
+  "effectiveDateLabel": "Date d'entrée en vigueur",
+  "translationNotice": "Cette traduction est fournie à titre de commodité. En cas de conflit, la version anglaise prévaut.",
+  "intro": "Réponses aux questions courantes sur ScannerCam Light. Pour tous les détails juridiques complets derrière l'une de ces réponses, consultez la [Politique de confidentialité](privacy.html) et les [Conditions d'utilisation](terms.html).",
+  "sections": [
+    {
+      "id": "offline",
+      "heading": "Fonctionne-t-elle hors ligne ?",
+      "body": [
+        { "type": "p", "text": "Oui. La numérisation, la détection des contours, l'amélioration d'image et la reconnaissance de texte sur l'appareil (OCR) s'exécutent entièrement sur l'appareil et ne nécessitent aucune connexion internet. Sur **Android**, l'application publiée ne demande même pas la permission INTERNET, elle n'a donc absolument aucun moyen d'effectuer une requête réseau." },
+        { "type": "p", "text": "Sur **iOS**, il n'existe pas de système de permissions équivalent, mais la même chose est vraie pour tout ce qui concerne les documents — rien à leur sujet ne touche jamais le réseau. Lorsque la fonction facultative de retour d'expérience est activée dans une version donnée, l'application vérifie automatiquement si le service de retour d'expérience est accessible à chaque ouverture de l'écran de la bibliothèque, que le retour d'expérience soit utilisé ou non — voir la question sur les retours ci-dessous pour le détail complet de ce que cette vérification envoie et quand. Lorsqu'un pourboire dans l'application est proposé, ouvrir l'écran d'assistance demande à l'App Store les options de pourboire disponibles avant qu'aucun pourboire ne soit effectué ; Apple gère le volet réseau d'un achat réel." }
+      ]
+    },
+    {
+      "id": "where-stored",
+      "heading": "Où sont stockés mes documents ?",
+      "body": [
+        { "type": "p", "text": "Uniquement sur l'appareil. Les images numérisées sont enregistrées sous forme de fichiers dans le stockage propre de l'application, et les titres des documents ainsi que le texte extrait sont indexés dans une base de données locale — rien n'est envoyé où que ce soit. Voir la [Politique de confidentialité](privacy.html) pour le détail complet de ce qui est stocké et où." }
+      ]
+    },
+    {
+      "id": "is-it-free",
+      "heading": "Est-elle gratuite ?",
+      "body": [
+        { "type": "p", "text": "Oui — ScannerCam Light est entièrement gratuite, sans aucune publicité. Selon la plateforme et la version de l'application, un moyen facultatif de soutenir le projet peut être proposé : un pourboire dans l'application traité par Apple sur iOS, un lien Ko-fi, ou une adresse de don Bitcoin. Aucun de ces moyens ne change ce que l'application peut faire." }
+      ]
+    },
+    {
+      "id": "tips",
+      "heading": "Que débloquent les pourboires ou les dons ?",
+      "body": [
+        { "type": "p", "text": "Rien. Tout pourboire ou don — un pourboire facultatif dans l'application traité par Apple, une contribution Ko-fi, ou un don en Bitcoin, selon l'option proposée — est entièrement **volontaire** et ne débloque aucune fonctionnalité, ne supprime aucune limite et ne change en rien le comportement de l'application. ScannerCam Light inclut déjà tout ce qu'elle propose avant même qu'un pourboire soit donné." },
+        { "type": "p", "text": "Les pourboires et les dons ne sont pas remboursables. Voir les [Conditions d'utilisation](terms.html) pour les conditions complètes." }
+      ]
+    },
+    {
+      "id": "export-pdf",
+      "heading": "Comment exporter un PDF ?",
+      "body": [
+        { "type": "p", "text": "Ouvrez un document, choisissez exporter, puis sélectionnez PDF. La feuille de partage du système permet ensuite d'enregistrer, d'imprimer ou d'envoyer le PDF vers n'importe quelle application ou destination choisie à cet endroit — ScannerCam Light ne contrôle ni ne voit où il finit." }
+      ]
+    },
+    {
+      "id": "ocr-accuracy",
+      "heading": "Quelle est la précision de la reconnaissance de texte (OCR) ?",
+      "body": [
+        { "type": "p", "text": "Pas parfaite. La reconnaissance de texte, comme la détection des contours et l'amélioration d'image, est automatisée et peut mal lire, omettre ou déformer du texte — en particulier sur des photos de mauvaise qualité, des mises en page inhabituelles ou de l'écriture manuscrite." },
+        { "type": "p", "text": "Vérifiez toujours le texte reconnu par rapport à l'original avant de vous y fier, en particulier pour tout ce qui est juridique, médical ou financier. Voir les [Conditions d'utilisation](terms.html) pour la clause de non-responsabilité complète sur la précision." }
+      ]
+    },
+    {
+      "id": "search",
+      "heading": "Comment fonctionne la recherche, et que ne peut-elle pas trouver ?",
+      "body": [
+        { "type": "p", "text": "La recherche parcourt les titres des documents et le texte capturé par l'OCR sur l'appareil. Comme l'OCR ne lit que le texte en alphabet latin, un document dont le contenu est en chinois, en arabe, en russe ou dans une autre écriture non latine ne sera pas trouvé en recherchant son texte — seul son titre le sera, et seul le texte OCR des documents en alphabet latin est consultable par la recherche." }
+      ]
+    },
+    {
+      "id": "backups",
+      "heading": "Mes documents sont-ils sauvegardés quelque part ?",
+      "body": [
+        { "type": "p", "text": "Non. ScannerCam Light stocke les documents uniquement sur l'appareil — il n'y a **aucun stockage cloud et aucune sauvegarde** créée par l'application, et rien n'est copié sur un serveur. Si l'application est désinstallée, ou si l'appareil est perdu, réinitialisé ou endommagé, ces documents sont perdus définitivement." },
+        { "type": "p", "text": "Conservez vos propres copies de tout ce que vous ne pouvez pas vous permettre de perdre — par exemple en exportant les documents importants vers une autre application, un ordinateur, ou un service cloud de votre choix avant de désinstaller l'application ou de changer d'appareil. Voir les [Conditions d'utilisation](terms.html) pour les conditions complètes en cas de perte de données." }
+      ]
+    },
+    {
+      "id": "free-space",
+      "heading": "Comment libérer de l'espace ?",
+      "body": [
+        { "type": "p", "text": "Supprimez les documents qui ne sont plus nécessaires depuis la bibliothèque. Supprimer un document retire entièrement ses fichiers image de l'appareil, pas seulement son entrée dans la liste, si bien que l'espace est réellement libéré." }
+      ]
+    },
+    {
+      "id": "feedback-public",
+      "heading": "Le retour d'expérience envoyé via l'application est-il rendu public ?",
+      "body": [
+        { "type": "p", "text": "Oui — lorsque la fonction facultative de retour d'expérience est activée dans une version donnée, un message envoyé devient un **ticket (« issue ») publiquement visible** sur le dépôt **GitHub** de ScannerCam Light, et n'importe qui sur internet peut lire le texte du message et, s'il a été saisi, l'adresse e-mail." },
+        { "type": "p", "text": "Une activité réseau se produit aussi avant ce point : lorsque l'écran de la bibliothèque se charge, l'application vérifie si le service de retour d'expérience est accessible, et l'ouverture du formulaire de retour charge un défi de vérification **Cloudflare Turnstile** — ce qui signifie que Cloudflare reçoit une requête et l'adresse IP de l'appareil. Aucune de ces deux étapes n'envoie le message ou l'e-mail ; cela se produit au moment d'appuyer sur **Envoyer**." },
+        { "type": "p", "text": "Aucun document numérisé ni son contenu n'est jamais inclus dans un retour d'expérience. Le champ e-mail peut être laissé vide pour ne pas apparaître dans le ticket public, et aucune information sensible ne doit être placée dans le message lui-même. Voir la section Retours de la [Politique de confidentialité](privacy.html) pour le détail complet." }
+      ]
+    },
+    {
+      "id": "languages",
+      "heading": "L'application est-elle disponible dans ma langue, et cela inclut-il l'OCR et la recherche ?",
+      "body": [
+        { "type": "p", "text": "L'interface de l'application est traduite en 11 langues, dont le chinois, le russe et l'arabe. La reconnaissance de texte est plus limitée : l'OCR de ScannerCam Light ne lit que le texte en **alphabet latin** — l'alphabet utilisé par l'anglais, l'espagnol, le français et les langues similaires — pas le chinois, l'arabe ni le cyrillique." },
+        { "type": "p", "text": "Comme la recherche en texte intégral repose sur le résultat de l'OCR, cela se répercute sur la recherche : un document numérisé en chinois, en arabe ou en russe ne sera pas trouvé en recherchant son texte, bien que son titre reste consultable. Numériser, consulter et exporter de tels documents fonctionne normalement — seules la reconnaissance et la recherche de texte sont affectées." }
+      ]
+    },
+    {
+      "id": "ads-tracking",
+      "heading": "ScannerCam Light affiche-t-elle des publicités ou suit-elle l'utilisation ?",
+      "body": [
+        { "type": "p", "text": "Non. Il n'y a aucune publicité, aucune analyse, aucun rapport de plantage et aucun SDK de suivi nulle part dans l'application, et aucun compte utilisateur. Rien concernant l'utilisation de l'application n'est collecté ni envoyé où que ce soit. Voir la [Politique de confidentialité](privacy.html) pour le détail complet de ce que l'application fait et ne fait pas avec les données." }
+      ]
+    },
+    {
+      "id": "lost-phone",
+      "heading": "Qu'arrive-t-il à mes documents si je perds mon téléphone ?",
+      "body": [
+        { "type": "p", "text": "Ils sont perdus. ScannerCam Light conserve les documents uniquement sur l'appareil qui les a numérisés — il n'y a aucune copie dans le cloud ni aucun compte pour se reconnecter sur un autre appareil. Si un téléphone est perdu, réinitialisé ou endommagé, ou si l'application est désinstallée, ses documents ne peuvent être récupérés ni par le développeur de ScannerCam Light ni par personne d'autre." },
+        { "type": "p", "text": "La seule protection consiste à exporter au préalable des copies de tout ce qui est important — vers une autre application, un ordinateur, ou un service cloud de votre choix. Voir les [Conditions d'utilisation](terms.html) pour les conditions complètes en cas de perte de données." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Comment puis-je entrer en contact ?",
+      "body": [
+        { "type": "p", "text": "Envoyez un e-mail à [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) pour toute question, rapport de bogue ou retour d'expérience. Le formulaire intégré **Envoyer un retour**, lorsqu'il est activé, est un autre moyen de signaler un problème — voir la [Politique de confidentialité](privacy.html) pour savoir ce que cela envoie et à qui, et les [Conditions d'utilisation](terms.html) pour les conditions régissant l'utilisation de l'application." }
+      ]
+    }
+  ]
+}

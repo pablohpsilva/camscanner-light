@@ -1,0 +1,116 @@
+{
+  "doc": "faq",
+  "locale": "lb",
+  "title": "Dacks gestallte Froen",
+  "effectiveDateLabel": "Datum vum Inkrafttrieden",
+  "translationNotice": "Dës Iwwersetzung gëtt just fir Är Bequemlechkeet ugebueden. Bei engem Widderspruch mat der englescher Versioun gëllt d'englesch Versioun.",
+  "intro": "Äntwerten op heefeg Froen iwwer ScannerCam Light. Fir all déi juristesch Detailer hannert enger vun dëse Froen, kuckt d'[Dateschutzerklärung](privacy.html) an d'[Notzungsbedingungen](terms.html).",
+  "sections": [
+    {
+      "id": "offline",
+      "heading": "Funktionnéiert d'App offline?",
+      "body": [
+        { "type": "p", "text": "Jo. D'Scannen, d'Kantenerkennung, d'Bildverbesserung an d'Texterkennung um Apparat (OCR) lafen komplett um Apparat a brauchen keng Internetverbindung. Op **Android** freet déi publizéiert App net emol d'INTERNET-Permissioun, sou datt si guer keng Méiglechkeet huet fir eng Netzwierk-Ufro ze maachen." },
+        { "type": "p", "text": "Op **iOS** gëtt et kee gläichwäertegt Permissiounssystem, mä dat selwecht gëllt fir alles wat mat Dokumenter ze dinn huet — näischt un engem Dokument beréiert jeemools d'Netzwierk. Do wou déi optional Feedback-Funktioun an enger Versioun aktivéiert ass, kontrolléiert d'App automatesch, all Kéier wann de Bibliothéik-Écran opgeet, ob de Feedback-Service erreechbar ass, egal ob de Feedback jeemools benotzt gëtt — kuckt d'Feedback-Fro hei drënner fir all d'Detailer, wat déi Kontroll schéckt a wéini. Do wou en Tipp an der App ugebuede gëtt, freet d'Opmaache vum Support-Écran den App Store no den disponibelen Tipp-Optiounen, ier iergendee Tipp gemaach gëtt; Apple këmmert sech ëm de Netzwierk-Deel vun engem richtege Kaf." }
+      ]
+    },
+    {
+      "id": "where-stored",
+      "heading": "Wou ginn meng Dokumenter gespäichert?",
+      "body": [
+        { "type": "p", "text": "Nëmmen um Apparat. Agescannt Biller ginn als Dateien am eegene Späicher vun der App gespäichert, an d'Titelen vun Dokumenter an den extrahéierte Text ginn a lokaler Datebank indexéiert — näischt gëtt iergendwouhin eropgelueden. Kuckt d'[Dateschutzerklärung](privacy.html) fir all d'Detailer, wat wou gespäichert gëtt." }
+      ]
+    },
+    {
+      "id": "is-it-free",
+      "heading": "Ass si gratis?",
+      "body": [
+        { "type": "p", "text": "Jo — ScannerCam Light ass komplett gratis ze benotzen, ouni Reklamm. Ofhängeg vun der Plattform an der App-Versioun kann eng optional Manéier ugebuede ginn fir d'Projet z'ënnerstëtzen: en Tipp an der App, dee vun Apple veraarbecht gëtt, op iOS, e Ko-fi-Link, oder eng Bitcoin-Don-Adress. Keng vun dëse Méiglechkeeten ännert eppes drun, wat d'App ka maachen." }
+      ]
+    },
+    {
+      "id": "tips",
+      "heading": "Wat schléissen Tippe oder Donen op?",
+      "body": [
+        { "type": "p", "text": "Näischt. All Tipp oder all Spend — en optionalen Tipp an der App, dee vun Apple veraarbecht gëtt, e Ko-fi-Bäitrag, oder eng Bitcoin-Spend, jee no där Optioun, déi ugebuede gëtt — ass komplett **fräiwëlleg** a schléisst keng Funktioun op, hieft keng Limite op, an ännert näischt un der Aart a Weis, wéi d'App funktionnéiert. ScannerCam Light huet schonn alles dobäi, wat si ubitt, ier iergendeen Tipp jeemools gemaach gëtt." },
+        { "type": "p", "text": "Tippen an Donen sinn net rembourséierbar. Kuckt d'[Notzungsbedingungen](terms.html) fir déi komplett Bedingungen." }
+      ]
+    },
+    {
+      "id": "export-pdf",
+      "heading": "Wéi exportéieren ech e PDF?",
+      "body": [
+        { "type": "p", "text": "Maacht en Dokument op, wielt Exportéieren, a wielt PDF. De Share-Menü vum Betribssystem léisst de PDF dann späicheren, drécken, oder un eng do gewielten App oder Destinatioun schécken — ScannerCam Light kontrolléiert oder gesäit net, wou en dann ophält." }
+      ]
+    },
+    {
+      "id": "ocr-accuracy",
+      "heading": "Wéi genau ass d'Texterkennung (OCR)?",
+      "body": [
+        { "type": "p", "text": "Net perfekt. D'Texterkennung ass, wéi och d'Kantenerkennung an d'Bildverbesserung, automatiséiert an onperfekt, a ka Text falsch liesen, ausloossen, oder verzerren — besonnesch bei Fotoen mat schlechter Qualitéit, ongewéinlechen Layouts, oder Handschrëft." },
+        { "type": "p", "text": "Kontrolléiert ëmmer den erkannte Text géint d'Original, ier Dir Iech drop verloosst, besonnesch fir alles wat juristesch, medezinesch, oder finanziell wichteg ass. Kuckt d'[Notzungsbedingungen](terms.html) fir déi komplett Ausschlossklausel iwwer d'Genauegkeet." }
+      ]
+    },
+    {
+      "id": "search",
+      "heading": "Wéi funktionnéiert d'Sich, a wat kann si net fannen?",
+      "body": [
+        { "type": "p", "text": "D'Sich duerchsicht d'Titelen vun Dokumenter an den Text, deen d'OCR um Apparat erfaasst huet. Well d'OCR nëmme Text am laténgesche Alfabet liest, gëtt en Dokument, deem säin Inhalt op Chinesesch, Arabesch, Russesch, oder engem aneren net-laténgesche Schrëftsystem geschriwwe steet, net fonnt, wann Dir no sengem Text sicht — nëmmen säin Titel gëtt fonnt, an nëmme OCR-Text vun Dokumenter am laténgesche Alfabet ass duerchsichbar." }
+      ]
+    },
+    {
+      "id": "backups",
+      "heading": "Ginn meng Dokumenter iergendwou gesëchert?",
+      "body": [
+        { "type": "p", "text": "Nee. ScannerCam Light späichert Dokumenter nëmmen um Apparat — et gëtt **kee Cloud-Späicher a kee Backup**, dat vun der App erstallt gëtt, an näischt gëtt op en Server kopéiert. Wann d'App desinstalléiert gëtt, oder wann den Apparat verluer geet, zréckgesat gëtt, oder futti geet, sinn dës Dokumenter fir ëmmer fort." },
+        { "type": "p", "text": "Behalt Är eege Kopie vun allem, wat Dir Iech net leeschte kënnt ze verléieren — zum Beispill andeems Dir wichteg Dokumenter an eng aner App, en Computer, oder en Cloud-Service vun Ärer Wiel exportéiert, ier Dir d'App desinstalléiert oder de Apparat wiesselt. Kuckt d'[Notzungsbedingungen](terms.html) fir déi komplett Bedingunge bei Datenverloscht." }
+      ]
+    },
+    {
+      "id": "free-space",
+      "heading": "Wéi maachen ech Späicherplaz fräi?",
+      "body": [
+        { "type": "p", "text": "Läscht net méi gebrauchten Dokumenter aus der Bibliothéik. En Dokument ze läschen entfernt seng Bilddateien komplett vum Apparat, net nëmme säin Agank an der Lëscht, sou datt de Plaz wierklech fräi gëtt." }
+      ]
+    },
+    {
+      "id": "feedback-public",
+      "heading": "Gëtt de Feedback, deen iwwer d'App geschéckt gëtt, ëffentlech gemaach?",
+      "body": [
+        { "type": "p", "text": "Jo — do wou déi optional Feedback-Funktioun an enger Versioun aktivéiert ass, gëtt eng ofgeschéckte Message zu engem **ëffentlech siichtbaren Issue** am **GitHub**-Repository vu ScannerCam Light, a jiddereen um Internet kann den Text vun der Message liesen a, wann eng agi gouf, d'E-Mail-Adress." },
+        { "type": "p", "text": "Och scho virdru geschitt e bësse Netzwierk-Aktivitéit: wann de Bibliothéik-Écran lued, kontrolléiert d'App, ob de Feedback-Service erreechbar ass, an d'Opmaache vum Feedback-Formulaire lued eng **Cloudflare-Turnstile**-Iwwerpréiwung — dat heescht, datt Cloudflare an deem Moment eng Ufro an d'IP-Adress vum Apparat kritt. Keen vun dëse béide Schrëtt schéckt d'Message oder d'E-Mail; dat geschitt eréischt beim Dréck op **Schécken**." },
+        { "type": "p", "text": "Kee gescannte Dokument oder säin Inhalt gëtt jeemools am Feedback abegraff. D'E-Mail-Feld ka eidel gelooss ginn, fir datt et net am ëffentleche Issue erschéngt, a sensibel Informatioune sollten net an d'Message selwer geschriwwe ginn. Kuckt d'Feedback-Sektioun vun der [Dateschutzerklärung](privacy.html) fir all d'Detailer." }
+      ]
+    },
+    {
+      "id": "languages",
+      "heading": "Ass d'App a menger Sprooch disponibel, an ass dat och fir OCR an d'Sich de Fall?",
+      "body": [
+        { "type": "p", "text": "D'Benotzeroberfläch vun der App ass a 11 Sproochen iwwersat, dorënner Chinesesch, Russesch, an Arabesch. D'Texterkennung ass méi limitéiert: D'OCR an ScannerCam Light liest nëmmen Text am **laténgesche Alfabet** — dat Alfabet, dat Englesch, Spuenesch, Franséisch a soss ähnlech Sproochen benotzen — net Chinesesch, Arabesch, oder Kyrillesch." },
+        { "type": "p", "text": "Well d'Volltextsuche op der OCR-Ausgab opbaut, wierkt sech dat och op d'Sich aus: En Dokument, dat op Chinesesch, Arabesch, oder Russesch agescannt gouf, gëtt net fonnt, wann Dir no sengem Text sicht, mä säin Titel bleift trotzdeem duerchsichbar. D'Scannen, d'Kucken, an d'Exportéiere vun esou Dokumenter funktionnéiert normal — nëmmen d'Texterkennung an d'Textsich si betraff." }
+      ]
+    },
+    {
+      "id": "ads-tracking",
+      "heading": "Weist ScannerCam Light Reklamm un oder verfollegt d'Notzung?",
+      "body": [
+        { "type": "p", "text": "Nee. Et gëtt keng Reklamm, keng Analyse, kee Crash-Reporting, a keng Tracking-SDKen iergendwou an der App, a keng Benotzerkonten. Näischt iwwer d'App-Notzung gëtt gesammelt oder iergendwouhin geschéckt. Kuckt d'[Dateschutzerklärung](privacy.html) fir all d'Detailer, wat d'App mat Daten mécht an net mécht." }
+      ]
+    },
+    {
+      "id": "lost-phone",
+      "heading": "Wat geschitt mat mengen Dokumenter, wann ech mäin Handy verléieren?",
+      "body": [
+        { "type": "p", "text": "Si si fort. ScannerCam Light behält Dokumenter nëmmen um Apparat, dee se agescannt huet — et gëtt keng Cloud-Kopie a kee Kont fir sech op engem anere Apparat nees unzemellen. Wann e Handy verluer geet, zréckgesat gëtt, oder futti geet, oder wann d'App desinstalléiert gëtt, kënnen dess Dokumenter net méi vum Entwéckler vu ScannerCam Light nach vun iergendengem anerem erëmfonnt ginn." },
+        { "type": "p", "text": "Deen eenzegen Schutz ass, am Viraus Kopien vun allem Wichtegem z'exportéieren — an eng aner App, op en Computer, oder an en Cloud-Service vun Ärer Wiel. Kuckt d'[Notzungsbedingungen](terms.html) fir déi komplett Bedingunge bei Datenverloscht." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Wéi kann ech Kontakt ophuelen?",
+      "body": [
+        { "type": "p", "text": "Schéckt eng E-Mail un [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) mat Froen, Feelerbericht, oder Feedback. D'App-intern Formulaire **Feedback schécken**, wou aktivéiert, ass eng weider Manéier fir e Problem ze mellen — kuckt d'[Dateschutzerklärung](privacy.html) fir ze gesinn, wat dat schéckt a un wien, an d'[Notzungsbedingungen](terms.html) fir déi Bedingungen, déi d'Notzung vun der App reegelen." }
+      ]
+    }
+  ]
+}
