@@ -159,7 +159,7 @@ test('requires a translation notice on non-English documents', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `cd libs/legal-content && node --test test/`
+Run: `cd libs/legal-content && node --test`
 Expected: FAIL — `Cannot find module '../src/constants.mjs'`.
 
 - [ ] **Step 3: Write the implementation**
@@ -174,7 +174,7 @@ Expected: FAIL — `Cannot find module '../src/constants.mjs'`.
   "type": "module",
   "scripts": {
     "generate": "node src/generate.mjs",
-    "test": "node --test test/"
+    "test": "node --test"
   }
 }
 ```
@@ -269,7 +269,7 @@ export function loadDocument (doc, locale) {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `cd libs/legal-content && node --test test/`
+Run: `cd libs/legal-content && node --test`
 Expected: PASS, 10 tests.
 
 - [ ] **Step 5: Install the workspace package and confirm nothing else broke**
@@ -542,6 +542,8 @@ Depends on Task 1. Parallel with Tasks 3 and 5.
 
 Source material: the current `apps/web/privacy.html` is accurate and well-written — port its wording rather than inventing new text, then add the missing sections (`purchases`, `retention`, `your-rights`).
 
+**Exact values, required verbatim:** `"title": "Privacy Policy"` and `"effectiveDateLabel": "Effective date"`. Task 12 labels the Settings row from this `title` and asserts `find.text('Privacy Policy')`, so any other wording fails a later task.
+
 - [ ] **Step 1: Write the failing test**
 
 Create `libs/legal-content/test/privacy_clauses.test.mjs`:
@@ -736,7 +738,7 @@ git commit -m "feat(legal): English FAQ content"
 
 ### Task 6: Dart renderer and the generated Dart artifact
 
-Depends on Tasks 1-5. Parallel with Task 7.
+Depends on Tasks 1-5 AND Task 8 (all 33 content files must exist). Runs BEFORE Task 7 — both tasks write `src/generate.mjs`.
 
 **Files:**
 - Create: `libs/legal-content/src/render-dart.mjs`
@@ -981,7 +983,7 @@ cd apps/mobile && flutter analyze
 ```
 Expected: the generator prints `wrote apps/mobile/lib/features/legal/generated/legal_content.g.dart`; `flutter analyze` reports **no issues** (the repo holds a zero-warning bar).
 
-> If the 10 non-English content files do not exist yet (Tasks 10-12 not done), temporarily narrow `LOCALES` **in the test only** — never in `constants.mjs` — or run this step after those tasks. Do not commit a narrowed `LOCALES`.
+> **Ordering, revised:** Task 8's translations run BEFORE this task, so all 33 content files already exist when the generator runs. Do **not** narrow `LOCALES` anywhere, for any reason — the generator must load all 11. If a content file is missing, that is a real failure to report, not something to work around.
 
 - [ ] **Step 7: Commit**
 
@@ -998,7 +1000,7 @@ git commit -m "feat(legal): Dart renderer and generated content artifact"
 
 ### Task 7: HTML renderer and the generated web pages
 
-Depends on Tasks 1-5. Parallel with Task 6.
+Depends on Tasks 1-5, Task 8, and Task 6 (which creates `src/generate.mjs`; this task extends it). Never run concurrently with Task 6.
 
 **Files:**
 - Create: `libs/legal-content/src/render-html.mjs`
@@ -1072,7 +1074,8 @@ test('shows the translation notice only on non-English pages', () => {
 
 test('emits hreflang alternates for all 11 locales plus x-default', () => {
   const out = renderHtml(doc, opts('en'))
-  assert.equal((out.match(/rel="alternate"/g) || []).length, 11)
+  // 12, not 11: <link rel="alternate" hreflang="x-default"> is itself a rel="alternate".
+  assert.equal((out.match(/rel="alternate"/g) || []).length, 12)
   assert.ok(out.includes('hreflang="x-default"'))
   assert.ok(out.includes('hreflang="pt-BR"'))
 })
@@ -1194,7 +1197,7 @@ git commit -m "feat(legal): HTML renderer and generated web pages"
 
 ### Task 8: The 30 translations
 
-Depends on Tasks 3-5 (English source). Split into three parallel sub-tasks — **8a terms, 8b privacy, 8c faq** — each producing 10 files. Run them as three subagents.
+Depends on Tasks 3-5 (English source) only. Runs BEFORE Tasks 6 and 7. Split into three sub-tasks — **8a terms, 8b privacy, 8c faq** — each producing 10 files. Run them as three subagents.
 
 **Files (per sub-task):**
 - Create: `libs/legal-content/content/{doc}.{locale}.json` for `pt, pt_BR, es, fr, de, lb, tr, ru, zh, ar`
@@ -1218,8 +1221,14 @@ import { loadDocument } from '../src/schema.mjs'
 
 test('the package locale list matches the app', () => {
   const dart = readFileSync(resolve(repoRoot, 'apps/mobile/lib/l10n/locale_resolution.dart'), 'utf8')
-  const tags = [...dart.matchAll(/Locale\('([a-z]{2})'(?:,\s*'([A-Z]{2})')?\)/g)]
+  // Slice out ONLY the kSupportedAppLocales list. resolveLocale() below it ends
+  // with `return const Locale('en');`, which a whole-file regex would count as a
+  // 12th locale — making this test impossible to pass no matter what LOCALES says.
+  const block = dart.match(/kSupportedAppLocales\s*=\s*<Locale>\[([\s\S]*?)\];/)
+  assert.ok(block, 'could not find kSupportedAppLocales in locale_resolution.dart')
+  const tags = [...block[1].matchAll(/Locale\('([a-z]{2})'(?:,\s*'([A-Z]{2})')?\)/g)]
     .map((m) => (m[2] ? `${m[1]}_${m[2]}` : m[1]))
+  assert.ok(tags.length > 0, 'locale slice matched nothing — the regex has drifted from the file')
   assert.deepEqual(tags, LOCALES)
 })
 
@@ -1288,7 +1297,7 @@ Rules, non-negotiable:
 
 - [ ] **Step 4: Run the parity test to verify it passes**
 
-Run: `cd libs/legal-content && node --test test/`
+Run: `cd libs/legal-content && node --test`
 Expected: PASS. (Sub-tasks 8b and 8c will still fail their own document's parity assertions until they land — that is expected while they run in parallel; the full suite is green only after all three.)
 
 - [ ] **Step 5: Commit**
@@ -2097,6 +2106,17 @@ echo "==> Regenerating legal artifacts"
 pnpm --filter @camscanner/legal-content generate
 
 echo "==> Checking for drift"
+# Untracked files matter as much as modified ones: `git diff` is blind to a
+# brand-new apps/web/legal/*.html that was generated but never committed.
+UNTRACKED="$(git ls-files --others --exclude-standard -- "${OUTPUTS[@]}")"
+if [ -n "$UNTRACKED" ]; then
+  echo
+  echo "FAIL: generated legal content includes files that were never committed:"
+  echo "$UNTRACKED"
+  echo "Fix: git add them, or delete them if they are no longer generated."
+  exit 1
+fi
+
 if ! git diff --quiet -- "${OUTPUTS[@]}"; then
   echo
   echo "FAIL: generated legal content is out of date."
@@ -2116,12 +2136,20 @@ Run:
 ```bash
 chmod +x scripts/check-legal-content.sh
 bash scripts/check-legal-content.sh                 # expect OK
+
+# Case 1: a hand edit to a committed generated file
 printf '\n<!-- hand edit -->\n' >> apps/web/terms.html
 bash scripts/check-legal-content.sh                 # expect FAIL, exit 1
 git checkout -- apps/web/terms.html
 bash scripts/check-legal-content.sh                 # expect OK again
+
+# Case 2: a generated file that was never committed (git diff is blind to this)
+cp apps/web/legal/terms.de.html apps/web/legal/terms.zz.html
+bash scripts/check-legal-content.sh                 # expect FAIL, exit 1
+rm apps/web/legal/terms.zz.html
+bash scripts/check-legal-content.sh                 # expect OK again
 ```
-Expected: OK, then FAIL with a non-zero exit, then OK. A guard that never fails is not a guard — do not skip this step.
+Expected: OK, FAIL, OK, FAIL, OK. **Both** failure cases must be proven — a guard that only catches modifications misses the newly-generated-but-uncommitted file entirely. A guard that never fails is not a guard; do not skip this step.
 
 - [ ] **Step 3: Wire it into CI**
 
@@ -2232,26 +2260,30 @@ git commit -m "test(legal): device integration test for the three documents"
 
 ## Execution order
 
+**Revised after the pre-flight conflict scan.** Two corrections to the original ordering: the generator loads all 11 locales unconditionally, so the translations must exist before it ever runs; and Tasks 6 and 7 both write `src/generate.mjs`, so they were never independent.
+
 ```
 Task 1 ─┬─> Task 3 ─┐
-        ├─> Task 4 ─┼─> Task 6 ─┬─> Task 10 ─┬─> Task 11 ─> Task 12 ─> Task 13 ─┐
-        └─> Task 5 ─┤           │            │                                   │
-Task 2 ─────────────┴─> Task 7 ─┘  Task 9 ───┘                                   ├─> Task 16
-                                   Task 8a/8b/8c ─────────────────> Task 15 ─────┤
-                                   Task 14 ──────────────────────────────────────┘
+        ├─> Task 4 ─┼─> Task 8a/8b/8c ─> Task 6 ─> Task 7 ─┬─> Task 14 ──────────────┐
+        └─> Task 5 ─┘                                      ├─> Task 15 ──────────────┤
+Task 2 ─────────────────────────────────> Task 9 ─┐        │                         ├─> Task 16
+                                          Task 10 ┴────────┴─> Task 11 ─> 12 ─> 13 ──┘
 ```
 
-Parallel groups, per `CLAUDE.md`'s subagent rule:
-- **Wave 1:** Task 1, Task 2 (independent)
-- **Wave 2:** Tasks 3, 4, 5 (independent, all need Task 1)
-- **Wave 3:** Tasks 6, 7 (independent), then 8a, 8b, 8c (independent)
-- **Wave 4:** Tasks 9, 10 (independent), Task 14 (independent of the app entirely)
-- **Wave 5:** Task 11 → 12 → 13 (a genuine chain), Task 15
-- **Wave 6:** Task 16 (device verification, serial by nature)
+Dependency order:
+- **Group 1:** Task 1, Task 2 (independent of each other)
+- **Group 2:** Tasks 3, 4, 5 (independent, all need Task 1)
+- **Group 3:** Tasks 8a, 8b, 8c (independent, need only the English content)
+- **Group 4:** Task 6, then Task 7 — **strictly serial, same file**
+- **Group 5:** Tasks 9, 10, 14 (independent)
+- **Group 6:** Task 11 → 12 → 13 (a genuine chain), Task 15
+- **Group 7:** Task 16 (device verification, serial by nature)
+
+**On concurrency:** these groups express *dependency*, not a mandate to run concurrently. Every task commits into one working tree with one git index, so concurrent implementers would interleave commits and corrupt each other's `git add` scopes. Execute serially in the order above unless each agent gets its own git worktree.
 
 ## Definition of done
 
-- [ ] `cd libs/legal-content && node --test test/` — all green
+- [ ] `cd libs/legal-content && node --test` — all green
 - [ ] `cd apps/mobile && flutter test` — all green, count risen by the new tests only
 - [ ] `cd apps/mobile && flutter analyze` — **No issues found**
 - [ ] `bash scripts/check-legal-content.sh` — in sync, and proven to fail on a hand edit
