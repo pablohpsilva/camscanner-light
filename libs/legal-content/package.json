@@ -1,0 +1,10 @@
+{
+  "name": "@camscanner/legal-content",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node src/generate.mjs",
+    "test": "node --test test/"
+  }
+}
