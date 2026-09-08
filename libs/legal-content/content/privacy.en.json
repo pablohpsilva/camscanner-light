@@ -10,14 +10,14 @@
       "id": "summary",
       "heading": "Summary",
       "body": [
-        { "type": "p", "text": "ScannerCam Light is built to keep documents private. Everything stays on the device, with one explicit exception: the optional in-app feedback feature described below, which only transmits data when it is actively chosen to be sent. There are no user accounts, no analytics, no ads, no tracking, and personal data is never sold." }
+        { "type": "p", "text": "ScannerCam Light is built to keep documents private. Your scanned documents, the text recognised from them, and everything derived from them stay on your device and are never uploaded. A few optional features do use the network, and some of that happens automatically rather than only when you ask for it: where the optional feedback feature is available, the app checks whether the feedback service is reachable when the library screen opens, and opening the feedback form loads a **Cloudflare** verification challenge that receives your device's IP address — both before you type or send anything. Where an in-app tip is offered, opening the support screen asks the App Store for the available tip options. The Network access, Feedback and In-app purchases and tips sections below describe every case. There are no user accounts, no analytics, no ads, no tracking, and personal data is never sold." }
       ]
     },
     {
       "id": "what-we-collect",
       "heading": "What is collected",
       "body": [
-        { "type": "p", "text": "**Almost nothing.** Apart from the optional feedback feature described below, ScannerCam Light does not collect, transmit, or store any personal data on any server. There are no user accounts and no analytics or tracking of any kind. No ads are shown, and no data is ever sold. See the Feedback section below for the sole exception." }
+        { "type": "p", "text": "**Almost nothing.** ScannerCam Light has no user accounts and no analytics or tracking of any kind; no ads are shown, and no data is ever sold. No document, no page image, and no text recognised from a document is ever sent to any server. What does leave the device is limited to the cases described in the Network access, Feedback and In-app purchases and tips sections below: the optional feedback feature — including two requests it makes automatically, before anything is submitted — the App Store query for the available tip options where an in-app tip is offered, and any donation link you tap." }
       ]
     },
     {
@@ -35,15 +35,15 @@
       "id": "network",
       "heading": "Network access",
       "body": [
-        { "type": "p", "text": "The app makes no background network requests unrelated to a feature you are actively using. Outbound connections happen when an optional donation link is tapped, opening your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; where an in-app tip is offered, opening the support screen asks the App Store for the available tip options before any tip is made, and Apple separately handles the network side of an actual purchase, as described in the Purchases section below; and, where the optional feedback feature is enabled in a given build, in connection with that feature as described in the Feedback section below — which includes a check of whether the feedback service is reachable when the library screen opens, not only a connection when you submit the form." },
-        { "type": "p", "text": "On **Android**, the released app does not request the INTERNET permission at all, so it cannot make any network request. On iOS there is no equivalent permission system; the app still makes no background requests regardless." }
+        { "type": "p", "text": "Beyond the cases described in this section, the app makes no network requests of its own — but some of these cases are automatic rather than something you trigger. Outbound connections happen when an optional donation link is tapped, opening your browser to a third-party donation page that the developer of ScannerCam Light does not control and receives no data from; where an in-app tip is offered, opening the support screen asks the App Store for the available tip options before any tip is made, and Apple separately handles the network side of an actual purchase, as described in the In-app purchases and tips section below; and, where the optional feedback feature is available, in connection with that feature as described in the Feedback section below — which includes a check of whether the feedback service is reachable when the library screen opens, and a **Cloudflare Turnstile** challenge loaded when the feedback form opens, neither of which waits for you to submit anything." },
+        { "type": "p", "text": "On **Android**, the released app does not request the INTERNET permission at all, so it cannot make any network request; the optional feedback feature therefore cannot reach its service on a released Android build, and is not offered there. On iOS there is no equivalent permission system, and the automatic requests described above are real: the feedback-service check, the **Cloudflare Turnstile** challenge, and the App Store tip-options query all happen without you triggering them. Apart from those and the links you tap yourself, the app makes no further requests." }
       ]
     },
     {
       "id": "feedback",
       "heading": "Feedback",
       "body": [
-        { "type": "p", "text": "The app includes an optional **Send feedback** feature. Where this feature is enabled in a given build, two things happen before you type anything: when the library screen loads, the app makes a small request to check whether the feedback service is currently reachable; and when you open the feedback form itself, it loads a **Cloudflare Turnstile** human-verification challenge inside the form, which means Cloudflare receives a request and your device's IP address at that point. Neither of these two steps sends your message, your email, or anything about your documents — they happen automatically and are not gated on Submit." },
+        { "type": "p", "text": "The app includes an optional **Send feedback** feature. It is available only in a build that enables it and can reach the network, which excludes released **Android** builds — those do not request the INTERNET permission, so the feature is not offered on them. Where the feature is available, two things happen before you type anything: when the library screen loads, the app makes a small request to check whether the feedback service is currently reachable; and when you open the feedback form itself, it loads a **Cloudflare Turnstile** human-verification challenge inside the form, which means Cloudflare receives a request and your device's IP address at that point. Neither of these two steps sends your message, your email, or anything about your documents — they happen automatically and are not gated on Submit." },
         { "type": "p", "text": "Your message, and the fields below, are sent only when you tap **Submit**:" },
         { "type": "ul", "items": [
           "Your message — the text typed into the feedback form (required).",
@@ -59,7 +59,7 @@
       "id": "purchases",
       "heading": "In-app purchases and tips",
       "body": [
-        { "type": "p", "text": "On iOS the app offers an optional tip. Opening the support screen asks the App Store for the available tip options, before any tip is made. Tips themselves are processed entirely by **Apple**; the developer receives no payment-card details, no billing address, and no other payment data — only Apple's aggregate, anonymous sales reporting. On Android there is no in-app purchase; the donation links open your browser." },
+        { "type": "p", "text": "Depending on your platform and app version, an optional in-app tip may be offered on iOS; whether any tip options actually appear also depends on Apple's own App Store settings at the time, so the support screen can legitimately show none. Where the tip is offered, opening the support screen asks the App Store for the available tip options as soon as that screen opens, before and independently of any tip being made. Tips themselves are processed entirely by **Apple**; the developer receives no payment-card details, no billing address, and no other payment data — only Apple's aggregate, anonymous sales reporting. On Android there is no in-app purchase; where a donation option is offered at all, tapping its link opens your browser." },
         { "type": "p", "text": "Ko-fi and Bitcoin donation options may also be offered, depending on platform and app version. These are independent of any Apple in-app purchase and, like other donation links, simply open a third-party page in your browser." }
       ]
     },
@@ -75,7 +75,7 @@
       "heading": "Retention",
       "body": [
         { "type": "p", "text": "A scanned document and its metadata are kept on your device for as long as you keep them — nothing is deleted automatically, and nothing expires on its own. A document is removed only when you delete it within the app, or when you uninstall the app itself." },
-        { "type": "p", "text": "Uninstalling ScannerCam Light removes the local database and every image file it created; nothing survives the uninstall. Because no server-side copy of any document is ever made, there is no server-side copy to request the deletion of — deleting on your device is deletion, complete and immediate." }
+        { "type": "p", "text": "Uninstalling ScannerCam Light removes the local database and every image file it created; nothing survives the uninstall. Because no server-side copy of any document is ever made, there is no server-side copy to request the deletion of. Deleting on your device removes the app's own files and database rows straight away; how soon the underlying storage is actually overwritten is decided by your operating system and device, which the app does not control." }
       ]
     },
     {
@@ -84,14 +84,14 @@
       "body": [
         { "type": "p", "text": "Privacy laws such as the EU/UK General Data Protection Regulation (**GDPR**) and the California Consumer Privacy Act (**CCPA**) give individuals rights over their personal data, including the right to access, correct, delete, or object to the processing of it." },
         { "type": "p", "text": "Because ScannerCam Light collects and stores no personal data on any server, there is normally nothing to export, correct, or erase: the data described in this policy exists only as files and a database on your own device, under your direct control at all times, and it can be removed whenever you like by deleting a document or uninstalling the app." },
-        { "type": "p", "text": "The one exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit, and the Feedback section above separately describes the automatic requests the feedback feature makes earlier than that. A submitted feedback issue becomes a public GitHub issue and can be removed on request by writing to the support email below." }
+        { "type": "p", "text": "The main exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit. The requests the feedback feature makes before that — described in the Feedback section above — are automatic and are not gated on that consent, and one of them discloses your device's IP address to Cloudflare when the form opens. A submitted feedback issue becomes a public GitHub issue; its removal can be requested by writing to the support email below, though no timeframe is promised, and by then the issue may already have been copied, cached, or indexed elsewhere, which the developer of ScannerCam Light has no way to undo." }
       ]
     },
     {
       "id": "children",
       "heading": "Children's privacy",
       "body": [
-        { "type": "p", "text": "Because the app performs no background data collection and the optional feedback feature is explicitly user-initiated, it poses no passive data-collection risk to users of any age." }
+        { "type": "p", "text": "The app is not directed at children, has no user accounts, asks no one for their age or any other personal detail, shows no ads, contains no analytics or tracking SDKs, and never sends a scanned document anywhere. It is not, however, silent on the network: where the optional feedback feature is available, the app checks whether the feedback service is reachable when the library screen opens, and opening the feedback form loads a **Cloudflare Turnstile** challenge that discloses the device's IP address to Cloudflare — both automatically, without anyone choosing to send anything. That applies to users of any age, and is the whole of what happens without a deliberate action." }
       ]
     },
     {

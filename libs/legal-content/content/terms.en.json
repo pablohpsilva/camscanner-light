@@ -4,7 +4,7 @@
   "title": "Terms of Service",
   "effectiveDateLabel": "Effective date",
   "translationNotice": "",
-  "intro": "ScannerCam Light is a free, offline, on-device document scanner for iOS and Android. It has no ads, no user accounts, and no tracking or analytics. These terms govern your use of the app. They are written to be plain and short, but they are still a legal agreement between you and the developer of ScannerCam Light.",
+  "intro": "ScannerCam Light is a free, on-device document scanner for iOS and Android: scanning, editing, text recognition and storage all happen on your device, and it has no ads, no user accounts, and no tracking or analytics. A few optional features do contact third parties, and some of that contact is automatic rather than something you choose — the Privacy Policy describes every case. These terms govern your use of the app. They are written to be plain and short, but they are still a legal agreement between you and the developer of ScannerCam Light.",
   "sections": [
     {
       "id": "acceptance",
@@ -60,7 +60,7 @@
       "id": "accuracy",
       "heading": "Accuracy of scanning and OCR",
       "body": [
-        { "type": "p", "text": "Edge detection, perspective correction, image enhancement, and text recognition (OCR) in ScannerCam Light are automated and imperfect. They can crop, distort, misread, or omit content, especially on poor-quality originals, unusual layouts, or handwriting." },
+        { "type": "p", "text": "Edge detection, perspective correction, image enhancement, and text recognition (OCR) in ScannerCam Light are automated and imperfect. They can crop, distort, misread, or omit content, especially on poor-quality originals, unusual layouts, or handwriting. Text recognition also reads **Latin-script** text only — the alphabet used by English, Spanish, French and similar languages — so Chinese, Arabic and Cyrillic text is not recognised at all, and does not become searchable." },
         { "type": "p", "text": "Output from these features must not be relied on for legal, medical, financial, or other consequential purposes without checking it against the original. Always verify a scanned or recognized document before you rely on it or send it to someone else." }
       ]
     },
@@ -68,13 +68,13 @@
       "id": "third-parties",
       "heading": "Third-party services",
       "body": [
-        { "type": "p", "text": "ScannerCam Light interacts with a small number of independent third parties for features you choose to use. Each is governed by its own terms and privacy practices, which the developer of ScannerCam Light does not control:" },
+        { "type": "p", "text": "ScannerCam Light interacts with a small number of independent third parties. Some of that contact follows something you do, such as tapping a donation link or submitting the feedback form. Some of it is automatic: where the optional feedback feature is available, the app checks whether the feedback service is reachable when the library screen opens, and opening the feedback form loads a **Cloudflare** verification challenge that receives your device's IP address. Each of these parties is governed by its own terms and privacy practices, which the developer of ScannerCam Light does not control:" },
         { "type": "ul", "items": [
-          "Apple and Google, for distributing the app through their app stores, and Apple alone for processing an optional in-app tip where that is offered.",
+          "Apple and Google, for distributing the app through their app stores, and Apple alone for processing an optional in-app tip where that is offered — including the App Store query for the available tip options, which happens automatically when the support screen opens.",
           "Ko-fi and the Bitcoin network, for optional donation options that may be offered depending on your platform and app version.",
-          "GitHub, for the optional feedback form, which files a publicly visible issue on ScannerCam Light's repository."
+          "**Cloudflare** and **GitHub**, for the optional feedback form: Cloudflare provides the verification challenge that loads with the form and the service that receives a submission, and that service then files a publicly visible issue on ScannerCam Light's GitHub repository."
         ] },
-        { "type": "p", "text": "Read those third parties' own terms before you use a feature that involves them. The developer of ScannerCam Light is not responsible for their acts, omissions, availability, or policies." }
+        { "type": "p", "text": "Read those third parties' own terms before you use a feature that involves them; where the contact is automatic, as described above, it happens without a separate choice on your part. The developer of ScannerCam Light is not responsible for their acts, omissions, availability, or policies." }
       ]
     },
     {
@@ -110,7 +110,7 @@
       "heading": "Termination",
       "body": [
         { "type": "p", "text": "You may stop using ScannerCam Light at any time, including by uninstalling it — remember to export any documents you want to keep first, since uninstalling deletes them permanently." },
-        { "type": "p", "text": "The developer of ScannerCam Light may suspend or discontinue the app, or your ability to use particular features, at any time, for any reason, including if you breach these terms. Because the app is offline and free, this will typically mean the app stops receiving updates rather than being remotely disabled." }
+        { "type": "p", "text": "The developer of ScannerCam Light may suspend or discontinue the app, or your ability to use particular features, at any time, for any reason, including if you breach these terms. Because the app runs on your device and is free, this will typically mean the app stops receiving updates rather than being remotely disabled." }
       ]
     },
     {

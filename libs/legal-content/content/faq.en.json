@@ -18,7 +18,7 @@
       "id": "where-stored",
       "heading": "Where are my documents stored?",
       "body": [
-        { "type": "p", "text": "On the device only. Scanned images are saved as files in the app's own storage, and document titles and extracted text are indexed in a local database — nothing is uploaded anywhere. See the [Privacy Policy](privacy.html) for the full detail on what is stored and where." }
+        { "type": "p", "text": "On the device only. Scanned images are saved as files in the app's own storage, and document titles and extracted text are indexed in a local database — none of it is uploaded anywhere. See the [Privacy Policy](privacy.html) for the full detail on what is stored and where." }
       ]
     },
     {
@@ -77,7 +77,7 @@
       "id": "feedback-public",
       "heading": "Is feedback sent through the app made public?",
       "body": [
-        { "type": "p", "text": "Yes — where the optional feedback feature is enabled in a build, a submitted message becomes a **publicly visible issue** on ScannerCam Light's **GitHub** repository, and anyone on the internet can read the message text and, if one was entered, the email address." },
+        { "type": "p", "text": "Yes — where the optional feedback feature is available (it is enabled per build, and a released **Android** build cannot make a network request at all, so it is not offered there), a submitted message becomes a **publicly visible issue** on ScannerCam Light's **GitHub** repository, and anyone on the internet can read the message text and, if one was entered, the email address." },
         { "type": "p", "text": "Some network activity happens before that point, too: when the library screen loads, the app checks whether the feedback service is reachable, and opening the feedback form loads a **Cloudflare Turnstile** verification challenge — which means Cloudflare receives a request and the device's IP address. Neither of those two steps sends the message or email; that happens on **Submit**." },
         { "type": "p", "text": "No scanned documents or their contents are ever included in feedback. The email field can be left blank to keep it out of the public issue, and sensitive information should not be put in the message itself. See the Feedback section of the [Privacy Policy](privacy.html) for the full detail." }
       ]
@@ -94,7 +94,7 @@
       "id": "ads-tracking",
       "heading": "Does ScannerCam Light show ads or track usage?",
       "body": [
-        { "type": "p", "text": "No. There are no ads, no analytics, no crash-reporting, and no tracking SDKs anywhere in the app, and no user accounts. Nothing about app usage is collected or sent anywhere. See the [Privacy Policy](privacy.html) for the full detail on what the app does and does not do with data." }
+        { "type": "p", "text": "No. There are no ads, no analytics, no crash-reporting, and no tracking SDKs anywhere in the app, no user accounts, and nothing you scan is ever sent anywhere. That is not quite the same as the app being silent on the network: where the optional feedback feature is available, the app checks whether the feedback service is reachable automatically when the library screen opens, and opening the feedback form contacts **Cloudflare**, which receives the device's IP address. Those two requests tell their operators that a device opened a screen, at a time, from an IP address; the developer of ScannerCam Light builds no profile from them and sells nothing. See the [Privacy Policy](privacy.html) for the full detail on what the app does and does not do with data." }
       ]
     },
     {

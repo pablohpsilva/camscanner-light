@@ -155,3 +155,107 @@ test('bold markup cannot be used to evade a gating-claim absence check', () => {
   // caught.
   assert.match(stripMarkup(bolded).toLowerCase(), GATING_CLAIM)
 })
+
+// --- Sweep guard for the recurring defect class -----------------------------
+//
+// H1-H5 and M1 of the cross-document review were not six bugs but one: an
+// ABSOLUTE ("everything", "nothing", "the sole exception") or USER-TRIGGERED
+// ("actively chosen", "explicitly user-initiated", "features you choose to
+// use") framing of network activity that is in fact AUTOMATIC. The app has
+// three automatic outbound paths — the feedback-availability probe on library
+// open, the Cloudflare Turnstile challenge on feedback-form open, and the App
+// Store tip-options query on support-screen open — none of which the user
+// triggers.
+//
+// That defect had been found and fixed SEVEN times before this guard existed,
+// section by section, and each time it reappeared in a different section or a
+// different document. So this list is checked DOCUMENT-WIDE, and the identical
+// list is checked in faq_clauses and terms_clauses too: a phrase deleted from
+// the Privacy Policy must not be able to reappear in the Terms or the FAQ.
+//
+// Every entry is a UNIVERSAL denial or a user-gating of automatic traffic, so
+// none of them can be true given the three automatic paths. Narrower, true
+// "only" claims (e.g. "your message ... is sent only when you tap Submit") are
+// deliberately NOT in this list, and are guarded by presence tests instead.
+const FALSE_ABSOLUTES = [
+  /everything stays on the device/,
+  /only transmits data when/,
+  /when it is actively chosen/,
+  /one explicit exception/,
+  /the sole exception/,
+  /the only exception/,
+  /unrelated to a feature you are actively using/,
+  /makes no background (network )?requests/,
+  /performs no background data collection/,
+  /explicitly user-initiated/,
+  /no passive data-collection risk/,
+  /nothing about app usage/,
+  /features you choose to use/,
+  /nothing is uploaded anywhere/,
+  /because the app is offline and free/,
+]
+
+test('carries none of the known false absolutes about network activity', () => {
+  const t = allText(doc())
+  for (const re of FALSE_ABSOLUTES) assert.doesNotMatch(t, re, `false absolute present: ${re}`)
+})
+
+// Presence pair for the sweep guard: deleting the offending clause must not be
+// enough — the Summary is the most-read section, so it has to carry the fact.
+test('the Summary discloses that some network activity is automatic', () => {
+  const t = section('summary')
+  assert.match(t, /automatic/)
+  assert.match(t, /library screen|feedback service/)
+})
+
+test('the what-is-collected carve-out is not limited to the feedback feature', () => {
+  const t = section('what-we-collect')
+  assert.match(t, /app store|tip options/)
+})
+
+test('the network section admits the automatic requests on iOS instead of denying them', () => {
+  const t = section('network')
+  assert.match(t, /ios/)
+  assert.match(t, /automatic/)
+  assert.match(t, /turnstile|cloudflare/)
+})
+
+test('states what the missing Android INTERNET permission means for the feedback feature', () => {
+  const t = section('network')
+  assert.match(t, /android/)
+  assert.match(t, /not offered|cannot reach|is not available/)
+})
+
+test('the feedback section scopes availability to builds that can reach the network', () => {
+  const t = section('feedback')
+  assert.match(t, /android/)
+})
+
+test("the children's section does not rest on feedback being user-initiated", () => {
+  const t = section('children')
+  assert.match(t, /automatic/)
+  assert.match(t, /turnstile|cloudflare|feedback service|library screen/)
+})
+
+test('hedges tip and donation availability the way every other document does', () => {
+  const t = section('purchases')
+  assert.match(t, /depending on (your )?platform and app version/)
+  assert.match(t, /where a donation option is offered/)
+})
+
+test('does not overstate on-device deletion as a storage-level erasure', () => {
+  const t = section('retention')
+  assert.doesNotMatch(t, /complete and immediate/)
+  assert.match(t, /operating system|overwritten/)
+})
+
+test('qualifies the public-GitHub-issue removal commitment', () => {
+  const t = section('your-rights')
+  assert.match(t, /cached|copied, |indexed/)
+})
+
+test('cross-references the purchases section by the heading it actually has', () => {
+  const t = section('network')
+  assert.match(t, /in-app purchases and tips section/)
+  assert.doesNotMatch(t, /the purchases section/)
+})
