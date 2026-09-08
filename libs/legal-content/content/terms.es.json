@@ -1,0 +1,139 @@
+{
+  "doc": "terms",
+  "locale": "es",
+  "title": "Términos de Servicio",
+  "effectiveDateLabel": "Fecha de entrada en vigor",
+  "translationNotice": "Esta traducción se proporciona por comodidad. En caso de conflicto, prevalece la versión en inglés.",
+  "intro": "ScannerCam Light es un escáner de documentos gratuito, sin conexión y procesado íntegramente en el dispositivo, para iOS y Android. No tiene anuncios, no requiere cuentas de usuario y no realiza seguimiento ni análisis de datos. Estos términos rigen el uso que hace de la aplicación. Están redactados para ser claros y breves, pero siguen siendo un acuerdo legal entre usted y el desarrollador de ScannerCam Light.",
+  "sections": [
+    {
+      "id": "acceptance",
+      "heading": "Aceptación de estos términos",
+      "body": [
+        { "type": "p", "text": "Al utilizar ScannerCam Light, usted acepta estos términos. Si no está de acuerdo, no utilice la aplicación." },
+        { "type": "p", "text": "Estos términos se aplican junto con la [Política de Privacidad](privacy.html), que explica los pocos datos que la aplicación trata y por qué." }
+      ]
+    },
+    {
+      "id": "licence",
+      "heading": "Licencia de uso de la aplicación",
+      "body": [
+        { "type": "p", "text": "El desarrollador de ScannerCam Light le concede una licencia personal, no exclusiva, intransferible y revocable para instalar y utilizar la aplicación en dispositivos que posea o controle, para sus propios fines lícitos, personales o comerciales." },
+        { "type": "p", "text": "Esta licencia no le otorga ninguna titularidad sobre la propia aplicación. No puede realizar ingeniería inversa, descompilar ni redistribuir la aplicación, salvo en la medida en que la ley aplicable lo permita expresamente, y no puede eliminar u ocultar ningún aviso contenido en ella." }
+      ]
+    },
+    {
+      "id": "your-content",
+      "heading": "Su contenido",
+      "body": [
+        { "type": "p", "text": "\"Su contenido\" significa todo lo que escanea, fotografía, edita, guarda, exporta o comparte mediante ScannerCam Light — incluyendo las imágenes y PDF resultantes, y cualquier texto extraído de ellos por el OCR realizado en el dispositivo." },
+        { "type": "p", "text": "**Usted es el único responsable** de los documentos que escanea, guarda y comparte con ScannerCam Light, de tener el derecho a escanearlos o copiarlos, y de que su uso cumpla las leyes que le sean aplicables." },
+        { "type": "p", "text": "El desarrollador de ScannerCam Light nunca ve, recibe ni tiene acceso a su contenido. Todo ocurre en su dispositivo, por lo que nada de lo que escanea puede ser revisado, moderado o eliminado por el desarrollador de ScannerCam Light — esa responsabilidad sigue siendo suya." }
+      ]
+    },
+    {
+      "id": "no-warranty",
+      "heading": "Sin garantía",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light se proporciona **\"tal cual\" y \"según disponibilidad\", sin garantía de ningún tipo**, expresa o implícita, incluyendo, entre otras, las garantías implícitas de comerciabilidad, idoneidad para un fin particular y no infracción." },
+        { "type": "p", "text": "El desarrollador de ScannerCam Light no garantiza que la aplicación funcione de forma ininterrumpida, libre de errores, segura o compatible con todos los dispositivos, ni que satisfaga sus requisitos particulares." }
+      ]
+    },
+    {
+      "id": "limitation-of-liability",
+      "heading": "Limitación de responsabilidad",
+      "body": [
+        { "type": "p", "text": "En la máxima medida permitida por la ley, el desarrollador de ScannerCam Light no será responsable de ningún daño indirecto, incidental, especial, consecuente o ejemplar, incluyendo, entre otros, la pérdida de datos o de beneficios, derivado de o relacionado con el uso o la imposibilidad de uso de la aplicación." },
+        { "type": "p", "text": "En la máxima medida permitida por la ley, la responsabilidad total del desarrollador de ScannerCam Light por cualquier reclamación derivada de o relacionada con la aplicación se limita al importe que usted haya pagado realmente por la aplicación, que en el caso de ScannerCam Light normalmente es cero." }
+      ]
+    },
+    {
+      "id": "data-loss",
+      "heading": "Pérdida de datos y copias de seguridad",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light guarda sus documentos únicamente en su dispositivo, como archivos más una base de datos local. **No hay almacenamiento en la nube ni copia en servidor** — sus documentos no se respaldan en ningún servidor a través de la aplicación." },
+        { "type": "p", "text": "Desinstalar la aplicación, borrar sus datos, o perder, restablecer o dañar su dispositivo destruirá permanentemente sus documentos. Esto no se puede deshacer, y el desarrollador de ScannerCam Light no tiene forma de recuperar nada por usted." },
+        { "type": "p", "text": "Conserve sus propias copias de todo aquello que no pueda permitirse perder — por ejemplo, exportando documentos importantes a otra aplicación, a un ordenador o a un servicio en la nube de su elección antes de desinstalar la aplicación, cambiar de dispositivo o borrar sus datos." }
+      ]
+    },
+    {
+      "id": "accuracy",
+      "heading": "Precisión del escaneo y del OCR",
+      "body": [
+        { "type": "p", "text": "La detección de bordes, la corrección de perspectiva, la mejora de imagen y el reconocimiento de texto (OCR) en ScannerCam Light son automatizados e imperfectos. Pueden recortar, distorsionar, leer mal u omitir contenido, especialmente en originales de baja calidad, diseños poco habituales o escritura manuscrita." },
+        { "type": "p", "text": "El resultado de estas funciones no debe utilizarse para fines legales, médicos, financieros u otros fines de importancia sin comprobarlo con el original. Verifique siempre un documento escaneado o reconocido antes de confiar en él o de enviárselo a otra persona." }
+      ]
+    },
+    {
+      "id": "third-parties",
+      "heading": "Servicios de terceros",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light interactúa con un pequeño número de terceros independientes para las funciones que usted decida utilizar. Cada uno se rige por sus propios términos y prácticas de privacidad, que el desarrollador de ScannerCam Light no controla:" },
+        { "type": "ul", "items": [
+          "Apple y Google, para la distribución de la aplicación a través de sus tiendas de aplicaciones, y Apple en solitario para procesar una propina opcional dentro de la aplicación cuando esté disponible.",
+          "Ko-fi y la red Bitcoin, para las opciones de donación opcionales que puedan ofrecerse según su plataforma y versión de la aplicación.",
+          "GitHub, para el formulario de comentarios opcional, que crea un incidente (\"issue\") públicamente visible en el repositorio de ScannerCam Light."
+        ] },
+        { "type": "p", "text": "Lea los propios términos de esos terceros antes de utilizar una función que los involucre. El desarrollador de ScannerCam Light no es responsable de sus actos, omisiones, disponibilidad o políticas." }
+      ]
+    },
+    {
+      "id": "donations",
+      "heading": "Propinas y donaciones",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light es gratuito en su totalidad. Según su plataforma y versión de la aplicación, puede apoyar opcionalmente el proyecto mediante una propina dentro de la aplicación procesada por Apple, a través de Ko-fi, o enviando Bitcoin a una dirección mostrada en la aplicación — la opción que se le ofrezca." },
+        { "type": "p", "text": "Cualquier propina o donación es totalmente **voluntaria** y **no reembolsable**, y no desbloquea ninguna función, garantía, prioridad ni obligación de soporte. No crea un contrato de bienes o servicios más allá de la buena voluntad que representa." }
+      ]
+    },
+    {
+      "id": "acceptable-use",
+      "heading": "Uso aceptable",
+      "body": [
+        { "type": "p", "text": "Usted se compromete a no utilizar ScannerCam Light para:" },
+        { "type": "ul", "items": [
+          "Escanear, guardar o compartir contenido que no tenga derecho a escanear, copiar o poseer.",
+          "Infringir cualquier ley que le sea aplicable, incluyendo la legislación sobre propiedad intelectual, privacidad y protección de datos.",
+          "Intentar interferir con, deshabilitar, sobrecargar o realizar ingeniería inversa de la aplicación o de sus bibliotecas subyacentes más allá de lo que la ley aplicable permite expresamente.",
+          "Hacer un uso indebido del formulario de comentarios para enviar informes abusivos, falsos o maliciosos, o contenido que no tenga derecho a enviar."
+        ] }
+      ]
+    },
+    {
+      "id": "indemnity",
+      "heading": "Indemnización",
+      "body": [
+        { "type": "p", "text": "Sujeto a los derechos obligatorios descritos en \"Sus derechos\" a continuación, y en la medida permitida por la ley aplicable, usted se compromete a indemnizar al desarrollador de ScannerCam Light frente a reclamaciones, pérdidas y costes legales razonables derivados directamente de su contenido o de su incumplimiento de estos términos o de la ley." }
+      ]
+    },
+    {
+      "id": "termination",
+      "heading": "Terminación",
+      "body": [
+        { "type": "p", "text": "Puede dejar de utilizar ScannerCam Light en cualquier momento, incluso desinstalándola — recuerde exportar antes cualquier documento que desee conservar, ya que la desinstalación los elimina permanentemente." },
+        { "type": "p", "text": "El desarrollador de ScannerCam Light puede suspender o interrumpir la aplicación, o su capacidad de utilizar funciones concretas, en cualquier momento y por cualquier motivo, incluido el incumplimiento de estos términos. Como la aplicación es sin conexión y gratuita, esto normalmente significará que la aplicación deja de recibir actualizaciones, en lugar de ser deshabilitada de forma remota." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Cambios en estos términos",
+      "body": [
+        { "type": "p", "text": "El desarrollador de ScannerCam Light puede actualizar estos términos de vez en cuando, por ejemplo para reflejar una nueva función o un cambio en la ley aplicable. La fecha de entrada en vigor en la parte superior de este documento muestra cuándo entró en vigor la versión actual." },
+        { "type": "p", "text": "Usted no recibe un aviso independiente cuando estos términos cambian. La copia incluida en la aplicación refleja la versión que estaba vigente cuando se creó esa versión de ScannerCam Light; la versión actual es la publicada en el sitio web de ScannerCam Light, y la fecha de entrada en vigor de arriba indica qué versión está leyendo. Continuar utilizando ScannerCam Light después de que una nueva versión entre en vigor significa que acepta los términos actualizados; si no los acepta, deje de utilizar la aplicación." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Sus derechos",
+      "body": [
+        { "type": "p", "text": "Nada en estos términos limita ningún derecho que tenga en virtud de la legislación de protección al consumidor de su propio país que no pueda excluirse ni limitarse por acuerdo. Cuando una cláusula anterior entre en conflicto con dicho derecho obligatorio, prevalecerá el derecho obligatorio y el resto de estos términos permanecerá en vigor." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Contacto",
+      "body": [
+        { "type": "p", "text": "Las preguntas sobre estos términos pueden enviarse a [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net). Consulte también la [Política de Privacidad](privacy.html) para saber cómo trata los datos ScannerCam Light." }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "doc": "terms",
+  "locale": "lb",
+  "title": "Notzungsbedingungen",
+  "effectiveDateLabel": "Datum vum Inkrafttrieden",
+  "translationNotice": "Dës Iwwersetzung gëtt just fir Är Bequemlechkeet ugebueden. Bei engem Widderspruch mat der englescher Versioun gëllt d'englesch Versioun.",
+  "intro": "ScannerCam Light ass e gratis Dokumenteschanner fir iOS an Android, deen offline funktionnéiert an alles nëmmen op Ärem Apparat veraarbecht. Et huet keng Reklamm, keng Benotzerkonten, a keen Tracking oder Analytik. Dës Bedingungen regelen Är Notzung vun der App. Si sinn einfach a kuerz geschriwwen, bleiwen awer trotzdem eng juristesch Vereinbarung tëscht Iech an dem Entwéckler vu ScannerCam Light.",
+  "sections": [
+    {
+      "id": "acceptance",
+      "heading": "Unhuele vun dëse Bedingungen",
+      "body": [
+        { "type": "p", "text": "Andeems Dir ScannerCam Light benotzt, akzeptéiert Dir dës Bedingungen. Wann Dir net d'accord sidd, benotzt d'App net." },
+        { "type": "p", "text": "Dës Bedingungen gëllen zesumme mat der [Dateschutzerklärung](privacy.html), déi erkläert, mat wéi wéineg Daten d'App iwwerhaapt a Kontakt kënnt, a firwat." }
+      ]
+    },
+    {
+      "id": "licence",
+      "heading": "Lizenz fir d'App ze benotzen",
+      "body": [
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light gëtt Iech eng perséinlech, net-exklusiv, net iwwerdroubar a widderrufbar Lizenz fir d'App op Apparater z'installéieren an ze benotzen, déi Iech gehéieren oder déi Dir kontrolléiert, fir Är eege gesetzlech, perséinlech oder geschäftlech Zwecker." },
+        { "type": "p", "text": "Dës Lizenz gëtt Iech kee Besëtz un der App selwer. Dir dierft d'App net zréck-entwéckelen, dekompiléieren oder weiderverbreeden, ausser esou wäit wéi dat gëlle Recht et ausdrécklech erlaabt, an Dir dierft keng Hiweiser dran ewechhuelen oder verstoppen." }
+      ]
+    },
+    {
+      "id": "your-content",
+      "heading": "Äre Contenu",
+      "body": [
+        { "type": "p", "text": "\"Äre Contenu\" heescht alles, wat Dir mat ScannerCam Light schannt, fotograféiert, änneren, späichert, exportéiert oder deelt — dorënner d'Biller a PDF'en, déi doraus entstinn, an all Text, deen doraus vum OCR op Ärem Apparat erausgezu gëtt." },
+        { "type": "p", "text": "**Dir sidd eleng verantwortlech** fir d'Dokumenter, déi Dir mat ScannerCam Light schannt, späichert an deelt, dofir datt Dir d'Recht hutt, se ze schannen oder ze kopéieren, an dofir datt Är Notzung mat de Gesetzer averstane bleift, déi op Iech applicabel sinn." },
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light gesäit, kritt oder huet ni Zougang zu Ärem Contenu. Alles geschitt op Ärem Apparat, sou datt näischt vun deem, wat Dir schannt, vum Entwéckler vu ScannerCam Light iwwerpréift, moderéiert oder ewechgeholl ka ginn — dëst bleift eleng Är Verantwortung." }
+      ]
+    },
+    {
+      "id": "no-warranty",
+      "heading": "Keng Garantie",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light gëtt **\"esou wéi et ass\" a \"esou wéi verfügbar\", ouni Garantie vun egal wéi enger Aart**, ausdrécklech oder implizit, dorënner ënnert anerem d'implizit Garantien vu Verkeefbarkeet, Gëeegent fir en bestëmmten Zweck, an Net-Verletzung vun Drëtt-Rechter." },
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light garantéiert net, datt d'App ouni Ënnerbriechung, feelerfräi, sécher, oder mat all Apparat kompatibel wäert sinn, nach datt si Är besonnesch Ufuerderunge wäert erfëllen." }
+      ]
+    },
+    {
+      "id": "limitation-of-liability",
+      "heading": "Begrenzung vun der Haftung",
+      "body": [
+        { "type": "p", "text": "Am maximale Mooss, wéi et d'Gesetz erlaabt, ass den Entwéckler vu ScannerCam Light net haftbar fir indirekt, zoufälleg, speziell, doraus resultéierend oder exemplaresch Schied, dorënner ënnert anerem verluere Daten oder verluere Profitter, déi aus Ärer Notzung vun der App, oder aus Ärer Onméiglechkeet se ze notzen, entstinn oder domat verbonne sinn." },
+        { "type": "p", "text": "Am maximale Mooss, wéi et d'Gesetz erlaabt, ass déi total Haftung vum Entwéckler vu ScannerCam Light fir all Reklamatioun, déi aus der App entsteet oder domat ze dinn huet, op de Montant limitéiert, dee Dir wierklech fir d'App bezuelt hutt — dat ass bei ScannerCam Light normalerweis näischt." }
+      ]
+    },
+    {
+      "id": "data-loss",
+      "heading": "Datenverloscht a Sécherungen",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light späichert Är Dokumenter nëmmen op Ärem Apparat, als Dateien plus eng lokal Datebank. **Et gëtt kee Cloud-Späicher a keng Kopie op engem Server** — Är Dokumenter ginn net vun der App op iergendengem Server gesëchert." },
+        { "type": "p", "text": "D'App ze desinstalléieren, hir Daten ze läschen, oder Äre Apparat ze verléieren, zréckzesetzen oder ze beschiedegen, wäert Är Dokumenter definitiv zerstéieren. Dëst kann net rückgängeg gemaach ginn, an den Entwéckler vu ScannerCam Light huet keng Méiglechkeet, iergendeppes fir Iech erëmzefannen." },
+        { "type": "p", "text": "Behalt Är eege Kopien vun allem, wat Dir Iech net leeschte kënnt ze verléieren — zum Beispill andeems Dir wichteg Dokumenter an eng aner App, op en Computer oder an een Cloud-Service vun Ärer Wiel exportéiert, ier Dir d'App desinstalléiert, den Apparat wiesselt, oder hir Daten läscht." }
+      ]
+    },
+    {
+      "id": "accuracy",
+      "heading": "Genauegkeet vum Schannen an dem OCR",
+      "body": [
+        { "type": "p", "text": "Kantenerkennung, Perspektivkorrektur, Bildverbesserung an Texterkennung (OCR) an ScannerCam Light sinn automatiséiert an net perfekt. Si kënnen Inhalt ofschneiden, verzerren, falsch liesen oder auslossen, besonnesch bei Originaler mat schlechter Qualitéit, ongewéinlechen Layouten oder Handschrëft." },
+        { "type": "p", "text": "D'Resultat vun dëse Funktiounen dierf ouni Vergläich mam Original net fir juristesch, medezinesch, finanziell oder aner wichteg Zwecker benotzt ginn. Iwwerpréift ëmmer en agescannt oder erkannt Dokument, ier Dir Iech drop verlooss oder et un een aneren schéckt." }
+      ]
+    },
+    {
+      "id": "third-parties",
+      "heading": "Servicer vun Drëttparteien",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light interagéiert mat enger klenger Zuel vun onofhängege Drëttparteien fir Funktiounen, déi Dir wielt ze benotzen. All eng dovun ass hire eegene Bedingunge an Dateschutzpraktiken ënnerworf, déi den Entwéckler vu ScannerCam Light net kontrolléiert:" },
+        { "type": "ul", "items": [
+          "Apple a Google, fir d'App iwwer hir App-Stores ze verdeelen, an Apple eleng fir en optionalen Tipp an der App ze veraarbechten, wa sou eppes ugebuede gëtt.",
+          "Ko-fi an d'Bitcoin-Netzwierk, fir optional Don-Optiounen, déi ofhängeg vun Ärer Plattform an App-Versioun ugebuede kënne ginn.",
+          "GitHub, fir dat optionaalt Feedback-Formulaire, dat en ëffentlech siichtbaren Issue am Repository vu ScannerCam Light erstellt."
+        ] },
+        { "type": "p", "text": "Liest d'Bedingunge vun dëse Drëttparteien selwer, ier Dir eng Funktioun benotzt, déi si mat abezitt. Den Entwéckler vu ScannerCam Light ass net verantwortlech fir hir Handlungen, Ënnerloossungen, Verfügbarkeet oder Richtlinnen." }
+      ]
+    },
+    {
+      "id": "donations",
+      "heading": "Tipps a Spenden",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light ass komplett gratis ze benotzen. Ofhängeg vun Ärer Plattform an App-Versioun kënnt Dir optional d'Projet ënnerstëtzen, iwwer en Tipp an der App, dee vun Apple veraarbecht gëtt, iwwer Ko-fi, oder andeems Dir Bitcoin op eng an der App ugewisen Adress schéckt — jee no där Optioun, déi Iech ugebuede gëtt." },
+        { "type": "p", "text": "All Tipp oder Spend ass komplett **fräiwëlleg** an **net rembourséierbar**, a se schléisst keng Funktioun, Garantie, Prioritéit oder Support-Obligatioun op. Si schafft keen Kontrakt fir Wueren oder Servicer, deen iwwer de gudde Wëllen, deen se duerstellt, erausgeet." }
+      ]
+    },
+    {
+      "id": "acceptable-use",
+      "heading": "Akzeptabel Notzung",
+      "body": [
+        { "type": "p", "text": "Dir sidd d'accord, ScannerCam Light net ze benotzen fir:" },
+        { "type": "ul", "items": [
+          "Inhalt ze schannen, ze späicheren oder ze deelen, deen Dir net d'Recht hutt ze schannen, ze kopéieren oder ze besëtzen.",
+          "Géint e Gesetz ze verstoussen, dat op Iech applicabel ass, dorënner Urheberrecht, Dateschutz a Privatsphär.",
+          "Ze probéieren, d'App oder hir zugrondleiend Bibliothéiken ze stéieren, ze desaktivéieren, z'iwwerlaaschten oder zréckzeentwéckelen, iwwer dat eraus, wat dat gëlle Recht ausdrécklech erlaabt.",
+          "Dat Feedback-Formulaire falsch ze benotzen, fir beleidegend, falsch oder béiswëlleg Reportagen anzeschécken, oder Inhalt, deen Dir net d'Recht hutt anzeschécken."
+        ] }
+      ]
+    },
+    {
+      "id": "indemnity",
+      "heading": "Entschiedegung",
+      "body": [
+        { "type": "p", "text": "Ënnert Virbehalt vun den obligatoresche Rechter, déi hei ënnendrënner am \"Är Rechter\" beschriwwe sinn, an am Mooss, wéi et dat gëlle Recht erlaabt, sidd Dir d'accord, den Entwéckler vu ScannerCam Light géint Reklamatiounen, Verloschter a raisonabel Prozesskäschten z'entschiedegen, déi direkt aus Ärem Contenu oder aus Ärer Verletzung vun dëse Bedingungen oder vum Gesetz entstinn." }
+      ]
+    },
+    {
+      "id": "termination",
+      "heading": "Ophalen",
+      "body": [
+        { "type": "p", "text": "Dir kënnt zu all Moment ophale ScannerCam Light ze benotzen, och andeems Dir et desinstalléiert — denkt drun, fir vireran all Dokumenter z'exportéieren, déi Dir behale wëllt, well d'Desinstalléiere se definitiv läscht." },
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light kann d'App, oder Är Méiglechkeet, bestëmmten Funktioune ze notzen, zu all Moment a fir all Grond suspendéieren oder ophalen, dorënner wann Dir géint dës Bedingungen verstéisst. Well d'App offline a gratis ass, heescht dëst normalerweis, datt d'App keng Updates méi kritt, amplaz aus der Ferne desaktivéiert ze ginn." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Ännerunge vun dëse Bedingungen",
+      "body": [
+        { "type": "p", "text": "Den Entwéckler vu ScannerCam Light kann dës Bedingungen vun Zäit zu Zäit aktualiséieren, zum Beispill fir eng nei Funktioun oder eng Ännerung am gëlle Recht ze reflektéieren. D'Datum vum Inkrafttrieden uewen an dësem Dokument weist, wéini déi aktuell Versioun a Kraaft getrueden ass." },
+        { "type": "p", "text": "Dir kritt keng separat Notifikatioun, wa sech dës Bedingunge änneren. D'Kopie, déi an der App integréiert ass, reflektéiert d'Versioun, déi aktuell war, wéi dës Versioun vu ScannerCam Light gebaut gouf; d'aktuell Versioun ass déi, déi op der ScannerCam-Light-Websäit publizéiert ass, an d'Datum vum Inkrafttrieden hei uewen weist, wéi eng Versioun Dir liest. Wann Dir ScannerCam Light weider benotzt, nodeems eng nei Versioun a Kraaft getrueden ass, heescht dat, datt Dir déi aktualiséiert Bedingungen akzeptéiert; wann Dir se net akzeptéiert, hale mat der Notzung vun der App op." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Är Rechter",
+      "body": [
+        { "type": "p", "text": "Näischt an dëse Bedingunge limitéiert iergendee Recht, dat Dir ënnert dem Konsumentschutzgesetz vun Ärem eegene Land hutt, dat net duerch eng Vereinbarung ausgeschloss oder limitéiert ka ginn. Wann eng Klausel hei uewen mat esou engem obligatoresche Recht am Widderspruch steet, iwwerwit dat obligatorescht Recht, an de Rescht vun dëse Bedingunge bleift a Kraaft." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "Kontakt",
+      "body": [
+        { "type": "p", "text": "Froen iwwer dës Bedingunge kënnen un [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) geschéckt ginn. Kuckt och d'[Dateschutzerklärung](privacy.html), fir ze gesinn, wéi ScannerCam Light mat Daten ëmgeet." }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "doc": "terms",
+  "locale": "tr",
+  "title": "Kullanım Koşulları",
+  "effectiveDateLabel": "Yürürlük tarihi",
+  "translationNotice": "Bu çeviri yalnızca kolaylık sağlamak amacıyla sunulmuştur. İngilizce sürümle çelişmesi halinde İngilizce sürüm geçerlidir.",
+  "intro": "ScannerCam Light, iOS ve Android için ücretsiz, çevrimdışı çalışan ve her şeyi yalnızca cihaz üzerinde işleyen bir belge tarayıcısıdır. Reklam içermez, kullanıcı hesabı gerektirmez ve herhangi bir izleme veya analiz yapmaz. Bu koşullar uygulamayı kullanımınızı düzenler. Sade ve kısa olacak şekilde yazılmıştır, ancak yine de sizinle ScannerCam Light geliştiricisi arasında bir hukuki sözleşme niteliğindedir.",
+  "sections": [
+    {
+      "id": "acceptance",
+      "heading": "Bu koşulların kabulü",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light'ı kullanarak bu koşulları kabul etmiş olursunuz. Kabul etmiyorsanız, uygulamayı kullanmayın." },
+        { "type": "p", "text": "Bu koşullar, uygulamanın hangi az miktardaki verilere neden dokunduğunu açıklayan [Gizlilik Politikası](privacy.html) ile birlikte uygulanır." }
+      ]
+    },
+    {
+      "id": "licence",
+      "heading": "Uygulamayı kullanma lisansı",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light geliştiricisi, sahip olduğunuz veya kontrol ettiğiniz cihazlara uygulamayı kurmanız ve kendi yasal, kişisel veya ticari amaçlarınız için kullanmanız amacıyla size kişisel, münhasır olmayan, devredilemez ve geri alınabilir bir lisans verir." },
+        { "type": "p", "text": "Bu lisans, uygulamanın kendisi üzerinde size herhangi bir mülkiyet hakkı vermez. Yürürlükteki hukukun açıkça izin verdiği ölçüde hariç olmak üzere uygulamayı tersine mühendislikle çözemez, kaynak koduna dönüştüremez veya yeniden dağıtamazsınız ve içinde yer alan bildirimleri kaldıramaz veya gizleyemezsiniz." }
+      ]
+    },
+    {
+      "id": "your-content",
+      "heading": "İçeriğiniz",
+      "body": [
+        { "type": "p", "text": "\"İçeriğiniz\", ScannerCam Light kullanarak taradığınız, fotoğrafladığınız, düzenlediğiniz, sakladığınız, dışa aktardığınız veya paylaştığınız her şey anlamına gelir — ortaya çıkan görüntüler ve PDF'ler ile bunlardan cihaz üzerinde OCR tarafından çıkarılan her türlü metin dahil." },
+        { "type": "p", "text": "ScannerCam Light ile taradığınız, sakladığınız ve paylaştığınız belgelerden, bunları tarama veya kopyalama hakkına sahip olduğunuzdan ve kullanımınızın size uygulanan yasalara uygun olmasından **yalnızca siz sorumlusunuz**." },
+        { "type": "p", "text": "ScannerCam Light geliştiricisi içeriğinizi asla görmez, almaz veya ona erişimi olmaz. Her şey cihazınızda gerçekleşir, bu nedenle taradığınız hiçbir şey ScannerCam Light geliştiricisi tarafından incelenemez, denetlenemez veya kaldırılamaz — bu sorumluluk size aittir." }
+      ]
+    },
+    {
+      "id": "no-warranty",
+      "heading": "Garanti verilmemesi",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light, satılabilirlik, belirli bir amaca uygunluk ve hak ihlali etmeme gibi zımni garantiler dahil ancak bunlarla sınırlı olmamak üzere, açık veya zımni **hiçbir türde garanti verilmeksizin, \"olduğu gibi\" ve \"mevcut olduğu şekliyle\"** sunulur." },
+        { "type": "p", "text": "ScannerCam Light geliştiricisi, uygulamanın kesintisiz, hatasız, güvenli veya her cihazla uyumlu olacağını ya da özel gereksinimlerinizi karşılayacağını garanti etmez." }
+      ]
+    },
+    {
+      "id": "limitation-of-liability",
+      "heading": "Sorumluluğun sınırlandırılması",
+      "body": [
+        { "type": "p", "text": "Yürürlükteki hukukun izin verdiği azami ölçüde, ScannerCam Light geliştiricisi, uygulamayı kullanmanızdan veya kullanamamanızdan doğan veya bunlarla bağlantılı, kaybedilen veriler veya kâr kayıpları dahil ancak bunlarla sınırlı olmamak üzere hiçbir dolaylı, arızi, özel, sonuç niteliğindeki veya ibret niteliğindeki zarardan sorumlu tutulamaz." },
+        { "type": "p", "text": "Yürürlükteki hukukun izin verdiği azami ölçüde, ScannerCam Light geliştiricisinin uygulamadan doğan veya uygulamayla ilgili herhangi bir talepten kaynaklanan toplam sorumluluğu, uygulama için fiilen ödediğiniz tutarla sınırlıdır; bu tutar ScannerCam Light için normalde sıfırdır." }
+      ]
+    },
+    {
+      "id": "data-loss",
+      "heading": "Veri kaybı ve yedekleme",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light, belgelerinizi yalnızca cihazınızda, dosyalar ve yerel bir veritabanı olarak saklar. **Bulut depolama ve sunucu tarafında herhangi bir kopya yoktur** — belgeleriniz uygulama tarafından hiçbir sunucuya yedeklenmez." },
+        { "type": "p", "text": "Uygulamayı kaldırmanız, verilerini temizlemeniz ya da cihazınızı kaybetmeniz, sıfırlamanız veya hasar görmesi belgelerinizi kalıcı olarak yok eder. Bu geri alınamaz ve ScannerCam Light geliştiricisinin sizin için herhangi bir şeyi kurtarma imkânı yoktur." },
+        { "type": "p", "text": "Kaybetmeyi göze alamayacağınız her şeyin kendi kopyalarını saklayın — örneğin, uygulamayı kaldırmadan, cihaz değiştirmeden veya verilerini temizlemeden önce önemli belgeleri başka bir uygulamaya, bir bilgisayara veya tercih ettiğiniz bir bulut hizmetine aktararak." }
+      ]
+    },
+    {
+      "id": "accuracy",
+      "heading": "Tarama ve OCR doğruluğu",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light'taki kenar algılama, perspektif düzeltme, görüntü iyileştirme ve metin tanıma (OCR) otomatiktir ve kusursuz değildir. Özellikle kalitesi düşük orijinallerde, sıra dışı düzenlerde veya el yazısında içeriği kırpabilir, bozabilir, yanlış okuyabilir veya atlayabilir." },
+        { "type": "p", "text": "Bu özelliklerin çıktısına, orijinaliyle karşılaştırılmadan hukuki, tıbbi, mali veya diğer önemli sonuçlar doğuran amaçlar için güvenilmemelidir. Taranan veya tanınan bir belgeye güvenmeden ya da onu başka birine göndermeden önce her zaman doğrulayın." }
+      ]
+    },
+    {
+      "id": "third-parties",
+      "heading": "Üçüncü taraf hizmetleri",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light, kullanmayı tercih ettiğiniz özellikler için az sayıda bağımsız üçüncü tarafla etkileşime girer. Her biri, ScannerCam Light geliştiricisinin kontrol etmediği kendi koşulları ve gizlilik uygulamaları tarafından yönetilir:" },
+        { "type": "ul", "items": [
+          "Uygulamayı kendi uygulama mağazaları üzerinden dağıtmaları nedeniyle Apple ve Google; sunulduğu durumlarda uygulama içi isteğe bağlı bahşişi işlemesi nedeniyle yalnızca Apple.",
+          "Platformunuza ve uygulama sürümünüze bağlı olarak sunulabilecek isteğe bağlı bağış seçenekleri nedeniyle Ko-fi ve Bitcoin ağı.",
+          "ScannerCam Light deposunda herkese açık şekilde görülebilen bir \"issue\" oluşturan isteğe bağlı geri bildirim formu nedeniyle GitHub."
+        ] },
+        { "type": "p", "text": "Onları içeren bir özelliği kullanmadan önce bu üçüncü tarafların kendi koşullarını okuyun. ScannerCam Light geliştiricisi, bu tarafların eylemlerinden, ihmallerinden, kullanılabilirliğinden veya politikalarından sorumlu değildir." }
+      ]
+    },
+    {
+      "id": "donations",
+      "heading": "Bahşişler ve bağışlar",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light tamamen ücretsizdir. Platformunuza ve uygulama sürümünüze bağlı olarak, Apple tarafından işlenen bir uygulama içi bahşiş, Ko-fi veya uygulamada gösterilen bir adrese Bitcoin göndererek — size sunulan seçeneklerden hangisiyse — isteğe bağlı olarak projeyi destekleyebilirsiniz." },
+        { "type": "p", "text": "Herhangi bir bahşiş veya bağış tamamen **gönüllüdür** ve **iade edilemez**, herhangi bir özelliği, garantiyi, önceliği veya destek yükümlülüğünü açığa çıkarmaz. Temsil ettiği iyi niyetin ötesinde mal veya hizmetlere ilişkin bir sözleşme oluşturmaz." }
+      ]
+    },
+    {
+      "id": "acceptable-use",
+      "heading": "Kabul edilebilir kullanım",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light'ı aşağıdaki amaçlarla kullanmamayı kabul edersiniz:" },
+        { "type": "ul", "items": [
+          "Tarama, kopyalama veya sahip olma hakkınız olmayan içeriği taramak, saklamak veya paylaşmak.",
+          "Telif hakkı, gizlilik ve veri koruma hukuku dahil, size uygulanan herhangi bir yasayı ihlal etmek.",
+          "Yürürlükteki hukukun açıkça izin verdiğinin ötesinde, uygulamayı veya onun temelini oluşturan kütüphaneleri engellemeye, devre dışı bırakmaya, aşırı yüklemeye veya tersine mühendislikle çözmeye çalışmak.",
+          "Geri bildirim formunu kötüye kullanarak taciz edici, sahte veya kötü niyetli raporlar ya da gönderme hakkınız olmayan içerikler göndermek."
+        ] }
+      ]
+    },
+    {
+      "id": "indemnity",
+      "heading": "Tazminat",
+      "body": [
+        { "type": "p", "text": "Aşağıda \"Haklarınız\" bölümünde açıklanan zorunlu haklara tabi olmak ve yürürlükteki hukukun izin verdiği ölçüde, içeriğinizden veya bu koşulları ya da kanunu ihlal etmenizden doğrudan doğan taleplere, kayıplara ve makul hukuki masraflara karşı ScannerCam Light geliştiricisini tazmin etmeyi kabul edersiniz." }
+      ]
+    },
+    {
+      "id": "termination",
+      "heading": "Fesih",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light'ı istediğiniz zaman, uygulamayı kaldırmak dahil olmak üzere kullanmayı bırakabilirsiniz — kaldırmanın belgelerinizi kalıcı olarak sildiğini unutmadan, saklamak istediğiniz belgeleri önce dışa aktarmayı unutmayın." },
+        { "type": "p", "text": "ScannerCam Light geliştiricisi, bu koşulları ihlal etmeniz dahil olmak üzere herhangi bir nedenle, herhangi bir zamanda uygulamayı veya belirli özellikleri kullanma yeteneğinizi askıya alabilir veya sonlandırabilir. Uygulama çevrimdışı ve ücretsiz olduğundan, bu genellikle uygulamanın uzaktan devre dışı bırakılması yerine güncelleme almayı bırakması anlamına gelir." }
+      ]
+    },
+    {
+      "id": "changes",
+      "heading": "Bu koşullardaki değişiklikler",
+      "body": [
+        { "type": "p", "text": "ScannerCam Light geliştiricisi, örneğin yeni bir özelliği veya yürürlükteki hukuktaki bir değişikliği yansıtmak amacıyla bu koşulları zaman zaman güncelleyebilir. Bu belgenin üstündeki yürürlük tarihi, mevcut sürümün ne zaman yürürlüğe girdiğini gösterir." },
+        { "type": "p", "text": "Bu koşullar değiştiğinde ayrı bir bildirim almazsınız. Uygulama içine paketlenen kopya, ScannerCam Light'ın o sürümü derlendiğinde geçerli olan sürümü yansıtır; güncel sürüm, ScannerCam Light web sitesinde yayınlanan sürümdür ve yukarıdaki yürürlük tarihi hangi sürümü okumakta olduğunuzu gösterir. Yeni bir sürüm yürürlüğe girdikten sonra ScannerCam Light'ı kullanmaya devam etmeniz, güncellenen koşulları kabul ettiğiniz anlamına gelir; bunları kabul etmiyorsanız, uygulamayı kullanmayı bırakın." }
+      ]
+    },
+    {
+      "id": "your-rights",
+      "heading": "Haklarınız",
+      "body": [
+        { "type": "p", "text": "Bu koşullardaki hiçbir şey, kendi ülkenizin sözleşmeyle hariç tutulamayacak veya sınırlandırılamayacak tüketici koruma hukuku kapsamında sahip olduğunuz herhangi bir hakkı sınırlamaz. Yukarıdaki bir maddenin böyle zorunlu bir hakla çelişmesi halinde, zorunlu hak üstün gelir ve bu koşulların geri kalanı yürürlükte kalır." }
+      ]
+    },
+    {
+      "id": "contact",
+      "heading": "İletişim",
+      "body": [
+        { "type": "p", "text": "Bu koşullarla ilgili sorular [scannercamlight.line149@passmail.net](mailto:scannercamlight.line149@passmail.net) adresine gönderilebilir. ScannerCam Light'ın verileri nasıl işlediği hakkında ayrıca [Gizlilik Politikası](privacy.html)'na bakın." }
+      ]
+    }
+  ]
+}
