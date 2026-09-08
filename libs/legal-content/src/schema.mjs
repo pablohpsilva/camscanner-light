@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { contentDir } from './constants.mjs'
+import { parseInline } from './inline.mjs'
 
 const isNonEmpty = (v) => typeof v === 'string' && v.trim().length > 0
 
@@ -30,9 +31,23 @@ export function validateDocument (json, { doc, locale }) {
     for (const b of s.body) {
       if (b.type === 'p') {
         if (!isNonEmpty(b.text)) throw new Error(`${where}: section "${s.id}" has an empty p block`)
+        // Validate no unescaped ** in inline markup
+        for (const token of parseInline(b.text)) {
+          if (token.type === 'text' && token.text.includes('**')) {
+            throw new Error(`${where}: section "${s.id}" contains unescaped ** in paragraph`)
+          }
+        }
       } else if (b.type === 'ul') {
         if (!Array.isArray(b.items) || b.items.length === 0 || !b.items.every(isNonEmpty)) {
           throw new Error(`${where}: section "${s.id}" has a ul block with empty items`)
+        }
+        // Validate no unescaped ** in list items
+        for (const item of b.items) {
+          for (const token of parseInline(item)) {
+            if (token.type === 'text' && token.text.includes('**')) {
+              throw new Error(`${where}: section "${s.id}" contains unescaped ** in list item`)
+            }
+          }
         }
       } else {
         throw new Error(`${where}: section "${s.id}" has unknown block type "${b.type}"`)

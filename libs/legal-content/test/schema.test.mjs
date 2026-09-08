@@ -67,3 +67,21 @@ test('requires a translation notice on non-English documents', () => {
   const d = { ...valid(), locale: 'de' }
   assert.throws(() => validateDocument(d, { doc: 'terms', locale: 'de' }), /translationNotice/)
 })
+
+test('allows valid bold markup', () => {
+  const d = valid()
+  d.sections[0].body = [{ type: 'p', text: 'This is **bold** text.' }]
+  assert.doesNotThrow(() => validateDocument(d, { doc: 'terms', locale: 'en' }))
+})
+
+test('rejects unescaped ** in a paragraph', () => {
+  const d = valid()
+  d.sections[0].body = [{ type: 'p', text: 'This is 2 ** 3 math.' }]
+  assert.throws(() => validateDocument(d, { doc: 'terms', locale: 'en' }), /unescaped \*\*.*paragraph/)
+})
+
+test('rejects unescaped ** in a list item', () => {
+  const d = valid()
+  d.sections[0].body = [{ type: 'ul', items: ['Item with 2 ** 3 in it'] }]
+  assert.throws(() => validateDocument(d, { doc: 'terms', locale: 'en' }), /unescaped \*\*.*list item/)
+})

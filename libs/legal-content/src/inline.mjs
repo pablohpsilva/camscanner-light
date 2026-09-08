@@ -2,7 +2,8 @@
 // Deliberately tiny — the Dart renderer must reimplement it exactly
 // (apps/mobile/lib/features/legal/legal_inline.dart), so every addition here
 // is a change in two languages plus two test suites.
-const PATTERN = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g
+// Bold content must begin AND end with non-whitespace; the ?? is load-bearing.
+const PATTERN = /\*\*(\S(?:[\s\S]*?\S)??)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g
 
 /** @returns {Array<{type:'text'|'bold'|'link', text: string, url?: string}>} */
 export function parseInline (text) {

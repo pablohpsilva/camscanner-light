@@ -37,3 +37,38 @@ test('an unmatched asterisk pair stays literal', () => {
 test('empty string yields no tokens', () => {
   assert.deepEqual(parseInline(''), [])
 })
+
+test('stray ** does not pair with later **bold**', () => {
+  assert.deepEqual(parseInline('2 ** 3 and **real bold** end'), [
+    { type: 'text', text: '2 ** 3 and ' },
+    { type: 'bold', text: 'real bold' },
+    { type: 'text', text: ' end' },
+  ])
+})
+
+test('adjacent bold spans stay separate', () => {
+  assert.deepEqual(parseInline('**a** and **b**'), [
+    { type: 'bold', text: 'a' },
+    { type: 'text', text: ' and ' },
+    { type: 'bold', text: 'b' },
+  ])
+})
+
+test('unclosed link bracket stays literal', () => {
+  assert.deepEqual(parseInline('[label]('), [{ type: 'text', text: '[label](' }])
+})
+
+test('empty link url stays literal', () => {
+  assert.deepEqual(parseInline('[label]()'), [{ type: 'text', text: '[label]()' }])
+})
+
+test('back-to-back bold spans', () => {
+  assert.deepEqual(parseInline('**a****b**'), [
+    { type: 'bold', text: 'a' },
+    { type: 'bold', text: 'b' },
+  ])
+})
+
+test('whitespace-only bold stays literal', () => {
+  assert.deepEqual(parseInline('** **'), [{ type: 'text', text: '** **' }])
+})
