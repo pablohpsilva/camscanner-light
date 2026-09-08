@@ -3,8 +3,16 @@ import assert from 'node:assert/strict'
 import { loadDocument } from '../src/schema.mjs'
 
 const doc = () => loadDocument('privacy', 'en')
-const allText = (d) => JSON.stringify(d).toLowerCase()
-const section = (id) => JSON.stringify(doc().sections.find((s) => s.id === id)).toLowerCase()
+
+// Inline bold markup (`**word**`) sits inside `**` markers that a naive regex
+// scan over the raw JSON does not see through — "**nothing is sent** unless"
+// contains "nothing is sent" and "unless" as separate fragments once the `**`
+// interrupts them. Strip `**` before matching so absence checks see the prose
+// a reader would see, not the markup, and can't be evaded by bolding a word
+// mid-phrase (by hand or by a future translation).
+const stripMarkup = (s) => s.replace(/\*\*/g, '')
+const allText = (d) => stripMarkup(JSON.stringify(d)).toLowerCase()
+const section = (id) => stripMarkup(JSON.stringify(doc().sections.find((s) => s.id === id))).toLowerCase()
 
 const EXPECTED_IDS = [
   'summary', 'what-we-collect', 'where-data-lives', 'network', 'feedback',
@@ -113,4 +121,20 @@ test('discloses the automatic App Store product query when the support screen op
   const t = section('network')
   assert.match(t, /app store/)
   assert.match(t, /before any tip is made/)
+})
+
+// Proves the bold-stripping fix actually closes the evasion hole, not just that
+// the code changed. A gating claim with `**` split across the middle of the
+// phrase used to slip straight through a raw-text regex scan.
+test('bold markup cannot be used to evade a gating-claim absence check', () => {
+  const bolded = JSON.stringify({ text: '**Nothing is sent** unless the form is opened.' })
+  const GATING_CLAIM = /nothing is sent unless/
+
+  // Before stripping: the raw JSON does NOT match, because "**" splits the
+  // phrase — this is the hole the team lead found.
+  assert.doesNotMatch(bolded.toLowerCase(), GATING_CLAIM)
+
+  // After stripping (what allText()/section() now do): the same claim IS
+  // caught.
+  assert.match(stripMarkup(bolded).toLowerCase(), GATING_CLAIM)
 })

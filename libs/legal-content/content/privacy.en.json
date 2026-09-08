@@ -44,7 +44,7 @@
       "heading": "Feedback",
       "body": [
         { "type": "p", "text": "The app includes an optional **Send feedback** feature. Where this feature is enabled in a given build, two things happen before you type anything: when the library screen loads, the app makes a small request to check whether the feedback service is currently reachable; and when you open the feedback form itself, it loads a **Cloudflare Turnstile** human-verification challenge inside the form, which means Cloudflare receives a request and your device's IP address at that point. Neither of these two steps sends your message, your email, or anything about your documents — they happen automatically and are not gated on Submit." },
-        { "type": "p", "text": "Your message, and the fields below, are sent only when you tap **Submit**:" },
+        { "type": "p", "text": "Your message, and the fields below, are sent when you tap **Submit**:" },
         { "type": "ul", "items": [
           "Your message — the text typed into the feedback form (required).",
           "Your email address — only if one is chosen to be entered. Providing an email is entirely optional.",
@@ -84,7 +84,7 @@
       "body": [
         { "type": "p", "text": "Privacy laws such as the EU/UK General Data Protection Regulation (**GDPR**) and the California Consumer Privacy Act (**CCPA**) give individuals rights over their personal data, including the right to access, correct, delete, or object to the processing of it." },
         { "type": "p", "text": "Because ScannerCam Light collects and stores no personal data on any server, there is normally nothing to export, correct, or erase: the data described in this policy exists only as files and a database on your own device, under your direct control at all times, and it can be removed whenever you like by deleting a document or uninstalling the app." },
-        { "type": "p", "text": "The one exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit, as described in the Feedback section above, which also describes the earlier requests that happen automatically once the feedback form is opened. A submitted feedback issue becomes a public GitHub issue and can be removed on request by writing to the support email below." }
+        { "type": "p", "text": "The one exception is feedback voluntarily submitted through the in-app feedback form. That submission relies on your **consent** as its lawful basis: your message, email, and diagnostics are sent when you tap Submit, and the Feedback section above separately describes the automatic requests the feedback feature makes earlier than that. A submitted feedback issue becomes a public GitHub issue and can be removed on request by writing to the support email below." }
       ]
     },
     {
