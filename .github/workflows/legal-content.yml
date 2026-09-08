@@ -1,0 +1,36 @@
+name: Legal content
+
+# The generated Dart, the 33 web pages, and the inline-parity test fixture are
+# committed. This job proves they still match libs/legal-content/content/, so
+# the app and the site cannot drift.
+#
+# No pnpm/pnpm install here: libs/legal-content has zero external npm
+# dependencies (every import is relative or a node: builtin), and the guard
+# script invokes `node` directly rather than through pnpm on purpose — pnpm's
+# implicit dependency check runs an install that has corrupted
+# pnpm-workspace.yaml in this repo's local dev environment. Node alone is
+# enough to run the script, so that failure mode never even enters the picture.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'libs/legal-content/**'
+      - 'apps/web/**'
+      - 'apps/mobile/lib/features/legal/**'
+      - '.github/workflows/legal-content.yml'
+  pull_request:
+    paths:
+      - 'libs/legal-content/**'
+      - 'apps/web/**'
+      - 'apps/mobile/lib/features/legal/**'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: bash scripts/check-legal-content.sh
