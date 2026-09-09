@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import '../support/app_l10n.dart';
 
 /// Usage: I see the message check your connection and try again
 ///
@@ -8,5 +9,5 @@ Future<void> iSeeTheMessageCheckYourConnectionAndTryAgain(
   WidgetTester tester,
 ) async {
   await tester.pump(const Duration(milliseconds: 100));
-  expect(find.text('Check your connection and try again.'), findsOneWidget);
+  expect(find.text(l10nOf(tester).feedbackOffline), findsOneWidget);
 }

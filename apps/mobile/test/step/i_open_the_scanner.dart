@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 
 /// Usage: I open the scanner
 ///
@@ -6,6 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// scanner the flow resolves immediately: either CaptureReviewScreen is pushed
 /// (pages > 0) or ScanScreen pops back to home (0 pages).
 Future<void> iOpenTheScanner(WidgetTester tester) async {
-  await tester.tap(find.text('Scan'));
+  await tester.tap(find.byKey(const Key('home-scan')));
   await tester.pumpAndSettle();
 }

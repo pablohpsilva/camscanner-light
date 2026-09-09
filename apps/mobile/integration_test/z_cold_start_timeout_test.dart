@@ -29,7 +29,11 @@ void main() {
           .byKey(const Key('documents-loading'))
           .evaluate()
           .isNotEmpty;
-      final homeReady = find.text('Documents').evaluate().isNotEmpty;
+      // Locale-independent: key, not English text (the iPhone runs in lb).
+      final homeReady = find
+          .byKey(const Key('home-scan'))
+          .evaluate()
+          .isNotEmpty;
       if (!stillLoading && homeReady) {
         loaded = true;
         break;
