@@ -294,34 +294,58 @@ class _CaptureReviewScreenState extends State<CaptureReviewScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
+          // Each button is Flexible and each label ellipsizes: three
+          // natural-width buttons do NOT fit a phone. Unconstrained this
+          // overflowed by 1.5px on an iPhone Pro Max and 58px at 360pt, and a
+          // RenderFlex overflow is a hard error under flutter_test, so it also
+          // failed the e1_crop / e2_flatten device runs before they asserted
+          // anything. Labels are localised, so widths vary by locale too.
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              OutlinedButton.icon(
-                key: const Key('review-retake'),
-                onPressed: widget.saving ? null : widget.onRetake,
-                icon: const Icon(Icons.replay),
-                label: Text(l10n.commonRetake),
+              Flexible(
+                child: OutlinedButton.icon(
+                  key: const Key('review-retake'),
+                  onPressed: widget.saving ? null : widget.onRetake,
+                  icon: const Icon(Icons.replay),
+                  label: Text(
+                    l10n.commonRetake,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
               if (widget.enableCrop)
-                TextButton(
-                  key: const Key('crop-reset'),
-                  onPressed: canCrop
-                      ? () => setState(() {
-                          _userInteracted =
-                              true; // NEW — block in-flight detection
-                          _corners = CropCorners.fullFrame;
-                        })
-                      : null,
-                  child: Text(l10n.captureReviewReset),
+                Flexible(
+                  child: TextButton(
+                    key: const Key('crop-reset'),
+                    onPressed: canCrop
+                        ? () => setState(() {
+                            _userInteracted =
+                                true; // NEW — block in-flight detection
+                            _corners = CropCorners.fullFrame;
+                          })
+                        : null,
+                    child: Text(
+                      l10n.captureReviewReset,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
-              FilledButton.icon(
-                key: const Key('review-accept'),
-                onPressed: widget.saving
-                    ? null
-                    : () => widget.onAccept(_corners, enhancerForMode(_mode)),
-                icon: const Icon(Icons.check),
-                label: Text(l10n.captureReviewAccept),
+              Flexible(
+                child: FilledButton.icon(
+                  key: const Key('review-accept'),
+                  onPressed: widget.saving
+                      ? null
+                      : () => widget.onAccept(_corners, enhancerForMode(_mode)),
+                  icon: const Icon(Icons.check),
+                  label: Text(
+                    l10n.captureReviewAccept,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ],
           ),
