@@ -42,9 +42,9 @@ dependencies:
   image: ^4.5.0
   archive: ^4.0.9
   shared_preferences: ^2.3.2
-  # Pinned EXACTLY (do not caret/upgrade): 2.2.x builds OpenCV from source
-  # (5–8× slower builds) and would break native load. See memory notes.
-  opencv_dart: 2.1.0
+  # Pinned EXACTLY (do not caret/upgrade) — see the note above the `hooks:`
+  # section at the bottom of this file for why this version and not a caret.
+  opencv_dart: 2.2.2
   drift: ^2.20.0
   sqlite3_flutter_libs: ^0.5.24
   path_provider: ^2.1.4
@@ -99,6 +99,25 @@ dev_dependencies:
 # opencv_dart 2.x native-assets module config: the app only uses core + imgproc
 # + imgcodecs (perspective warp, filters, contours, decode/encode). Excluding the
 # heavy modules keeps the native binary small and the build fast.
+#
+# WHY opencv_dart IS PINNED EXACTLY (no caret): from 2.2.x, dartcv4 COMPILES
+# OpenCV FROM SOURCE via CMake/Ninja instead of downloading a prebuilt binary.
+# A cold build therefore costs ~5m20s instead of ~30s (measured on 2.2.2,
+# Android, this machine); incremental builds reuse the CMake cache and are
+# normal speed. A caret range would let that cost — and any upstream source
+# change — arrive silently, so the version is chosen deliberately and verified
+# on both devices before it moves.
+#
+# TRAP: after changing this version you MUST delete
+# apps/mobile/.dart_tool/hooks_runner/ before building. The CMake cache records
+# the OLD dartcv source path and the build dies with "does not match the source
+# ... used to generate cache". That failure looks like an incompatibility and
+# is not one.
+#
+# 2.2.2 verified 2026-09-09: native-vs-Dart Auto parity is byte-identical to
+# 2.1.0 (mean=1.193 max=13 full-frame, 0.090/9 bright-bg on the same Android
+# device, gate is mean < 2.0), and the whole OpenCV device surface is green —
+# 25/25 on a physical Android, and np1/np2/np3/e4/e5 on a physical iPhone.
 hooks:
   user_defines:
     dartcv4:

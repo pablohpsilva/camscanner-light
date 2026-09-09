@@ -237,18 +237,10 @@ packages:
     dependency: transitive
     description:
       name: dartcv4
-      sha256: "2481c3a0b542c39c421512499be17314b7fcd6e6da43b2a1dde19a04c4eaa01f"
+      sha256: b2be1fd93df688079745b71601b3c959d8405a33ad72dcf8d892ec324318b9c1
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0+1"
-  data_assets:
-    dependency: transitive
-    description:
-      name: data_assets
-      sha256: d8b93648a338f471e576e0ba05f6b5d63a4e0fa447ca839a500267421d9245ba
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.19.6"
+    version: "2.2.2"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -744,10 +736,10 @@ packages:
     dependency: transitive
     description:
       name: native_toolchain_cmake
-      sha256: de90e8952bad0684bdcff4d674c53d961f5cd1fdcf3a0255a669a35986c4ac1d
+      sha256: "8ba223410102665483e873b83d2156720233a6a0181c07f9dc41cb2e961336b0"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.7"
+    version: "0.3.2"
   objective_c:
     dependency: transitive
     description:
@@ -760,10 +752,10 @@ packages:
     dependency: "direct main"
     description:
       name: opencv_dart
-      sha256: "744899196c6275996c031b96d1ca176f7480c57d373b97dd2cf72b818ea28cda"
+      sha256: a135da49e35c1a42f433e8925561711e3c8b5dade59f999fd62787be628491e1
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.2.2"
   package_config:
     dependency: transitive
     description:
