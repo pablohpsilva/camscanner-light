@@ -33,7 +33,7 @@
       "heading": "Que débloquent les pourboires ou les dons ?",
       "body": [
         { "type": "p", "text": "Rien. Tout pourboire ou don — un pourboire facultatif dans l'application traité par Apple, une contribution Ko-fi, ou un don en Bitcoin, selon l'option proposée — est entièrement **volontaire** et ne débloque aucune fonctionnalité, ne supprime aucune limite et ne change en rien le comportement de l'application. ScannerCam Light inclut déjà tout ce qu'elle propose avant même qu'un pourboire soit donné." },
-        { "type": "p", "text": "Les pourboires et les dons ne sont pas remboursables. Voir les [Conditions d'utilisation](terms.html) pour les conditions complètes." }
+        { "type": "p", "text": "Les pourboires et les dons ne sont pas remboursables. Quelle que soit la voie proposée, l'application ne transmet rien vous concernant : **Apple** ou **Ko-fi** ne reçoivent que ce que vous leur communiquez directement, et le développeur ne reçoit aucune information de paiement dans un cas comme dans l'autre — uniquement les rapports de ventes agrégés et anonymes d'Apple. Un don en Bitcoin n'implique aucune requête de la part de l'application, même si le registre public de Bitcoin rend toute transaction traçable par n'importe qui. Voir les [Conditions d'utilisation](terms.html) pour les conditions complètes." }
       ]
     },
     {

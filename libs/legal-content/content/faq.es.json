@@ -33,7 +33,7 @@
       "heading": "¿Qué desbloquean las propinas o donaciones?",
       "body": [
         { "type": "p", "text": "Nada. Cualquier propina o donación — una propina opcional dentro de la aplicación procesada por Apple, una contribución mediante Ko-fi, o una donación en Bitcoin, según la opción ofrecida — es enteramente **voluntaria** y no desbloquea ninguna función, elimina ningún límite ni cambia el comportamiento de la aplicación. ScannerCam Light ya incluye todo lo que ofrece antes de que se dé ninguna propina." },
-        { "type": "p", "text": "Las propinas y donaciones no son reembolsables. Vea los [Términos de Servicio](terms.html) para las condiciones completas." }
+        { "type": "p", "text": "Las propinas y donaciones no son reembolsables. Sea cual sea la vía que se ofrezca, la aplicación no transmite nada sobre usted: **Apple** o **Ko-fi** solo reciben lo que usted les facilite directamente, y el desarrollador no recibe datos de pago en ningún caso, solo los informes de ventas agregados y anónimos de Apple. Una donación en Bitcoin no implica ninguna petición por parte de la aplicación, aunque el registro público de Bitcoin hace que cualquier transacción sea rastreable por cualquiera. Vea los [Términos de Servicio](terms.html) para las condiciones completas." }
       ]
     },
     {

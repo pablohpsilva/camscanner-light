@@ -67,6 +67,8 @@
       "id": "sharing",
       "heading": "Partage",
       "body": [
+        { "type": "p", "text": "**Votre identité n'est jamais transmise à qui que ce soit, car l'application n'en détient aucune.** Il n'y a ni compte, ni identifiant de connexion, ni identifiant publicitaire, ni profil — rien qui dise qui vous êtes. Les données personnelles ne sont jamais vendues ni louées, et rien n'est jamais partagé à des fins publicitaires ou de profilage. Aucun document numérisé, aucune image de page et aucun texte reconnu n'est jamais transmis à un tiers." },
+        { "type": "p", "text": "Lorsque l'application contacte effectivement un tiers, celui-ci n'apprend que ce qui est décrit dans les sections Accès au réseau, Retour d'expérience et Achats dans l'application et pourboires ci-dessus : **Cloudflare** voit l'adresse IP de votre appareil, comme le fait tout serveur lorsque votre appareil le joint, ainsi qu'une attestation anti-abus qui certifie une installation authentique sans vous identifier ; **GitHub** voit le message de retour que vous avez rédigé, et une adresse e-mail seulement si vous avez choisi de la saisir ; **Apple** voit les informations de paiement que vous communiquez directement à Apple, que le développeur ne reçoit jamais. Télécharger l'application depuis Apple ou Google, visiter Ko-fi ou envoyer des Bitcoin sont des affaires entre vous et eux — l'application ne leur transmet rien vous concernant." },
         { "type": "p", "text": "Lorsqu'un document est exporté ou partagé, la destination est choisie via le propre menu de partage de votre appareil. Cette action, et l'endroit où va le fichier, relèvent entièrement de votre contrôle." }
       ]
     },

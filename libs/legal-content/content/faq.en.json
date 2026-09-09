@@ -33,7 +33,7 @@
       "heading": "What do tips or donations unlock?",
       "body": [
         { "type": "p", "text": "Nothing. Any tip or donation — an optional in-app tip processed by Apple, a Ko-fi contribution, or a Bitcoin donation, whichever is offered — is entirely **voluntary** and does not unlock any feature, remove any limit, or change how the app behaves. ScannerCam Light already includes everything it offers before any tip is given." },
-        { "type": "p", "text": "Tips and donations are non-refundable. See [Terms of Service](terms.html) for the full terms." }
+        { "type": "p", "text": "Tips and donations are non-refundable. Whichever route is offered, the app passes on nothing about you: **Apple** or **Ko-fi** receive only what you give them directly, and the developer receives no payment details either way — only Apple's aggregate, anonymous sales reporting. A Bitcoin donation involves no request from the app at all, though Bitcoin's public ledger makes any transaction traceable by anyone. See [Terms of Service](terms.html) for the full terms." }
       ]
     },
     {

@@ -148,3 +148,19 @@ test('the where-stored answer binds its no-upload claim to the documents', () =>
   const t = section('where-stored')
   assert.match(t, /none of it is uploaded/)
 })
+
+// --- donation data-handling (user request) ---------------------------------
+test('the tips answer says the app passes on nothing about the user', () => {
+  const t = section('tips')
+  assert.match(t, /passes on nothing about you|nothing about you/)
+  assert.match(t, /no payment details|receives no payment/)
+})
+
+// Bitcoin is pseudonymous, not anonymous. Saying otherwise in a privacy
+// document would mislead someone into relying on anonymity they do not have.
+// The true, narrower claim is that the APP makes no request.
+test('the tips answer is honest that the Bitcoin ledger is public', () => {
+  const t = section('tips')
+  assert.match(t, /public ledger/)
+  assert.match(t, /traceable|traced/)
+})

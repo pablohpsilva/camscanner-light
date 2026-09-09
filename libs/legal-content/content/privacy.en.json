@@ -67,6 +67,8 @@
       "id": "sharing",
       "heading": "Sharing",
       "body": [
+        { "type": "p", "text": "**Your identity is never handed to anyone, because the app does not hold one.** There are no accounts, no sign-in, no advertising identifier, and no profile — nothing that says who you are. Personal data is never sold or rented, and nothing is ever shared for advertising or profiling. No scanned document, page image, or recognised text is ever sent to any third party." },
+        { "type": "p", "text": "Where the app does contact a third party, that party learns only what is described in the Network access, Feedback, and In-app purchases and tips sections above: **Cloudflare** sees your device's IP address, as any server does when your device reaches it, plus an anti-abuse attestation that certifies a genuine install rather than identifying you; **GitHub** sees the feedback message you wrote, and an email address only if you chose to type one; **Apple** sees the payment details you give Apple directly, which the developer never receives. Downloading the app from Apple or Google, and visiting Ko-fi or sending Bitcoin, are between you and them — the app passes them nothing about you." },
         { "type": "p", "text": "When a document is exported or shared, the destination is chosen through your device's own share sheet. That action, and where the file goes, is entirely under your control." }
       ]
     },

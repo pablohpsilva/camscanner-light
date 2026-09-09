@@ -67,6 +67,8 @@
       "id": "sharing",
       "heading": "Paylaşım",
       "body": [
+        { "type": "p", "text": "**Kimliğiniz hiç kimseye verilmez, çünkü uygulamanın elinde böyle bir bilgi yoktur.** Hesap yoktur, oturum açma yoktur, reklam tanımlayıcısı yoktur, profil yoktur — kim olduğunuzu söyleyen hiçbir şey yoktur. Kişisel veriler hiçbir zaman satılmaz veya kiralanmaz ve hiçbir şey reklam ya da profilleme amacıyla paylaşılmaz. Taranan hiçbir belge, sayfa görüntüsü veya tanınan metin hiçbir üçüncü tarafa gönderilmez." },
+        { "type": "p", "text": "Uygulamanın bir üçüncü tarafla iletişime geçtiği durumlarda, o taraf yalnızca yukarıdaki Ağ erişimi, Geri bildirim ve Uygulama içi satın alımlar ve bahşişler bölümlerinde açıklananları öğrenir: **Cloudflare**, cihazınız kendisine ulaştığında herhangi bir sunucunun gördüğü gibi cihazınızın IP adresini görür; ayrıca sizi tanımlamak yerine gerçek bir kurulumu doğrulayan, kötüye kullanıma karşı bir onay görür; **GitHub**, yazdığınız geri bildirim mesajını ve yalnızca yazmayı seçtiyseniz bir e-posta adresini görür; **Apple**, doğrudan Apple'a verdiğiniz ve geliştiricinin hiçbir zaman almadığı ödeme bilgilerini görür. Uygulamayı Apple veya Google'dan indirmeniz, Ko-fi'yi ziyaret etmeniz ya da Bitcoin göndermeniz sizinle onlar arasındadır — uygulama onlara sizin hakkınızda hiçbir şey iletmez." },
         { "type": "p", "text": "Bir belge dışa aktarıldığında veya paylaşıldığında, hedef cihazınızın kendi paylaşım menüsü aracılığıyla seçilir. Bu eylem ve dosyanın nereye gittiği tamamen sizin kontrolünüzdedir." }
       ]
     },

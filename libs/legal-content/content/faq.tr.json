@@ -33,7 +33,7 @@
       "heading": "Bahşişler veya bağışlar neyin kilidini açar?",
       "body": [
         { "type": "p", "text": "Hiçbir şeyin. Herhangi bir bahşiş veya bağış — Apple tarafından işlenen isteğe bağlı bir uygulama içi bahşiş, bir Ko-fi katkısı veya sunulan seçeneğe bağlı olarak bir Bitcoin bağışı — tamamen **gönüllüdür** ve hiçbir özelliğin kilidini açmaz, hiçbir sınırı kaldırmaz veya uygulamanın davranışını değiştirmez. ScannerCam Light, herhangi bir bahşiş verilmeden önce sunduğu her şeyi zaten içerir." },
-        { "type": "p", "text": "Bahşişler ve bağışlar iade edilemez. Tam koşullar için [Kullanım Koşulları](terms.html)'na bakın." }
+        { "type": "p", "text": "Bahşişler ve bağışlar iade edilemez. Hangi yol sunulursa sunulsun, uygulama sizin hakkınızda hiçbir şey aktarmaz: **Apple** veya **Ko-fi** yalnızca doğrudan onlara verdiğiniz bilgileri alır ve geliştirici hiçbir durumda hiçbir ödeme bilgisi almaz — yalnızca Apple'ın toplu ve anonim satış raporlamasını alır. Bitcoin bağışı ise uygulamadan hiçbir istek gönderilmesini gerektirmez; yine de Bitcoin'in herkese açık defteri, her işlemin herkes tarafından izlenebilmesine yol açar. Tam koşullar için [Kullanım Koşulları](terms.html)'na bakın." }
       ]
     },
     {

@@ -33,7 +33,7 @@
       "heading": "Was schalten Trinkgelder oder Spenden frei?",
       "body": [
         { "type": "p", "text": "Nichts. Jedes Trinkgeld oder jede Spende — ein optionales, von Apple abgewickeltes In-App-Trinkgeld, ein Ko-fi-Beitrag oder eine Bitcoin-Spende, je nachdem, was angeboten wird — ist vollständig **freiwillig** und schaltet keine Funktion frei, hebt keine Begrenzung auf und ändert nicht, wie die App sich verhält. ScannerCam Light enthält bereits alles, was die App bietet, noch bevor irgendein Trinkgeld gegeben wird." },
-        { "type": "p", "text": "Trinkgelder und Spenden sind nicht erstattungsfähig. Siehe die [Nutzungsbedingungen](terms.html) für die vollständigen Bedingungen." }
+        { "type": "p", "text": "Trinkgelder und Spenden sind nicht erstattungsfähig. Welcher Weg auch angeboten wird, die App gibt nichts über Sie weiter: **Apple** oder **Ko-fi** erhalten nur das, was Sie ihnen unmittelbar geben, und der Entwickler erhält so oder so keine Zahlungsdaten — nur Apples aggregierte, anonyme Verkaufsberichte. Eine Bitcoin-Spende umfasst überhaupt keine Anfrage der App, wobei das öffentliche Register von Bitcoin jede Transaktion für jedermann nachverfolgbar macht. Siehe die [Nutzungsbedingungen](terms.html) für die vollständigen Bedingungen." }
       ]
     },
     {

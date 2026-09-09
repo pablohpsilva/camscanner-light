@@ -33,7 +33,7 @@
       "heading": "O que gorjetas ou doações liberam?",
       "body": [
         { "type": "p", "text": "Nada. Qualquer gorjeta ou doação — uma gorjeta opcional dentro do app processada pela Apple, uma contribuição via Ko-fi, ou uma doação em Bitcoin, dependendo do que estiver disponível — é completamente **voluntária** e não libera nenhum recurso, remove nenhum limite, nem muda o funcionamento do app. O ScannerCam Light já vem com tudo o que oferece antes mesmo de qualquer gorjeta ser dada." },
-        { "type": "p", "text": "Gorjetas e doações não são reembolsáveis. Veja os [Termos de Uso](terms.html) para os termos completos." }
+        { "type": "p", "text": "Gorjetas e doações não são reembolsáveis. Seja qual for o caminho oferecido, o aplicativo não transmite nada a seu respeito: a **Apple** ou o **Ko-fi** recebem apenas o que você fornece diretamente a eles, e o desenvolvedor não recebe nenhum dado de pagamento em nenhum dos casos — apenas os relatórios de vendas agregados e anônimos da Apple. Uma doação em Bitcoin não envolve nenhuma requisição por parte do aplicativo, embora o registro público do Bitcoin torne qualquer transação rastreável por qualquer pessoa. Veja os [Termos de Uso](terms.html) para os termos completos." }
       ]
     },
     {

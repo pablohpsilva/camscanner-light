@@ -155,3 +155,41 @@ test('the accuracy section carries the Latin-script OCR limitation', () => {
 test('the termination clause does not justify itself with the app being offline', () => {
   assert.doesNotMatch(section('termination'), /because the app is offline/)
 })
+
+// --- third-party data-handling guarantee ------------------------------------
+test('the third-party section opens by stating no data is handed out', () => {
+  const t = section('third-parties')
+  assert.match(t, /does not hand out your data/)
+  assert.match(t, /no user accounts|there are no user accounts/)
+  assert.match(t, /sold, rented|never sold/)
+})
+
+test('the third-party section says what each party can actually learn', () => {
+  const t = section('third-parties')
+  assert.match(t, /ip address/)          // Cloudflare
+  assert.match(t, /only if you chose to enter one|only because you chose/) // GitHub email
+  assert.match(t, /aggregate/)           // Apple sales reporting
+  assert.match(t, /tells ko-fi nothing|nothing about you/) // Ko-fi
+})
+
+// Bitcoin is pseudonymous, not anonymous: every transaction sits on a permanent
+// public ledger and chain analysis is routine. A privacy document that implied
+// otherwise would be both false and actively harmful — someone could rely on it
+// for anonymity they do not have. The true claim is narrower: the APP transmits
+// nothing when a Bitcoin address is shown.
+test('no document claims Bitcoin donations are untraceable or anonymous', () => {
+  for (const d of ['terms', 'privacy', 'faq']) {
+    const t = JSON.stringify(loadDocument(d, 'en')).toLowerCase()
+    assert.doesNotMatch(
+      t,
+      /bitcoin[^.]{0,120}(untraceable|anonymous|nobody (can )?track|cannot be traced|no one tracks)/,
+      `${d} must not present Bitcoin as untraceable`,
+    )
+  }
+})
+
+test('the Bitcoin option is honest that the ledger is public', () => {
+  const t = section('third-parties')
+  assert.match(t, /public ledger/)
+  assert.match(t, /traced|traceable/)
+})

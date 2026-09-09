@@ -67,6 +67,8 @@
       "id": "sharing",
       "heading": "Deelen",
       "body": [
+        { "type": "p", "text": "**Är Identitéit gëtt ni un iergendee weiderginn, well d'App guer keng huet.** Et gi keng Konten, keng Umeldung, keng Reklamm-ID a kee Profil — näischt, wat seet, wien Dir sidd. Perséinlech Date ginn ni verkaaft oder verlount, an et gëtt ni eppes fir Reklamm oder Profilerstellung weiderginn. Kee Dokument, dat Dir agescannt hutt, kee Säitebild a kee Text, deen erkannt gouf, gëtt jeemools un eng Drëttpartei geschéckt." },
+        { "type": "p", "text": "Do wou d'App tatsächlech Kontakt mat enger Drëttpartei huet, gëtt déi Partei just dat gewuer, wat an de Sektiounen Netzzougang, Feedback an In-App-Käf an Tipps hei uewe beschriwwe steet: **Cloudflare** gesäit d'IP-Adress vun Ärem Apparat, sou wéi all Server, deen Ären Apparat erreecht, dobäi en Nowäis géint Mëssbrauch, deen eng echt Installatioun bescheinegt, amplaz Iech ze identifizéieren; **GitHub** gesäit d'Feedback-Noriicht, déi Dir geschriwwen hutt, an eng E-Mail-Adress nëmmen dann, wann Dir Iech decidéiert hutt, eng anzeginn; **Apple** gesäit d'Bezuelungsdaten, déi Dir Apple direkt gitt an déi den Entwéckler ni kritt. D'App bei Apple oder Google erofzelueden, Ko-fi ze besichen oder Bitcoin ze schécken, sinn Saachen tëschent Iech an deene Parteien — d'App gëtt hinnen näischt iwwer Iech weider." },
         { "type": "p", "text": "Wann e Dokument exportéiert oder gedeelt gëtt, gëtt d'Destinatioun iwwer de Share-Menü vun Ärem eegene Apparat gewielt. Dës Aktioun, an wouhin d'Datei geet, läit komplett a Ärer Kontroll." }
       ]
     },

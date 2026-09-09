@@ -67,6 +67,8 @@
       "id": "sharing",
       "heading": "Partilha",
       "body": [
+        { "type": "p", "text": "**A sua identidade nunca é entregue a ninguém, porque a aplicação não possui nenhuma.** Não há contas, não há início de sessão, não há identificador de publicidade e não há perfil — nada que diga quem é. Os dados pessoais nunca são vendidos nem alugados, e nada é alguma vez partilhado para publicidade ou definição de perfis. Nenhum documento digitalizado, imagem de página ou texto reconhecido é alguma vez enviado a terceiros." },
+        { "type": "p", "text": "Quando a aplicação contacta efetivamente um terceiro, esse terceiro fica a saber apenas o que é descrito nas secções Acesso à rede, Feedback e Compras dentro da aplicação e gorjetas, acima: a **Cloudflare** vê o endereço IP do seu dispositivo, como qualquer servidor vê quando o seu dispositivo lhe chega, mais uma atestação antiabuso que certifica uma instalação genuína, em vez de o identificar; o **GitHub** vê a mensagem de feedback que escreveu e um endereço de e-mail apenas se tiver optado por o escrever; a **Apple** vê os dados de pagamento que fornece diretamente à Apple, que o programador nunca recebe. Transferir a aplicação da Apple ou da Google, e visitar a Ko-fi ou enviar Bitcoin, são assuntos entre si e essas entidades — a aplicação não lhes transmite nada sobre si." },
         { "type": "p", "text": "Quando um documento é exportado ou partilhado, o destino é escolhido através do próprio menu de partilha do seu dispositivo. Essa ação, e o destino do ficheiro, está inteiramente sob o seu controlo." }
       ]
     },

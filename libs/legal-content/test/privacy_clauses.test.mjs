@@ -303,3 +303,25 @@ test('the privacy policy carries its own mandatory-rights saving clause', () => 
   assert.match(t, /law that applies to you|applicable law/)
   assert.match(t, /regardless of anything above|cannot be excluded|applies regardless/)
 })
+
+// --- third-party identity guarantee (user request) -------------------------
+// The app holds no identity, so it has none to pass on. Stated positively so
+// it cannot be satisfied by deleting text, and paired with the specific
+// disclosures so the strong claim never drifts into an unqualified absolute.
+test('the sharing section states the app holds no identity to hand out', () => {
+  const t = section('sharing')
+  assert.match(t, /never handed to anyone|does not hold one/)
+  assert.match(t, /no accounts|no sign-in/)
+  assert.match(t, /advertising identifier/)
+  assert.match(t, /never sold|never .{0,20}sold/)
+})
+
+test('the sharing section still names what each third party does receive', () => {
+  const t = section('sharing')
+  assert.match(t, /cloudflare/)
+  assert.match(t, /ip address/)
+  assert.match(t, /github/)
+  assert.match(t, /apple/)
+  // the strong claim must not swallow the honest carve-outs
+  assert.match(t, /only if you chose|only because you chose|if you chose/)
+})

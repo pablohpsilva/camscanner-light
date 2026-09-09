@@ -67,6 +67,8 @@
       "id": "sharing",
       "heading": "Teilen",
       "body": [
+        { "type": "p", "text": "**Ihre Identität wird niemandem übergeben, weil die App gar keine besitzt.** Es gibt keine Konten, keine Anmeldung, keine Werbekennung und kein Profil — nichts, was sagt, wer Sie sind. Personenbezogene Daten werden niemals verkauft oder vermietet, und nichts wird jemals für Werbung oder Profilbildung weitergegeben. Kein gescanntes Dokument, kein Seitenbild und kein erkannter Text wird jemals an Dritte gesendet." },
+        { "type": "p", "text": "Wo die App tatsächlich Kontakt zu einem Dritten aufnimmt, erfährt diese Partei nur das, was in den Abschnitten Netzwerkzugriff, Feedback sowie In-App-Käufe und Trinkgelder weiter oben beschrieben ist: **Cloudflare** sieht die IP-Adresse Ihres Geräts, wie jeder Server, den Ihr Gerät erreicht, dazu einen Missbrauchsschutz-Nachweis, der eine echte Installation bescheinigt, statt Sie zu identifizieren; **GitHub** sieht die Feedback-Nachricht, die Sie geschrieben haben, und eine E-Mail-Adresse nur dann, wenn Sie sich entschieden haben, eine einzugeben; **Apple** sieht die Zahlungsdaten, die Sie Apple unmittelbar geben und die der Entwickler nie erhält. Das Herunterladen der App bei Apple oder Google sowie der Besuch von Ko-fi oder das Senden von Bitcoin sind Sachen zwischen Ihnen und diesen Anbietern — die App gibt ihnen nichts über Sie weiter." },
         { "type": "p", "text": "Wenn ein Dokument exportiert oder geteilt wird, wird das Ziel über das eigene Teilen-Menü Ihres Geräts gewählt. Diese Aktion, und wohin die Datei gelangt, liegt vollständig in Ihrer Kontrolle." }
       ]
     },
