@@ -1,8 +1,11 @@
 Feature: iOS Bitcoin donation after tips
 
-  The iOS tip jar can additionally show the display-only Bitcoin section
-  (QR + copyable address) after the tip consumables, behind the
-  FEATURE_IOS_BTC_DONATION flag (default on). Ko-fi stays off on iOS.
+  The iOS tip jar additionally shows the display-only Bitcoin section
+  (QR + copyable address) after the tip consumables. This is ALWAYS on --
+  the old FEATURE_IOS_BTC_DONATION build flag is gone, including for App
+  Store builds. The disabled scenario below still covers the hidden state,
+  which is now reachable only by an explicit constructor argument or by an
+  empty BITCOIN_ADDRESS. Ko-fi stays off on iOS.
 
   Scenario: iOS shows Bitcoin after tips when enabled
     Given the iOS tip jar with Bitcoin enabled is shown

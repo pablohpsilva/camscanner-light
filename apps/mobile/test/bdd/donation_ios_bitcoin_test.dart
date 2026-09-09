@@ -13,8 +13,9 @@ import './../step/i_do_not_see_the_bitcoin_donation_section.dart';
 
 void main() {
   group('''iOS Bitcoin donation after tips''', () {
-    testWidgets('''iOS shows Bitcoin after tips when enabled''',
-        (tester) async {
+    testWidgets('''iOS shows Bitcoin after tips when enabled''', (
+      tester,
+    ) async {
       await theIosTipJarWithBitcoinEnabledIsShown(tester);
       await iSeeTheTipButtons(tester);
       await iSeeTheBitcoinDonationSectionAfterTheTips(tester);

@@ -45,10 +45,7 @@ class DonationScreen extends StatelessWidget {
     this.copyToClipboard = _writeClipboard,
     this.createTipJar = _defaultTipJar,
     this.tipJarMode,
-    this.iosBtcDonation = const bool.fromEnvironment(
-      'FEATURE_IOS_BTC_DONATION',
-      defaultValue: true,
-    ),
+    this.iosBtcDonation = true,
   });
 
   final String kofiUrl;
@@ -67,10 +64,12 @@ class DonationScreen extends StatelessWidget {
   final bool? tipJarMode;
 
   /// Whether the iOS tip-jar body also shows the display-only Bitcoin section
-  /// (QR + copyable address) after the tip consumables. Defaults to the
-  /// `FEATURE_IOS_BTC_DONATION` build flag (on). Bitcoin is display-only, so it
-  /// carries no App Store 3.1.1 in-app-payment risk; the section still
-  /// auto-hides when [bitcoinAddress] is empty. Does not affect Android.
+  /// (QR + copyable address) after the tip consumables. ALWAYS on: this was
+  /// once the `FEATURE_IOS_BTC_DONATION` build flag, which App Store builds set
+  /// to false; the flag is gone and the default is an unconditional `true`.
+  /// Bitcoin here is display-only (no in-app payment path), and the section
+  /// still auto-hides when [bitcoinAddress] is empty. Does not affect Android.
+  /// Stays a constructor parameter so tests can pump the hidden state.
   final bool iosBtcDonation;
 
   /// The navigation route to this screen (P14 DUP-3) — one definition for the
@@ -78,10 +77,7 @@ class DonationScreen extends StatelessWidget {
   static Route<void> route({
     TipJarService Function()? createTipJar,
     bool? tipJarMode,
-    bool iosBtcDonation = const bool.fromEnvironment(
-      'FEATURE_IOS_BTC_DONATION',
-      defaultValue: true,
-    ),
+    bool iosBtcDonation = true,
   }) => MaterialPageRoute<void>(
     builder: (_) => DonationScreen(
       createTipJar: createTipJar ?? _defaultTipJar,

@@ -37,12 +37,13 @@ else
   echo "!! donation_config.json not found -- donation methods will be hidden" >&2
 fi
 
-# App Store Guideline 3.1.1: iOS builds must NOT surface the Bitcoin donation
-# address (Apple rejects out-of-app "purchase" prompts). This script only ever
-# produces App-Store/TestFlight IPAs, so force the flag off here. Android builds
-# still read BITCOIN_ADDRESS from donation_config.json and show it.
-DEFINES+=(--dart-define=FEATURE_IOS_BTC_DONATION=false)
-echo "== FEATURE_IOS_BTC_DONATION=false (App Store 3.1.1) =="
+# The iOS Bitcoin section is now ALWAYS on, including in App Store builds.
+# It used to be forced off here under Guideline 3.1.1; that kill switch is gone
+# and DonationScreen.iosBtcDonation is an unconditional `true`. The section is
+# display-only (a QR code and a copyable address, no in-app payment path) and
+# still auto-hides when BITCOIN_ADDRESS is empty in donation_config.json.
+# If Apple ever objects, the revert is to reinstate this define AND restore the
+# build flag in donation_screen.dart -- the define alone no longer does anything.
 
 echo "== building release IPA (archive + app-store export) =="
 flutter build ipa --release \
