@@ -15,7 +15,9 @@ Future<List<String>?> _pluginLaunch({int? noOfPages}) =>
       scannerSource: ScannerSource.camera,
       // VisionKit defaults to PNG on iOS; the JPEG storage pipeline (and its
       // JPEG-only metadata scrubber) needs JPEG, and a full-page PNG is huge.
-      iosScannerOptions: const IosScannerOptions(
+      // NOT const since 3.0.0: the constructor now validates
+      // jpgCompressionQuality and throws ArgumentError outside 0.0-1.0.
+      iosScannerOptions: IosScannerOptions(
         imageFormat: IosImageFormat.jpg,
         jpgCompressionQuality: 0.9,
       ),
