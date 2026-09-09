@@ -44,17 +44,19 @@ void main() {
     expect(repo.addPageCalls, 0);
   });
 
-  test('first-page save failure → ScanBatchSaveFailed, no addPage attempted',
-      () async {
-    final repo = FakeDocumentRepository(throwOnCreate: true);
-    final result = await controllerFor(
-      repo,
-    ).saveBatch(images(3), const NoneEnhancer(), active: () => true);
+  test(
+    'first-page save failure → ScanBatchSaveFailed, no addPage attempted',
+    () async {
+      final repo = FakeDocumentRepository(throwOnCreate: true);
+      final result = await controllerFor(
+        repo,
+      ).saveBatch(images(3), const NoneEnhancer(), active: () => true);
 
-    expect(result, isA<ScanBatchSaveFailed>());
-    expect(repo.createCalls, 1);
-    expect(repo.addPageCalls, 0);
-  });
+      expect(result, isA<ScanBatchSaveFailed>());
+      expect(repo.createCalls, 1);
+      expect(repo.addPageCalls, 0);
+    },
+  );
 
   test('an addPage failure is reported but does not abort the doc', () async {
     final repo = FakeDocumentRepository(throwOnAddPage: true);
@@ -70,19 +72,24 @@ void main() {
     expect(repo.addPageCalls, 1);
   });
 
-  test('inactive right after the first save → Cancelled, no addPage loop',
-      () async {
-    // The save itself does not consult active(); the check fires immediately
-    // after it (mirrors the old `if (!mounted) return` after the save await).
-    final repo = FakeDocumentRepository();
-    final result = await controllerFor(
-      repo,
-    ).saveBatch(images(3), const NoneEnhancer(), active: () => false);
+  test(
+    'inactive right after the first save → Cancelled, no addPage loop',
+    () async {
+      // The save itself does not consult active(); the check fires immediately
+      // after it (mirrors the old `if (!mounted) return` after the save await).
+      final repo = FakeDocumentRepository();
+      final result = await controllerFor(
+        repo,
+      ).saveBatch(images(3), const NoneEnhancer(), active: () => false);
 
-    expect(result, isA<ScanBatchCancelled>());
-    expect(repo.createCalls, 1); // the doc was created before the cancel check
-    expect(repo.addPageCalls, 0);
-  });
+      expect(result, isA<ScanBatchCancelled>());
+      expect(
+        repo.createCalls,
+        1,
+      ); // the doc was created before the cancel check
+      expect(repo.addPageCalls, 0);
+    },
+  );
 
   test('going inactive mid-loop stops adding further pages', () async {
     // active() is called once after the save, then once after each addPage.

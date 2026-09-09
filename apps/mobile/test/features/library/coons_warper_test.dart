@@ -105,38 +105,46 @@ void main() {
 
   // P01 T4: NORMAL source (≤ 2×cap) — output unchanged vs pre-bound impl.
   //   computeWorkResolution returns scale==1.0 so no source resize happens.
-  test('P01 T4: small source (≤ 2×cap) → output unchanged (scale==1.0)', () async {
-    const bent = CropCorners(
-      topLeft: Offset(0.1, 0.1),
-      topRight: Offset(0.9, 0.1),
-      bottomRight: Offset(0.9, 0.9),
-      bottomLeft: Offset(0.1, 0.9),
-      topMidDev: Offset(0, -0.08),
-    );
-    final out = await warper.warp(_rectJpeg(200, 160), bent);
-    expect(out, isNotNull);
-    final decoded = img.decodeImage(out!)!;
-    expect(decoded.width, greaterThan(2));
-    expect(decoded.height, greaterThan(2));
-  });
+  test(
+    'P01 T4: small source (≤ 2×cap) → output unchanged (scale==1.0)',
+    () async {
+      const bent = CropCorners(
+        topLeft: Offset(0.1, 0.1),
+        topRight: Offset(0.9, 0.1),
+        bottomRight: Offset(0.9, 0.9),
+        bottomLeft: Offset(0.1, 0.9),
+        topMidDev: Offset(0, -0.08),
+      );
+      final out = await warper.warp(_rectJpeg(200, 160), bent);
+      expect(out, isNotNull);
+      final decoded = img.decodeImage(out!)!;
+      expect(decoded.width, greaterThan(2));
+      expect(decoded.height, greaterThan(2));
+    },
+  );
 
   // P01 T4: LARGE source (long side > 2×cap) — warp succeeds, source buffer is
   //   bounded, output long side stays ≤ kDefaultFlatMaxDimension, no throw.
-  test('P01 T4: large source (> 2×cap) → bounded, output long side ≤ cap', () async {
-    const cap = 3500; // kDefaultFlatMaxDimension
-    const bent = CropCorners(
-      topLeft: Offset(0, 0),
-      topRight: Offset(1, 0),
-      bottomRight: Offset(1, 1),
-      bottomLeft: Offset(0, 1),
-      topMidDev: Offset(0, 0.05),
-    );
-    final out = await warper.warp(_rectJpeg(8000, 6000), bent);
-    expect(out, isNotNull);
-    final decoded = img.decodeImage(out!)!;
-    final longest = decoded.width > decoded.height ? decoded.width : decoded.height;
-    expect(longest, lessThanOrEqualTo(cap));
-  });
+  test(
+    'P01 T4: large source (> 2×cap) → bounded, output long side ≤ cap',
+    () async {
+      const cap = 3500; // kDefaultFlatMaxDimension
+      const bent = CropCorners(
+        topLeft: Offset(0, 0),
+        topRight: Offset(1, 0),
+        bottomRight: Offset(1, 1),
+        bottomLeft: Offset(0, 1),
+        topMidDev: Offset(0, 0.05),
+      );
+      final out = await warper.warp(_rectJpeg(8000, 6000), bent);
+      expect(out, isNotNull);
+      final decoded = img.decodeImage(out!)!;
+      final longest = decoded.width > decoded.height
+          ? decoded.width
+          : decoded.height;
+      expect(longest, lessThanOrEqualTo(cap));
+    },
+  );
 
   // P01 T4 (direct): the sampling loop reads a SOURCE buffer bounded to
   //   2×maxDim. Calling warpCoonsToImage on an oversized img.Image must

@@ -122,21 +122,23 @@ void main() {
     expect(mock.capturedUrl, 'https://ko-fi.com/example');
   });
 
-  testWidgets('Ko-fi launch refused (returns false) → shows the error snackbar',
-      (tester) async {
-    await tester.pumpWidget(
-      localizedTestApp(
-        home: DonationScreen(
-          kofiUrl: 'https://ko-fi.com/example',
-          bitcoinAddress: '',
-          openUrl: (_) async => false, // launch refused
+  testWidgets(
+    'Ko-fi launch refused (returns false) → shows the error snackbar',
+    (tester) async {
+      await tester.pumpWidget(
+        localizedTestApp(
+          home: DonationScreen(
+            kofiUrl: 'https://ko-fi.com/example',
+            bitcoinAddress: '',
+            openUrl: (_) async => false, // launch refused
+          ),
         ),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('donation-kofi-button')));
-    await tester.pumpAndSettle();
-    expect(find.byType(SnackBar), findsOneWidget);
-  });
+      );
+      await tester.tap(find.byKey(const Key('donation-kofi-button')));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+    },
+  );
 
   testWidgets('Ko-fi launch throwing → shows the error snackbar', (
     tester,

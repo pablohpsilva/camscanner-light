@@ -38,7 +38,8 @@ Future<Uint8List?> warpAndEnhance(
   @visibleForTesting Future<Uint8List?> Function()? runner,
 }) {
   if (corners == CropCorners.fullFrame) return Future.value(null);
-  final run = runner ??
+  final run =
+      runner ??
       () => compute(_warpEnhanceFn, _WarpEnhanceArgs(bytes, corners, mode));
   return withIsolateTimeout(run, timeout: timeout, onTimeout: () => null);
 }

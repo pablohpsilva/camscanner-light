@@ -118,15 +118,18 @@ void main() {
     expect(await withStatus(502, '{}'), isA<FeedbackServerError>());
   });
 
-  test('malformed /challenge (missing field) → server error, does not throw', () async {
-    final client = MockClient((req) async {
-      if (req.url.path == '/challenge') {
-        return http.Response(jsonEncode({'not_challenge': 'x'}), 200);
-      }
-      return http.Response(jsonEncode({'ok': true, 'issueUrl': 'u'}), 201);
-    });
-    expect(await _service(client).submit(_draft), isA<FeedbackServerError>());
-  });
+  test(
+    'malformed /challenge (missing field) → server error, does not throw',
+    () async {
+      final client = MockClient((req) async {
+        if (req.url.path == '/challenge') {
+          return http.Response(jsonEncode({'not_challenge': 'x'}), 200);
+        }
+        return http.Response(jsonEncode({'ok': true, 'issueUrl': 'u'}), 201);
+      });
+      expect(await _service(client).submit(_draft), isA<FeedbackServerError>());
+    },
+  );
 
   test('non-JSON /challenge body → server error, does not throw', () async {
     final client = MockClient((req) async {
@@ -185,9 +188,7 @@ class _StallingClient extends http.BaseClient {
     // The non-stalling endpoint answers with a valid challenge so the flow
     // proceeds to the /feedback POST.
     final body = utf8.encode(jsonEncode({'challenge': 'CHAL'}));
-    return Future.value(
-      http.StreamedResponse(Stream.value(body), 200),
-    );
+    return Future.value(http.StreamedResponse(Stream.value(body), 200));
   }
 }
 

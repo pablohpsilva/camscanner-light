@@ -10,7 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> iTapThePrivacyPolicyLink(WidgetTester tester) async {
   final section = find.byKey(const Key('legal-section-acceptance'));
   await tester.scrollUntilVisible(section, 300);
-  final link = find.descendant(of: section, matching: find.text('Privacy Policy'));
+  final link = find.descendant(
+    of: section,
+    matching: find.text('Privacy Policy'),
+  );
   await tester.scrollUntilVisible(link, 300);
   await tester.tap(link);
   await tester.pumpAndSettle();

@@ -151,7 +151,9 @@ class AppColors extends ThemeExtension<AppColors> {
 /// here so the ONLY `Color(0x…)` literals in the app are in this file.
 const Color kAppScrimStrong = Color(0x99000000); // ~60% black — modal/busy dim
 const Color kAppScrimMedium = Color(0x66000000); // ~40% black — lighter dim
-const Color kAppCardShadow = Color(0x14000000); // ~8% black — subtle card shadow
+const Color kAppCardShadow = Color(
+  0x14000000,
+); // ~8% black — subtle card shadow
 
 /// The contrasting "ink" to place on a [fill] of arbitrary brightness (P15):
 /// white on dark fills, warm near-black on bright fills. Theme-independent — it

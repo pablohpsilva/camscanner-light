@@ -119,33 +119,39 @@ void main() {
   // P01 T4: NORMAL source (≤ 2×cap) — output bytes/dimensions are byte-for-byte
   //   UNCHANGED vs the pre-bound implementation. computeWorkResolution returns
   //   scale==1.0 so no source resize happens and normal inputs are untouched.
-  test('P01 T4: small source (≤ 2×cap) → output unchanged (scale==1.0)', () async {
-    // 200×100 long side 200 ≪ 2×3500 → no resize path.
-    final expected = await warper.warp(_jpeg(200, 100), _kRect);
-    expect(expected, isNotNull);
-    final out = img.decodeImage(expected!)!;
-    // Same edge-length dims as test #2 — proves geometry is preserved.
-    expect(out.width, 160);
-    expect(out.height, 80);
-  });
+  test(
+    'P01 T4: small source (≤ 2×cap) → output unchanged (scale==1.0)',
+    () async {
+      // 200×100 long side 200 ≪ 2×3500 → no resize path.
+      final expected = await warper.warp(_jpeg(200, 100), _kRect);
+      expect(expected, isNotNull);
+      final out = img.decodeImage(expected!)!;
+      // Same edge-length dims as test #2 — proves geometry is preserved.
+      expect(out.width, 160);
+      expect(out.height, 80);
+    },
+  );
 
   // P01 T4: LARGE source (long side > 2×cap) — the warp still succeeds and
   //   produces the same-capped output dims; the SOURCE buffer is now bounded so
   //   it must not throw and the output long side stays ≤ kDefaultFlatMaxDimension.
-  test('P01 T4: large source (> 2×cap) → bounded, output long side ≤ cap', () async {
-    // Long side 8000 > 2×3500=7000 → source-bound path engages.
-    const cap = kDefaultFlatMaxDimension;
-    final bytes = _jpeg(8000, 6000);
-    final result = await warper.warp(bytes, _kRect);
-    expect(result, isNotNull);
-    final out = img.decodeImage(result!)!;
-    final longest = out.width > out.height ? out.width : out.height;
-    expect(longest, lessThanOrEqualTo(cap));
-    // Geometry: _kRect quad is 0.8×8000=6400 wide, 0.8×6000=4800 tall → capped
-    // to 3500 long side keeps the 4:3 aspect (3500×2625).
-    expect(out.width, 3500);
-    expect(out.height, 2625);
-  });
+  test(
+    'P01 T4: large source (> 2×cap) → bounded, output long side ≤ cap',
+    () async {
+      // Long side 8000 > 2×3500=7000 → source-bound path engages.
+      const cap = kDefaultFlatMaxDimension;
+      final bytes = _jpeg(8000, 6000);
+      final result = await warper.warp(bytes, _kRect);
+      expect(result, isNotNull);
+      final out = img.decodeImage(result!)!;
+      final longest = out.width > out.height ? out.width : out.height;
+      expect(longest, lessThanOrEqualTo(cap));
+      // Geometry: _kRect quad is 0.8×8000=6400 wide, 0.8×6000=4800 tall → capped
+      // to 3500 long side keeps the 4:3 aspect (3500×2625).
+      expect(out.width, 3500);
+      expect(out.height, 2625);
+    },
+  );
 
   // P01 T4 (direct): the sampling loop reads a SOURCE buffer bounded to
   //   2×maxDim. Calling warpPerspectiveToImage on an oversized img.Image must

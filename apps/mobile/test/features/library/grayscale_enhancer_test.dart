@@ -9,7 +9,8 @@ import 'package:mobile/features/library/image_enhancer.dart';
 
 /// A runner that never completes — injected to simulate a wedged isolate so the
 /// timeout branch can be exercised deterministically without a real hang.
-Future<Uint8List> _neverCompletes(Uint8List bytes) => Completer<Uint8List>().future;
+Future<Uint8List> _neverCompletes(Uint8List bytes) =>
+    Completer<Uint8List>().future;
 
 void main() {
   group('NoneEnhancer', () {

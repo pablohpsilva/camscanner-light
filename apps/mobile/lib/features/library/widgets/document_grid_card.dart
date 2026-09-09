@@ -108,7 +108,10 @@ class DocumentGridCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       metaText,
-                      style: AppTypography.mono(size: 11, color: appColors.muted),
+                      style: AppTypography.mono(
+                        size: 11,
+                        color: appColors.muted,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -128,7 +131,6 @@ class DocumentGridCard extends StatelessWidget {
       child: card,
     );
   }
-
 }
 
 /// Fills the thumbnail area: shows [DocumentThumbnail] sized to fill, or a

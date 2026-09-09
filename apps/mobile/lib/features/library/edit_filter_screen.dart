@@ -114,7 +114,8 @@ class _EditFilterScreenState extends State<EditFilterScreen> {
       return;
     }
     try {
-      final proxyRun = widget.proxyRunner ?? ((b) => compute(previewProxyJpeg, b));
+      final proxyRun =
+          widget.proxyRunner ?? ((b) => compute(previewProxyJpeg, b));
       final proxy = await proxyRun(bytes);
       if (!mounted || gen != _previewGen) return;
       final enhancerFor = widget.previewEnhancerFor ?? enhancerForMode;

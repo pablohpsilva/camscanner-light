@@ -46,8 +46,7 @@ class Pages extends Table {
   /// Enhancement filter (EnhancerMode index: none=0, grayscale=1, auto=2,
   /// color=3) applied to the DISPLAY image. Metadata re-applied during flat
   /// regeneration — never baked destructively into the base. See _writeFlat.
-  IntColumn get enhancerMode =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get enhancerMode => integer().withDefault(const Constant(0))();
 
   /// Recognized OCR text for this page (O1); null until OCR has run.
   TextColumn get ocrText => text().nullable()();

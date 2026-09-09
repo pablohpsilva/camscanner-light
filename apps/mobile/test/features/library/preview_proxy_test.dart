@@ -23,9 +23,13 @@ void main() {
         '(the 160-byte seed JPEG that decodeImage chokes on)', () {
       // A 160-byte buffer that starts like a JPEG but is not decodable — the
       // exact shape that threw `RangeError ... 0..159: 160` on device.
-      final tiny = Uint8List.fromList(
-        <int>[0xFF, 0xD8, 0xFF, 0xE0, ...List<int>.filled(156, 0)],
-      );
+      final tiny = Uint8List.fromList(<int>[
+        0xFF,
+        0xD8,
+        0xFF,
+        0xE0,
+        ...List<int>.filled(156, 0),
+      ]);
       expect(() => previewProxyJpeg(tiny), returnsNormally);
       expect(previewProxyJpeg(tiny), same(tiny));
     });

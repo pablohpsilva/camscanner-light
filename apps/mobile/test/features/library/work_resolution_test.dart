@@ -39,14 +39,17 @@ void main() {
       expect(r.targetH, 2);
     });
 
-    test('over-cap long side is scaled exactly to cap (monotonic property)', () {
-      final a = computeWorkResolution(9000, 6000, 3000);
-      final b = computeWorkResolution(12000, 8000, 3000);
-      // Long side always lands on the cap when over it, regardless of source.
-      expect(a.targetW, 3000);
-      expect(b.targetW, 3000);
-      // Larger-but-same-cap source never yields a larger long-side target.
-      expect(b.targetW, lessThanOrEqualTo(a.targetW));
-    });
+    test(
+      'over-cap long side is scaled exactly to cap (monotonic property)',
+      () {
+        final a = computeWorkResolution(9000, 6000, 3000);
+        final b = computeWorkResolution(12000, 8000, 3000);
+        // Long side always lands on the cap when over it, regardless of source.
+        expect(a.targetW, 3000);
+        expect(b.targetW, 3000);
+        // Larger-but-same-cap source never yields a larger long-side target.
+        expect(b.targetW, lessThanOrEqualTo(a.targetW));
+      },
+    );
   });
 }

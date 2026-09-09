@@ -46,7 +46,10 @@ class _TurnstileWidgetState extends State<TurnstileWidget> {
         'TurnstileError',
         onMessageReceived: (_) => widget.onToken(null),
       )
-      ..loadHtmlString(buildTurnstileHtml(widget.siteKey), baseUrl: widget.baseUrl);
+      ..loadHtmlString(
+        buildTurnstileHtml(widget.siteKey),
+        baseUrl: widget.baseUrl,
+      );
   }
 
   @override

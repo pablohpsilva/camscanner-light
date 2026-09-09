@@ -14,14 +14,15 @@ import './../step/the_feedback_screen_is_dismissed.dart';
 void main() {
   group('''Feedback submission result messaging''', () {
     testWidgets(
-        '''Server rejects the feedback as invalid and the user goes back''',
-        (tester) async {
-      await theFeedbackScreenBackedByAServiceThatRejectsAsInvalid(tester);
-      await iEnterAFeedbackMessage(tester);
-      await iTapSendFeedback(tester);
-      await iSeeTheMessagePleaseCheckYourMessageAndTryAgain(tester);
-      await iTapTheFeedbackBackButton(tester);
-      await theFeedbackScreenIsDismissed(tester);
-    });
+      '''Server rejects the feedback as invalid and the user goes back''',
+      (tester) async {
+        await theFeedbackScreenBackedByAServiceThatRejectsAsInvalid(tester);
+        await iEnterAFeedbackMessage(tester);
+        await iTapSendFeedback(tester);
+        await iSeeTheMessagePleaseCheckYourMessageAndTryAgain(tester);
+        await iTapTheFeedbackBackButton(tester);
+        await theFeedbackScreenIsDismissed(tester);
+      },
+    );
   });
 }

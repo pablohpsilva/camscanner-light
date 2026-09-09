@@ -9,8 +9,10 @@ void main() {
     expect(kSlot, kTileWidth + 2 * kTileMargin);
   });
 
-  test('the derived slot equals the previous hand-summed value (56 + 4 + 4)',
-      () {
-    expect(kSlot, 64.0);
-  });
+  test(
+    'the derived slot equals the previous hand-summed value (56 + 4 + 4)',
+    () {
+      expect(kSlot, 64.0);
+    },
+  );
 }

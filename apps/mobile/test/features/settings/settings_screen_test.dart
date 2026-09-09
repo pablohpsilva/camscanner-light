@@ -164,10 +164,7 @@ void main() {
   testWidgets('the privacy row opens the privacy document', (t) async {
     final c = ThemeController(store: InMemoryThemeModeStore());
     await t.pumpWidget(_host(c));
-    await t.scrollUntilVisible(
-      find.byKey(const Key('settings-privacy')),
-      300,
-    );
+    await t.scrollUntilVisible(find.byKey(const Key('settings-privacy')), 300);
     await t.tap(find.byKey(const Key('settings-privacy')));
     await t.pumpAndSettle();
     expect(find.byKey(const Key('legal-section-summary')), findsOneWidget);

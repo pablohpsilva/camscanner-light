@@ -82,25 +82,24 @@ void main() {
     },
   );
 
-  testWidgets(
-    'OCR screen uses App chrome: paper bg, header, confidence chip',
-    (tester) async {
-      final repo = FakeDocumentRepository(
-        pages: const [
-          PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD'),
-        ],
-      );
-      await tester.pumpWidget(host(repo, initialText: 'HELLO WORLD'));
-      await tester.pumpAndSettle();
+  testWidgets('OCR screen uses App chrome: paper bg, header, confidence chip', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository(
+      pages: const [
+        PageImage(position: 1, imagePath: '/x.jpg', ocrText: 'HELLO WORLD'),
+      ],
+    );
+    await tester.pumpWidget(host(repo, initialText: 'HELLO WORLD'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Recognized text'), findsOneWidget);
-      expect(find.byType(ConfidenceChip), findsOneWidget);
-      expect(find.byKey(const Key('recognized-text-copy')), findsOneWidget);
-      expect(find.byKey(const Key('recognized-text-share')), findsOneWidget);
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, AppColors.light.paper);
-    },
-  );
+    expect(find.text('Recognized text'), findsOneWidget);
+    expect(find.byType(ConfidenceChip), findsOneWidget);
+    expect(find.byKey(const Key('recognized-text-copy')), findsOneWidget);
+    expect(find.byKey(const Key('recognized-text-share')), findsOneWidget);
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, AppColors.light.paper);
+  });
 
   testWidgets('OCR screen uses dark paper under the dark theme', (
     tester,

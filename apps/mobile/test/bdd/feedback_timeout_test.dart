@@ -13,13 +13,14 @@ import './../step/the_feedback_submit_control_is_enabled_again.dart';
 void main() {
   group('''Feedback submission survives a stalled network''', () {
     testWidgets(
-        '''A stalled submit surfaces the offline message and re-enables submit''',
-        (tester) async {
-      await theFeedbackScreenBackedByAStalledService(tester);
-      await iEnterAFeedbackMessage(tester);
-      await iTapSendFeedback(tester);
-      await iSeeTheMessageCheckYourConnectionAndTryAgain(tester);
-      await theFeedbackSubmitControlIsEnabledAgain(tester);
-    });
+      '''A stalled submit surfaces the offline message and re-enables submit''',
+      (tester) async {
+        await theFeedbackScreenBackedByAStalledService(tester);
+        await iEnterAFeedbackMessage(tester);
+        await iTapSendFeedback(tester);
+        await iSeeTheMessageCheckYourConnectionAndTryAgain(tester);
+        await theFeedbackSubmitControlIsEnabledAgain(tester);
+      },
+    );
   });
 }

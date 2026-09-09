@@ -9,7 +9,10 @@ import 'image_enhancer.dart';
 import 'oriented_enhance.dart';
 
 class ColorEnhancer implements ImageEnhancer {
-  const ColorEnhancer({this.timeout = const Duration(seconds: 12), this.runner});
+  const ColorEnhancer({
+    this.timeout = const Duration(seconds: 12),
+    this.runner,
+  });
 
   /// Upper bound on the enhancement isolate. A wedged isolate cannot be killed
   /// from Dart, but the awaiting future detaches so the caller's `catch (_)`

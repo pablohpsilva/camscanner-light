@@ -21,22 +21,25 @@ import './../step/the_settings_screen_is_shown_in_german.dart';
 
 void main() {
   group('''App language''', () {
-    testWidgets('''A supported device language is used automatically''',
-        (tester) async {
+    testWidgets('''A supported device language is used automatically''', (
+      tester,
+    ) async {
       await theDeviceLanguageIsBrazilianPortuguese(tester);
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await theHomeTitleIsShownInBrazilianPortuguese(tester);
       await theDeviceLanguageOverrideIsCleared(tester);
     });
-    testWidgets('''An unsupported device language falls back to English''',
-        (tester) async {
+    testWidgets('''An unsupported device language falls back to English''', (
+      tester,
+    ) async {
       await theDeviceLanguageIsJapanese(tester);
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await theHomeTitleIsShownInEnglish(tester);
       await theDeviceLanguageOverrideIsCleared(tester);
     });
-    testWidgets('''Choosing Spanish in settings applies immediately''',
-        (tester) async {
+    testWidgets('''Choosing Spanish in settings applies immediately''', (
+      tester,
+    ) async {
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await iOpenSettingsFromHome(tester);
       await iChooseTheSpanishLanguage(tester);
@@ -51,8 +54,9 @@ void main() {
       await theHomeTitleIsShownInSpanish(tester);
       await theDeviceLanguageOverrideIsCleared(tester);
     });
-    testWidgets('''System default returns to the device language''',
-        (tester) async {
+    testWidgets('''System default returns to the device language''', (
+      tester,
+    ) async {
       await theDeviceLanguageIsGerman(tester);
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await iOpenSettingsFromHome(tester);

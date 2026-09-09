@@ -42,23 +42,31 @@ void main() {
   // fullFrame short-circuits to null with no isolate spawned.
   test('fullFrame → null', () async {
     expect(
-      await warpAndEnhance(_jpeg(100, 80), CropCorners.fullFrame,
-          EnhancerMode.none),
+      await warpAndEnhance(
+        _jpeg(100, 80),
+        CropCorners.fullFrame,
+        EnhancerMode.none,
+      ),
       isNull,
     );
   });
 
   // NORMAL parity: a real cropped pass returns non-null bytes decoding to the
   // edge-length dimensions — proves the success path is unchanged.
-  test('valid quad → JPEG with edge-length dimensions (success unchanged)',
-      () async {
-    final result =
-        await warpAndEnhance(_jpeg(200, 100), _kRect, EnhancerMode.none);
-    expect(result, isNotNull);
-    final out = img.decodeImage(result!)!;
-    expect(out.width, 160);
-    expect(out.height, 80);
-  });
+  test(
+    'valid quad → JPEG with edge-length dimensions (success unchanged)',
+    () async {
+      final result = await warpAndEnhance(
+        _jpeg(200, 100),
+        _kRect,
+        EnhancerMode.none,
+      );
+      expect(result, isNotNull);
+      final out = img.decodeImage(result!)!;
+      expect(out.width, 160);
+      expect(out.height, 80);
+    },
+  );
 
   // TIMEOUT: an injected never-completing runner + a tiny timeout → null,
   // within the bound. Mirrors the fallback contract on any failure.

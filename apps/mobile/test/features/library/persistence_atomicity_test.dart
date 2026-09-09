@@ -153,8 +153,7 @@ void main() {
   }
 
   CapturedImage freshCapture() {
-    final f = File('${base.path}/cap_${capN++}.jpg')
-      ..writeAsBytesSync(fixture);
+    final f = File('${base.path}/cap_${capN++}.jpg')..writeAsBytesSync(fixture);
     return CapturedImage(f.path);
   }
 

@@ -117,11 +117,11 @@ void main() {
                     '${double.parse(m.group(1)!).round()}x${double.parse(m.group(2)!).round()}',
               )
               .toList();
-      expect(
-        mediaBoxes,
-        ['120x60', '80x160', '200x100'],
-        reason: 'each page MediaBox matches its image aspect, in page order',
-      );
+      expect(mediaBoxes, [
+        '120x60',
+        '80x160',
+        '200x100',
+      ], reason: 'each page MediaBox matches its image aspect, in page order');
     },
   );
 

@@ -21,31 +21,35 @@ import './../step/i_tap_the_privacy_policy_link.dart';
 void main() {
   group('''Legal documents''', () {
     testWidgets(
-        '''The terms disclaim liability and place responsibility on the user''',
-        (tester) async {
-      await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
-      await iOpenSettingsFromHome(tester);
-      await iOpenTheTermsOfService(tester);
-      await theDocumentDisclaimsAllWarranties(tester);
-      await theDocumentSaysIAmResponsibleForWhatIScan(tester);
-    });
-    testWidgets('''The privacy policy warns that feedback is public''',
-        (tester) async {
+      '''The terms disclaim liability and place responsibility on the user''',
+      (tester) async {
+        await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
+        await iOpenSettingsFromHome(tester);
+        await iOpenTheTermsOfService(tester);
+        await theDocumentDisclaimsAllWarranties(tester);
+        await theDocumentSaysIAmResponsibleForWhatIScan(tester);
+      },
+    );
+    testWidgets('''The privacy policy warns that feedback is public''', (
+      tester,
+    ) async {
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await iOpenSettingsFromHome(tester);
       await iOpenThePrivacyPolicy(tester);
       await theDocumentWarnsThatFeedbackIsPublic(tester);
     });
-    testWidgets('''FAQ answers are hidden until a question is tapped''',
-        (tester) async {
+    testWidgets('''FAQ answers are hidden until a question is tapped''', (
+      tester,
+    ) async {
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await iOpenSettingsFromHome(tester);
       await iOpenTheFaq(tester);
       await iExpandTheFirstQuestion(tester);
       await theAnswerIsShown(tester);
     });
-    testWidgets('''A translated document says the English version prevails''',
-        (tester) async {
+    testWidgets('''A translated document says the English version prevails''', (
+      tester,
+    ) async {
       await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
       await iOpenSettingsFromHome(tester);
       await iChooseTheSpanishLanguage(tester);
@@ -53,13 +57,14 @@ void main() {
       await theEnglishPrevailsNoticeIsShown(tester);
     });
     testWidgets(
-        '''Tapping a sibling document link opens that document in-app''',
-        (tester) async {
-      await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
-      await iOpenSettingsFromHome(tester);
-      await iOpenTheTermsOfService(tester);
-      await iTapThePrivacyPolicyLink(tester);
-      await theDocumentWarnsThatFeedbackIsPublic(tester);
-    });
+      '''Tapping a sibling document link opens that document in-app''',
+      (tester) async {
+        await theAppIsLaunchedWithEmptyStorageAndMockedPreferences(tester);
+        await iOpenSettingsFromHome(tester);
+        await iOpenTheTermsOfService(tester);
+        await iTapThePrivacyPolicyLink(tester);
+        await theDocumentWarnsThatFeedbackIsPublic(tester);
+      },
+    );
   });
 }

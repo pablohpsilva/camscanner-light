@@ -11,9 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// `pumpAndSettle`, which would spin on the submit spinner while it is showing.
 /// A final long pump drains the result SnackBar's auto-dismiss timer so no
 /// pending-timer warning fires when the test ends.
-Future<void> theFeedbackSubmitControlIsEnabledAgain(
-  WidgetTester tester,
-) async {
+Future<void> theFeedbackSubmitControlIsEnabledAgain(WidgetTester tester) async {
   // Advance past the 50ms per-POST timeout so submit() resolves to offline
   // and the finally-block clears the _submitting flag.
   await tester.pump(const Duration(milliseconds: 100));

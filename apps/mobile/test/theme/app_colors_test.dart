@@ -52,7 +52,9 @@ void main() {
     expect(mid, isA<AppColors>());
   });
 
-  testWidgets('context.appColors resolves from a themed context', (tester) async {
+  testWidgets('context.appColors resolves from a themed context', (
+    tester,
+  ) async {
     late AppColors seen;
     await tester.pumpWidget(
       MaterialApp(
@@ -68,25 +70,26 @@ void main() {
     expect(seen.paper, const Color(0xFFF4F1EA));
   });
 
-  testWidgets('context.appColors falls back to light when no extension is present', (
-    tester,
-  ) async {
-    late AppColors seen;
-    await tester.pumpWidget(
-      MaterialApp(
-        // No AppColors extension registered (bare theme) — as in isolated
-        // widget tests. context.appColors must degrade to light, not crash.
-        home: Builder(
-          builder: (context) {
-            seen = context.appColors;
-            return const SizedBox();
-          },
+  testWidgets(
+    'context.appColors falls back to light when no extension is present',
+    (tester) async {
+      late AppColors seen;
+      await tester.pumpWidget(
+        MaterialApp(
+          // No AppColors extension registered (bare theme) — as in isolated
+          // widget tests. context.appColors must degrade to light, not crash.
+          home: Builder(
+            builder: (context) {
+              seen = context.appColors;
+              return const SizedBox();
+            },
+          ),
         ),
-      ),
-    );
-    expect(seen.paper, AppColors.light.paper);
-    expect(seen.green, AppColors.light.green);
-  });
+      );
+      expect(seen.paper, AppColors.light.paper);
+      expect(seen.green, AppColors.light.green);
+    },
+  );
 
   test(
     'copyWith with no args returns instance with all fields equal to original',

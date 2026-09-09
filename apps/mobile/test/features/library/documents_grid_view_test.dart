@@ -29,10 +29,7 @@ void main() {
 
   group('DocumentsGridView', () {
     testWidgets('renders the grid root key and both card keys', (tester) async {
-      await pumpApp(
-        tester,
-        DocumentsGridView(summaries: [summaryA, summaryB]),
-      );
+      await pumpApp(tester, DocumentsGridView(summaries: [summaryA, summaryB]));
 
       expect(find.byKey(const Key('documents-grid')), findsOneWidget);
       expect(find.byKey(const Key('document-card-1')), findsOneWidget);

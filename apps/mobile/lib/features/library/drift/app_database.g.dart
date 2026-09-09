@@ -1274,7 +1274,7 @@ class $$DocumentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$DocumentsTable, Document>(table),
                   $$DocumentsTableReferences(db, table, e),
                 ),
               )
@@ -1667,8 +1667,10 @@ class $$PagesTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$PagesTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$PagesTable, Page>(table),
+                  $$PagesTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback: ({documentId = false}) {
