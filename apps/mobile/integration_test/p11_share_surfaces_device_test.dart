@@ -13,11 +13,19 @@ import '../test/support/fake_library.dart';
 import '../test/support/localized_app.dart';
 
 /// P11 device verification: every share surface — rebuilt from the single
-/// [ShareAction] model — opens, lists the correct enabled actions for the
-/// default FeatureFlags, and dispatches (the unavailable-toast path) on a REAL
-/// Android device AND a real iOS device. The export/share DATA path is covered
-/// separately by r1/r2; here we prove the refactored UI renders + dispatches
-/// on-device.
+/// [ShareAction] model — opens, lists its enabled actions, and dispatches (the
+/// unavailable-toast path) on a REAL Android device AND a real iOS device. The
+/// export/share DATA path is covered separately by r1/r2; here we prove the
+/// refactored UI renders + dispatches on-device.
+///
+/// The flags are injected EXPLICITLY rather than relying on the compile-time
+/// defaults. Both `fax` and `shareLink` default to false in production — no fax
+/// provider and no link-share channel are wired yet — and this test is about
+/// each surface rendering every tile that IS enabled, not about what ships
+/// enabled. Leaning on the default is what silently rotted this test once:
+/// FEATURE_SHARE_LINK defaulted to true when it was written and was later
+/// flipped to false, so the share-link assertions began failing for a reason
+/// that had nothing to do with the share surfaces.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -44,7 +52,7 @@ void main() {
           documentId: 1,
           name: 'Scan X',
           repository: repo,
-          features: const FeatureFlags(fax: true),
+          features: const FeatureFlags(fax: true, shareLink: true),
         ),
       ),
     );
@@ -79,7 +87,7 @@ void main() {
             summaries: [s],
             onShare: (_) {},
             onRename: (_) {},
-            features: const FeatureFlags(fax: true),
+            features: const FeatureFlags(fax: true, shareLink: true),
           ),
         ),
       ),
