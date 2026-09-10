@@ -209,4 +209,42 @@ void main() {
       const DocumentSort(SortCriterion.created, SortDirection.desc),
     );
   });
+
+  // `expect(a, b)` only exercises operator==. DocumentSort is used as a map key
+  // by the home sort-cache (P12), so a hashCode disagreeing with == would cause
+  // cache misses — or worse, stale hits — while equality still looked fine.
+  test('DocumentSort hashCode agrees with equality', () {
+    expect(
+      const DocumentSort(SortCriterion.name, SortDirection.asc).hashCode,
+      const DocumentSort(SortCriterion.name, SortDirection.asc).hashCode,
+    );
+    expect(
+      const DocumentSort(SortCriterion.name, SortDirection.asc).hashCode,
+      isNot(
+        const DocumentSort(SortCriterion.name, SortDirection.desc).hashCode,
+      ),
+    );
+    // Built from pairs, not a map literal: duplicate literal keys are a static
+    // lint, but the runtime collapse is exactly what is under test.
+    const pairs = <(DocumentSort, String)>[
+      (DocumentSort(SortCriterion.name, SortDirection.asc), 'a'),
+      (DocumentSort(SortCriterion.name, SortDirection.asc), 'b'),
+      (DocumentSort(SortCriterion.name, SortDirection.desc), 'c'),
+    ];
+    final keyed = <DocumentSort, String>{for (final (k, v) in pairs) k: v};
+    expect(keyed, hasLength(2));
+    expect(
+      keyed[const DocumentSort(SortCriterion.name, SortDirection.asc)],
+      'b',
+    );
+  });
+
+  test('DocumentSort toString names both fields', () {
+    final s = const DocumentSort(
+      SortCriterion.name,
+      SortDirection.asc,
+    ).toString();
+    expect(s, contains('name'));
+    expect(s, contains('asc'));
+  });
 }
