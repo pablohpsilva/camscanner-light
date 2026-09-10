@@ -46,7 +46,13 @@ dependencies:
   # section at the bottom of this file for why this version and not a caret.
   opencv_dart: 2.2.2
   drift: ^2.20.0
-  sqlite3_flutter_libs: ^0.5.24
+  # NOTE: no `sqlite3_flutter_libs` here, deliberately. `package:sqlite3` 3.x
+  # bundles SQLite itself through Dart build hooks (see NativeAssetsManifest.json
+  # — `package:sqlite3/src/ffi/libsqlite3.g.dart` -> sqlite3.framework/sqlite3 on
+  # iOS, lib/<abi>/libsqlite3.so on Android), which is what the upstream v3
+  # upgrade notes mean by "if you depend on sqlite3_flutter_libs, stop doing
+  # that". The old plugin's platform build scripts are redundant, and its 0.6.0
+  # release is an EMPTY marker package, not an upgrade — do not "bump" to it.
   path_provider: ^2.1.4
   path: ^1.9.0
   pdf: ^3.11.1

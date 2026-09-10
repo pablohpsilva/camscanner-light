@@ -3,7 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Proves the host test runtime's SQLite has FTS5 + the trigram tokenizer.
-/// Device is fine (sqlite3_flutter_libs ships FTS5); this guards the HOST path
+/// Device is fine (package:sqlite3 bundles an FTS5 build); this guards the HOST path
 /// that Tasks 2–3 rely on. If it fails, those tests move to integration_test/.
 void main() {
   test('host SQLite supports fts5 trigram substring MATCH', () async {
