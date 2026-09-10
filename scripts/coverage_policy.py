@@ -32,6 +32,25 @@ reach from a host test, and hiding them would flatter the number.
 import os
 import re
 
+# Files that CANNOT be covered by either suite, and why. They stay in the
+# denominator on purpose -- hiding them would flatter the number -- but they are
+# named here and reported by scripts/coverage-combined.sh so the shortfall is a
+# known, checked gap rather than an anonymous one.
+#
+# Each needs a live third-party service, so the honest substitute is a manual
+# check before shipping, exactly like the R8 and donation-config guards.
+KNOWN_UNREACHABLE = {
+    'lib/features/feedback/turnstile_widget.dart':
+        'renders a Cloudflare Turnstile challenge in a WebView; needs real '
+        'site keys and a reachable Worker. Manual check: submit feedback from '
+        'a build carrying FEEDBACK_* defines and confirm an issue is filed.',
+    'lib/features/donation/tip_jar/storekit_tip_jar_service.dart':
+        'drives real StoreKit purchases; the simulator returns zero products '
+        'and a sandbox tester account is required. Manual check: buy a tip on '
+        'a physical iPhone with a sandbox account (see docs/claude/'
+        'ios-release.md).',
+}
+
 EXCLUDE_SUFFIXES = ('.g.dart', '.freezed.dart')
 EXCLUDE_DIRS = ('lib/l10n/gen/',)
 

@@ -45,7 +45,7 @@ python3 - "$REPO_ROOT" "$HOST" "$E2E" "$GATE" <<'PY'
 import sys, os, collections
 repo_root, host_path, e2e_path, gate = sys.argv[1:5]
 sys.path.insert(0, os.path.join(repo_root, 'scripts'))
-from coverage_policy import filtered_records  # noqa: E402
+from coverage_policy import filtered_records, KNOWN_UNREACHABLE  # noqa: E402
 
 
 def load(path):
@@ -96,7 +96,23 @@ for f, h, l in worst:
     if l - h:
         print(f"  {l-h:>4} miss  {h/l*100:5.0f}%  {f.replace('lib/features/', '').replace('lib/', '')}")
 print()
+by_file = {f: (h, l) for f, h, l in recs}
+known_missing = 0
+print("Known-unreachable (needs a live service — verify by hand before shipping):")
+for path, why in sorted(KNOWN_UNREACHABLE.items()):
+    hit_total = by_file.get(path)
+    if hit_total is None:
+        print(f"  {path}: not in this report")
+        continue
+    h, l = hit_total
+    known_missing += l - h
+    print(f"  {l-h:>4} miss  {path.replace('lib/features/', '')}")
+    print(f"        {why}")
+print()
 print(f"COMBINED COVERAGE: {ch}/{cn} = {ch/cn*100:.2f}%")
+reachable = cn - (ch + known_missing)
+print(f"  missed by both: {cn-ch}  (known-unreachable {known_missing}, "
+      f"addressable {reachable})")
 
 if gate:
     g = float(gate)
