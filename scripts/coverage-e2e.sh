@@ -78,12 +78,14 @@ ls "$ROOT_OUT"/*/*.info >/dev/null 2>&1 || { echo "no per-test lcov under $ROOT_
 
 # Merge across ALL device subdirectories: a line covered on either platform
 # counts, which is the only way Platform.isIOS forks can both be reached.
-python3 - "$ROOT_OUT" "$MOBILE/coverage/e2e-merged.info" "$GATE" <<'PY'
+python3 - "$ROOT_OUT" "$MOBILE/coverage/e2e-merged.info" "$GATE" "$REPO_ROOT" <<'PY'
 import sys, glob, os, collections
-out_dir, merged_path, gate = sys.argv[1], sys.argv[2], sys.argv[3]
+out_dir, merged_path, gate, repo_root = sys.argv[1:5]
 
-EXCLUDE = ('.g.dart', '.freezed.dart')
-EXCLUDE_DIRS = ('lib/l10n/gen/',)
+# Policy (which files/lines count) is shared with scripts/coverage.sh and
+# scripts/coverage-combined.sh so the three figures stay comparable.
+sys.path.insert(0, os.path.join(repo_root, 'scripts'))
+from coverage_policy import filtered_records  # noqa: E402
 
 # line-level union across every per-test lcov: a line is covered if ANY test hit it
 hits = collections.defaultdict(dict)   # file -> {line: count}
@@ -109,10 +111,7 @@ with open(merged_path, 'w') as fh:
         fh.write(f'LH:{sum(1 for c in lines.values() if c > 0)}\n')
         fh.write('end_of_record\n')
 
-inc = [(f, sum(1 for c in l.values() if c > 0), len(l))
-       for f, l in hits.items()
-       if not any(f.endswith(x) for x in EXCLUDE)
-       and not any(d in f for d in EXCLUDE_DIRS)]
+inc = filtered_records(hits, repo_root)
 
 tlh = sum(r[1] for r in inc); tlf = sum(r[2] for r in inc)
 pct = tlh / tlf * 100 if tlf else 100.0
@@ -127,7 +126,7 @@ for f, h, l in worst:
 print()
 print(f"E2E COVERAGE (merged {len(glob.glob(os.path.join(out_dir,'*','*.info')))} runs across "
       f"{len([d for d in glob.glob(os.path.join(out_dir,'*')) if os.path.isdir(d)])} device(s), "
-      f"excl {', '.join(EXCLUDE)}): {tlh}/{tlf} = {pct:.2f}%")
+      f"policy in scripts/coverage_policy.py): {tlh}/{tlf} = {pct:.2f}%")
 print(f"merged lcov -> {merged_path}")
 
 if gate:

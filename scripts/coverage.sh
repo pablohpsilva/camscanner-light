@@ -33,36 +33,36 @@ fi
 
 [ -f coverage/lcov.info ] || { echo "coverage/lcov.info missing" >&2; exit 1; }
 
-python3 - "$GATE" <<'PY'
-import sys
-gate = sys.argv[1] if len(sys.argv) > 1 else ""
-EXCLUDE = ('.g.dart', '.freezed.dart')
-# gen-l10n output is generated per-locale lookup code (not .g.dart-suffixed);
-# same generated-code policy as drift.
-EXCLUDE_DIRS = ('lib/l10n/gen/',)
-recs = []
-cur = None; lf = lh = 0
+python3 - "$REPO_ROOT" "$GATE" <<'PY'
+import sys, os, collections
+repo_root, gate = sys.argv[1], sys.argv[2]
+sys.path.insert(0, os.path.join(repo_root, 'scripts'))
+from coverage_policy import filtered_records  # noqa: E402
+
+hits = collections.defaultdict(dict)
+cur = None
 for line in open('coverage/lcov.info'):
     line = line.strip()
-    if line.startswith('SF:'): cur = line[3:]
-    elif line.startswith('LF:'): lf = int(line[3:])
-    elif line.startswith('LH:'): lh = int(line[3:])
-    elif line == 'end_of_record': recs.append((cur, lh, lf))
-inc = [r for r in recs
-       if not any(r[0].endswith(x) for x in EXCLUDE)
-       and not any(d in r[0] for d in EXCLUDE_DIRS)]
+    if line.startswith('SF:'):
+        cur = line[3:]
+    elif line.startswith('DA:') and cur:
+        ln, cnt = line[3:].split(',')[:2]
+        hits[cur][int(ln)] = hits[cur].get(int(ln), 0) + int(cnt)
+    elif line == 'end_of_record':
+        cur = None
+
+inc = filtered_records(hits, repo_root)
 tlh = sum(r[1] for r in inc); tlf = sum(r[2] for r in inc)
 pct = tlh / tlf * 100 if tlf else 100.0
-base = ''
-for pfx in recs:
-    pass
-worst = sorted(inc, key=lambda r: (r[2]-r[1]), reverse=True)[:15]
-print("Lowest-coverage hand-written files (excl. generated):")
+
+worst = sorted(inc, key=lambda r: (r[2] - r[1]), reverse=True)[:15]
+print("Lowest-coverage hand-written files (policy applied):")
 for f, h, l in worst:
-    if l - h == 0: continue
+    if l - h == 0:
+        continue
     print(f"  {l-h:>4} miss  {h/l*100:5.0f}%  {h}/{l}  {f.split('apps/mobile/')[-1]}")
 print()
-print(f"FILTERED COVERAGE (excl {', '.join(EXCLUDE)}): {tlh}/{tlf} = {pct:.2f}%")
+print(f"FILTERED COVERAGE (see scripts/coverage_policy.py): {tlh}/{tlf} = {pct:.2f}%")
 if gate:
     g = float(gate)
     if pct < g:
