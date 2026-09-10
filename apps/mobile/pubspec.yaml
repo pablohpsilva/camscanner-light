@@ -40,12 +40,17 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   image: ^4.5.0
-  archive: ^4.0.9
+  archive: ^4.2.0
   shared_preferences: ^2.3.2
   # Pinned EXACTLY (do not caret/upgrade) — see the note above the `hooks:`
   # section at the bottom of this file for why this version and not a caret.
   opencv_dart: 2.2.2
-  drift: ^2.20.0
+  # The NATIVE OpenCV. Pinned exactly and declared directly because
+  # opencv_dart only asks for `^2.2.2`, so without this line the compiled
+  # OpenCV source can move on its own under the pinned wrapper. See the long
+  # note above the `hooks:` section for the verification this version carries.
+  dartcv4: 2.3.0
+  drift: ^2.35.0
   # NOTE: no `sqlite3_flutter_libs` here, deliberately. `package:sqlite3` 3.x
   # bundles SQLite itself through Dart build hooks (see NativeAssetsManifest.json
   # — `package:sqlite3/src/ffi/libsqlite3.g.dart` -> sqlite3.framework/sqlite3 on
@@ -88,7 +93,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
   bdd_widget_test: ^2.1.4
   build_runner: ^2.15.0
-  drift_dev: ^2.20.0
+  drift_dev: ^2.35.0
   exif: ^3.3.0
   sqlite3: ^3.0.0
   # Used by the donation Ko-fi launch-mode test to mock UrlLauncherPlatform.
@@ -124,6 +129,22 @@ dev_dependencies:
 # 2.1.0 (mean=1.193 max=13 full-frame, 0.090/9 bright-bg on the same Android
 # device, gate is mean < 2.0), and the whole OpenCV device surface is green —
 # 25/25 on a physical Android, and np1/np2/np3/e4/e5 on a physical iPhone.
+#
+# THE PIN ABOVE DOES NOT COVER THE NATIVE CODE BY ITSELF. opencv_dart is a thin
+# Dart wrapper; the OpenCV that actually gets COMPILED comes from `dartcv4`,
+# which opencv_dart 2.2.2 declares only as `dartcv4: ^2.2.2`. So a plain
+# `flutter pub upgrade` moves the native source under a pinned opencv_dart —
+# exactly the silent change the exact pin was meant to prevent. dartcv4 is
+# therefore pinned explicitly in `dependencies:` above; keep the two in step.
+#
+# dartcv4 2.3.0 verified 2026-09-10 (both devices, with the native-assets
+# overrides below): parity UNCHANGED — mean=1.193 max=13 and 0.090/9 on Android,
+# mean=1.188 max=12 and 0.090/9 on the iPhone — across np1/np2/np3, e1/e2/e4/e5,
+# g1/g3/g4, f1/f3/f4 and k3. Its `treeshake` hook option (new in 2.3.0) restricts
+# exported native symbols and writes its keep-list ONLY on AOT builds, so a bad
+# keep-list would break RELEASE while every Debug integration test still passed.
+# It defaults to false and we do not enable it below — leave it that way unless
+# you are prepared to verify a Release build by hand.
 hooks:
   user_defines:
     dartcv4:
@@ -191,3 +212,60 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Every package below sits at the newest version published. Each entry is here
+# because some upstream constraint pinned it BELOW that, and each was verified
+# on a real Android device AND a real iPhone before being kept — an override
+# silences the constraint solver, so it is only honest with evidence behind it.
+#
+# What each one costs to be wrong: pub can no longer tell us when the override
+# becomes genuinely incompatible. Re-check this block whenever Flutter or the
+# native-assets packages move (`flutter pub outdated`, then re-run the OpenCV
+# parity + DB device batches).
+dependency_overrides:
+  # pdf 3.13.0 (its own latest) caps `archive <4.1.0`. 4.1.0/4.2.0 are pure
+  # fixes/optimisations — no breaking changes — and pdf touches archive only in
+  # lib/src/pdf/io/js.dart (web I/O, which we never build). We DO use archive
+  # directly for the ZIP export (file_archiver.dart), so 4.1.0's "RangeError
+  # parsing ZIP extra fields" and "invalid path separator in zip content
+  # compression" fixes are ours to gain. Verified by r4/multi_export/j1/q1.
+  archive: 4.2.0
+
+  # The Flutter SDK pins these two EXACTLY (flutter_test -> test_api 0.7.12,
+  # flutter -> material_color_utilities 0.13.0), so they normally only move when
+  # Flutter moves. NOTE both are patch bumps that NOTHING in lib/ imports — they
+  # are framework internals — so the benefit here is close to zero while the
+  # risk (framework running against a version it was not compiled with) is real.
+  # These are the first two to drop if this block ever misbehaves.
+  material_color_utilities: 0.13.1
+  test_api: 0.7.14
+
+  # Build-time only (build_runner / drift_dev / dart_style). drift_dev 2.35.0
+  # caps `cli_util <0.6.0`; codegen verified green with 0.6.0 anyway
+  # (`dart run build_runner build --delete-conflicting-outputs`, 1294 outputs).
+  package_config: 3.0.0
+  cli_util: 0.6.0
+
+  # The native-assets toolchain. native_toolchain_c 0.19.4 and objective_c 9.6.0
+  # both require `code_assets ^2.0.0`, while dartcv4 2.3.0 still declares
+  # `code_assets ^1.0.0` and sqlite3 3.5.2 `<3.0.0` — so this trio moves as a
+  # cluster that dartcv4 gates. dartcv4's cap proved CONSERVATIVE rather than a
+  # real incompatibility: with these overrides OpenCV rebuilt from source
+  # against the 2.x hook API and produced BYTE-IDENTICAL output (np2 parity
+  # mean=1.193 max=13 and 0.090/9 on Android — the same figures as the 2.2.2
+  # baseline recorded above; mean=1.188 max=12 on the iPhone, gate is mean<2.0).
+  # This is the highest-risk group in the block: it governs how the OpenCV and
+  # SQLite native libraries are BUILT, so re-run np1/np2/np3 + the DB batch on
+  # both devices before trusting any change here.
+  code_assets: 2.0.0
+  native_toolchain_c: 0.19.4
+  objective_c: 9.6.0
+
+# NOT overridden, deliberately — `qr: 4.0.0` is available and does NOT work:
+# it is a hard API break (QrErrorCorrectLevel class -> enum, QrCode made
+# immutable, addData/fromUint8List/fromData removed) and BOTH dependents are
+# already at their own latest and still require qr 3.x — barcode 2.2.9 (pulled
+# in by pdf) needs `^3.0.0`, qr_flutter 4.1.0 needs `^3.0.1`. Forcing it broke
+# barcode's compile and took out 107 tests. Making it work would mean forking
+# and maintaining two third-party packages, one of them inside the PDF path.
+# Revisit when barcode/qr_flutter publish qr 4.x support.
