@@ -13,13 +13,11 @@
 // longer a build flag, so a device is the only place to prove the shipped
 // default really renders.
 //
-// Run (the address comes from the gitignored donation_config.json):
-//   flutter test integration_test/n1_donation_gate_device_test.dart \
-//     -d <device-id> --dart-define-from-file=donation_config.json
+// Runs unparameterised — no --dart-define needed. The Bitcoin address is
+// injected by the test, so this file is safe in a full e2e sweep.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:mobile/features/donation/donation_config.dart';
 import 'package:mobile/features/donation/donation_screen.dart';
 import 'package:mobile/main.dart' as app;
 
@@ -46,15 +44,17 @@ void main() {
   testWidgets('the tip-jar body shows Bitcoin with no flag passed', (
     tester,
   ) async {
-    // Guard rather than skip: a silent pass here would hide exactly the
-    // regression this test exists to catch.
-    expect(
-      DonationConfig.bitcoinAddress,
-      isNotEmpty,
-      reason:
-          'run with --dart-define-from-file=donation_config.json, '
-          'otherwise the Bitcoin section legitimately hides and proves nothing',
-    );
+    // The address is INJECTED, not read from DonationConfig. This test is about
+    // the shipped default of `iosBtcDonation` (always true, no longer a build
+    // flag) — not about whether this particular build was given an address.
+    //
+    // It used to guard on `DonationConfig.bitcoinAddress` being non-empty, which
+    // made it unrunnable in any suite that does not pass
+    // `--dart-define-from-file=donation_config.json` — so it failed permanently
+    // in the full e2e sweep and contributed no coverage. Whether a SHIPPING
+    // build actually carries an address is a build-artifact concern, and is
+    // guarded separately by scripts/verify-donation-config.sh.
+    const testAddress = 'bc1qtestonlyaddressnotreal000000000000000';
 
     final fake = FakeTipJarService();
     addTearDown(fake.dispose);
@@ -63,7 +63,11 @@ void main() {
     // iosBtcDonation is NOT passed — this asserts the shipped DEFAULT.
     await tester.pumpWidget(
       localizedTestApp(
-        home: DonationScreen(tipJarMode: true, createTipJar: () => fake),
+        home: DonationScreen(
+          tipJarMode: true,
+          createTipJar: () => fake,
+          bitcoinAddress: testAddress,
+        ),
       ),
     );
     await tester.pumpAndSettle();
