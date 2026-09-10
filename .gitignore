@@ -23,3 +23,6 @@ apps/mobile/.flutter-plugins-dependencies
 
 # Playwright MCP debug output
 .playwright-mcp/
+
+# Python bytecode from scripts/coverage_policy.py
+scripts/__pycache__/
